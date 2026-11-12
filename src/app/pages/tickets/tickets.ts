@@ -3,7 +3,7 @@ import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
-import { NumericTextBoxModule, TextBoxModule } from '@syncfusion/ej2-angular-inputs';
+import { NumericTextBoxModule, TextBoxModule, UploaderModule } from '@syncfusion/ej2-angular-inputs';
 import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
 import { scorePartNotes } from '../../core/kpi-meaning';
 import { MyProjectSyncAdapter } from '../../core/myproject-sync';
@@ -19,7 +19,7 @@ type TypeFilter = TicketType | 'All';
 
 @Component({
   selector: 'app-tickets',
-  imports: [GridModule, DropDownListModule, NumericTextBoxModule, TextBoxModule, DatePickerModule, ToolbarModule, ButtonModule],
+  imports: [GridModule, DropDownListModule, NumericTextBoxModule, TextBoxModule, UploaderModule, DatePickerModule, ToolbarModule, ButtonModule],
   providers: [PageService, SortService, FilterService],
   templateUrl: './tickets.html',
 })
@@ -193,11 +193,8 @@ export class TicketsPage {
     this.closedOn = event.value ?? null;
   }
 
-  protected onModule(event: Event): void {
-    const target = event.target;
-    if (target instanceof HTMLInputElement) {
-      this.moduleName = target.value;
-    }
+  protected onModule(event: { value?: string | null }): void {
+    this.moduleName = event.value ?? '';
   }
 
   protected markReference(args: { data?: object; row?: Element }): void {
@@ -214,24 +211,30 @@ export class TicketsPage {
     }
   }
 
-  protected async onImport(event: Event): Promise<void> {
-    const input = event.target;
-    if (!(input instanceof HTMLInputElement) || !input.files || input.files.length === 0) {
+  protected downloadSample(kind: 'csv' | 'json'): void {
+    const link = document.createElement('a');
+    link.href = kind === 'csv' ? '/samples/closed-tickets.csv' : '/samples/closed-tickets.json';
+    link.download = kind === 'csv' ? 'closed-tickets.csv' : 'closed-tickets.json';
+    link.click();
+  }
+
+  protected async onImport(event: { filesData?: { rawFile?: Blob | string; name?: string }[] }): Promise<void> {
+    const item = event.filesData?.[0];
+    const raw = item?.rawFile;
+    if (!(raw instanceof Blob)) {
       return;
     }
-    const file = input.files[0];
+    const name = item?.name ?? '';
     try {
-      const text = await file.text();
+      const text = await raw.text();
       const peopleIds = this.scorecard.people.map((person) => person.id);
-      const tickets = file.name.toLowerCase().endsWith('.json')
+      const tickets = name.toLowerCase().endsWith('.json')
         ? parseClosedTicketJson(text, peopleIds)
         : parseClosedTicketCsv(text, peopleIds);
       this.reportImport(this.scorecard.importTickets(tickets), 'นำเข้า');
     } catch (error) {
       this.message.set('');
       this.error.set(error instanceof Error ? error.message : 'นำเข้าไม่สำเร็จ');
-    } finally {
-      input.value = '';
     }
   }
 

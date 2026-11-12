@@ -1,13 +1,14 @@
-<div class="app-frame">
+<div class="app-frame" [class.is-narrow]="narrow()" [class.nav-open]="navOpen()">
   <ejs-sidebar
     id="app-nav"
-    type="Push"
+    type="Over"
     width="248px"
-    [isOpen]="true"
-    [showBackdrop]="false"
-    [closeOnDocumentClick]="false"
+    [isOpen]="navOpen()"
+    [showBackdrop]="narrow()"
+    [closeOnDocumentClick]="narrow()"
     [enableGestures]="false"
     [animate]="false"
+    (close)="onNavClose()"
   >
     <div class="brand">
       <p class="eyebrow">Man-day scorecard</p>
@@ -30,21 +31,22 @@
 
   <div class="workspace">
     <ejs-appbar colorMode="Dark" cssClass="shell-appbar" [isSticky]="true">
+      <button ejs-button cssClass="nav-toggle e-flat" iconCss="e-icons e-menu" type="button" (click)="toggleNav()" aria-label="เปิดหรือพับเมนู"></button>
       <span class="appbar-title">{{ title() }}</span>
       <span class="appbar-note">R&amp;D และ Implement</span>
     </ejs-appbar>
 
-    <section class="shell-alerts" aria-label="แจ้งเตือน">
+    <section class="shell-alerts mx-4 mt-4 grid gap-2 md:mx-6" aria-label="แจ้งเตือน">
       @if (alerts().length === 0) {
-        <p class="empty-state">ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate</p>
+        <ejs-message content="ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate" severity="Info" variant="Outlined"></ejs-message>
       } @else {
         @for (alert of alerts(); track alert.id) {
-          <p>{{ alert.message }}</p>
+          <ejs-message [content]="alert.message" severity="Warning" variant="Outlined"></ejs-message>
         }
       }
     </section>
 
-    <main class="px-6 pb-10 pt-2">
+    <main class="px-4 pb-10 pt-2 md:px-6">
       <router-outlet />
     </main>
   </div>

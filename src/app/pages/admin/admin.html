@@ -1,4 +1,4 @@
-<section class="page">
+<section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
       <h2>หลังบ้าน</h2>
@@ -24,7 +24,7 @@
 
   <h3>โควต้ารายสัปดาห์</h3>
   <p class="fine">ใช้คำนวณคนว่างบนคิว. ไม่เปลี่ยน MD ที่วางไว้ของดัชนี และไม่เปลี่ยนคะแนนใบ.</p>
-  <div class="form-grid">
+  <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
     <label class="field">
       <span>Senior</span>
       <ejs-numerictextbox id="quota-senior" [value]="quotas().Senior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Senior', $event)"></ejs-numerictextbox>
@@ -64,7 +64,7 @@
 
   <h3>น้ำหนักคะแนนแยกสาย</h3>
   <p class="fine">ค่าเริ่มต้นคือสูตรเดิม. ช่องเป็นเปอร์เซ็นต์.</p>
-  <div class="form-grid">
+  <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
     <label class="field"><span>Implement คะแนนใบ</span><ejs-numerictextbox id="weight-imp-ticket" [value]="weights().implementTicket" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'ticket' }, $event)"></ejs-numerictextbox></label>
     <label class="field"><span>Implement แผน</span><ejs-numerictextbox id="weight-imp-plan" [value]="weights().implementPlan" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'plan' }, $event)"></ejs-numerictextbox></label>
     <label class="field"><span>Implement ความแม่น</span><ejs-numerictextbox id="weight-imp-accuracy" [value]="weights().implementAccuracy" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'accuracy' }, $event)"></ejs-numerictextbox></label>
@@ -76,7 +76,7 @@
   </div>
 
   <h3>กฎแจ้งเตือน</h3>
-  <div class="form-grid">
+  <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
     <ejs-checkbox id="rule-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="rules().deadline" [disabled]="!canEdit()" (change)="onDeadline($event)"></ejs-checkbox>
     <ejs-checkbox id="rule-overrun" label="actual มีแนวโน้มเกิน estimate" [checked]="rules().overrun" [disabled]="!canEdit()" (change)="onOverrun($event)"></ejs-checkbox>
     <label class="field">

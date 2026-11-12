@@ -1,4 +1,4 @@
-<section class="page">
+<section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
       <h2>คิวงานใหม่</h2>
@@ -69,14 +69,18 @@
   </ejs-grid>
 
   <h3>วิเคราะห์แผนและข้อเสนอ</h3>
-  @for (item of plan().plans; track item.ticket.id) {
-    <article class="proposal">
-      <p>{{ item.text }}</p>
-      @if (item.personId) {
-        <button ejs-button [isPrimary]="true" type="button" [attr.data-ticket]="item.ticket.id" (click)="accept(item)">รับข้อเสนอ</button>
-      }
-    </article>
-  }
+  <div class="grid grid-cols-1 gap-3">
+    @for (item of plan().plans; track item.ticket.id) {
+      <article class="e-card surface-card">
+        <div class="e-card-content flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+          <p class="m-0">{{ item.text }}</p>
+          @if (item.personId) {
+            <button ejs-button [isPrimary]="true" type="button" [attr.data-ticket]="item.ticket.id" (click)="accept(item)">รับข้อเสนอ</button>
+          }
+        </div>
+      </article>
+    }
+  </div>
   @if (message()) {
     <p class="form-ok">{{ message() }}</p>
   }

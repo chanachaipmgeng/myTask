@@ -73,7 +73,19 @@
   font-size: 13px;
 }
 
+.nav-toggle {
+  display: none;
+}
+
 @media (max-width: 800px) {
+  .app-frame {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+  }
+
   main {
     padding-left: 12px;
     padding-right: 12px;

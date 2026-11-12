@@ -68,6 +68,7 @@
               "node_modules/@syncfusion/ej2-calendars/styles/material.css",
               "node_modules/@syncfusion/ej2-inputs/styles/numerictextbox/material.css",
               "node_modules/@syncfusion/ej2-inputs/styles/textbox/material.css",
+              "node_modules/@syncfusion/ej2-inputs/styles/uploader/material.css",
               "node_modules/@syncfusion/ej2-dropdowns/styles/material.css",
               "node_modules/@syncfusion/ej2-navigations/styles/material.css",
               "node_modules/@syncfusion/ej2-layouts/styles/material.css",

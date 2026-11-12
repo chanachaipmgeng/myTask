@@ -1,12 +1,14 @@
-import { Component, inject, signal } from '@angular/core';
-import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { Component, computed, inject, signal } from '@angular/core';
+import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { ShellNotice } from '../../core/shell-notice';
 import { TeamsNotifyService } from '../../core/teams-notify';
 import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-teams',
-  imports: [ButtonModule],
+  imports: [ButtonModule, CheckBoxModule, TextBoxModule, GridModule],
   templateUrl: './teams.html',
 })
 export class TeamsPage {
@@ -18,28 +20,22 @@ export class TeamsPage {
   protected readonly deadline = this.teams.deadline;
   protected readonly overrun = this.teams.overrun;
   protected readonly log = this.teams.log;
+  protected readonly logRows = computed(() =>
+    this.log().map((entry) => ({ ...entry, statusLabel: 'บันทึกไว้ ยังไม่ส่ง' })),
+  );
   protected readonly message = signal('');
   protected readonly error = signal('');
 
-  protected onChannel(event: Event): void {
-    const target = event.target;
-    if (target instanceof HTMLInputElement) {
-      this.channel.set(target.value);
-    }
+  protected onChannel(event: { value?: string | null }): void {
+    this.channel.set(event.value ?? '');
   }
 
-  protected onDeadline(event: Event): void {
-    const target = event.target;
-    if (target instanceof HTMLInputElement) {
-      this.deadline.set(target.checked);
-    }
+  protected onDeadline(event: { checked?: boolean }): void {
+    this.deadline.set(Boolean(event.checked));
   }
 
-  protected onOverrun(event: Event): void {
-    const target = event.target;
-    if (target instanceof HTMLInputElement) {
-      this.overrun.set(target.checked);
-    }
+  protected onOverrun(event: { checked?: boolean }): void {
+    this.overrun.set(Boolean(event.checked));
   }
 
   protected testSend(): void {

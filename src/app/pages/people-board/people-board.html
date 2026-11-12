@@ -1,4 +1,4 @@
-<section class="page">
+<section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
       <h2>กระดานรายคน</h2>
@@ -20,9 +20,11 @@
     </label>
   </div>
 
-  <ul class="legend-row">
+  <ul class="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 xl:grid-cols-4">
     @for (item of quotas(); track item.label) {
-      <li>{{ item.label }} {{ item.quota }} MD/สัปดาห์</li>
+      <li class="e-card surface-card">
+        <div class="e-card-content p-3">{{ item.label }} {{ item.quota }} MD/สัปดาห์</div>
+      </li>
     }
   </ul>
   <p class="fine">

@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import {
   CategoryService,
   ChartModule,
@@ -15,12 +16,13 @@ import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-person-dashboard',
-  imports: [ChartModule, RouterLink],
+  imports: [ChartModule, ButtonModule],
   providers: [CategoryService, LineSeriesService, LegendService, TooltipService],
   templateUrl: './person-dashboard.html',
 })
 export class PersonDashboard {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly scorecard = inject(ScorecardService);
   private readonly personId = toSignal(this.route.paramMap.pipe(map((params) => params.get('personId') ?? '')), {
     initialValue: this.route.snapshot.paramMap.get('personId') ?? '',
@@ -53,4 +55,8 @@ export class PersonDashboard {
       quota: person ? weeklyQuotas()[person.level] : undefined,
     });
   });
+
+  protected back(): void {
+    void this.router.navigate(['/people']);
+  }
 }

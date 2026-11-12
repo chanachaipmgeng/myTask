@@ -20,7 +20,7 @@
   </div>
 
   <div class="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
-    <article id="velocity-card" class="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4">
+    <article id="velocity-card" class="e-card surface-card flex flex-col gap-2 p-4">
       <h3 class="m-0 text-base">Velocity</h3>
       <p class="text-sm text-muted">รวม story points ของใบ Done รายคน</p>
       @if (report().velocity.length === 0) {
@@ -37,7 +37,7 @@
       }
     </article>
 
-    <article id="ontime-card" class="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4">
+    <article id="ontime-card" class="e-card surface-card flex flex-col gap-2 p-4">
       <h3 class="m-0 text-base">ส่งตรงเวลา</h3>
       <p class="text-sm text-muted">วันส่งของ Dev ไม่เกินวันส่งครั้งแรก</p>
       <p class="m-0 text-2xl font-bold text-cyan">{{ report().onTimePct }}%</p>
@@ -58,7 +58,7 @@
       ></ejs-progressbar>
     </article>
 
-    <article id="first-time-card" class="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4">
+    <article id="first-time-card" class="e-card surface-card flex flex-col gap-2 p-4">
       <h3 class="m-0 text-base">First-time right</h3>
       <p class="text-sm text-muted">ใบที่ reopen เป็น 0 หารใบทั้งหมด</p>
       <p class="m-0 text-2xl font-bold text-cyan">{{ report().firstTimePct }}%</p>
@@ -79,7 +79,7 @@
       ></ejs-progressbar>
     </article>
 
-    <article id="category-card" class="flex flex-col gap-3 rounded-2xl border border-line bg-card p-4">
+    <article id="category-card" class="e-card surface-card flex flex-col gap-3 p-4">
       <h3 class="m-0 text-base">สัดส่วนตามหมวด</h3>
       <p class="text-sm text-muted">story points แยกตามหมวด ไม่นับจำนวนใบ</p>
       @for (row of report().categories; track row.key) {
@@ -130,7 +130,7 @@
     </ng-template>
   </ejs-kanban>
 
-  <form class="grid gap-3 rounded-2xl border border-line bg-card p-4 md:grid-cols-4" (submit)="$event.preventDefault(); saveFields()">
+  <form class="e-card surface-card grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-4" (submit)="$event.preventDefault(); saveFields()">
     <div class="md:col-span-4">
       <h3 class="m-0 text-base">ฟิลด์ที่คนกรอก</h3>
       <p class="mt-1 text-sm text-muted">
