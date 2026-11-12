@@ -27,9 +27,12 @@
     "@syncfusion/ej2-angular-dropdowns": "32.2.3",
     "@syncfusion/ej2-angular-grids": "32.2.3",
     "@syncfusion/ej2-angular-inputs": "32.2.3",
+    "@syncfusion/ej2-angular-kanban": "32.2.3",
     "@syncfusion/ej2-angular-layouts": "32.2.3",
     "@syncfusion/ej2-angular-navigations": "32.2.3",
     "@syncfusion/ej2-angular-notifications": "32.2.3",
+    "@syncfusion/ej2-angular-popups": "32.2.3",
+    "@syncfusion/ej2-angular-progressbar": "32.2.3",
     "@syncfusion/ej2-material-theme": "32.2.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
@@ -39,7 +42,10 @@
     "@angular/build": "^22.2.6",
     "@angular/cli": "^22.2.6",
     "@angular/compiler-cli": "^22.2.0",
+    "autoprefixer": "^10.6.2",
+    "postcss": "^8.5.32",
     "prettier": "^3.8.1",
+    "tailwindcss": "^3.4.19",
     "tsx": "^4.20.5",
     "typescript": "~6.0.2"
   }

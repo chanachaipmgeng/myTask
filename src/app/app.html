@@ -19,6 +19,7 @@
       <a routerLink="/people" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">กระดานรายคน</a>
       <a routerLink="/people/itsara" routerLinkActive="is-active">รายคน · อิสรภาพ</a>
       <a routerLink="/tickets" routerLinkActive="is-active">ใบงาน</a>
+      <a routerLink="/pipeline" routerLinkActive="is-active">สถานะงาน</a>
       <a routerLink="/queue" routerLinkActive="is-active">คิวงานใหม่</a>
       <a routerLink="/mygit" routerLinkActive="is-active">ซิงก์ mygit</a>
       <a routerLink="/teams" routerLinkActive="is-active">แจ้งเตือน Teams</a>
@@ -43,7 +44,7 @@
       }
     </section>
 
-    <main>
+    <main class="px-6 pb-10 pt-2">
       <router-outlet />
     </main>
   </div>

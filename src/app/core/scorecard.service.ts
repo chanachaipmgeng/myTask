@@ -162,6 +162,20 @@ export class ScorecardService {
     return { added: added.map((ticket) => ticket.id), skipped };
   }
 
+  replaceTicket(next: Ticket): boolean {
+    let updated = false;
+    this.ticketsState.update((current) =>
+      current.map((ticket) => {
+        if (ticket.id !== next.id) {
+          return ticket;
+        }
+        updated = true;
+        return { ...next, id: ticket.id };
+      }),
+    );
+    return updated;
+  }
+
   assignTicket(ticketId: string, assigneeId: string): boolean {
     if (!this.people.some((person) => person.id === assigneeId)) {
       return false;

@@ -19,6 +19,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/tickets/tickets').then((m) => m.TicketsPage),
   },
   {
+    path: 'pipeline',
+    loadComponent: () => import('./pages/pipeline/pipeline').then((m) => m.PipelinePage),
+  },
+  {
     path: 'queue',
     loadComponent: () => import('./pages/queue/queue').then((m) => m.QueuePage),
   },

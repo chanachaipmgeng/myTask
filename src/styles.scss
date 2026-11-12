@@ -1,3 +1,6 @@
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --ink: #e8f4fb;
   --muted: #9bb4c9;
@@ -456,6 +459,73 @@ h3 {
   background: #12304d;
   color: var(--ink);
   border: 1px solid var(--cyan);
+}
+
+.e-kanban.pipeline-board {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.e-kanban.pipeline-board .e-kanban-header .e-header-cells,
+.e-kanban.pipeline-board .e-kanban-content,
+.e-kanban.pipeline-board .e-kanban-content .e-content-row .e-content-cells,
+.e-kanban.pipeline-board .e-content-cells {
+  background: #102844 !important;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.e-kanban.pipeline-board .e-kanban-table {
+  width: 1540px !important;
+}
+
+.e-kanban.pipeline-board .e-header-cells,
+.e-kanban.pipeline-board .e-content-cells {
+  width: 220px;
+}
+
+.e-kanban.pipeline-board .e-empty-card {
+  color: #9bb4c9;
+  background: transparent;
+}
+
+.e-kanban.pipeline-board .e-header-title,
+.e-kanban.pipeline-board .e-item-count,
+.e-kanban.pipeline-board .e-card-header,
+.e-kanban.pipeline-board .e-card-header-caption,
+.e-kanban.pipeline-board .e-card-content {
+  color: var(--ink);
+}
+
+.e-kanban.pipeline-board .e-card {
+  background: #071426;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.e-kanban.pipeline-board .e-card .e-card-header {
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+.e-dialog.pipeline-dialog,
+.e-dialog.pipeline-dialog .e-dlg-header-content,
+.e-dialog.pipeline-dialog .e-dlg-content {
+  background: #102844;
+  color: var(--ink);
+}
+
+.e-dialog.pipeline-dialog .e-dlg-header,
+.e-dialog.pipeline-dialog .e-dlg-content,
+.e-dialog.pipeline-dialog .e-dlg-content p {
+  color: #e8f4fb;
+  font-size: 16px;
+}
+
+.e-progressbar .e-progressbar-text {
+  fill: #e8f4fb;
 }
 
 .chart-frame {

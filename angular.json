@@ -73,6 +73,8 @@
               "node_modules/@syncfusion/ej2-layouts/styles/material.css",
               "node_modules/@syncfusion/ej2-grids/styles/material.css",
               "node_modules/@syncfusion/ej2-notifications/styles/material.css",
+              "node_modules/@syncfusion/ej2-kanban/styles/kanban/material.css",
+              "node_modules/@syncfusion/ej2-popups/styles/dialog/material.css",
               "src/styles.scss"
             ]
           },

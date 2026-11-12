@@ -59,7 +59,53 @@ export interface Ticket {
   /** Working days left in the committed week. Null when that clock is unknown. */
   workingDaysLeft: number | null;
   note: string;
+  /** Pipeline column. Missing values are derived from assignee and closed. */
+  workflowStatus?: WorkflowStatus;
+  discipline?: Discipline | '';
+  workCategory?: WorkCategory | '';
+  storyPoints?: StoryPoint | null;
+  /** First promised delivery date. Locked once set. */
+  firstDueOn?: string | null;
+  mrLink?: string;
+  pocResult?: PocResult | '';
+  bugCause?: BugCause | '';
+  /** Set by the system when the card enters In Progress. */
+  actualStartOn?: string | null;
+  /** Set by the system when the card enters Ready for QA. */
+  devDeliveredOn?: string | null;
 }
+
+export const WORKFLOW_STATUSES = [
+  'Backlog',
+  'In Progress',
+  'Code Review',
+  'Ready for QA',
+  'In QA',
+  'Reopened',
+  'Done',
+] as const;
+
+export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number];
+
+export const DISCIPLINES = ['FE', 'BE', 'Full-Stack', 'AI-Data', 'Infra'] as const;
+
+export type Discipline = (typeof DISCIPLINES)[number];
+
+export const WORK_CATEGORIES = ['Feature', 'R&D-PoC', 'Refactor', 'BugInternal', 'BugProduction'] as const;
+
+export type WorkCategory = (typeof WORK_CATEGORIES)[number];
+
+export const STORY_POINTS = [1, 2, 3, 5, 8, 13] as const;
+
+export type StoryPoint = (typeof STORY_POINTS)[number];
+
+export const POC_RESULTS = ['Adopted', 'Alternative Chosen', 'Dropped'] as const;
+
+export type PocResult = (typeof POC_RESULTS)[number];
+
+export const BUG_CAUSES = ['Logic', 'UI', 'API', 'Requirement', 'Environment'] as const;
+
+export type BugCause = (typeof BUG_CAUSES)[number];
 
 export interface ChartPoint {
   x: string;

@@ -1,0 +1,237 @@
+<section id="pipeline-page" class="flex flex-col gap-4">
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div class="max-w-3xl">
+      <h2>สถานะงาน</h2>
+      <p class="mt-2 text-muted">
+        ลากการ์ดตามลำดับงาน วันเริ่มจริงและวันส่งของ Dev เกิดจากสถานะ ระบบไม่เขียนกลับ myProject หรือ mygit
+      </p>
+    </div>
+    <label class="grid gap-1">
+      <span class="text-sm text-muted">สายคะแนน</span>
+      <ejs-dropdownlist
+        id="pipeline-track"
+        [dataSource]="trackOptions"
+        [fields]="fields"
+        [value]="trackFilter()"
+        (change)="setTrack($event)"
+        width="180px"
+      ></ejs-dropdownlist>
+    </label>
+  </div>
+
+  <div class="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <article id="velocity-card" class="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4">
+      <h3 class="m-0 text-base">Velocity</h3>
+      <p class="text-sm text-muted">รวม story points ของใบ Done รายคน</p>
+      @if (report().velocity.length === 0) {
+        <p class="m-0 text-sm text-muted">ยังไม่มีใบ Done</p>
+      } @else {
+        <ul class="m-0 grid list-none gap-2 p-0">
+          @for (row of report().velocity; track row.personId) {
+            <li class="flex items-center justify-between gap-3 text-sm">
+              <span>{{ row.name }}</span>
+              <span class="font-bold text-cyan">{{ row.points }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </article>
+
+    <article id="ontime-card" class="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4">
+      <h3 class="m-0 text-base">ส่งตรงเวลา</h3>
+      <p class="text-sm text-muted">วันส่งของ Dev ไม่เกินวันส่งครั้งแรก</p>
+      <p class="m-0 text-2xl font-bold text-cyan">{{ report().onTimePct }}%</p>
+      <p class="text-sm text-muted">{{ report().onTimeHit }}/{{ report().onTimeTotal }} ใบที่ส่งแล้ว</p>
+      <ejs-progressbar
+        id="ontime-bar"
+        type="Linear"
+        width="100%"
+        height="28"
+        [value]="report().onTimePct"
+        [trackThickness]="12"
+        [progressThickness]="12"
+        progressColor="#3ec6e0"
+        trackColor="#1e4566"
+        [showProgressValue]="true"
+        [labelStyle]="barLabel"
+        [animation]="barAnimation"
+      ></ejs-progressbar>
+    </article>
+
+    <article id="first-time-card" class="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4">
+      <h3 class="m-0 text-base">First-time right</h3>
+      <p class="text-sm text-muted">ใบที่ reopen เป็น 0 หารใบทั้งหมด</p>
+      <p class="m-0 text-2xl font-bold text-cyan">{{ report().firstTimePct }}%</p>
+      <p class="text-sm text-muted">{{ report().firstTimeHit }}/{{ report().firstTimeTotal }} ใบ</p>
+      <ejs-progressbar
+        id="first-time-bar"
+        type="Linear"
+        width="100%"
+        height="28"
+        [value]="report().firstTimePct"
+        [trackThickness]="12"
+        [progressThickness]="12"
+        progressColor="#7ee7f7"
+        trackColor="#1e4566"
+        [showProgressValue]="true"
+        [labelStyle]="barLabel"
+        [animation]="barAnimation"
+      ></ejs-progressbar>
+    </article>
+
+    <article id="category-card" class="flex flex-col gap-3 rounded-2xl border border-line bg-card p-4">
+      <h3 class="m-0 text-base">สัดส่วนตามหมวด</h3>
+      <p class="text-sm text-muted">story points แยกตามหมวด ไม่นับจำนวนใบ</p>
+      @for (row of report().categories; track row.key) {
+        <div class="grid gap-1">
+          <div class="flex items-center justify-between gap-3 text-sm">
+            <span>{{ row.label }}</span>
+            <span>{{ row.points }} · {{ row.pct }}%</span>
+          </div>
+          <ejs-progressbar
+            [id]="'category-' + row.key"
+            type="Linear"
+            width="100%"
+            height="18"
+            [value]="row.pct"
+            [trackThickness]="8"
+            [progressThickness]="8"
+            progressColor="#f0b429"
+            trackColor="#1e4566"
+            [showProgressValue]="false"
+            [animation]="barAnimation"
+          ></ejs-progressbar>
+        </div>
+      }
+    </article>
+  </div>
+
+  <ejs-kanban
+    id="pipeline-board"
+    cssClass="pipeline-board"
+    keyField="status"
+    height="640px"
+    width="100%"
+    [columns]="columns"
+    [dataSource]="cards()"
+    [cardSettings]="cardSettings"
+    [allowDragAndDrop]="true"
+    [allowColumnDragAndDrop]="false"
+    [showEmptyColumn]="true"
+    (dragStop)="onDragStop($event)"
+    (cardClick)="onCardClick($event)"
+    (dialogOpen)="onDialogOpen($event)"
+  >
+    <ng-template #cardSettingsTemplate let-data>
+      <div class="flex flex-col gap-1" [attr.data-ticket]="data.id">
+        <p class="m-0 text-sm font-bold text-cyan">{{ data.id }}</p>
+        <p class="m-0 text-xs text-ink">{{ data.summary }}</p>
+      </div>
+    </ng-template>
+  </ejs-kanban>
+
+  <form class="grid gap-3 rounded-2xl border border-line bg-card p-4 md:grid-cols-4" (submit)="$event.preventDefault(); saveFields()">
+    <div class="md:col-span-4">
+      <h3 class="m-0 text-base">ฟิลด์ที่คนกรอก</h3>
+      <p class="mt-1 text-sm text-muted">
+        @if (selected(); as ticket) {
+          {{ ticket.id }} · สถานะ {{ ticket.workflowStatus }} · เริ่มจริง {{ ticket.actualStartOn || '—' }} · ส่งของ Dev
+          {{ ticket.devDeliveredOn || '—' }} · Reopen {{ ticket.reopenCount }}
+        } @else {
+          เลือกการ์ดบนบอร์ด
+        }
+      </p>
+    </div>
+    <label class="grid gap-1">
+      <span class="text-sm text-muted">สายงาน</span>
+      <ejs-dropdownlist
+        id="field-discipline"
+        [dataSource]="disciplineOptions"
+        [fields]="fields"
+        [value]="discipline"
+        [enabled]="!!selected()"
+        (change)="setDiscipline($event)"
+      ></ejs-dropdownlist>
+    </label>
+    <label class="grid gap-1">
+      <span class="text-sm text-muted">หมวด</span>
+      <ejs-dropdownlist
+        id="field-category"
+        [dataSource]="categoryOptions"
+        [fields]="fields"
+        [value]="workCategory"
+        [enabled]="!!selected()"
+        (change)="setCategory($event)"
+      ></ejs-dropdownlist>
+    </label>
+    <label class="grid gap-1">
+      <span class="text-sm text-muted">Story points</span>
+      <ejs-dropdownlist
+        id="field-points"
+        [dataSource]="storyOptions"
+        [fields]="fields"
+        [value]="storyValue"
+        [enabled]="!!selected()"
+        (change)="setStory($event)"
+      ></ejs-dropdownlist>
+    </label>
+    <label class="grid gap-1">
+      <span class="text-sm text-muted">วันส่งครั้งแรก</span>
+      <ejs-datepicker
+        id="field-due"
+        format="dd/MM/yyyy"
+        [value]="due"
+        [enabled]="!!selected() && !dueLocked"
+        (change)="setDue($event)"
+      ></ejs-datepicker>
+    </label>
+    <label class="grid gap-1 md:col-span-2">
+      <span class="text-sm text-muted">ลิงก์ MR</span>
+      <ejs-textbox id="field-mr" [value]="mrLink" [enabled]="!!selected()" (change)="setMr($event)"></ejs-textbox>
+    </label>
+    @if (workCategory === 'R&D-PoC') {
+      <label class="grid gap-1">
+        <span class="text-sm text-muted">ผล PoC</span>
+        <ejs-dropdownlist
+          id="field-poc"
+          [dataSource]="pocOptions"
+          [fields]="fields"
+          [value]="pocResult"
+          [enabled]="!!selected()"
+          (change)="setPoc($event)"
+        ></ejs-dropdownlist>
+      </label>
+    }
+    @if (bugCategory()) {
+      <label class="grid gap-1">
+        <span class="text-sm text-muted">สาเหตุ Bug</span>
+        <ejs-dropdownlist
+          id="field-cause"
+          [dataSource]="causeOptions"
+          [fields]="fields"
+          [value]="bugCause"
+          [enabled]="!!selected()"
+          (change)="setCause($event)"
+        ></ejs-dropdownlist>
+      </label>
+    }
+    <div class="flex items-end">
+      <button ejs-button cssClass="e-primary" type="submit" [disabled]="!selected()">บันทึกฟิลด์</button>
+    </div>
+  </form>
+</section>
+
+<ejs-dialog
+  #blockDialog
+  id="block-dialog"
+  cssClass="pipeline-dialog"
+  header="ยังเปลี่ยนสถานะไม่ได้"
+  width="440px"
+  [visible]="false"
+  [isModal]="true"
+  [showCloseIcon]="true"
+>
+  <ng-template #content>
+    <p class="m-0 text-ink">{{ blockMessage() }}</p>
+  </ng-template>
+</ejs-dialog>

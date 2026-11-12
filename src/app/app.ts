@@ -49,6 +49,9 @@ function screenTitle(url: string): string {
   if (url.startsWith('/tickets')) {
     return 'ใบงาน';
   }
+  if (url.startsWith('/pipeline')) {
+    return 'สถานะงาน';
+  }
   if (url.startsWith('/queue')) {
     return 'คิวงานใหม่';
   }

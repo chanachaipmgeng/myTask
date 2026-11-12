@@ -1,5 +1,6 @@
 import { Person, Ticket } from '../core/models';
 import { WEEKLY_QUOTA } from '../core/scoring';
+import { decorateSeed } from '../core/workflow';
 
 export const REFERENCE_BUG_ID = 'IMP-100';
 export const REFERENCE_SPIKE_ID = 'RD-SPIKE';
@@ -187,7 +188,7 @@ function ticket(seed: TicketSeed): Ticket {
   } else if (seed.closedOn === undefined) {
     draft.closedOn = closedMonth(seed.id);
   }
-  return draft;
+  return decorateSeed(draft, seed);
 }
 
 export const SEED_TICKETS: readonly Ticket[] = [
@@ -448,6 +449,15 @@ export const SEED_TICKETS: readonly Ticket[] = [
     estimateMd: 0.5,
     actualMd: 0.5,
     note: 'Bug ฝั่ง R&D',
+    workflowStatus: 'In QA',
+    discipline: 'BE',
+    workCategory: 'BugInternal',
+    storyPoints: 2,
+    firstDueOn: '2025-10-20',
+    devDeliveredOn: '2025-10-20',
+    actualStartOn: '2025-10-08',
+    mrLink: 'https://git.local/mr/RD-NAK-BUG',
+    bugCause: '',
   }),
   ticket({
     id: 'RD-NAK-CR',
@@ -473,6 +483,13 @@ export const SEED_TICKETS: readonly Ticket[] = [
     closed: false,
     closedOn: null,
     note: 'ยังไม่ปิด จึงยังไม่คิดคะแนน',
+    workflowStatus: 'In Progress',
+    discipline: 'BE',
+    workCategory: 'Feature',
+    storyPoints: 3,
+    firstDueOn: '2025-11-20',
+    mrLink: '',
+    actualStartOn: '2025-11-03',
   }),
   ticket({
     id: 'RD-NTH-SP',

@@ -17,6 +17,7 @@ import { personDashboard } from '../src/app/core/person-dashboard';
 import { ScorecardService } from '../src/app/core/scorecard.service';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../src/app/core/ticket-file';
 import { Person, Ticket, TicketType } from '../src/app/core/models';
+import { editWorkflow, moveWorkflow, pipelineReport } from '../src/app/core/workflow';
 import {
   INDEX_TARGET,
   SIZE_POINTS,
@@ -393,6 +394,72 @@ assert.equal(canEditAdmin(), true);
 assert.equal(setWeeklyQuota('Junior', 1), true);
 assert.equal(weeklyQuotas().Junior, 1);
 setWeeklyQuota('Junior', 3);
+assert.equal(scoreTicket(seeded(REFERENCE_BUG_ID)).total, 100);
+assert.equal(scoreTicket(seeded(REFERENCE_SPIKE_ID)).spikeScore, 100);
+
+const blockedStart = moveWorkflow(seeded('Q-RD-1'), 'In Progress', '2025-11-12');
+assert.equal(blockedStart.ok, false);
+if (!blockedStart.ok) {
+  assert.match(blockedStart.message, /Assignee/);
+  assert.match(blockedStart.message, /Story Points/);
+  assert.match(blockedStart.message, /วันส่ง/);
+}
+const blockedReview = moveWorkflow(seeded('RD-OPEN'), 'Code Review', '2025-11-12');
+assert.equal(blockedReview.ok, false);
+if (!blockedReview.ok) {
+  assert.match(blockedReview.message, /ลิงก์ MR/);
+}
+const blockedDone = moveWorkflow(seeded('RD-NAK-BUG'), 'Done', '2025-11-12');
+assert.equal(blockedDone.ok, false);
+if (!blockedDone.ok) {
+  assert.match(blockedDone.message, /สาเหตุของ Bug/);
+}
+const reviewCopy: Ticket = {
+  ...seeded('RD-NAK-CR'),
+  workflowStatus: 'Code Review',
+  mrLink: 'https://git.local/mr/x',
+  storyPoints: 2,
+  firstDueOn: '2025-11-01',
+  actualStartOn: null,
+  devDeliveredOn: null,
+};
+const bounced = moveWorkflow(reviewCopy, 'In Progress', '2025-11-12');
+assert.equal(bounced.ok, true);
+if (bounced.ok) {
+  assert.equal(bounced.ticket.reopenCount, reviewCopy.reopenCount + 1);
+  assert.equal(bounced.ticket.actualStartOn, '2025-11-12');
+}
+const ready = bounced.ok
+  ? moveWorkflow(
+      { ...bounced.ticket, workflowStatus: 'Code Review', mrLink: 'https://git.local/mr/x', devDeliveredOn: null },
+      'Ready for QA',
+      '2025-11-18',
+    )
+  : bounced;
+assert.equal(ready.ok, true);
+if (ready.ok) {
+  assert.equal(ready.ticket.devDeliveredOn, '2025-11-18');
+  assert.equal(ready.ticket.reopenCount, reviewCopy.reopenCount + 1);
+}
+const locked = editWorkflow(
+  { ...seeded('Q-RD-1'), firstDueOn: '2025-11-01', assigneeId: 'chanachai' },
+  {
+    discipline: 'BE',
+    workCategory: 'Feature',
+    storyPoints: 5,
+    firstDueOn: '2025-12-01',
+    mrLink: '',
+    pocResult: '',
+    bugCause: '',
+  },
+);
+assert.equal(locked.ok, false);
+const rdReport = pipelineReport(
+  SEED_TICKETS.filter((item) => item.track === 'RD'),
+  SEED_PEOPLE,
+);
+assert.ok(rdReport.velocity.some((row) => row.points > 0));
+assert.ok(rdReport.categories.some((row) => row.key === 'R&D-PoC' && row.points > 0));
 assert.equal(scoreTicket(seeded(REFERENCE_BUG_ID)).total, 100);
 assert.equal(scoreTicket(seeded(REFERENCE_SPIKE_ID)).spikeScore, 100);
 
