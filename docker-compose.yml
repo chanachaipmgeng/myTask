@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: manday-db
+    environment:
+      POSTGRES_DB: manday
+      POSTGRES_USER: manday
+      POSTGRES_PASSWORD: manday
+    ports:
+      - "5433:5432"
+    volumes:
+      - manday-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U manday -d manday"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: manday-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://manday:manday@db:5432/manday
+      HOST: 0.0.0.0
+      PORT: 3000
+      APP_URL: http://localhost:8080
+      AUTH_DEV_LOGIN: "true"
+      TOKEN_ENC_KEY: ${TOKEN_ENC_KEY:-dev-only-insecure-key-change-me-please}
+      SESSION_DAYS: ${SESSION_DAYS:-7}
+      OPENPROJECT_URL: ${OPENPROJECT_URL:-}
+      OPENPROJECT_API_TOKEN: ${OPENPROJECT_API_TOKEN:-}
+      OPENPROJECT_WRITEBACK: ${OPENPROJECT_WRITEBACK:-false}
+      OPENPROJECT_SYNC_CRON: ${OPENPROJECT_SYNC_CRON:-*/15 * * * *}
+      GITLAB_URL: ${GITLAB_URL:-}
+      GITLAB_OAUTH_CLIENT_ID: ${GITLAB_OAUTH_CLIENT_ID:-}
+      GITLAB_OAUTH_CLIENT_SECRET: ${GITLAB_OAUTH_CLIENT_SECRET:-}
+      BOOTSTRAP_ADMIN_GITLAB_USERNAMES: ${BOOTSTRAP_ADMIN_GITLAB_USERNAMES:-}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+      args:
+        SYNCFUSION_LICENSE: ${SYNCFUSION_LICENSE:-}
+    container_name: manday-web
+    depends_on:
+      - api
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  manday-db:

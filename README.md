@@ -1,25 +1,65 @@
 # Man-day Scorecard
 
-Local Angular + Syncfusion board that scores closed tickets in man-days, with separate development indexes for R&D and Implement. Sample people and tickets come from the 2568 team report. There is no myProject API and no salary page.
+Angular + Syncfusion scoreboard for closed tickets in man-days, with separate Implement / R&D indexes.
 
-## Run
+**Phase 0–1 is live:** NestJS API, PostgreSQL, GitLab/dev login, and OpenProject (myProject) sync. Domain scoring lives in `shared/` so web and server reuse the same rules.
 
-```bash
-cd /agent/manday-scorecard
+Full Thai guide: [docs/คู่มือ.md](docs/คู่มือ.md)
+
+## Quick start (Docker)
+
+Put the Syncfusion license in `.env` (see `.env.example`), then build and run the full stack:
+
+```powershell
+Copy-Item .env.example .env
+# set SYNCFUSION_LICENSE=... in .env
+docker compose up --build
+```
+
+Open **http://localhost:8080**
+
+- Web (nginx) serves the Angular app and proxies `/api` to Nest
+- API listens on port 3000 inside the network (also published for debugging)
+- Postgres is on host port **5433**
+
+On **หลังบ้าน** click **Dev login · ปวีณา**, then open **Integrations** to set OpenProject URL/token and **Sync now**.
+
+`OPENPROJECT_WRITEBACK` defaults to `false` so assignee is never patched back during early testing.
+
+## Local development (without Docker web/API)
+
+```powershell
 npm install
-npm start
+npm --prefix server install
+Copy-Item .env.example .env
+docker compose up -d db
+npm --prefix server run seed
 ```
 
-Open http://127.0.0.1:4200 . The board has the team dashboard, people, tickets, and a new-work queue.
+Two terminals:
 
-Closed tickets can be imported from CSV or JSON on the tickets page. Sample files are at `/samples/closed-tickets.csv` and `/samples/closed-tickets.json`. The Sync button reads `/fixtures/myproject-tickets.json`, a local stand-in for myProject. It does not call an API host and does not write scores back.
+```powershell
+npm --prefix server run start   # API http://127.0.0.1:3000
+npm start                       # Web  http://127.0.0.1:4200  (proxies /api)
+```
 
-Production build:
+## Checks
 
-```bash
+```powershell
+npm run verify                  # scoring rules (IMP-100 / RD-SPIKE = 100)
+npm --prefix server run test    # OpenProject mapper unit tests
 npm run build
+npm --prefix server run build
 ```
 
-`npm run verify` checks the scoring rules, including the Implement bug-fix at 100 and the R&D spike at 100.
+## Layout
 
-Put `SYNCFUSION_LICENSE` in the gitignored `.env` file (see `.env.example`). `npm start` and `npm run build` read that value and register it. If it is unset, the Syncfusion trial banner stays.
+| Path | Role |
+|---|---|
+| `shared/domain/` | Pure scoring, capacity, workflow |
+| `server/` | NestJS + PostgreSQL + OpenProject sync |
+| `src/app/` | Angular UI (Syncfusion Fluent 2 Dark) |
+| `docker/` | Dockerfiles and nginx for the full stack |
+| `docs/คู่มือ.md` | Setup, login, sync, troubleshooting |
+
+Put `SYNCFUSION_LICENSE` in the gitignored `.env` (see `.env.example`). Without it the Syncfusion trial banner stays.

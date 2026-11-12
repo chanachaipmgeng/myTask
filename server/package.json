@@ -1,0 +1,32 @@
+{
+  "name": "manday-scorecard-server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "NestJS + PostgreSQL backend for the man-day scorecard: GitLab login, OpenProject sync, persistence.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server/src/main.js",
+    "dev": "tsc -p tsconfig.json && node --enable-source-maps dist/server/src/main.js",
+    "migrate": "tsc -p tsconfig.json && node dist/server/src/db/migrate-cli.js",
+    "seed": "tsc -p tsconfig.json && node dist/server/src/db/seed-cli.js",
+    "test": "tsc -p tsconfig.json && node --test --enable-source-maps \"dist/server/test/unit/**/*.spec.js\"",
+    "test:e2e": "tsc -p tsconfig.json && node --test --test-concurrency=1 --enable-source-maps \"dist/server/test/e2e/**/*.spec.js\""
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/core": "^11.1.0",
+    "@nestjs/platform-express": "^11.1.0",
+    "@nestjs/schedule": "^6.1.0",
+    "cookie-parser": "^1.4.7",
+    "pg": "^8.16.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.15.0",
+    "typescript": "~5.9.3"
+  }
+}
