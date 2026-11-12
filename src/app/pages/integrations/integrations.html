@@ -1,0 +1,105 @@
+<section class="page flex flex-col gap-4">
+  <div class="page-head">
+    <div>
+      <h2>Integrations</h2>
+      <p>เชื่อม myProject (OpenProject) ตั้ง field mapping และซิงก์ work package / time entry</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button ejs-button cssClass="e-outline" type="button" [disabled]="loading() || saving()" (click)="reload()">
+        รีเฟรช
+      </button>
+      <button ejs-button cssClass="e-primary" type="button" [disabled]="loading() || saving()" (click)="syncNow()">
+        Sync now
+      </button>
+    </div>
+  </div>
+
+  @if (message()) {
+    <ejs-message [content]="message()" severity="Info" variant="Outlined"></ejs-message>
+  }
+  @if (error()) {
+    <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
+  }
+
+  <h3>การเชื่อมต่อ</h3>
+  <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+    <label class="field">
+      <span>OpenProject URL</span>
+      <ejs-textbox [(value)]="baseUrl" [enabled]="canEdit()" placeholder="https://myproject.example.com"></ejs-textbox>
+    </label>
+    <label class="field">
+      <span>API token (ว่าง = คงค่าเดิม / ใช้จาก env)</span>
+      <ejs-textbox [(value)]="token" [enabled]="canEdit()" type="password" autocomplete="off"></ejs-textbox>
+    </label>
+    <label class="field">
+      <span>ชั่วโมงต่อ 1 man-day</span>
+      <ejs-numerictextbox [(value)]="hoursPerMd" [enabled]="canEdit()" [min]="1" [max]="24" [step]="0.5" format="n1"></ejs-numerictextbox>
+    </label>
+    <div class="field flex items-end">
+      <ejs-checkbox
+        id="op-enabled"
+        label="เปิดการเชื่อมต่อในฐานข้อมูล"
+        [checked]="enabled"
+        [disabled]="!canEdit()"
+        (change)="onEnabled($event)"
+      ></ejs-checkbox>
+    </div>
+  </div>
+
+  <h3>Status → workflow</h3>
+  <p class="fine">JSON object · ค่าที่ใช้ได้: {{ workflowHint }}</p>
+  <ejs-textarea
+    [(value)]="statusMapText"
+    [enabled]="canEdit()"
+    [rows]="10"
+    cssClass="map-textarea"
+    width="100%"
+  ></ejs-textarea>
+
+  <h3>Type map</h3>
+  <ejs-textarea
+    [(value)]="typeMapText"
+    [enabled]="canEdit()"
+    [rows]="8"
+    cssClass="map-textarea"
+    width="100%"
+  ></ejs-textarea>
+
+  <h3>Custom fields</h3>
+  <p class="fine">ใส่ชื่อ property เช่น customField12 ว่าง = ไม่ใช้</p>
+  <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+    <label class="field"><span>Size</span><ejs-textbox [(value)]="customSize" [enabled]="canEdit()"></ejs-textbox></label>
+    <label class="field"><span>Track</span><ejs-textbox [(value)]="customTrack" [enabled]="canEdit()"></ejs-textbox></label>
+    <label class="field"><span>Type</span><ejs-textbox [(value)]="customType" [enabled]="canEdit()"></ejs-textbox></label>
+    <label class="field"><span>Variance</span><ejs-textbox [(value)]="customVariance" [enabled]="canEdit()"></ejs-textbox></label>
+  </div>
+
+  @if (canEdit()) {
+    <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="save()">บันทึกการตั้งค่า</button>
+  }
+
+  <h3>User mapping</h3>
+  <div class="form-grid grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+    <label class="field">
+      <span>คนในระบบ</span>
+      <ejs-dropdownlist [dataSource]="personOptions()" [fields]="fields" (change)="onPerson($event)" [enabled]="canEdit()"></ejs-dropdownlist>
+    </label>
+    <label class="field">
+      <span>ผู้ใช้ OpenProject ที่ยังไม่จับคู่</span>
+      <ejs-dropdownlist [dataSource]="unmappedOptions()" [fields]="fields" (change)="onOpUser($event)" [enabled]="canEdit()"></ejs-dropdownlist>
+    </label>
+    <button ejs-button type="button" [disabled]="!canEdit() || saving()" (click)="mapUser()">จับคู่</button>
+  </div>
+
+  <h3>ประวัติ sync</h3>
+  <ejs-grid [dataSource]="data()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
+    <e-columns>
+      <e-column field="id" headerText="ID" width="80"></e-column>
+      <e-column field="status" headerText="สถานะ" width="100"></e-column>
+      <e-column field="started_at" headerText="เริ่ม" width="180"></e-column>
+      <e-column field="added" headerText="เพิ่ม" width="80"></e-column>
+      <e-column field="updated" headerText="อัปเดต" width="80"></e-column>
+      <e-column field="unchanged" headerText="ไม่เปลี่ยน" width="100"></e-column>
+    </e-columns>
+  </ejs-grid>
+</section>

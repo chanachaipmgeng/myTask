@@ -14,14 +14,14 @@
     <button ejs-button [isPrimary]="true" type="button" id="mygit-sync" (click)="sync()">ซิงก์จากไฟล์ตัวอย่าง</button>
   </div>
   @if (message()) {
-    <p class="form-ok">{{ message() }}</p>
+    <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
   }
   @if (error()) {
-    <p class="form-error">{{ error() }}</p>
+    <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
   }
 
   @if (!synced()) {
-    <p class="empty-state">ยังไม่ได้ซิงก์ กดปุ่มด้านบนเพื่ออ่านไฟล์ตัวอย่างในเครื่อง</p>
+    <ejs-message content="ยังไม่ได้ซิงก์ กดปุ่มด้านบนเพื่ออ่านไฟล์ตัวอย่างในเครื่อง" severity="Info" variant="Outlined"></ejs-message>
   }
   @if (synced()) {
     <h3>ใบที่จับคู่ได้</h3>

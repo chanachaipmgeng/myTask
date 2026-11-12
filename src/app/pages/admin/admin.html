@@ -10,17 +10,26 @@
   </div>
 
   <label class="field">
-    <span>ผู้ที่กำลังดู</span>
+    <span>ผู้ที่กำลังดู (ตัวอย่างออฟไลน์)</span>
     <ejs-dropdownlist
       id="viewer-role"
       [dataSource]="viewerOptions"
       [fields]="fields"
       [value]="viewer().id"
+      [enabled]="!session()"
       (change)="onViewer($event)"
       width="280px"
     ></ejs-dropdownlist>
   </label>
-  <p id="access-flag" class="formula-banner">{{ canEdit() ? 'แก้ได้' : 'ดูได้อย่างเดียว' }}</p>
+  <ejs-message id="access-flag" [content]="accessBanner()" severity="Info" variant="Outlined"></ejs-message>
+  <div class="flex flex-wrap gap-2">
+    <button ejs-button type="button" cssClass="e-outline" (click)="devLogin('paweena')">Dev login · ปวีณา (admin)</button>
+    <button ejs-button type="button" cssClass="e-outline" (click)="devLogin('itsara')">Dev login · อิสรภาพ</button>
+    <button ejs-button type="button" cssClass="e-flat" (click)="logout()">Logout</button>
+  </div>
+  @if (status()) {
+    <ejs-message [content]="status()" severity="Info" variant="Outlined"></ejs-message>
+  }
 
   <h3>โควต้ารายสัปดาห์</h3>
   <p class="fine">ใช้คำนวณคนว่างบนคิว. ไม่เปลี่ยน MD ที่วางไว้ของดัชนี และไม่เปลี่ยนคะแนนใบ.</p>
@@ -44,23 +53,25 @@
   </div>
 
   <h3>คนและระดับ</h3>
-  <ul class="meaning-list">
+  <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
     @for (person of roster(); track person.id) {
-      <li>
-        {{ person.nickname }} · {{ person.track === 'RD' ? 'R&D' : 'Implement' }}
-        <ejs-dropdownlist
-          cssClass="level-list"
-          [attr.data-person]="person.id"
-          [dataSource]="levelOptions"
-          [fields]="fields"
-          [value]="person.level"
-          [enabled]="canEdit()"
-          (change)="onLevel(person.id, $event)"
-          width="160px"
-        ></ejs-dropdownlist>
-      </li>
+      <div class="e-card">
+        <div class="e-card-content flex flex-wrap items-center justify-between gap-3 p-3">
+          <span>{{ person.nickname }} · {{ person.track === 'RD' ? 'R&D' : 'Implement' }}</span>
+          <ejs-dropdownlist
+            cssClass="level-list"
+            [attr.data-person]="person.id"
+            [dataSource]="levelOptions"
+            [fields]="fields"
+            [value]="person.level"
+            [enabled]="canEdit()"
+            (change)="onLevel(person.id, $event)"
+            width="160px"
+          ></ejs-dropdownlist>
+        </div>
+      </div>
     }
-  </ul>
+  </div>
 
   <h3>น้ำหนักคะแนนแยกสาย</h3>
   <p class="fine">ค่าเริ่มต้นคือสูตรเดิม. ช่องเป็นเปอร์เซ็นต์.</p>
@@ -86,20 +97,22 @@
   </div>
 
   <h3>สถานะการเชื่อม</h3>
-  <ul class="meaning-list">
+  <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
     @for (link of links(); track link.id) {
-      <li>
-        {{ link.label }} · {{ link.detail }}
-        <ejs-dropdownlist
-          [id]="'connection-' + link.id"
-          [dataSource]="connectionOptions"
-          [fields]="fields"
-          [value]="link.state"
-          [enabled]="canEdit()"
-          (change)="onConnection(link.id, $event)"
-          width="180px"
-        ></ejs-dropdownlist>
-      </li>
+      <div class="e-card">
+        <div class="e-card-content flex flex-wrap items-center justify-between gap-3 p-3">
+          <span>{{ link.label }} · {{ link.detail }}</span>
+          <ejs-dropdownlist
+            [id]="'connection-' + link.id"
+            [dataSource]="connectionOptions"
+            [fields]="fields"
+            [value]="link.state"
+            [enabled]="canEdit()"
+            (change)="onConnection(link.id, $event)"
+            width="180px"
+          ></ejs-dropdownlist>
+        </div>
+      </div>
     }
-  </ul>
+  </div>
 </section>

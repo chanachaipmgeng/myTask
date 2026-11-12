@@ -17,16 +17,14 @@
     </e-items>
   </ejs-toolbar>
   <ng-template #freeTemplate>
-    <p class="free-line" id="free-people">
+    <div class="free-line" id="free-people">
       @if (freePeople().length === 0) {
-        <span class="empty-state">ไม่มีคนว่างในโควต้านี้</span>
+        <ejs-message content="ไม่มีคนว่างในโควต้านี้" severity="Info" variant="Outlined"></ejs-message>
       } @else {
-        คนว่าง:
-        @for (person of freePeople(); track person.id) {
-          <span>{{ person.personLabel }} ว่าง {{ person.freeMd }} MD</span>
-        }
+        <span class="toolbar-field"><span>คนว่าง</span></span>
+        <ejs-chiplist [chips]="freeChips()" selection="None" cssClass="free-chips"></ejs-chiplist>
       }
-    </p>
+    </div>
   </ng-template>
 
   <h3>กำลังที่เหลือ</h3>
@@ -71,20 +69,20 @@
   <h3>วิเคราะห์แผนและข้อเสนอ</h3>
   <div class="grid grid-cols-1 gap-3">
     @for (item of plan().plans; track item.ticket.id) {
-      <article class="e-card surface-card">
+      <div class="e-card">
         <div class="e-card-content flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
           <p class="m-0">{{ item.text }}</p>
           @if (item.personId) {
             <button ejs-button [isPrimary]="true" type="button" [attr.data-ticket]="item.ticket.id" (click)="accept(item)">รับข้อเสนอ</button>
           }
         </div>
-      </article>
+      </div>
     }
   </div>
   @if (message()) {
-    <p class="form-ok">{{ message() }}</p>
+    <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
   }
   @if (error()) {
-    <p class="form-error">{{ error() }}</p>
+    <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
   }
 </section>

@@ -1,14 +1,15 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { ButtonModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
 import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
 import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
+import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { QueuePlan } from '../../core/capacity';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 
 @Component({
   selector: 'app-queue',
-  imports: [GridModule, ToolbarModule, ButtonModule],
+  imports: [GridModule, ToolbarModule, ButtonModule, ChipListModule, MessageModule],
   providers: [PageService, SortService, FilterService],
   templateUrl: './queue.html',
 })
@@ -21,6 +22,9 @@ export class QueuePage {
   protected readonly error = signal('');
   protected readonly plan = this.scorecard.workPlan;
   protected readonly freePeople = computed(() => this.plan().rows.filter((row) => row.available));
+  protected readonly freeChips = computed(() =>
+    this.freePeople().map((person) => `${person.personLabel} ว่าง ${person.freeMd} MD`),
+  );
   protected readonly implementQueue = computed(() =>
     this.scorecard.ticketRows().filter((row) => row.unassigned && row.track === 'Implement'),
   );

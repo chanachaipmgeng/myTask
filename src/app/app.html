@@ -2,7 +2,7 @@
   <ejs-sidebar
     id="app-nav"
     type="Over"
-    width="248px"
+    width="260px"
     [isOpen]="navOpen()"
     [showBackdrop]="narrow()"
     [closeOnDocumentClick]="narrow()"
@@ -11,32 +11,40 @@
     (close)="onNavClose()"
   >
     <div class="brand">
-      <p class="eyebrow">Man-day scorecard</p>
-      <p class="brand-title">คะแนนใบงาน</p>
-      <p class="brand-sub">1 MD = 6 ชั่วโมงโฟกัส</p>
+      <div class="brand-mark" aria-hidden="true">MD</div>
+      <div>
+        <p class="eyebrow">Man-day scorecard</p>
+        <p class="brand-title">คะแนนใบงาน</p>
+        <p class="brand-sub">1 MD = 6 ชั่วโมงโฟกัส</p>
+      </div>
     </div>
-    <nav class="side-nav">
-      <a routerLink="/team" routerLinkActive="is-active">แดชบอร์ดทีม</a>
-      <a routerLink="/people" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">กระดานรายคน</a>
-      <a routerLink="/people/itsara" routerLinkActive="is-active">รายคน · อิสรภาพ</a>
-      <a routerLink="/tickets" routerLinkActive="is-active">ใบงาน</a>
-      <a routerLink="/pipeline" routerLinkActive="is-active">สถานะงาน</a>
-      <a routerLink="/queue" routerLinkActive="is-active">คิวงานใหม่</a>
-      <a routerLink="/mygit" routerLinkActive="is-active">ซิงก์ mygit</a>
-      <a routerLink="/teams" routerLinkActive="is-active">แจ้งเตือน Teams</a>
-      <a routerLink="/ai" routerLinkActive="is-active">ติดตามงาน AI</a>
-      <a routerLink="/admin" routerLinkActive="is-active">หลังบ้าน</a>
-    </nav>
+
+    <ejs-treeview
+      id="app-nav-tree"
+      cssClass="side-nav-tree"
+      [fields]="navFields"
+      [expandedNodes]="expandedNodes"
+      [selectedNodes]="selectedNodes()"
+      [fullRowSelect]="true"
+      (nodeSelecting)="onNavSelecting($event)"
+      (nodeClicked)="onNavClick($event)"
+      (nodeSelected)="onNavSelect($event)"
+    ></ejs-treeview>
   </ejs-sidebar>
 
   <div class="workspace">
-    <ejs-appbar colorMode="Dark" cssClass="shell-appbar" [isSticky]="true">
-      <button ejs-button cssClass="nav-toggle e-flat" iconCss="e-icons e-menu" type="button" (click)="toggleNav()" aria-label="เปิดหรือพับเมนู"></button>
-      <span class="appbar-title">{{ title() }}</span>
-      <span class="appbar-note">R&amp;D และ Implement</span>
+    <ejs-appbar colorMode="Inherit" cssClass="shell-appbar" [isSticky]="true">
+      <button ejs-button cssClass="nav-toggle e-flat e-inherit" iconCss="e-icons e-menu" type="button" (click)="toggleNav()" aria-label="เปิดหรือพับเมนู"></button>
+      <div class="appbar-copy">
+        <span class="appbar-title">{{ title() }}</span>
+        <span class="appbar-note">R&amp;D และ Implement</span>
+      </div>
+      @if (alerts().length > 0) {
+        <span class="e-badge e-badge-warning e-badge-pill appbar-alert-chip">แจ้งเตือน {{ alerts().length }}</span>
+      }
     </ejs-appbar>
 
-    <section class="shell-alerts mx-4 mt-4 grid gap-2 md:mx-6" aria-label="แจ้งเตือน">
+    <section class="shell-alerts" aria-label="แจ้งเตือน">
       @if (alerts().length === 0) {
         <ejs-message content="ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate" severity="Info" variant="Outlined"></ejs-message>
       } @else {
@@ -46,7 +54,7 @@
       }
     </section>
 
-    <main class="px-4 pb-10 pt-2 md:px-6">
+    <main class="shell-main">
       <router-outlet />
     </main>
   </div>

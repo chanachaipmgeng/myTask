@@ -1,6 +1,6 @@
-import { Person, Ticket } from '../core/models';
-import { WEEKLY_QUOTA } from '../core/scoring';
-import { decorateSeed } from '../core/workflow';
+import { Person, Ticket } from './domain/models';
+import { WEEKLY_QUOTA } from './domain/scoring';
+import { decorateSeed } from './domain/workflow';
 
 export const REFERENCE_BUG_ID = 'IMP-100';
 export const REFERENCE_SPIKE_ID = 'RD-SPIKE';

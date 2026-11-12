@@ -113,7 +113,7 @@ export class PipelinePage {
 
   protected readonly cards = computed(() => {
     this.boardRevision();
-    const names = new Map(this.scorecard.people.map((person) => [person.id, person.nickname]));
+    const names = new Map(this.scorecard.people().map((person) => [person.id, person.nickname]));
     return this.visibleTickets().map((ticket) => ({
       id: ticket.id,
       status: workflowStatusOf(ticket),
@@ -121,7 +121,7 @@ export class PipelinePage {
     }));
   });
 
-  protected readonly report = computed(() => pipelineReport(this.visibleTickets(), this.scorecard.people));
+  protected readonly report = computed(() => pipelineReport(this.visibleTickets(), this.scorecard.people()));
 
   protected readonly selected = computed(
     () => this.scorecard.tickets().find((ticket) => ticket.id === this.selectedId()) ?? null,

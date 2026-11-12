@@ -10,11 +10,7 @@
     </div>
   </div>
 
-  <ul class="legend-row">
-    @for (item of sizes; track item.size) {
-      <li>{{ item.size }} {{ item.points }} points / {{ item.md }} MD</li>
-    }
-  </ul>
+  <ejs-chiplist [chips]="sizeChips" selection="None" cssClass="legend-chips"></ejs-chiplist>
 
   <section class="ticket-form">
     <h3>นำเข้าและซิงก์</h3>
@@ -30,12 +26,13 @@
     </div>
   </section>
 
-  <ul class="meaning-list">
-    <li>40 มาจากส่งตรงสัปดาห์ — ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว</li>
-    <li>20 มาจากอัตราส่วน 0.8–1.5 — การตีขนาดเก่งขึ้น เทียบกับตัวเอง</li>
-    <li>20 มาจากรีวิวไม่เกิน 2 รอบและไม่มี blocker — ยังไม่พังเรื่อง security หรือ boundary</li>
-    <li>20 มาจากไม่ reopen — ของที่ส่งแล้วอยู่ได้หลัง DEV/UAT</li>
-  </ul>
+  <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+    @for (text of scoreMeaningCards; track text) {
+      <div class="e-card">
+        <div class="e-card-content p-3">{{ text }}</div>
+      </div>
+    }
+  </div>
 
   <form class="ticket-form" (submit)="$event.preventDefault(); add()">
     <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
@@ -105,7 +102,7 @@
       </label>
       <label class="field">
         <span>ผู้รับผิดชอบ</span>
-        <ejs-dropdownlist [dataSource]="assigneeOptions" [fields]="fields" [value]="assigneeId" [allowFiltering]="true" (change)="setChoice('assigneeId', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="assigneeOptions()" [fields]="fields" [value]="assigneeId" [allowFiltering]="true" (change)="setChoice('assigneeId', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>วันที่ปิด</span>
@@ -126,10 +123,10 @@
       }
     </div>
     @if (error()) {
-      <p class="form-error">{{ error() }}</p>
+      <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
     }
     @if (message()) {
-      <p class="form-ok">{{ message() }}</p>
+      <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
     }
   </form>
 

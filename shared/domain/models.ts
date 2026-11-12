@@ -23,6 +23,20 @@ export type WorkloadCategory =
   | 'Spike'
   | 'TechDebt';
 
+export type AccessRole = 'admin' | 'lead' | 'member';
+
+export interface Department {
+  id: string;
+  name: string;
+}
+
+export interface Team {
+  id: string;
+  departmentId: string;
+  name: string;
+  leadId: string | null;
+}
+
 export interface Person {
   id: string;
   nickname: string;
@@ -32,6 +46,12 @@ export interface Person {
   track: Track;
   /** Planned man-days for this scorecard window. Not the weekly quota. */
   plannedMd: number;
+  /** Main team. Empty when the person is not placed in a team yet. */
+  teamId?: string | null;
+  access?: AccessRole;
+  email?: string | null;
+  gitlabUsername?: string | null;
+  openprojectUserId?: number | null;
 }
 
 export interface Ticket {
@@ -73,6 +93,13 @@ export interface Ticket {
   actualStartOn?: string | null;
   /** Set by the system when the card enters Ready for QA. */
   devDeliveredOn?: string | null;
+  /** Where the ticket came from. Missing means local / seed / file import. */
+  source?: 'local' | 'openproject';
+  /** OpenProject work package id when source is openproject. */
+  opId?: number | null;
+  opProject?: string;
+  title?: string;
+  dueOn?: string | null;
 }
 
 export const WORKFLOW_STATUSES = [

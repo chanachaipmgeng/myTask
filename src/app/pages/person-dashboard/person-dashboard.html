@@ -10,29 +10,30 @@
       </div>
     </div>
 
-    <p class="formula-banner" [attr.data-formula]="view().formulaId">{{ view().formula }}</p>
+    <ejs-message [attr.data-formula]="view().formulaId" [content]="view().formula" severity="Info" variant="Outlined"></ejs-message>
     <p class="fine">{{ view().calculation }}</p>
 
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-      <article class="e-card surface-card">
+      <div class="e-card">
         <div class="e-card-content p-4">
           <p class="kpi-note">ดัชนีพัฒนา</p>
           <p class="kpi-value">{{ view().indexLabel }}</p>
         </div>
-      </article>
-      <article class="e-card surface-card">
+      </div>
+      <div class="e-card">
         <div class="e-card-content p-4">
           <p class="kpi-note">เป้า {{ view().target }} ของคนนี้ ไม่ได้เรียงอันดับกับคนอื่น</p>
         </div>
-      </article>
+      </div>
     </div>
 
-    <p class="quarter-line">{{ view().quarterText }}</p>
+    <ejs-message [content]="view().quarterText" severity="Info" variant="Outlined"></ejs-message>
 
     <div class="chart-frame">
       <ejs-chart
         id="self-trend"
         style="display: block; height: 320px; width: 100%"
+        theme="Tailwind3Dark"
         [primaryXAxis]="categoryAxis"
         [primaryYAxis]="indexAxis"
         [tooltip]="tooltip"
@@ -66,16 +67,16 @@
     </div>
 
     <h3>ความหมายของ KPI</h3>
-    <ul class="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2">
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
       @for (item of view().kpis; track item.id) {
-        <li class="e-card surface-card">
+        <div class="e-card">
           <div class="e-card-content flex flex-col gap-1 p-3">
             <span class="kpi-inline">{{ item.value }} {{ item.label }}</span>
             <span>{{ item.meaning }}</span>
             <span class="kpi-note">{{ item.criterion }}</span>
           </div>
-        </li>
+        </div>
       }
-    </ul>
+    </div>
   }
 </section>

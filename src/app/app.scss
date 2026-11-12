@@ -1,15 +1,14 @@
 .app-frame {
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
-  padding-top: 64px;
 }
 
 #app-nav,
 #app-nav.e-sidebar,
 .e-sidebar.e-left {
   position: relative;
-  width: 248px;
+  width: 260px;
   height: auto;
   min-height: 100vh;
   transform: none;
@@ -20,57 +19,107 @@
 }
 
 .brand {
-  padding: 20px 18px 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 20px 18px 8px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #0f6cbd, #3ec6e0);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex: none;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .brand-title {
-  margin: 4px 0 0;
-  font-size: 22px;
+  margin: 2px 0 0;
+  font-size: 20px;
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .brand-sub {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
-.side-nav {
-  display: grid;
-  gap: 4px;
-  padding: 8px 12px 24px;
+.side-nav-tree {
+  padding: 8px 12px 28px;
 }
 
-.side-nav a {
-  color: var(--ink);
-  text-decoration: none;
-  border-radius: 8px;
-  padding: 10px 12px;
+.side-nav-tree .e-list-item.e-level-1 > .e-fullrow,
+.side-nav-tree .e-list-item.e-level-1 > .e-text-content {
+  pointer-events: none;
 }
 
-.side-nav a.is-active,
-.side-nav a:hover {
-  background: rgba(62, 198, 224, 0.16);
-  color: var(--cyan);
+.side-nav-tree .e-list-item.e-level-1 > .e-text-content .e-list-text {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .workspace {
+  min-width: 0;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .shell-appbar {
-  padding: 0 24px;
+  padding: 0 20px;
+  gap: 12px;
+}
+
+.appbar-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .appbar-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .appbar-note {
-  margin-left: auto;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
+}
+
+.appbar-alert-chip {
+  margin-left: auto;
+}
+
+.shell-alerts {
+  display: grid;
+  gap: 8px;
+  margin: 16px 20px 0;
+}
+
+.shell-main {
+  flex: 1;
+  padding: 12px 20px 40px;
 }
 
 .nav-toggle {
@@ -86,8 +135,14 @@
     display: inline-flex;
   }
 
-  main {
+  .shell-main,
+  .shell-alerts {
     padding-left: 12px;
     padding-right: 12px;
+  }
+
+  .shell-alerts {
+    margin-left: 12px;
+    margin-right: 12px;
   }
 }

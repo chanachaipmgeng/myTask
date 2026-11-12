@@ -1,13 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { GridModule, PageService } from '@syncfusion/ej2-angular-grids';
+import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ShellNotice } from '../../core/shell-notice';
 import { MyGitMatch, MyGitSyncAdapter, MyGitUnmatched } from '../../core/mygit-sync';
 import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-mygit',
-  imports: [GridModule, ButtonModule],
+  imports: [GridModule, ButtonModule, MessageModule],
   providers: [PageService],
   templateUrl: './mygit.html',
 })

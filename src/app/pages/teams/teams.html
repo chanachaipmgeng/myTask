@@ -22,16 +22,16 @@
       <button ejs-button [isPrimary]="true" type="submit" id="teams-test">ทดสอบส่ง</button>
     </div>
     @if (message()) {
-      <p class="form-ok">{{ message() }}</p>
+      <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
     }
     @if (error()) {
-      <p class="form-error">{{ error() }}</p>
+      <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
     }
   </form>
 
   <h3>บันทึกข้อความที่จะส่ง</h3>
   @if (logRows().length === 0) {
-    <p class="empty-state">ยังไม่มีการทดสอบ ข้อความจะถูกเก็บในหน้านี้ ไม่ได้ส่งออกไป</p>
+    <ejs-message content="ยังไม่มีการทดสอบ ข้อความจะถูกเก็บในหน้านี้ ไม่ได้ส่งออกไป" severity="Info" variant="Outlined"></ejs-message>
   } @else {
     <ejs-grid [dataSource]="logRows()" height="240">
       <e-columns>

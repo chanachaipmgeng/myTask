@@ -20,41 +20,42 @@
     </label>
   </div>
 
-  <ul class="m-0 grid list-none grid-cols-1 gap-3 p-0 sm:grid-cols-2 xl:grid-cols-4">
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
     @for (item of quotas(); track item.label) {
-      <li class="e-card surface-card">
+      <div class="e-card">
         <div class="e-card-content p-3">{{ item.label }} {{ item.quota }} MD/สัปดาห์</div>
-      </li>
+      </div>
     }
-  </ul>
+  </div>
   <p class="fine">
     โควต้าใช้จัดกำลังคนอย่างเดียว ไม่เข้าสูตร. ปิดตามแผนคือเปอร์เซ็นต์จริงของ MD ที่ปิดต่อ MD ที่วางไว้
     ถ้าเกิน 100 ดัชนีใช้ 100. นอกแผนของ Implement = unplanned MD / 5 เป้าไม่เกิน 25% และไม่เข้าดัชนี.
     อัตรา Spike ของ R&D = MD ของ Spike ต่อ MD ที่วางไว้ เป้า 15–40% และไม่เข้าดัชนี. Rework เป้าไม่เกิน 10%.
     1 MD = 6 ชั่วโมงโฟกัส.
   </p>
-  <dl class="kpi-meanings">
-    <div>
-      <dt>ปิดตามแผน</dt>
-      <dd>ปิดได้ตาม MD ที่รับไว้</dd>
+  <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <div class="e-card">
+      <div class="e-card-header"><div class="e-card-header-caption"><div class="e-card-header-title">ปิดตามแผน</div></div></div>
+      <div class="e-card-content p-3">ปิดได้ตาม MD ที่รับไว้</div>
     </div>
-    <div>
-      <dt>นอกแผน</dt>
-      <dd>งานกระทันหันกินช่องนอกแผน</dd>
+    <div class="e-card">
+      <div class="e-card-header"><div class="e-card-header-caption"><div class="e-card-header-title">นอกแผน</div></div></div>
+      <div class="e-card-content p-3">งานกระทันหันกินช่องนอกแผน</div>
     </div>
-    <div>
-      <dt>Spike</dt>
-      <dd>สัดส่วนการค้นพบ ต่ำไปคือเดา มากไปคือ requirement ยังไม่พร้อม</dd>
+    <div class="e-card">
+      <div class="e-card-header"><div class="e-card-header-caption"><div class="e-card-header-title">Spike</div></div></div>
+      <div class="e-card-content p-3">สัดส่วนการค้นพบ ต่ำไปคือเดา มากไปคือ requirement ยังไม่พร้อม</div>
     </div>
-    <div>
-      <dt>คะแนนถ่วง</dt>
-      <dd>40 มาจากส่งตรงสัปดาห์ และ 20 มาจากความแม่น estimate เทียบกับตัวเอง</dd>
+    <div class="e-card">
+      <div class="e-card-header"><div class="e-card-header-caption"><div class="e-card-header-title">คะแนนถ่วง</div></div></div>
+      <div class="e-card-content p-3">40 มาจากส่งตรงสัปดาห์ และ 20 มาจากความแม่น estimate เทียบกับตัวเอง</div>
     </div>
-  </dl>
+  </div>
 
   <div class="chart-frame">
     <ejs-chart
       style="display: block; height: 420px; width: 100%"
+      theme="Tailwind3Dark"
       [primaryXAxis]="primaryXAxis"
       [primaryYAxis]="primaryYAxis"
       [tooltip]="tooltip"

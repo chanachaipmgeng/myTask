@@ -61,21 +61,7 @@
               "node_modules/@fontsource/sarabun/thai-400.css",
               "node_modules/@fontsource/sarabun/thai-600.css",
               "node_modules/@fontsource/sarabun/thai-700.css",
-              "node_modules/@syncfusion/ej2-base/styles/material.css",
-              "node_modules/@syncfusion/ej2-icons/styles/material.css",
-              "node_modules/@syncfusion/ej2-buttons/styles/material.css",
-              "node_modules/@syncfusion/ej2-popups/styles/material.css",
-              "node_modules/@syncfusion/ej2-calendars/styles/material.css",
-              "node_modules/@syncfusion/ej2-inputs/styles/numerictextbox/material.css",
-              "node_modules/@syncfusion/ej2-inputs/styles/textbox/material.css",
-              "node_modules/@syncfusion/ej2-inputs/styles/uploader/material.css",
-              "node_modules/@syncfusion/ej2-dropdowns/styles/material.css",
-              "node_modules/@syncfusion/ej2-navigations/styles/material.css",
-              "node_modules/@syncfusion/ej2-layouts/styles/material.css",
-              "node_modules/@syncfusion/ej2-grids/styles/material.css",
-              "node_modules/@syncfusion/ej2-notifications/styles/material.css",
-              "node_modules/@syncfusion/ej2-kanban/styles/kanban/material.css",
-              "node_modules/@syncfusion/ej2-popups/styles/dialog/material.css",
+              "node_modules/@syncfusion/ej2-tailwind3-dark-theme/styles/tailwind3-dark.css",
               "src/styles.scss"
             ]
           },
@@ -84,8 +70,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "2MB",
-                  "maximumError": "5MB"
+                  "maximumWarning": "6MB",
+                  "maximumError": "8MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -105,6 +91,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "manday-scorecard:build:production"

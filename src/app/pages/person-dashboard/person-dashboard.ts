@@ -9,6 +9,7 @@ import {
   LineSeriesService,
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
+import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { map } from 'rxjs';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { personDashboard } from '../../core/person-dashboard';
@@ -16,7 +17,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-person-dashboard',
-  imports: [ChartModule, ButtonModule],
+  imports: [ChartModule, ButtonModule, MessageModule],
   providers: [CategoryService, LineSeriesService, LegendService, TooltipService],
   templateUrl: './person-dashboard.html',
 })

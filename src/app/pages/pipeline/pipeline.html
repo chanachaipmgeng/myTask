@@ -20,90 +20,114 @@
   </div>
 
   <div class="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
-    <article id="velocity-card" class="e-card surface-card flex flex-col gap-2 p-4">
-      <h3 class="m-0 text-base">Velocity</h3>
-      <p class="text-sm text-muted">รวม story points ของใบ Done รายคน</p>
-      @if (report().velocity.length === 0) {
-        <p class="m-0 text-sm text-muted">ยังไม่มีใบ Done</p>
-      } @else {
-        <ul class="m-0 grid list-none gap-2 p-0">
-          @for (row of report().velocity; track row.personId) {
-            <li class="flex items-center justify-between gap-3 text-sm">
-              <span>{{ row.name }}</span>
-              <span class="font-bold text-cyan">{{ row.points }}</span>
-            </li>
-          }
-        </ul>
-      }
-    </article>
-
-    <article id="ontime-card" class="e-card surface-card flex flex-col gap-2 p-4">
-      <h3 class="m-0 text-base">ส่งตรงเวลา</h3>
-      <p class="text-sm text-muted">วันส่งของ Dev ไม่เกินวันส่งครั้งแรก</p>
-      <p class="m-0 text-2xl font-bold text-cyan">{{ report().onTimePct }}%</p>
-      <p class="text-sm text-muted">{{ report().onTimeHit }}/{{ report().onTimeTotal }} ใบที่ส่งแล้ว</p>
-      <ejs-progressbar
-        id="ontime-bar"
-        type="Linear"
-        width="100%"
-        height="28"
-        [value]="report().onTimePct"
-        [trackThickness]="12"
-        [progressThickness]="12"
-        progressColor="#3ec6e0"
-        trackColor="#1e4566"
-        [showProgressValue]="true"
-        [labelStyle]="barLabel"
-        [animation]="barAnimation"
-      ></ejs-progressbar>
-    </article>
-
-    <article id="first-time-card" class="e-card surface-card flex flex-col gap-2 p-4">
-      <h3 class="m-0 text-base">First-time right</h3>
-      <p class="text-sm text-muted">ใบที่ reopen เป็น 0 หารใบทั้งหมด</p>
-      <p class="m-0 text-2xl font-bold text-cyan">{{ report().firstTimePct }}%</p>
-      <p class="text-sm text-muted">{{ report().firstTimeHit }}/{{ report().firstTimeTotal }} ใบ</p>
-      <ejs-progressbar
-        id="first-time-bar"
-        type="Linear"
-        width="100%"
-        height="28"
-        [value]="report().firstTimePct"
-        [trackThickness]="12"
-        [progressThickness]="12"
-        progressColor="#7ee7f7"
-        trackColor="#1e4566"
-        [showProgressValue]="true"
-        [labelStyle]="barLabel"
-        [animation]="barAnimation"
-      ></ejs-progressbar>
-    </article>
-
-    <article id="category-card" class="e-card surface-card flex flex-col gap-3 p-4">
-      <h3 class="m-0 text-base">สัดส่วนตามหมวด</h3>
-      <p class="text-sm text-muted">story points แยกตามหมวด ไม่นับจำนวนใบ</p>
-      @for (row of report().categories; track row.key) {
-        <div class="grid gap-1">
-          <div class="flex items-center justify-between gap-3 text-sm">
-            <span>{{ row.label }}</span>
-            <span>{{ row.points }} · {{ row.pct }}%</span>
-          </div>
-          <ejs-progressbar
-            [id]="'category-' + row.key"
-            type="Linear"
-            width="100%"
-            height="18"
-            [value]="row.pct"
-            [trackThickness]="8"
-            [progressThickness]="8"
-            progressColor="#f0b429"
-            trackColor="#1e4566"
-            [showProgressValue]="false"
-            [animation]="barAnimation"
-          ></ejs-progressbar>
+    <div id="velocity-card" class="e-card">
+      <div class="e-card-header">
+        <div class="e-card-header-caption">
+          <div class="e-card-header-title">Velocity</div>
+          <div class="e-card-sub-title">รวม story points ของใบ Done รายคน</div>
         </div>
-      }
-    </article>
+      </div>
+      <div class="e-card-content flex flex-col gap-2 p-4">
+        @if (report().velocity.length === 0) {
+          <p class="m-0 text-sm text-muted">ยังไม่มีใบ Done</p>
+        } @else {
+          <div class="grid gap-2">
+            @for (row of report().velocity; track row.personId) {
+              <div class="flex items-center justify-between gap-3 text-sm">
+                <span>{{ row.name }}</span>
+                <span class="font-bold text-cyan">{{ row.points }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div id="ontime-card" class="e-card">
+      <div class="e-card-header">
+        <div class="e-card-header-caption">
+          <div class="e-card-header-title">ส่งตรงเวลา</div>
+          <div class="e-card-sub-title">วันส่งของ Dev ไม่เกินวันส่งครั้งแรก</div>
+        </div>
+      </div>
+      <div class="e-card-content flex flex-col gap-2 p-4">
+        <p class="m-0 text-2xl font-bold text-cyan">{{ report().onTimePct }}%</p>
+        <p class="text-sm text-muted">{{ report().onTimeHit }}/{{ report().onTimeTotal }} ใบที่ส่งแล้ว</p>
+        <ejs-progressbar
+          id="ontime-bar"
+          type="Linear"
+          width="100%"
+          height="28"
+          [value]="report().onTimePct"
+          [trackThickness]="12"
+          [progressThickness]="12"
+          progressColor="#3ec6e0"
+          trackColor="#1e4566"
+          [showProgressValue]="true"
+          [labelStyle]="barLabel"
+          [animation]="barAnimation"
+        ></ejs-progressbar>
+      </div>
+    </div>
+
+    <div id="first-time-card" class="e-card">
+      <div class="e-card-header">
+        <div class="e-card-header-caption">
+          <div class="e-card-header-title">First-time right</div>
+          <div class="e-card-sub-title">ใบที่ reopen เป็น 0 หารใบทั้งหมด</div>
+        </div>
+      </div>
+      <div class="e-card-content flex flex-col gap-2 p-4">
+        <p class="m-0 text-2xl font-bold text-cyan">{{ report().firstTimePct }}%</p>
+        <p class="text-sm text-muted">{{ report().firstTimeHit }}/{{ report().firstTimeTotal }} ใบ</p>
+        <ejs-progressbar
+          id="first-time-bar"
+          type="Linear"
+          width="100%"
+          height="28"
+          [value]="report().firstTimePct"
+          [trackThickness]="12"
+          [progressThickness]="12"
+          progressColor="#7ee7f7"
+          trackColor="#1e4566"
+          [showProgressValue]="true"
+          [labelStyle]="barLabel"
+          [animation]="barAnimation"
+        ></ejs-progressbar>
+      </div>
+    </div>
+
+    <div id="category-card" class="e-card">
+      <div class="e-card-header">
+        <div class="e-card-header-caption">
+          <div class="e-card-header-title">สัดส่วนตามหมวด</div>
+          <div class="e-card-sub-title">story points แยกตามหมวด ไม่นับจำนวนใบ</div>
+        </div>
+      </div>
+      <div class="e-card-content flex flex-col gap-3 p-4">
+        @for (row of report().categories; track row.key) {
+          <div class="grid gap-1">
+            <div class="flex items-center justify-between gap-3 text-sm">
+              <span>{{ row.label }}</span>
+              <span>{{ row.points }} · {{ row.pct }}%</span>
+            </div>
+            <ejs-progressbar
+              [id]="'category-' + row.key"
+              type="Linear"
+              width="100%"
+              height="18"
+              [value]="row.pct"
+              [trackThickness]="8"
+              [progressThickness]="8"
+              progressColor="#f0b429"
+              trackColor="#1e4566"
+              [showProgressValue]="false"
+              [animation]="barAnimation"
+            ></ejs-progressbar>
+          </div>
+        }
+      </div>
+    </div>
   </div>
 
   <ejs-kanban
@@ -130,7 +154,7 @@
     </ng-template>
   </ejs-kanban>
 
-  <form class="e-card surface-card grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-4" (submit)="$event.preventDefault(); saveFields()">
+  <form class="e-card grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-4" (submit)="$event.preventDefault(); saveFields()">
     <div class="md:col-span-4">
       <h3 class="m-0 text-base">ฟิลด์ที่คนกรอก</h3>
       <p class="mt-1 text-sm text-muted">

@@ -9,18 +9,23 @@
     </div>
   </div>
 
-  <article class="e-card surface-card" id="ai-spike-ratio" [attr.data-ratio]="share().ratio">
-    <div class="e-card-content p-4">
-      สัดส่วน Spike ของ R&D {{ share().percentLabel }}
-      ({{ share().spikeMd }} / {{ share().plannedMd }} MD) {{ share().bandLabel }}
+  <div class="e-card" id="ai-spike-ratio" [attr.data-ratio]="share().ratio">
+    <div class="e-card-header">
+      <div class="e-card-header-caption">
+        <div class="e-card-header-title">สัดส่วน Spike ของ R&D</div>
+      </div>
     </div>
-  </article>
+    <div class="e-card-content p-4">
+      {{ share().percentLabel }} ({{ share().spikeMd }} / {{ share().plannedMd }} MD) {{ share().bandLabel }}
+    </div>
+  </div>
   <p class="fine">MD ในมุมนี้ {{ trackedMd() }} · MD ที่ปิดแล้ว {{ acceptedMd() }}</p>
 
   <div class="chart-frame">
     <ejs-chart
       id="ai-md-chart"
       style="display: block; height: 360px; width: 100%"
+      theme="Tailwind3Dark"
       [primaryXAxis]="categoryAxis"
       [primaryYAxis]="mdAxis"
       [tooltip]="tooltip"
@@ -42,11 +47,11 @@
     </ejs-chart>
   </div>
 
-  <ul class="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2">
+  <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
     @for (point of points(); track point.id) {
-      <li class="e-card surface-card">
+      <div class="e-card">
         <div class="e-card-content p-3">{{ point.id }} · {{ point.label }} · {{ point.module }} · {{ point.md }} MD</div>
-      </li>
+      </div>
     }
-  </ul>
+  </div>
 </section>

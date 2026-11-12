@@ -39,7 +39,7 @@ export class AiTrackingPage {
   protected readonly chartArea = { border: { width: 0 } };
 
   protected readonly points = computed(() => aiTicketPoints(this.scorecard.tickets()));
-  protected readonly share = computed(() => researchSpikeShare(this.scorecard.people, this.scorecard.tickets()));
+  protected readonly share = computed(() => researchSpikeShare(this.scorecard.people(), this.scorecard.tickets()));
   protected readonly acceptedMd = computed(() => formatTrackedMd(acceptedTrackedMd(this.scorecard.tickets())));
   protected readonly trackedMd = computed(() =>
     formatTrackedMd(this.points().reduce((sum, point) => sum + point.md, 0)),

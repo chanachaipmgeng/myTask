@@ -1,10 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
-import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { ButtonModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
 import { NumericTextBoxModule, TextBoxModule, UploaderModule } from '@syncfusion/ej2-angular-inputs';
 import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
+import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { scorePartNotes } from '../../core/kpi-meaning';
 import { MyProjectSyncAdapter } from '../../core/myproject-sync';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -19,7 +20,18 @@ type TypeFilter = TicketType | 'All';
 
 @Component({
   selector: 'app-tickets',
-  imports: [GridModule, DropDownListModule, NumericTextBoxModule, TextBoxModule, UploaderModule, DatePickerModule, ToolbarModule, ButtonModule],
+  imports: [
+    GridModule,
+    DropDownListModule,
+    NumericTextBoxModule,
+    TextBoxModule,
+    UploaderModule,
+    DatePickerModule,
+    ToolbarModule,
+    ButtonModule,
+    ChipListModule,
+    MessageModule,
+  ],
   providers: [PageService, SortService, FilterService],
   templateUrl: './tickets.html',
 })
@@ -37,6 +49,13 @@ export class TicketsPage {
     points: SIZE_POINTS[size],
     md: SIZE_STANDARD_MD[size],
   }));
+  protected readonly sizeChips = this.sizes.map((item) => `${item.size} ${item.points} points / ${item.md} MD`);
+  protected readonly scoreMeaningCards = [
+    '40 มาจากส่งตรงสัปดาห์ — ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว',
+    '20 มาจากอัตราส่วน 0.8–1.5 — การตีขนาดเก่งขึ้น เทียบกับตัวเอง',
+    '20 มาจากรีวิวไม่เกิน 2 รอบและไม่มี blocker — ยังไม่พังเรื่อง security หรือ boundary',
+    '20 มาจากไม่ reopen — ของที่ส่งแล้วอยู่ได้หลัง DEV/UAT',
+  ];
   protected readonly trackOptions = [
     { text: 'Implement', value: 'Implement' },
     { text: 'R&D', value: 'RD' },
@@ -72,10 +91,12 @@ export class TicketsPage {
     { text: 'ใช่', value: 'yes' },
     { text: 'ไม่', value: 'no' },
   ];
-  protected readonly assigneeOptions = this.scorecard.people.map((person) => ({
-    text: `${person.nickname} · ${person.role}`,
-    value: person.id,
-  }));
+  protected readonly assigneeOptions = computed(() =>
+    this.scorecard.people().map((person) => ({
+      text: `${person.nickname} · ${person.role}`,
+      value: person.id,
+    })),
+  );
 
   protected readonly referenceBug = REFERENCE_BUG_ID;
   protected readonly referenceSpike = REFERENCE_SPIKE_ID;
@@ -227,7 +248,7 @@ export class TicketsPage {
     const name = item?.name ?? '';
     try {
       const text = await raw.text();
-      const peopleIds = this.scorecard.people.map((person) => person.id);
+      const peopleIds = this.scorecard.people().map((person) => person.id);
       const tickets = name.toLowerCase().endsWith('.json')
         ? parseClosedTicketJson(text, peopleIds)
         : parseClosedTicketCsv(text, peopleIds);
@@ -240,8 +261,20 @@ export class TicketsPage {
 
   protected async syncMyProject(): Promise<void> {
     try {
-      const tickets = await this.myProject.pull(this.scorecard.people.map((person) => person.id));
-      this.reportImport(this.scorecard.importTickets(tickets), 'ซิงก์จากไฟล์ตัวอย่างในเครื่อง');
+      const result = await this.myProject.pullDetailed(this.scorecard.people().map((person) => person.id));
+      if (result.source === 'api') {
+        await this.scorecard.reloadFromApi();
+        const parts = [
+          `ซิงก์ OpenProject แล้ว (+${result.sync?.added ?? 0} อัปเดต ${result.sync?.updated ?? 0})`,
+        ];
+        if (result.sync?.errors?.length) {
+          parts.push(`มี error ${result.sync.errors.length} รายการ`);
+        }
+        this.error.set('');
+        this.message.set(parts.join(' · '));
+        return;
+      }
+      this.reportImport(this.scorecard.importTickets(result.tickets), 'ซิงก์จากไฟล์ตัวอย่างในเครื่อง');
     } catch (error) {
       this.message.set('');
       this.error.set(error instanceof Error ? error.message : 'ซิงก์ไม่สำเร็จ');
@@ -255,7 +288,7 @@ export class TicketsPage {
       this.message.set('');
       return;
     }
-    if (!this.scorecard.people.some((person) => person.id === this.assigneeId)) {
+    if (!this.scorecard.people().some((person) => person.id === this.assigneeId)) {
       this.error.set('เลือกผู้รับผิดชอบ');
       this.message.set('');
       return;

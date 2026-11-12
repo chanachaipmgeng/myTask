@@ -2,13 +2,14 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
+import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ShellNotice } from '../../core/shell-notice';
 import { TeamsNotifyService } from '../../core/teams-notify';
 import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-teams',
-  imports: [ButtonModule, CheckBoxModule, TextBoxModule, GridModule],
+  imports: [ButtonModule, CheckBoxModule, TextBoxModule, GridModule, MessageModule],
   templateUrl: './teams.html',
 })
 export class TeamsPage {

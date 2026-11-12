@@ -1,7 +1,14 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { SEED_PEOPLE, SEED_TICKETS } from '../data/seed';
-import { alertRules, levelOverrides, trackWeights, weeklyQuotas } from './admin-settings';
+import {
+  alertRules,
+  applyRemoteSettings,
+  levelOverrides,
+  trackWeights,
+  weeklyQuotas,
+} from './admin-settings';
 import { collectAlerts } from './alerts';
+import { ApiClient } from './api-client';
 import { planNewWork } from './capacity';
 import { MyGitCommit, MyGitMatch, MyGitSyncResult, MyGitUnmatched } from './mygit-sync';
 import { scorePartNotes } from './kpi-meaning';
@@ -14,6 +21,15 @@ import {
   scorePerson,
   scoreTicket,
 } from './scoring';
+import { setSessionUser } from './session';
+
+function optionalApiClient(): ApiClient | null {
+  try {
+    return inject(ApiClient, { optional: true });
+  } catch {
+    return null;
+  }
+}
 
 export interface TicketRow {
   id: string;
@@ -108,15 +124,19 @@ function personById(people: readonly Person[]): Map<string, Person> {
 
 @Injectable({ providedIn: 'root' })
 export class ScorecardService {
-  readonly people: readonly Person[] = SEED_PEOPLE;
-
+  private readonly peopleState = signal<Person[]>(SEED_PEOPLE.map((person) => ({ ...person })));
   private readonly ticketsState = signal<Ticket[]>(SEED_TICKETS.map((ticket) => ({ ...ticket })));
   private readonly sequence = signal(1);
+  private readonly apiOnline = signal(false);
+  private readonly readyState = signal(false);
 
+  readonly people = computed(() => this.peopleState());
   readonly tickets = this.ticketsState.asReadonly();
+  readonly apiReady = this.readyState.asReadonly();
+  readonly usingApi = this.apiOnline.asReadonly();
 
   readonly roster = computed(() =>
-    this.people.map((person) => ({
+    this.peopleState().map((person) => ({
       ...person,
       level: levelOverrides()[person.id] ?? person.level,
     })),
@@ -137,10 +157,52 @@ export class ScorecardService {
 
   readonly workPlan = computed(() => planNewWork(this.roster(), this.ticketsState(), weeklyQuotas()));
 
+  private readonly api = optionalApiClient();
+
+  constructor() {
+    if (this.api) {
+      void this.reloadFromApi();
+    } else {
+      this.readyState.set(true);
+    }
+  }
+
+  async reloadFromApi(): Promise<boolean> {
+    if (!this.api) {
+      this.readyState.set(true);
+      return false;
+    }
+    try {
+      const data = await this.api.bootstrap();
+      this.peopleState.set(data.people.map((person) => ({ ...person })));
+      this.ticketsState.set(data.tickets.map((ticket) => ({ ...ticket })));
+      applyRemoteSettings(data.settings);
+      if (data.auth.authenticated && data.auth.person) {
+        setSessionUser(data.auth.person, data.auth.access ?? data.auth.person.access ?? 'member');
+      } else {
+        setSessionUser(null, null);
+      }
+      this.apiOnline.set(true);
+      this.readyState.set(true);
+      return true;
+    } catch {
+      this.apiOnline.set(false);
+      this.readyState.set(true);
+      return false;
+    }
+  }
+
   addTicket(input: Omit<Ticket, 'id'>): Ticket {
     const ticket: Ticket = { ...input, id: `T-${String(this.sequence()).padStart(3, '0')}` };
     this.sequence.update((value) => value + 1);
     this.ticketsState.update((current) => [...current, ticket]);
+    if (this.apiOnline() && this.api) {
+      void this.api.createWorkItem(ticket).then((result) => {
+        if (result.ticket) {
+          this.replaceLocal(result.ticket);
+        }
+      });
+    }
     return ticket;
   }
 
@@ -158,6 +220,9 @@ export class ScorecardService {
     }
     if (added.length > 0) {
       this.ticketsState.update((current) => [...current, ...added]);
+      if (this.apiOnline() && this.api) {
+        void this.api.importWorkItems(added);
+      }
     }
     return { added: added.map((ticket) => ticket.id), skipped };
   }
@@ -173,11 +238,14 @@ export class ScorecardService {
         return { ...next, id: ticket.id };
       }),
     );
+    if (updated && this.apiOnline() && this.api) {
+      void this.api.replaceWorkItem(next);
+    }
     return updated;
   }
 
   assignTicket(ticketId: string, assigneeId: string): boolean {
-    if (!this.people.some((person) => person.id === assigneeId)) {
+    if (!this.peopleState().some((person) => person.id === assigneeId)) {
       return false;
     }
     let updated = false;
@@ -190,6 +258,9 @@ export class ScorecardService {
         return { ...ticket, assigneeId };
       }),
     );
+    if (updated && this.apiOnline() && this.api) {
+      void this.api.assignWorkItem(ticketId, assigneeId);
+    }
     return updated;
   }
 
@@ -234,18 +305,34 @@ export class ScorecardService {
           if (!update) {
             return ticket;
           }
-          return { ...ticket, reviewRounds: update.reviewRounds, reopenCount: update.reopenCount };
+          const next = { ...ticket, reviewRounds: update.reviewRounds, reopenCount: update.reopenCount };
+          if (this.apiOnline() && this.api) {
+            void this.api.replaceWorkItem(next);
+          }
+          return next;
         }),
       );
     }
     return { matched, unmatched };
   }
 
+  private replaceLocal(next: Ticket): void {
+    this.ticketsState.update((current) => {
+      const index = current.findIndex((ticket) => ticket.id === next.id);
+      if (index < 0) {
+        return [...current, next];
+      }
+      const copy = current.slice();
+      copy[index] = next;
+      return copy;
+    });
+  }
+
   private toTicketRows(
     tickets: readonly Ticket[],
     rules: { deadline: boolean; overrun: boolean; overrunLimit: number },
   ): TicketRow[] {
-    const people = personById(this.people);
+    const people = personById(this.peopleState());
     return tickets.map((ticket) => {
       const score = scoreTicket(ticket);
       const person = ticket.assigneeId ? people.get(ticket.assigneeId) : undefined;

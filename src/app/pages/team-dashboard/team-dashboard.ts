@@ -96,13 +96,13 @@ export class TeamDashboard {
   protected readonly targetMarker = { visible: true, width: 7, height: 7, fill: '#f0b429' };
 
   protected readonly alerts = this.scorecard.alerts;
-  protected readonly explanations = computed(() => kpiExplanations(this.scorecard.tickets(), this.scorecard.people));
+  protected readonly explanations = computed(() => kpiExplanations(this.scorecard.tickets(), this.scorecard.people()));
 
   protected readonly monthlyPoints = computed(() =>
-    monthlyTrend(this.scorecard.people, this.scorecard.tickets(), this.track()),
+    monthlyTrend(this.scorecard.people(), this.scorecard.tickets(), this.track()),
   );
   protected readonly quotaPoints = computed(() =>
-    quotaBars(this.scorecard.people, this.scorecard.tickets(), this.track()),
+    quotaBars(this.scorecard.people(), this.scorecard.tickets(), this.track()),
   );
 
   protected readonly samplePoints = computed(() =>

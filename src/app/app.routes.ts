@@ -39,6 +39,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/ai-tracking/ai-tracking').then((m) => m.AiTrackingPage),
   },
   {
+    path: 'integrations',
+    loadComponent: () => import('./pages/integrations/integrations').then((m) => m.IntegrationsPage),
+  },
+  {
     path: 'admin',
     loadComponent: () => import('./pages/admin/admin').then((m) => m.AdminPage),
   },
