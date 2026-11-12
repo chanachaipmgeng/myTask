@@ -1,0 +1,48 @@
+<section class="page">
+  <div class="page-head">
+    <div>
+      <h2>ติดตามงาน AI</h2>
+      <p>
+        เฉพาะใบ Spike, AI, myBOX และ AI Agent. ไม่ใช่คะแนนชุดใหม่.
+        สัดส่วน Spike ใช้สูตร R&D เดิม คือ MD ของใบ Spike ต่อ MD ที่วางไว้.
+      </p>
+    </div>
+  </div>
+
+  <p class="formula-banner" id="ai-spike-ratio" [attr.data-ratio]="share().ratio">
+    สัดส่วน Spike ของ R&D {{ share().percentLabel }}
+    ({{ share().spikeMd }} / {{ share().plannedMd }} MD) {{ share().bandLabel }}
+  </p>
+  <p class="fine">MD ในมุมนี้ {{ trackedMd() }} · MD ที่ปิดแล้ว {{ acceptedMd() }}</p>
+
+  <div class="chart-frame">
+    <ejs-chart
+      id="ai-md-chart"
+      style="display: block; height: 360px; width: 100%"
+      [primaryXAxis]="categoryAxis"
+      [primaryYAxis]="mdAxis"
+      [tooltip]="tooltip"
+      [legendSettings]="legend"
+      [chartArea]="chartArea"
+      [enableAnimation]="false"
+    >
+      <e-series-collection>
+        <e-series
+          type="Column"
+          [dataSource]="points()"
+          xName="id"
+          yName="md"
+          name="MD"
+          columnWidth="0.6"
+          fill="#3ec6e0"
+        ></e-series>
+      </e-series-collection>
+    </ejs-chart>
+  </div>
+
+  <ul class="meaning-list">
+    @for (point of points(); track point.id) {
+      <li>{{ point.id }} · {{ point.label }} · {{ point.module }} · {{ point.md }} MD</li>
+    }
+  </ul>
+</section>

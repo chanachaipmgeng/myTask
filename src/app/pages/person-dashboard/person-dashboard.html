@@ -1,0 +1,73 @@
+<section class="page">
+  <p><a class="person-link" routerLink="/people">กลับกระดานรายคน</a></p>
+  @if (!view().found) {
+    <h2>ไม่พบบุคคลนี้</h2>
+  } @else {
+    <div class="page-head">
+      <div>
+        <h2>{{ view().name }} · {{ view().role }}</h2>
+        <p>{{ view().trackLabel }} · {{ view().level }} · โควต้า {{ view().quota }} MD/สัปดาห์ ใช้จัดกำลังคน ไม่เข้าสูตร</p>
+      </div>
+    </div>
+
+    <p class="formula-banner" [attr.data-formula]="view().formulaId">{{ view().formula }}</p>
+    <p class="fine">{{ view().calculation }}</p>
+
+    <div class="index-block">
+      <div>
+        <p class="kpi-note">ดัชนีพัฒนา</p>
+        <p class="kpi-value">{{ view().indexLabel }}</p>
+      </div>
+      <p class="kpi-note">เป้า {{ view().target }} ของคนนี้ ไม่ได้เรียงอันดับกับคนอื่น</p>
+    </div>
+
+    <p class="quarter-line">{{ view().quarterText }}</p>
+
+    <div class="chart-frame">
+      <ejs-chart
+        id="self-trend"
+        style="display: block; height: 320px; width: 100%"
+        [primaryXAxis]="categoryAxis"
+        [primaryYAxis]="indexAxis"
+        [tooltip]="tooltip"
+        [legendSettings]="legend"
+        [chartArea]="chartArea"
+        [enableAnimation]="false"
+      >
+        <e-series-collection>
+          <e-series
+            type="Line"
+            [dataSource]="view().trend"
+            xName="month"
+            yName="index"
+            name="ดัชนีของตัวเอง"
+            width="2"
+            fill="#3ec6e0"
+            [marker]="marker"
+          ></e-series>
+          <e-series
+            type="Line"
+            [dataSource]="view().trend"
+            xName="month"
+            yName="target"
+            name="เป้า 75"
+            width="2"
+            fill="#f0b429"
+            [marker]="marker"
+          ></e-series>
+        </e-series-collection>
+      </ejs-chart>
+    </div>
+
+    <h3>ความหมายของ KPI</h3>
+    <ul class="kpi-meanings">
+      @for (item of view().kpis; track item.id) {
+        <li>
+          <span class="kpi-inline">{{ item.value }} {{ item.label }}</span>
+          <span>{{ item.meaning }}</span>
+          <span class="kpi-note">{{ item.criterion }}</span>
+        </li>
+      }
+    </ul>
+  }
+</section>

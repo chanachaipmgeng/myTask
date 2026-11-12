@@ -1,0 +1,21 @@
+{
+  "source": "local-fixture",
+  "commits": [
+    {
+      "sha": "4f1a9c2",
+      "message": "Merge IMP-ITS-CR into main",
+      "mergedAt": "2025-10-15T09:00:00Z",
+      "ticketId": "IMP-ITS-CR",
+      "reviewRounds": 4,
+      "reopenCount": 0
+    },
+    {
+      "sha": "c0ffee01",
+      "message": "ปรับข้อความ README โดยไม่มีรหัสใบ",
+      "mergedAt": "2025-10-16T11:30:00Z",
+      "ticketId": "",
+      "reviewRounds": 1,
+      "reopenCount": 0
+    }
+  ]
+}

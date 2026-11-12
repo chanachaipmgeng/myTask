@@ -1,0 +1,51 @@
+<section class="page">
+  <div class="page-head">
+    <div>
+      <h2>ซิงก์ mygit</h2>
+      <p>
+        อ่านไฟล์ตัวอย่างในเครื่องของ merge รอบรีวิว และ reopen แล้วเติมใบที่จับคู่ได้.
+        Commit ที่ไม่มีใบจะแสดงด้านล่าง. ไม่มีโฮสต์ repo และไม่เขียนคะแนนกลับ.
+        ไม่นับจำนวนไฟล์หรือจำนวน commit เป็นคะแนน.
+      </p>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button ejs-button [isPrimary]="true" type="button" id="mygit-sync" (click)="sync()">ซิงก์จากไฟล์ตัวอย่าง</button>
+  </div>
+  @if (message()) {
+    <p class="form-ok">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="form-error">{{ error() }}</p>
+  }
+
+  @if (!synced()) {
+    <p class="empty-state">ยังไม่ได้ซิงก์ กดปุ่มด้านบนเพื่ออ่านไฟล์ตัวอย่างในเครื่อง</p>
+  }
+  @if (synced()) {
+    <h3>ใบที่จับคู่ได้</h3>
+    <ejs-grid [dataSource]="matched()" [allowPaging]="true" [pageSettings]="pageSettings" height="220">
+      <e-columns>
+        <e-column field="sha" headerText="Commit" width="120"></e-column>
+        <e-column field="ticketId" headerText="ใบงาน" width="140"></e-column>
+        <e-column field="reviewRounds" headerText="รอบรีวิว" width="110" textAlign="Right"></e-column>
+        <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right"></e-column>
+        <e-column field="reviewBefore" headerText="คะแนนรีวิวก่อน" width="140" textAlign="Right"></e-column>
+        <e-column field="reviewAfter" headerText="คะแนนรีวิวหลัง" width="140" textAlign="Right"></e-column>
+        <e-column field="mergedAt" headerText="เวลา merge" width="200"></e-column>
+        <e-column field="message" headerText="ข้อความ" width="260"></e-column>
+      </e-columns>
+    </ejs-grid>
+
+    <h3>Commit ที่จับใบไม่ได้</h3>
+    <ejs-grid [dataSource]="unmatched()" [allowPaging]="true" [pageSettings]="pageSettings" height="180">
+      <e-columns>
+        <e-column field="sha" headerText="Commit" width="120"></e-column>
+        <e-column field="ticketId" headerText="รหัสที่อ้าง" width="140"></e-column>
+        <e-column field="mergedAt" headerText="เวลา merge" width="200"></e-column>
+        <e-column field="message" headerText="ข้อความ" width="320"></e-column>
+      </e-columns>
+    </ejs-grid>
+  }
+</section>

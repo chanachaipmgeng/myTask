@@ -1,0 +1,204 @@
+<section class="page">
+  <div class="page-head">
+    <div>
+      <h2>ใบงาน</h2>
+      <p>
+        คะแนนเต็ม 100 ตอนปิดใบ: สัปดาห์ 40/20/0, ความแม่น 20/10/0, รีวิว 20/10/0, reopen 20/10/0.
+        REQ, BLK, ENV ให้คะแนนสัปดาห์และความแม่นเต็ม. ใบอ้างอิง {{ referenceBug }} ต้องได้ 100 และ
+        {{ referenceSpike }} ได้คะแนน Spike 100.
+      </p>
+    </div>
+  </div>
+
+  <ul class="legend-row">
+    @for (item of sizes; track item.size) {
+      <li>{{ item.size }} {{ item.points }} points / {{ item.md }} MD</li>
+    }
+  </ul>
+
+  <section class="ticket-form">
+    <h3>นำเข้าและซิงก์</h3>
+    <p class="fine">
+      นำเข้าใบที่ปิดแล้วจาก CSV หรือ JSON แล้วคะแนนถูกคิดใหม่จากสูตรเดียวกัน. ปุ่มซิงก์อ่านไฟล์ตัวอย่างในเครื่อง
+      ที่ยืนแทน myProject ไม่มีโฮสต์ API และไม่เขียนคะแนนกลับ.
+    </p>
+    <div class="form-actions">
+      <a class="button-link" href="/samples/closed-tickets.csv" download>ดาวน์โหลดตัวอย่าง CSV</a>
+      <a class="button-link" href="/samples/closed-tickets.json" download>ดาวน์โหลดตัวอย่าง JSON</a>
+      <input class="file-input" type="file" accept=".csv,.json,text/csv,application/json" (change)="onImport($event)" />
+      <button type="button" (click)="syncMyProject()">ซิงก์จากไฟล์ตัวอย่าง</button>
+    </div>
+  </section>
+
+  <ul class="meaning-list">
+    <li>40 มาจากส่งตรงสัปดาห์ — ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว</li>
+    <li>20 มาจากอัตราส่วน 0.8–1.5 — การตีขนาดเก่งขึ้น เทียบกับตัวเอง</li>
+    <li>20 มาจากรีวิวไม่เกิน 2 รอบและไม่มี blocker — ยังไม่พังเรื่อง security หรือ boundary</li>
+    <li>20 มาจากไม่ reopen — ของที่ส่งแล้วอยู่ได้หลัง DEV/UAT</li>
+  </ul>
+
+  <form class="ticket-form" (submit)="$event.preventDefault(); add()">
+    <div class="form-grid">
+      <label class="field">
+        <span>สาย</span>
+        <ejs-dropdownlist [dataSource]="trackOptions" [fields]="fields" [value]="track" (change)="setChoice('track', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>ชนิด</span>
+        <ejs-dropdownlist [dataSource]="typeOptions" [fields]="fields" [value]="type" (change)="setChoice('type', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>โมดูล</span>
+        <input class="text-input" [value]="moduleName" (input)="onModule($event)" placeholder="เช่น Billing" />
+      </label>
+      <label class="field">
+        <span>ขนาด</span>
+        <ejs-dropdownlist [dataSource]="sizeOptions" [fields]="fields" [value]="size" (change)="setChoice('size', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>ประมาณ MD</span>
+        <ejs-numerictextbox [value]="estimateMd" (change)="setNumber('estimateMd', $event)" [min]="0" [step]="0.25" format="n2" [decimals]="2" width="100%"></ejs-numerictextbox>
+      </label>
+      <label class="field">
+        <span>ใช้จริง MD</span>
+        <ejs-numerictextbox [value]="actualMd" (change)="setNumber('actualMd', $event)" [min]="0" [step]="0.25" format="n2" [decimals]="2" width="100%"></ejs-numerictextbox>
+      </label>
+      <label class="field">
+        <span>สัปดาห์ที่ commit</span>
+        <ejs-dropdownlist [dataSource]="weekOptions" [fields]="fields" [value]="weekOffset" (change)="setChoice('weekOffset', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>รอบรีวิว</span>
+        <ejs-numerictextbox [value]="reviewRounds" (change)="setNumber('reviewRounds', $event)" [min]="0" [step]="1" format="n0" [decimals]="0" width="100%"></ejs-numerictextbox>
+      </label>
+      <label class="field">
+        <span>Blocker</span>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="blocker" (change)="setChoice('blocker', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>จำนวน reopen</span>
+        <ejs-numerictextbox [value]="reopenCount" (change)="setNumber('reopenCount', $event)" [min]="0" [step]="1" format="n0" [decimals]="0" width="100%"></ejs-numerictextbox>
+      </label>
+      <label class="field">
+        <span>Variance</span>
+        <ejs-dropdownlist [dataSource]="varianceOptions" [fields]="fields" [value]="variance" (change)="setChoice('variance', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>ปิดใบแล้ว</span>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="closed" (change)="setChoice('closed', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>ผ่าน DoD</span>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="dodPassed" (change)="setChoice('dodPassed', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>นอกแผน</span>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="unplanned" (change)="setChoice('unplanned', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>Spike ใน time-box</span>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="inTimeBox" [enabled]="type === 'Spike'" (change)="setChoice('inTimeBox', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>ใบลูกตีขนาดแล้ว</span>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="childTicketsSized" [enabled]="type === 'Spike'" (change)="setChoice('childTicketsSized', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>ผู้รับผิดชอบ</span>
+        <ejs-dropdownlist [dataSource]="assigneeOptions" [fields]="fields" [value]="assigneeId" [allowFiltering]="true" (change)="setChoice('assigneeId', $event)" width="100%"></ejs-dropdownlist>
+      </label>
+      <label class="field">
+        <span>วันที่ปิด</span>
+        <ejs-datepicker [value]="closedOn" (change)="setClosedOn($event)" format="dd/MM/yyyy" width="100%"></ejs-datepicker>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button ejs-button [isPrimary]="true" type="submit">เพิ่มใบงาน</button>
+      @if (preview().total === null) {
+        <p>ยังไม่ปิดใบ — ยังไม่คิดคะแนน</p>
+      } @else {
+        <p>
+          คะแนน {{ preview().total }} = {{ previewNotes() }}
+          @if (type === 'Spike') {
+            <span> · คะแนน Spike {{ preview().spikeScore }}</span>
+          }
+        </p>
+      }
+    </div>
+    @if (error()) {
+      <p class="form-error">{{ error() }}</p>
+    }
+    @if (message()) {
+      <p class="form-ok">{{ message() }}</p>
+    }
+  </form>
+
+  <ejs-toolbar id="ticket-toolbar" cssClass="page-toolbar" overflowMode="Scroll" width="100%">
+    <e-items>
+      <e-item [template]="searchTemplate"></e-item>
+      <e-item [template]="trackTemplate"></e-item>
+      <e-item [template]="typeTemplate"></e-item>
+    </e-items>
+  </ejs-toolbar>
+  <ng-template #searchTemplate>
+    <label class="toolbar-field">
+      <span>ค้นหา</span>
+      <ejs-textbox id="ticket-search" placeholder="รหัส โมดูล หรือผู้รับ" width="220px" (input)="onSearch($event)"></ejs-textbox>
+    </label>
+  </ng-template>
+  <ng-template #trackTemplate>
+    <label class="toolbar-field">
+      <span>สาย</span>
+      <ejs-dropdownlist id="ticket-track-filter" [dataSource]="trackFilters" [fields]="fields" [value]="trackFilter()" (change)="setTrackFilter($event)" width="160px"></ejs-dropdownlist>
+    </label>
+  </ng-template>
+  <ng-template #typeTemplate>
+    <label class="toolbar-field">
+      <span>ชนิด</span>
+      <ejs-dropdownlist id="ticket-type-filter" [dataSource]="typeFilters" [fields]="fields" [value]="typeFilter()" (change)="setTypeFilter($event)" width="180px"></ejs-dropdownlist>
+    </label>
+  </ng-template>
+
+  <ejs-grid
+    [dataSource]="rows()"
+    [allowPaging]="true"
+    [allowSorting]="true"
+    [allowFiltering]="true"
+    [pageSettings]="pageSettings"
+    [filterSettings]="filterSettings"
+    [sortSettings]="sortSettings"
+    (rowDataBound)="markReference($event)"
+    height="480"
+  >
+    <e-columns>
+      <e-column field="id" headerText="รหัส" width="120"></e-column>
+      <e-column field="trackLabel" headerText="สาย" width="120"></e-column>
+      <e-column field="type" headerText="ชนิด" width="150"></e-column>
+      <e-column field="module" headerText="โมดูล" width="120"></e-column>
+      <e-column field="size" headerText="ขนาด" width="80"></e-column>
+      <e-column field="points" headerText="Points" width="90" textAlign="Right"></e-column>
+      <e-column field="assignee" headerText="ผู้รับ" width="170"></e-column>
+      <e-column field="estimateMd" headerText="Est" width="80" textAlign="Right" format="N2"></e-column>
+      <e-column field="actualMd" headerText="Actual" width="90" textAlign="Right" format="N2"></e-column>
+      <e-column field="ratioLabel" headerText="อัตราส่วน" width="110"></e-column>
+      <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="120"></e-column>
+      <e-column field="weekPoints" headerText="คะแนนสัปดาห์" width="130" textAlign="Right"></e-column>
+      <e-column field="accuracyPoints" headerText="คะแนนแม่น" width="120" textAlign="Right"></e-column>
+      <e-column field="reviewRounds" headerText="รอบรีวิว" width="110" textAlign="Right"></e-column>
+      <e-column field="blockerLabel" headerText="Blocker" width="100"></e-column>
+      <e-column field="reviewPoints" headerText="คะแนนรีวิว" width="120" textAlign="Right"></e-column>
+      <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right"></e-column>
+      <e-column field="reopenPoints" headerText="คะแนนเปิดซ้ำ" width="130" textAlign="Right"></e-column>
+      <e-column field="varianceCode" headerText="Variance" width="110"></e-column>
+      <e-column field="closedLabel" headerText="ปิด" width="80"></e-column>
+      <e-column field="dodLabel" headerText="DoD" width="80"></e-column>
+      <e-column field="spikeLabel" headerText="Spike" width="90"></e-column>
+      <e-column field="unplannedLabel" headerText="นอกแผน" width="100"></e-column>
+      <e-column field="score" headerText="คะแนน" width="90" textAlign="Right"></e-column>
+      <e-column field="scoreMeaning" headerText="ที่มาของคะแนน" width="420"></e-column>
+      <e-column field="alertLabel" headerText="แจ้งเตือน" width="180"></e-column>
+      <e-column field="closedOnLabel" headerText="วันที่ปิด" width="120"></e-column>
+      <e-column field="note" headerText="หมายเหตุ" width="260"></e-column>
+    </e-columns>
+  </ejs-grid>
+</section>

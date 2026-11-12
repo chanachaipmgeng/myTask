@@ -1,0 +1,86 @@
+<section class="page">
+  <div class="page-head">
+    <div>
+      <h2>คิวงานใหม่</h2>
+      <p>
+        ใบที่ยังไม่มีผู้รับ แยก R&D กับ Implement. คนว่าง = โควต้าสัปดาห์ − MD ของใบที่ยังไม่ปิด − 1 MD
+        ที่กันไว้นอกแผน. WIP ไม่เกิน 2 และ XL ไม่เกิน 1 ใบต่อคน. ข้อเสนอไม่ย้ายใบจนกว่าจะกดรับ.
+      </p>
+    </div>
+  </div>
+
+  <ejs-toolbar id="queue-toolbar" cssClass="page-toolbar" overflowMode="Scroll" width="100%">
+    <e-items>
+      <e-item text="กดรับข้อเสนอก่อน ใบจึงจะย้าย"></e-item>
+      <e-item type="Separator"></e-item>
+      <e-item [template]="freeTemplate"></e-item>
+    </e-items>
+  </ejs-toolbar>
+  <ng-template #freeTemplate>
+    <p class="free-line" id="free-people">
+      @if (freePeople().length === 0) {
+        <span class="empty-state">ไม่มีคนว่างในโควต้านี้</span>
+      } @else {
+        คนว่าง:
+        @for (person of freePeople(); track person.id) {
+          <span>{{ person.personLabel }} ว่าง {{ person.freeMd }} MD</span>
+        }
+      }
+    </p>
+  </ng-template>
+
+  <h3>กำลังที่เหลือ</h3>
+  <ejs-grid [dataSource]="plan().rows" [allowPaging]="true" [pageSettings]="pageSettings" height="320">
+    <e-columns>
+      <e-column field="personLabel" headerText="คน" width="180"></e-column>
+      <e-column field="trackLabel" headerText="สาย" width="120"></e-column>
+      <e-column field="level" headerText="ระดับ" width="110"></e-column>
+      <e-column field="quota" headerText="โควต้า" width="100" textAlign="Right" format="N1"></e-column>
+      <e-column field="openMd" headerText="MD ที่เปิดอยู่" width="130" textAlign="Right" format="N2"></e-column>
+      <e-column field="freeMd" headerText="ว่างหลังกัน 1 MD" width="150" textAlign="Right" format="N2"></e-column>
+      <e-column field="wipLabel" headerText="WIP" width="90"></e-column>
+      <e-column field="xlLabel" headerText="XL" width="80"></e-column>
+      <e-column field="status" headerText="สถานะ" width="110"></e-column>
+    </e-columns>
+  </ejs-grid>
+
+  <h3>คิว Implement</h3>
+  <ejs-grid class="queue-grid" [dataSource]="implementQueue()" [allowPaging]="true" [pageSettings]="pageSettings" height="240">
+    <e-columns>
+      <e-column field="id" headerText="รหัส" width="120"></e-column>
+      <e-column field="type" headerText="ชนิด" width="140"></e-column>
+      <e-column field="module" headerText="โมดูล" width="120"></e-column>
+      <e-column field="size" headerText="ขนาด" width="80"></e-column>
+      <e-column field="estimateMd" headerText="Est" width="90" textAlign="Right" format="N2"></e-column>
+      <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
+    </e-columns>
+  </ejs-grid>
+
+  <h3>คิว R&amp;D</h3>
+  <ejs-grid class="queue-grid" [dataSource]="researchQueue()" [allowPaging]="true" [pageSettings]="pageSettings" height="240">
+    <e-columns>
+      <e-column field="id" headerText="รหัส" width="120"></e-column>
+      <e-column field="type" headerText="ชนิด" width="140"></e-column>
+      <e-column field="module" headerText="โมดูล" width="120"></e-column>
+      <e-column field="size" headerText="ขนาด" width="80"></e-column>
+      <e-column field="estimateMd" headerText="Est" width="90" textAlign="Right" format="N2"></e-column>
+      <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
+    </e-columns>
+  </ejs-grid>
+
+  <h3>วิเคราะห์แผนและข้อเสนอ</h3>
+  @for (item of plan().plans; track item.ticket.id) {
+    <article class="proposal">
+      <p>{{ item.text }}</p>
+      @if (item.personId) {
+        <button ejs-button [isPrimary]="true" type="button" [attr.data-ticket]="item.ticket.id" (click)="accept(item)">รับข้อเสนอ</button>
+      }
+    </article>
+  }
+  @if (message()) {
+    <p class="form-ok">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p class="form-error">{{ error() }}</p>
+  }
+</section>

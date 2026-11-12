@@ -1,0 +1,2 @@
+id,track,type,module,size,estimateMd,actualMd,weekOffset,reviewRounds,blocker,reopenCount,varianceCode,closed,dodPassed,inTimeBox,childTicketsSized,unplanned,assigneeId,closedOn,note,score
+FILE-100,Implement,Bug-Fix,Import,S,0.5,0.75,0,1,false,0,LEG,true,false,false,false,false,paweena,2025-10-31,นำเข้าจากไฟล์ตัวอย่าง,100

@@ -1,0 +1,85 @@
+.app-frame {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100vh;
+  padding-top: 64px;
+}
+
+#app-nav,
+#app-nav.e-sidebar,
+.e-sidebar.e-left {
+  position: relative;
+  width: 248px;
+  height: auto;
+  min-height: 100vh;
+  transform: none;
+  visibility: visible;
+  left: auto;
+  right: auto;
+  top: auto;
+}
+
+.brand {
+  padding: 20px 18px 12px;
+}
+
+.brand-title {
+  margin: 4px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.brand-sub {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.side-nav {
+  display: grid;
+  gap: 4px;
+  padding: 8px 12px 24px;
+}
+
+.side-nav a {
+  color: var(--ink);
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.side-nav a.is-active,
+.side-nav a:hover {
+  background: rgba(62, 198, 224, 0.16);
+  color: var(--cyan);
+}
+
+.workspace {
+  min-height: 100vh;
+}
+
+.shell-appbar {
+  padding: 0 24px;
+}
+
+.appbar-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.appbar-note {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+main {
+  padding: 8px 24px 40px;
+}
+
+@media (max-width: 800px) {
+  main {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}

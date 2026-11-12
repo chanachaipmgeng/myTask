@@ -1,0 +1,27 @@
+{
+  "tickets": [
+    {
+      "id": "FILE-JSON",
+      "track": "Implement",
+      "type": "Ops",
+      "module": "Import",
+      "size": "XS",
+      "estimateMd": 0.25,
+      "actualMd": 0.25,
+      "weekOffset": 0,
+      "reviewRounds": 1,
+      "blocker": false,
+      "reopenCount": 0,
+      "varianceCode": "NONE",
+      "closed": true,
+      "dodPassed": false,
+      "inTimeBox": false,
+      "childTicketsSized": false,
+      "unplanned": false,
+      "assigneeId": "watchara",
+      "closedOn": "2025-10-31",
+      "note": "นำเข้าจาก JSON",
+      "score": 100
+    }
+  ]
+}

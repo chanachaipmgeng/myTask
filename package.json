@@ -1,0 +1,46 @@
+{
+  "name": "manday-scorecard",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "prestart": "node scripts/write-license.mjs",
+    "start": "ng serve --host 127.0.0.1 --port 4200",
+    "prebuild": "node scripts/write-license.mjs",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "verify": "tsx scripts/verify-scores.ts"
+  },
+  "private": true,
+  "packageManager": "npm@10.9.9",
+  "dependencies": {
+    "@angular/common": "^22.2.0",
+    "@angular/compiler": "^22.2.0",
+    "@angular/core": "^22.2.0",
+    "@angular/forms": "^22.2.0",
+    "@angular/platform-browser": "^22.2.0",
+    "@angular/router": "^22.2.0",
+    "@fontsource/sarabun": "^5.3.0",
+    "@syncfusion/ej2-angular-buttons": "32.2.3",
+    "@syncfusion/ej2-angular-calendars": "32.2.3",
+    "@syncfusion/ej2-angular-charts": "32.2.3",
+    "@syncfusion/ej2-angular-dropdowns": "32.2.3",
+    "@syncfusion/ej2-angular-grids": "32.2.3",
+    "@syncfusion/ej2-angular-inputs": "32.2.3",
+    "@syncfusion/ej2-angular-layouts": "32.2.3",
+    "@syncfusion/ej2-angular-navigations": "32.2.3",
+    "@syncfusion/ej2-angular-notifications": "32.2.3",
+    "@syncfusion/ej2-material-theme": "32.2.3",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.16.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.6",
+    "@angular/cli": "^22.2.6",
+    "@angular/compiler-cli": "^22.2.0",
+    "prettier": "^3.8.1",
+    "tsx": "^4.20.5",
+    "typescript": "~6.0.2"
+  }
+}

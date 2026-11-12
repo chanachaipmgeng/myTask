@@ -1,0 +1,331 @@
+import { Component, computed, inject, signal } from '@angular/core';
+import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
+import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
+import { NumericTextBoxModule, TextBoxModule } from '@syncfusion/ej2-angular-inputs';
+import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
+import { scorePartNotes } from '../../core/kpi-meaning';
+import { MyProjectSyncAdapter } from '../../core/myproject-sync';
+import { ScorecardService } from '../../core/scorecard.service';
+import { Size, Ticket, TicketType, Track, VarianceCode } from '../../core/models';
+import { SIZE_POINTS, SIZE_STANDARD_MD, scoreTicket } from '../../core/scoring';
+import { parseClosedTicketCsv, parseClosedTicketJson } from '../../core/ticket-file';
+import { ShellNotice } from '../../core/shell-notice';
+import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID } from '../../data/seed';
+
+type TrackFilter = Track | 'All';
+type TypeFilter = TicketType | 'All';
+
+@Component({
+  selector: 'app-tickets',
+  imports: [GridModule, DropDownListModule, NumericTextBoxModule, TextBoxModule, DatePickerModule, ToolbarModule, ButtonModule],
+  providers: [PageService, SortService, FilterService],
+  templateUrl: './tickets.html',
+})
+export class TicketsPage {
+  private readonly scorecard = inject(ScorecardService);
+  private readonly myProject = inject(MyProjectSyncAdapter);
+  private readonly notice = inject(ShellNotice);
+
+  protected readonly fields = { text: 'text', value: 'value' };
+  protected readonly pageSettings = { pageSize: 8 };
+  protected readonly filterSettings = { type: 'Menu' };
+  protected readonly sortSettings = { columns: [{ field: 'score', direction: 'Descending' }] };
+  protected readonly sizes = (['XS', 'S', 'M', 'L', 'XL'] as const).map((size) => ({
+    size,
+    points: SIZE_POINTS[size],
+    md: SIZE_STANDARD_MD[size],
+  }));
+  protected readonly trackOptions = [
+    { text: 'Implement', value: 'Implement' },
+    { text: 'R&D', value: 'RD' },
+  ];
+  protected readonly trackFilters = [{ text: 'ทุกสาย', value: 'All' }, ...this.trackOptions];
+  protected readonly typeOptions = [
+    { text: 'Feature', value: 'Feature' },
+    { text: 'CR', value: 'CR' },
+    { text: 'Bug-Investigate', value: 'Bug-Investigate' },
+    { text: 'Bug-Fix', value: 'Bug-Fix' },
+    { text: 'Spike', value: 'Spike' },
+    { text: 'Ops', value: 'Ops' },
+    { text: 'TechDebt', value: 'TechDebt' },
+  ];
+  protected readonly typeFilters = [{ text: 'ทุกชนิด', value: 'All' }, ...this.typeOptions];
+  protected readonly sizeOptions = this.sizes.map((item) => ({
+    text: `${item.size} · ${item.points} points · ${item.md} MD`,
+    value: item.size,
+  }));
+  protected readonly weekOptions = [
+    { text: 'ตรงสัปดาห์ (0)', value: '0' },
+    { text: 'เลื่อน 1 สัปดาห์', value: '1' },
+    { text: 'เลื่อน 2 สัปดาห์ขึ้นไป', value: '2' },
+  ];
+  protected readonly varianceOptions = [
+    { text: 'NONE', value: 'NONE' },
+    { text: 'REQ', value: 'REQ' },
+    { text: 'BLK', value: 'BLK' },
+    { text: 'ENV', value: 'ENV' },
+    { text: 'LEG', value: 'LEG' },
+  ];
+  protected readonly yesNoOptions = [
+    { text: 'ใช่', value: 'yes' },
+    { text: 'ไม่', value: 'no' },
+  ];
+  protected readonly assigneeOptions = this.scorecard.people.map((person) => ({
+    text: `${person.nickname} · ${person.role}`,
+    value: person.id,
+  }));
+
+  protected readonly referenceBug = REFERENCE_BUG_ID;
+  protected readonly referenceSpike = REFERENCE_SPIKE_ID;
+  protected readonly trackFilter = signal<TrackFilter>('All');
+  protected readonly typeFilter = signal<TypeFilter>('All');
+  protected readonly query = signal('');
+  protected readonly message = signal('');
+  protected readonly error = signal('');
+
+  protected track: Track = 'Implement';
+  protected type: TicketType = 'Bug-Fix';
+  protected moduleName = '';
+  protected size: Size = 'S';
+  protected estimateMd: number | null = 0.5;
+  protected actualMd: number | null = 0.75;
+  protected weekOffset = '0';
+  protected reviewRounds: number | null = 1;
+  protected blocker = 'no';
+  protected reopenCount: number | null = 0;
+  protected variance: VarianceCode = 'LEG';
+  protected closed = 'yes';
+  protected dodPassed = 'no';
+  protected inTimeBox = 'yes';
+  protected childTicketsSized = 'yes';
+  protected unplanned = 'no';
+  protected assigneeId = 'itsara';
+  protected closedOn: Date | null = new Date(2025, 9, 31);
+
+  protected readonly alerts = this.scorecard.alerts;
+
+  protected readonly rows = computed(() => {
+    const track = this.trackFilter();
+    const type = this.typeFilter();
+    const query = this.query();
+    return this.scorecard
+      .ticketRows()
+      .filter((row) => (track === 'All' || row.track === track) && (type === 'All' || row.type === type))
+      .filter((row) => query === '' || `${row.id} ${row.module} ${row.assignee}`.toLowerCase().includes(query));
+  });
+
+  protected preview() {
+    return scoreTicket(this.draft('PREVIEW'));
+  }
+
+  protected previewNotes(): string {
+    return scorePartNotes(this.preview());
+  }
+
+  protected onSearch(event: { value?: string | null }): void {
+    this.query.set((event.value ?? '').trim().toLowerCase());
+  }
+
+  protected setTrackFilter(event: { value?: string | null }): void {
+    const value = event.value;
+    if (value === 'All' || value === 'Implement' || value === 'RD') {
+      this.trackFilter.set(value);
+    }
+  }
+
+  protected setTypeFilter(event: { value?: string | null }): void {
+    const value = event.value;
+    if (value === 'All' || this.typeOptions.some((option) => option.value === value)) {
+      this.typeFilter.set(value as TypeFilter);
+    }
+  }
+
+  protected setChoice(field: 'track' | 'type' | 'size' | 'weekOffset' | 'variance' | 'blocker' | 'closed' | 'dodPassed' | 'inTimeBox' | 'childTicketsSized' | 'unplanned' | 'assigneeId', event: { value?: string | null }): void {
+    const value = event.value;
+    if (typeof value !== 'string') {
+      return;
+    }
+    switch (field) {
+      case 'track':
+        if (value === 'Implement' || value === 'RD') {
+          this.track = value;
+        }
+        break;
+      case 'type':
+        if (this.typeOptions.some((option) => option.value === value)) {
+          this.type = value as TicketType;
+        }
+        break;
+      case 'size':
+        if (value === 'XS' || value === 'S' || value === 'M' || value === 'L' || value === 'XL') {
+          this.size = value;
+        }
+        break;
+      case 'weekOffset':
+        this.weekOffset = value;
+        break;
+      case 'variance':
+        if (value === 'NONE' || value === 'REQ' || value === 'BLK' || value === 'ENV' || value === 'LEG') {
+          this.variance = value;
+        }
+        break;
+      case 'blocker':
+      case 'closed':
+      case 'dodPassed':
+      case 'inTimeBox':
+      case 'childTicketsSized':
+      case 'unplanned':
+        this[field] = value;
+        break;
+      case 'assigneeId':
+        this.assigneeId = value;
+        break;
+    }
+  }
+
+  protected setNumber(field: 'estimateMd' | 'actualMd' | 'reviewRounds' | 'reopenCount', event: { value?: number | null }): void {
+    this[field] = typeof event.value === 'number' ? event.value : 0;
+  }
+
+  protected setClosedOn(event: { value?: Date | null }): void {
+    this.closedOn = event.value ?? null;
+  }
+
+  protected onModule(event: Event): void {
+    const target = event.target;
+    if (target instanceof HTMLInputElement) {
+      this.moduleName = target.value;
+    }
+  }
+
+  protected markReference(args: { data?: object; row?: Element }): void {
+    const data = args.data;
+    const id = data && 'id' in data ? String(data.id) : '';
+    if (!args.row) {
+      return;
+    }
+    if (id === REFERENCE_BUG_ID || id === REFERENCE_SPIKE_ID) {
+      args.row.classList.add('reference-row');
+    }
+    if (data && 'alertLabel' in data && data.alertLabel !== '—') {
+      args.row.classList.add('alert-row');
+    }
+  }
+
+  protected async onImport(event: Event): Promise<void> {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || !input.files || input.files.length === 0) {
+      return;
+    }
+    const file = input.files[0];
+    try {
+      const text = await file.text();
+      const peopleIds = this.scorecard.people.map((person) => person.id);
+      const tickets = file.name.toLowerCase().endsWith('.json')
+        ? parseClosedTicketJson(text, peopleIds)
+        : parseClosedTicketCsv(text, peopleIds);
+      this.reportImport(this.scorecard.importTickets(tickets), 'นำเข้า');
+    } catch (error) {
+      this.message.set('');
+      this.error.set(error instanceof Error ? error.message : 'นำเข้าไม่สำเร็จ');
+    } finally {
+      input.value = '';
+    }
+  }
+
+  protected async syncMyProject(): Promise<void> {
+    try {
+      const tickets = await this.myProject.pull(this.scorecard.people.map((person) => person.id));
+      this.reportImport(this.scorecard.importTickets(tickets), 'ซิงก์จากไฟล์ตัวอย่างในเครื่อง');
+    } catch (error) {
+      this.message.set('');
+      this.error.set(error instanceof Error ? error.message : 'ซิงก์ไม่สำเร็จ');
+    }
+  }
+
+  protected add(): void {
+    const moduleName = this.moduleName.trim();
+    if (moduleName.length === 0) {
+      this.error.set('ใส่ชื่อโมดูล');
+      this.message.set('');
+      return;
+    }
+    if (!this.scorecard.people.some((person) => person.id === this.assigneeId)) {
+      this.error.set('เลือกผู้รับผิดชอบ');
+      this.message.set('');
+      return;
+    }
+    const week = Number(this.weekOffset);
+    if (week !== 0 && week !== 1 && week !== 2) {
+      this.error.set('เลือกสัปดาห์ที่ commit');
+      this.message.set('');
+      return;
+    }
+    const ticket = this.scorecard.addTicket(this.draft('', moduleName, week));
+    this.moduleName = '';
+    this.error.set('');
+    const hidden =
+      (this.trackFilter() !== 'All' && this.trackFilter() !== ticket.track) ||
+      (this.typeFilter() !== 'All' && this.typeFilter() !== ticket.type);
+    const text = hidden ? `เพิ่ม ${ticket.id} แล้ว — เปลี่ยนตัวกรองเพื่อดูใบนี้` : `เพิ่ม ${ticket.id} แล้ว`;
+    this.message.set(text);
+    this.notice.show(text);
+  }
+
+  private draft(id: string, moduleName = this.moduleName.trim() || 'Preview', week = Number(this.weekOffset)): Omit<Ticket, 'id'> & { id: string } {
+    const isSpike = this.type === 'Spike';
+    return {
+      id,
+      track: this.track,
+      type: this.type,
+      module: moduleName,
+      size: this.size,
+      estimateMd: this.estimateMd ?? 0,
+      actualMd: this.actualMd ?? 0,
+      weekOffset: week,
+      reviewRounds: Math.round(this.reviewRounds ?? 0),
+      blocker: this.blocker === 'yes',
+      reopenCount: Math.round(this.reopenCount ?? 0),
+      varianceCode: this.variance,
+      closed: this.closed === 'yes',
+      dodPassed: this.dodPassed === 'yes',
+      inTimeBox: isSpike && this.inTimeBox === 'yes',
+      childTicketsSized: isSpike && this.childTicketsSized === 'yes',
+      unplanned: this.unplanned === 'yes',
+      assigneeId: this.assigneeId,
+      closedOn: this.closed === 'yes' ? toIsoDate(this.closedOn) : null,
+      workingDaysLeft: null,
+      note: '',
+    };
+  }
+
+  private reportImport(result: { added: readonly string[]; skipped: readonly string[] }, action: string): void {
+    const added = result.added.map((id) => this.describeImported(id)).join(', ');
+    const skipped = result.skipped.length > 0 ? ` ข้ามใบที่มีอยู่แล้ว ${result.skipped.join(', ')}` : '';
+    this.error.set('');
+    const text =
+      result.added.length > 0
+        ? `${action} ${added} แล้ว คะแนนคำนวณจากสูตร ไม่ได้เขียนกลับ${skipped}`
+        : `${action} ไม่มีใบใหม่${skipped}`;
+    this.message.set(text);
+    this.notice.show(text);
+  }
+
+  private describeImported(id: string): string {
+    const ticket = this.scorecard.tickets().find((item) => item.id === id);
+    const total = ticket ? scoreTicket(ticket).total : null;
+    return `${id} คะแนน ${total ?? 'ยังไม่ปิด'}`;
+  }
+}
+
+function toIsoDate(value: Date | null): string | null {
+  if (!value) {
+    return null;
+  }
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}

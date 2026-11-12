@@ -1,0 +1,204 @@
+<section class="page">
+  <div class="page-head">
+    <div>
+      <h2>แดชบอร์ดทีม</h2>
+      <p>
+        ตัวเลขปี {{ context.yearLabel }} เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง
+        เส้นรายเดือน และแท่งโควตา เป้า {{ target }} อยู่บนเส้นรายเดือน
+      </p>
+    </div>
+    <label class="filter">
+      <span>สายงาน</span>
+      <ejs-dropdownlist
+        [dataSource]="trackOptions"
+        [fields]="fields"
+        [value]="track()"
+        (change)="setTrack($event)"
+        width="180px"
+      ></ejs-dropdownlist>
+    </label>
+  </div>
+
+  <ejs-dashboardlayout
+    [columns]="4"
+    [cellSpacing]="cellSpacing"
+    [cellAspectRatio]="1.25"
+    [allowDragging]="false"
+    [allowResizing]="false"
+    [allowFloating]="false"
+    [showGridLines]="false"
+    mediaQuery="max-width: 800px"
+  >
+    <div id="kpi-tasks" class="e-panel" data-row="0" data-col="0" data-sizex="1" data-sizey="1">
+      <div class="e-panel-container">
+        <div class="e-panel-header">งานทั้งปี</div>
+        <div class="e-panel-content">
+          <p class="kpi-value">{{ tasksLabel }}</p>
+          <p class="kpi-note">งานในรายงาน {{ context.yearLabel }}</p>
+        </div>
+      </div>
+    </div>
+    <div id="kpi-ontime" class="e-panel" data-row="0" data-col="1" data-sizex="1" data-sizey="1">
+      <div class="e-panel-container">
+        <div class="e-panel-header">ส่งตรงเวลา</div>
+        <div class="e-panel-content">
+          <p class="kpi-value">{{ context.onTimePct }}%</p>
+          <p class="kpi-note">ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว</p>
+        </div>
+      </div>
+    </div>
+    <div id="kpi-qa" class="e-panel" data-row="0" data-col="2" data-sizex="1" data-sizey="1">
+      <div class="e-panel-container">
+        <div class="e-panel-header">ผ่าน QA รอบแรก</div>
+        <div class="e-panel-content">
+          <p class="kpi-value">{{ context.firstPassQaPct }}%</p>
+          <p class="kpi-note">งานที่ส่งตรวจแล้วยังไม่พังเรื่อง security หรือ boundary</p>
+        </div>
+      </div>
+    </div>
+    <div id="kpi-attend" class="e-panel" data-row="0" data-col="3" data-sizex="1" data-sizey="1">
+      <div class="e-panel-container">
+        <div class="e-panel-header">มาทำงาน</div>
+        <div class="e-panel-content">
+          <p class="kpi-value">{{ context.attendancePct }}%</p>
+          <p class="kpi-note">attendance</p>
+        </div>
+      </div>
+    </div>
+    <div id="chart-context" class="e-panel" data-row="1" data-col="0" data-sizex="2" data-sizey="2">
+      <div class="e-panel-container">
+        <div class="e-panel-header">สัดส่วนงานทีม {{ context.yearLabel }}</div>
+        <div class="e-panel-content">
+          <ejs-accumulationchart
+            style="display: block; height: 220px; width: 100%"
+            [legendSettings]="legend"
+            [tooltip]="contextTooltip"
+            [enableAnimation]="false"
+            [enableSmartLabels]="true"
+          >
+            <e-accumulation-series-collection>
+              <!-- This Syncfusion build draws a doughnut as a pie series with innerRadius. -->
+              <e-accumulation-series
+                type="Pie"
+                [dataSource]="context.workload"
+                xName="x"
+                yName="y"
+                innerRadius="58%"
+                [dataLabel]="contextLabel"
+                [palettes]="palette"
+              ></e-accumulation-series>
+            </e-accumulation-series-collection>
+          </ejs-accumulationchart>
+        </div>
+      </div>
+    </div>
+    <div id="chart-sample" class="e-panel" data-row="1" data-col="2" data-sizex="2" data-sizey="2">
+      <div class="e-panel-container">
+        <div class="e-panel-header">Bug / Custom / Enhancement แยกสาย</div>
+        <div class="e-panel-content">
+          <p class="kpi-note">{{ sampleSummary() }} จากใบตัวอย่าง ไม่ใช่ 1,319 งาน</p>
+          <ejs-accumulationchart
+            style="display: block; height: 220px; width: 100%"
+            [legendSettings]="legend"
+            [tooltip]="sampleTooltip"
+            [enableAnimation]="false"
+            [enableSmartLabels]="true"
+          >
+            <e-accumulation-series-collection>
+              <!-- This Syncfusion build draws a doughnut as a pie series with innerRadius. -->
+              <e-accumulation-series
+                type="Pie"
+                [dataSource]="samplePoints()"
+                xName="x"
+                yName="y"
+                innerRadius="52%"
+                [dataLabel]="sampleLabel"
+                [palettes]="palette"
+              ></e-accumulation-series>
+            </e-accumulation-series-collection>
+          </ejs-accumulationchart>
+        </div>
+      </div>
+    </div>
+    <div id="kpi-alerts" class="e-panel" data-row="3" data-col="0" data-sizex="2" data-sizey="2">
+      <div class="e-panel-container">
+        <div class="e-panel-header">แจ้งเตือนใบที่เปิดอยู่</div>
+        <div class="e-panel-content panel-scroll">
+          @if (alerts().length === 0) {
+            <p class="kpi-note">ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate</p>
+          } @else {
+            <ul class="meaning-list">
+              @for (alert of alerts(); track alert.id) {
+                <li>{{ alert.message }}</li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+    </div>
+    <div id="kpi-meaning" class="e-panel" data-row="3" data-col="2" data-sizex="2" data-sizey="2">
+      <div class="e-panel-container">
+        <div class="e-panel-header">ความหมายของ KPI จากใบในกระดาน</div>
+        <div class="e-panel-content panel-scroll">
+          <ul class="kpi-meanings">
+            @for (item of explanations(); track item.id) {
+              <li>
+                <span class="kpi-inline">{{ item.value }} {{ item.label }}</span>
+                <span>{{ item.meaning }}</span>
+                <span class="kpi-note">{{ item.criterion }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div id="chart-monthly" class="e-panel" data-row="5" data-col="0" data-sizex="2" data-sizey="2">
+      <div class="e-panel-container">
+        <div class="e-panel-header">เส้นรายเดือน</div>
+        <div class="e-panel-content">
+          <p class="kpi-note">ปิดตามแผน ความแม่น และ rework ของใบที่ปิดในเดือนนั้น เป้า {{ target }}</p>
+          <ejs-chart
+            id="monthly-line"
+            style="display: block; height: 260px; width: 100%"
+            [primaryXAxis]="categoryAxis"
+            [primaryYAxis]="percentAxis"
+            [tooltip]="chartTooltip"
+            [legendSettings]="chartLegend"
+            [chartArea]="chartArea"
+            [enableAnimation]="false"
+          >
+            <e-series-collection>
+              <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="plan" name="ปิดตามแผน" width="2" fill="#7eb6ff"></e-series>
+              <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="accuracy" name="ความแม่น" width="2" fill="#3ec6e0"></e-series>
+              <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="rework" name="Rework" width="2" fill="#9f3a2f"></e-series>
+              <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="target" name="เป้า 75" width="2" fill="#f0b429" [marker]="targetMarker"></e-series>
+            </e-series-collection>
+          </ejs-chart>
+        </div>
+      </div>
+    </div>
+    <div id="chart-quota" class="e-panel" data-row="5" data-col="2" data-sizex="2" data-sizey="2">
+      <div class="e-panel-container">
+        <div class="e-panel-header">โควตาที่ใช้กับที่ว่าง</div>
+        <div class="e-panel-content">
+          <p class="kpi-note">ใช้แล้วคือ MD ของใบที่ยังไม่ปิด ที่ว่างคือโควต้าสัปดาห์หักใบที่เปิดอยู่และกัน 1 MD</p>
+          <ejs-chart
+            id="quota-bars"
+            style="display: block; height: 260px; width: 100%"
+            [primaryXAxis]="categoryAxis"
+            [primaryYAxis]="quotaAxis"
+            [tooltip]="chartTooltip"
+            [legendSettings]="chartLegend"
+            [chartArea]="chartArea"
+            [enableAnimation]="false"
+          >
+            <e-series-collection>
+              <e-series type="Column" [dataSource]="quotaPoints()" xName="nickname" yName="used" name="ใช้แล้ว" fill="#7eb6ff" columnWidth="0.5"></e-series>
+              <e-series type="Column" [dataSource]="quotaPoints()" xName="nickname" yName="free" name="ว่าง" fill="#3ec6e0" columnWidth="0.5"></e-series>
+            </e-series-collection>
+          </ejs-chart>
+        </div>
+      </div>
+    </div>
+  </ejs-dashboardlayout>
+</section>

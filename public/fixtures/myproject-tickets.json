@@ -1,0 +1,50 @@
+{
+  "source": "local-fixture",
+  "tickets": [
+    {
+      "id": "MP-IMP-1",
+      "track": "Implement",
+      "type": "Bug-Fix",
+      "module": "Sync",
+      "size": "S",
+      "estimateMd": 0.5,
+      "actualMd": 0.5,
+      "weekOffset": 0,
+      "reviewRounds": 1,
+      "blocker": false,
+      "reopenCount": 0,
+      "varianceCode": "NONE",
+      "closed": true,
+      "dodPassed": false,
+      "inTimeBox": false,
+      "childTicketsSized": false,
+      "unplanned": false,
+      "assigneeId": "natthaphat",
+      "closedOn": "2025-10-31",
+      "note": "ซิงก์จากไฟล์ตัวอย่างในเครื่อง ไม่มี API"
+    },
+    {
+      "id": "MP-QUEUE",
+      "track": "Implement",
+      "type": "TechDebt",
+      "module": "Sync",
+      "size": "S",
+      "estimateMd": 0.5,
+      "actualMd": 0,
+      "weekOffset": 0,
+      "reviewRounds": 0,
+      "blocker": false,
+      "reopenCount": 0,
+      "varianceCode": "NONE",
+      "closed": false,
+      "dodPassed": false,
+      "inTimeBox": false,
+      "childTicketsSized": false,
+      "unplanned": false,
+      "assigneeId": "",
+      "closedOn": null,
+      "workingDaysLeft": null,
+      "note": "คิวจากไฟล์ซิงก์ ยังไม่มีผู้รับ"
+    }
+  ]
+}

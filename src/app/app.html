@@ -1,0 +1,59 @@
+<div class="app-frame">
+  <ejs-sidebar
+    id="app-nav"
+    type="Push"
+    width="248px"
+    [isOpen]="true"
+    [showBackdrop]="false"
+    [closeOnDocumentClick]="false"
+    [enableGestures]="false"
+    [animate]="false"
+  >
+    <div class="brand">
+      <p class="eyebrow">Man-day scorecard</p>
+      <p class="brand-title">คะแนนใบงาน</p>
+      <p class="brand-sub">1 MD = 6 ชั่วโมงโฟกัส</p>
+    </div>
+    <nav class="side-nav">
+      <a routerLink="/team" routerLinkActive="is-active">แดชบอร์ดทีม</a>
+      <a routerLink="/people" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">กระดานรายคน</a>
+      <a routerLink="/people/itsara" routerLinkActive="is-active">รายคน · อิสรภาพ</a>
+      <a routerLink="/tickets" routerLinkActive="is-active">ใบงาน</a>
+      <a routerLink="/queue" routerLinkActive="is-active">คิวงานใหม่</a>
+      <a routerLink="/mygit" routerLinkActive="is-active">ซิงก์ mygit</a>
+      <a routerLink="/teams" routerLinkActive="is-active">แจ้งเตือน Teams</a>
+      <a routerLink="/ai" routerLinkActive="is-active">ติดตามงาน AI</a>
+      <a routerLink="/admin" routerLinkActive="is-active">หลังบ้าน</a>
+    </nav>
+  </ejs-sidebar>
+
+  <div class="workspace">
+    <ejs-appbar colorMode="Dark" cssClass="shell-appbar" [isSticky]="true">
+      <span class="appbar-title">{{ title() }}</span>
+      <span class="appbar-note">R&amp;D และ Implement</span>
+    </ejs-appbar>
+
+    <section class="shell-alerts" aria-label="แจ้งเตือน">
+      @if (alerts().length === 0) {
+        <p class="empty-state">ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate</p>
+      } @else {
+        @for (alert of alerts(); track alert.id) {
+          <p>{{ alert.message }}</p>
+        }
+      }
+    </section>
+
+    <main>
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<ejs-toast
+  #toast
+  id="shell-toast"
+  [position]="toastPosition"
+  [timeOut]="4000"
+  [showCloseButton]="true"
+  width="320px"
+></ejs-toast>

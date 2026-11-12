@@ -1,0 +1,105 @@
+<section class="page">
+  <div class="page-head">
+    <div>
+      <h2>หลังบ้าน</h2>
+      <p>
+        จัดการคน ระดับ โควต้ารายสัปดาห์ น้ำหนักคะแนน กฎแจ้งเตือน และสถานะการเชื่อม.
+        ธง role ในข้อมูลตัวอย่าง: หัวหน้าแก้ได้ สมาชิกดูได้อย่างเดียว.
+      </p>
+    </div>
+  </div>
+
+  <label class="field">
+    <span>ผู้ที่กำลังดู</span>
+    <ejs-dropdownlist
+      id="viewer-role"
+      [dataSource]="viewerOptions"
+      [fields]="fields"
+      [value]="viewer().id"
+      (change)="onViewer($event)"
+      width="280px"
+    ></ejs-dropdownlist>
+  </label>
+  <p id="access-flag" class="formula-banner">{{ canEdit() ? 'แก้ได้' : 'ดูได้อย่างเดียว' }}</p>
+
+  <h3>โควต้ารายสัปดาห์</h3>
+  <p class="fine">ใช้คำนวณคนว่างบนคิว. ไม่เปลี่ยน MD ที่วางไว้ของดัชนี และไม่เปลี่ยนคะแนนใบ.</p>
+  <div class="form-grid">
+    <label class="field">
+      <span>Senior</span>
+      <ejs-numerictextbox id="quota-senior" [value]="quotas().Senior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Senior', $event)"></ejs-numerictextbox>
+    </label>
+    <label class="field">
+      <span>Mid</span>
+      <ejs-numerictextbox id="quota-mid" [value]="quotas().Mid" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Mid', $event)"></ejs-numerictextbox>
+    </label>
+    <label class="field">
+      <span>Junior</span>
+      <ejs-numerictextbox id="quota-junior" [attr.data-quota]="quotas().Junior" [value]="quotas().Junior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Junior', $event)"></ejs-numerictextbox>
+    </label>
+    <label class="field">
+      <span>เดือนแรก</span>
+      <ejs-numerictextbox id="quota-first" [value]="quotas().FirstMonth" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('FirstMonth', $event)"></ejs-numerictextbox>
+    </label>
+  </div>
+
+  <h3>คนและระดับ</h3>
+  <ul class="meaning-list">
+    @for (person of roster(); track person.id) {
+      <li>
+        {{ person.nickname }} · {{ person.track === 'RD' ? 'R&D' : 'Implement' }}
+        <ejs-dropdownlist
+          cssClass="level-list"
+          [attr.data-person]="person.id"
+          [dataSource]="levelOptions"
+          [fields]="fields"
+          [value]="person.level"
+          [enabled]="canEdit()"
+          (change)="onLevel(person.id, $event)"
+          width="160px"
+        ></ejs-dropdownlist>
+      </li>
+    }
+  </ul>
+
+  <h3>น้ำหนักคะแนนแยกสาย</h3>
+  <p class="fine">ค่าเริ่มต้นคือสูตรเดิม. ช่องเป็นเปอร์เซ็นต์.</p>
+  <div class="form-grid">
+    <label class="field"><span>Implement คะแนนใบ</span><ejs-numerictextbox id="weight-imp-ticket" [value]="weights().implementTicket" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'ticket' }, $event)"></ejs-numerictextbox></label>
+    <label class="field"><span>Implement แผน</span><ejs-numerictextbox id="weight-imp-plan" [value]="weights().implementPlan" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'plan' }, $event)"></ejs-numerictextbox></label>
+    <label class="field"><span>Implement ความแม่น</span><ejs-numerictextbox id="weight-imp-accuracy" [value]="weights().implementAccuracy" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'accuracy' }, $event)"></ejs-numerictextbox></label>
+    <label class="field"><span>Implement คุณภาพ</span><ejs-numerictextbox id="weight-imp-quality" [value]="weights().implementQuality" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'quality' }, $event)"></ejs-numerictextbox></label>
+    <label class="field"><span>R&amp;D DoD</span><ejs-numerictextbox id="weight-rd-dod" [value]="weights().researchDod" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'dod' }, $event)"></ejs-numerictextbox></label>
+    <label class="field"><span>R&amp;D Spike</span><ejs-numerictextbox id="weight-rd-spike" [value]="weights().researchSpike" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'spike' }, $event)"></ejs-numerictextbox></label>
+    <label class="field"><span>R&amp;D รับเข้า</span><ejs-numerictextbox id="weight-rd-outcome" [value]="weights().researchOutcome" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'outcome' }, $event)"></ejs-numerictextbox></label>
+    <label class="field"><span>R&amp;D รีวิว</span><ejs-numerictextbox id="weight-rd-review" [value]="weights().researchReview" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'review' }, $event)"></ejs-numerictextbox></label>
+  </div>
+
+  <h3>กฎแจ้งเตือน</h3>
+  <div class="form-grid">
+    <ejs-checkbox id="rule-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="rules().deadline" [disabled]="!canEdit()" (change)="onDeadline($event)"></ejs-checkbox>
+    <ejs-checkbox id="rule-overrun" label="actual มีแนวโน้มเกิน estimate" [checked]="rules().overrun" [disabled]="!canEdit()" (change)="onOverrun($event)"></ejs-checkbox>
+    <label class="field">
+      <span>เกณฑ์เกิน (เท่าของ estimate)</span>
+      <ejs-numerictextbox id="rule-overrun-limit" [value]="rules().overrunLimit" [enabled]="canEdit()" [min]="1.1" [max]="5" [step]="0.1" format="n1" (change)="onOverrunLimit($event)"></ejs-numerictextbox>
+    </label>
+  </div>
+
+  <h3>สถานะการเชื่อม</h3>
+  <ul class="meaning-list">
+    @for (link of links(); track link.id) {
+      <li>
+        {{ link.label }} · {{ link.detail }}
+        <ejs-dropdownlist
+          [id]="'connection-' + link.id"
+          [dataSource]="connectionOptions"
+          [fields]="fields"
+          [value]="link.state"
+          [enabled]="canEdit()"
+          (change)="onConnection(link.id, $event)"
+          width="180px"
+        ></ejs-dropdownlist>
+      </li>
+    }
+  </ul>
+</section>
