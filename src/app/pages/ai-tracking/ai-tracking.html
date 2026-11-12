@@ -1,4 +1,4 @@
-<section class="page">
+<section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
       <h2>ติดตามงาน AI</h2>
@@ -9,10 +9,12 @@
     </div>
   </div>
 
-  <p class="formula-banner" id="ai-spike-ratio" [attr.data-ratio]="share().ratio">
-    สัดส่วน Spike ของ R&D {{ share().percentLabel }}
-    ({{ share().spikeMd }} / {{ share().plannedMd }} MD) {{ share().bandLabel }}
-  </p>
+  <article class="e-card surface-card" id="ai-spike-ratio" [attr.data-ratio]="share().ratio">
+    <div class="e-card-content p-4">
+      สัดส่วน Spike ของ R&D {{ share().percentLabel }}
+      ({{ share().spikeMd }} / {{ share().plannedMd }} MD) {{ share().bandLabel }}
+    </div>
+  </article>
   <p class="fine">MD ในมุมนี้ {{ trackedMd() }} · MD ที่ปิดแล้ว {{ acceptedMd() }}</p>
 
   <div class="chart-frame">
@@ -40,9 +42,11 @@
     </ejs-chart>
   </div>
 
-  <ul class="meaning-list">
+  <ul class="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2">
     @for (point of points(); track point.id) {
-      <li>{{ point.id }} · {{ point.label }} · {{ point.module }} · {{ point.md }} MD</li>
+      <li class="e-card surface-card">
+        <div class="e-card-content p-3">{{ point.id }} · {{ point.label }} · {{ point.module }} · {{ point.md }} MD</div>
+      </li>
     }
   </ul>
 </section>

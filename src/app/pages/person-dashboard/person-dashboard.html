@@ -1,5 +1,5 @@
-<section class="page">
-  <p><a class="person-link" routerLink="/people">กลับกระดานรายคน</a></p>
+<section class="page flex flex-col gap-4">
+  <p><button ejs-button cssClass="e-flat" type="button" (click)="back()">กลับกระดานรายคน</button></p>
   @if (!view().found) {
     <h2>ไม่พบบุคคลนี้</h2>
   } @else {
@@ -13,12 +13,18 @@
     <p class="formula-banner" [attr.data-formula]="view().formulaId">{{ view().formula }}</p>
     <p class="fine">{{ view().calculation }}</p>
 
-    <div class="index-block">
-      <div>
-        <p class="kpi-note">ดัชนีพัฒนา</p>
-        <p class="kpi-value">{{ view().indexLabel }}</p>
-      </div>
-      <p class="kpi-note">เป้า {{ view().target }} ของคนนี้ ไม่ได้เรียงอันดับกับคนอื่น</p>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <article class="e-card surface-card">
+        <div class="e-card-content p-4">
+          <p class="kpi-note">ดัชนีพัฒนา</p>
+          <p class="kpi-value">{{ view().indexLabel }}</p>
+        </div>
+      </article>
+      <article class="e-card surface-card">
+        <div class="e-card-content p-4">
+          <p class="kpi-note">เป้า {{ view().target }} ของคนนี้ ไม่ได้เรียงอันดับกับคนอื่น</p>
+        </div>
+      </article>
     </div>
 
     <p class="quarter-line">{{ view().quarterText }}</p>
@@ -60,12 +66,14 @@
     </div>
 
     <h3>ความหมายของ KPI</h3>
-    <ul class="kpi-meanings">
+    <ul class="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2">
       @for (item of view().kpis; track item.id) {
-        <li>
-          <span class="kpi-inline">{{ item.value }} {{ item.label }}</span>
-          <span>{{ item.meaning }}</span>
-          <span class="kpi-note">{{ item.criterion }}</span>
+        <li class="e-card surface-card">
+          <div class="e-card-content flex flex-col gap-1 p-3">
+            <span class="kpi-inline">{{ item.value }} {{ item.label }}</span>
+            <span>{{ item.meaning }}</span>
+            <span class="kpi-note">{{ item.criterion }}</span>
+          </div>
         </li>
       }
     </ul>

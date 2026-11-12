@@ -1,4 +1,4 @@
-<section class="page">
+<section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
       <h2>แจ้งเตือน Teams</h2>
@@ -10,19 +10,13 @@
   </div>
 
   <form class="ticket-form" (submit)="$event.preventDefault(); testSend()">
-    <div class="form-grid">
+    <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
       <label class="field">
         <span>ช่อง Teams</span>
-        <input class="text-input" id="teams-channel" [value]="channel()" (input)="onChannel($event)" />
+        <ejs-textbox id="teams-channel" [value]="channel()" (input)="onChannel($event)" width="100%"></ejs-textbox>
       </label>
-      <label class="field check-field">
-        <input id="teams-deadline" type="checkbox" [checked]="deadline()" (change)="onDeadline($event)" />
-        <span>สัปดาห์ที่ commit ใกล้หมด</span>
-      </label>
-      <label class="field check-field">
-        <input id="teams-overrun" type="checkbox" [checked]="overrun()" (change)="onOverrun($event)" />
-        <span>actual มีแนวโน้มเกิน estimate มากกว่า 50%</span>
-      </label>
+      <ejs-checkbox id="teams-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="deadline()" (change)="onDeadline($event)"></ejs-checkbox>
+      <ejs-checkbox id="teams-overrun" label="actual มีแนวโน้มเกิน estimate มากกว่า 50%" [checked]="overrun()" (change)="onOverrun($event)"></ejs-checkbox>
     </div>
     <div class="form-actions">
       <button ejs-button [isPrimary]="true" type="submit" id="teams-test">ทดสอบส่ง</button>
@@ -36,16 +30,15 @@
   </form>
 
   <h3>บันทึกข้อความที่จะส่ง</h3>
-  @if (log().length === 0) {
+  @if (logRows().length === 0) {
     <p class="empty-state">ยังไม่มีการทดสอบ ข้อความจะถูกเก็บในหน้านี้ ไม่ได้ส่งออกไป</p>
   } @else {
-    <ul class="teams-log">
-      @for (entry of log(); track entry.id) {
-        <li [attr.data-kind]="entry.kind">
-          <p>{{ entry.text }}</p>
-          <p class="kpi-note">สถานะ: บันทึกไว้ ยังไม่ส่ง</p>
-        </li>
-      }
-    </ul>
+    <ejs-grid [dataSource]="logRows()" height="240">
+      <e-columns>
+        <e-column field="ticketId" headerText="ใบงาน" width="140"></e-column>
+        <e-column field="text" headerText="ข้อความ" width="420"></e-column>
+        <e-column field="statusLabel" headerText="สถานะ" width="180"></e-column>
+      </e-columns>
+    </ejs-grid>
   }
 </section>

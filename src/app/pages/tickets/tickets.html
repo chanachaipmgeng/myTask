@@ -1,4 +1,4 @@
-<section class="page">
+<section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
       <h2>ใบงาน</h2>
@@ -22,11 +22,11 @@
       นำเข้าใบที่ปิดแล้วจาก CSV หรือ JSON แล้วคะแนนถูกคิดใหม่จากสูตรเดียวกัน. ปุ่มซิงก์อ่านไฟล์ตัวอย่างในเครื่อง
       ที่ยืนแทน myProject ไม่มีโฮสต์ API และไม่เขียนคะแนนกลับ.
     </p>
-    <div class="form-actions">
-      <a class="button-link" href="/samples/closed-tickets.csv" download>ดาวน์โหลดตัวอย่าง CSV</a>
-      <a class="button-link" href="/samples/closed-tickets.json" download>ดาวน์โหลดตัวอย่าง JSON</a>
-      <input class="file-input" type="file" accept=".csv,.json,text/csv,application/json" (change)="onImport($event)" />
-      <button type="button" (click)="syncMyProject()">ซิงก์จากไฟล์ตัวอย่าง</button>
+    <div class="form-actions flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
+      <button ejs-button type="button" (click)="downloadSample('csv')">ดาวน์โหลดตัวอย่าง CSV</button>
+      <button ejs-button type="button" (click)="downloadSample('json')">ดาวน์โหลดตัวอย่าง JSON</button>
+      <ejs-uploader id="ticket-import" [autoUpload]="false" [multiple]="false" allowedExtensions=".csv,.json" (selected)="onImport($event)"></ejs-uploader>
+      <button ejs-button [isPrimary]="true" type="button" (click)="syncMyProject()">ซิงก์จากไฟล์ตัวอย่าง</button>
     </div>
   </section>
 
@@ -38,7 +38,7 @@
   </ul>
 
   <form class="ticket-form" (submit)="$event.preventDefault(); add()">
-    <div class="form-grid">
+    <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
       <label class="field">
         <span>สาย</span>
         <ejs-dropdownlist [dataSource]="trackOptions" [fields]="fields" [value]="track" (change)="setChoice('track', $event)" width="100%"></ejs-dropdownlist>
@@ -49,7 +49,7 @@
       </label>
       <label class="field">
         <span>โมดูล</span>
-        <input class="text-input" [value]="moduleName" (input)="onModule($event)" placeholder="เช่น Billing" />
+        <ejs-textbox [value]="moduleName" (input)="onModule($event)" placeholder="เช่น Billing" width="100%"></ejs-textbox>
       </label>
       <label class="field">
         <span>ขนาด</span>
