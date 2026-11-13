@@ -188,6 +188,31 @@ export class OpenProjectSyncService {
     return spent;
   }
 
+  /**
+   * When OPENPROJECT_WRITEBACK is true, PATCH assignee on the work package.
+   * Returns an error string on failure; null when skipped or succeeded.
+   */
+  async writebackAssignee(opId: number, opUserId: number): Promise<string | null> {
+    if (!this.config.openproject.writeback) {
+      return null;
+    }
+    const creds = await this.resolveCredentials();
+    if (!creds) {
+      return 'OpenProject URL/token is not configured';
+    }
+    try {
+      const client = new OpenProjectClient(creds.url, creds.token);
+      const wp = await client.getWorkPackage(opId);
+      const lockVersion = typeof wp.lockVersion === 'number' ? wp.lockVersion : 0;
+      await client.patchAssignee(opId, opUserId, lockVersion);
+      return null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.log.warn(`writeback assignee OP-${opId} failed: ${message}`);
+      return message;
+    }
+  }
+
   private async resolveCredentials(): Promise<{ url: string; token: string } | null> {
     const envUrl = this.config.openproject.url;
     const envToken = this.config.openproject.token;

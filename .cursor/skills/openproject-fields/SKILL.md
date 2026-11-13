@@ -24,8 +24,15 @@ description: >-
 5. อัปเดตตารางในคู่มือ
 6. เพิ่ม/ขยาย unit test แล้ว `npm --prefix server run test`
 
+## Assign / writeback (P1 ปิดแล้ว)
+
+- API assign: `@Roles('admin', 'lead')` ใน `work-items.controller.ts`
+- UI: `canAssignWork` + ปุ่มรับข้อเสนอใน `/queue`; Dialog ยืนยันเมื่อ `writeback && opId`
+- `OPENPROJECT_WRITEBACK=true` → PATCH assignee หลัง assign สำเร็จ; ล้มแล้วคืน `writebackError`
+- อย่าเปิด writeback เป็นค่าเริ่ม; อย่าทำ toggle จาก UI โดยไม่ผ่านแผน
+
 ## ข้อจำกัด
 
 - ค่า mapping ว่างหรือ `customField\d+` เท่านั้น (`validateMapping`)
 - `hoursPerMd` ค่าเริ่ม 6
-- อย่าเปิด writeback เป็นค่าเริ่ม
+- P2 Teams จะใช้ `TEAMS_WEBHOOK_URL` (ยังไม่ implement)

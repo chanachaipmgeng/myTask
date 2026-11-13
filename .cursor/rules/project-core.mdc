@@ -26,7 +26,13 @@ alwaysApply: true
 - อย่าแก้ไฟล์แผน `.cursor/plans/` ของผู้ใช้เว้นแต่ถูกขอ
 - อย่า commit `.agents/` `.claude/` `skills-lock.json` หรือ `.env`
 
+## สิทธิ์แจกงาน / writeback
+
+- รับข้อเสนอคิว / assign ได้เฉพาะ `admin` | `lead` (API + `canAssignWork`)
+- Writeback เปิดด้วย env เท่านั้น; บนคิวต้องยืนยันก่อน PATCH เมื่อมี `opId`
+
 ## ขอบเขตที่ยังไม่บังคับ
 
 - ไม่เปิด OpenProject writeback โดยค่าเริ่ม
 - ไม่เปลี่ยนสูตร Implement/R&D เว้นแต่ผู้ใช้ขอชัดเจนและอัปเดต verify
+- Teams / KPI snapshot / GitLab MR จริง — ตาม `docs/แผนงาน.md` (P2+)

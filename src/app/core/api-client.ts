@@ -90,7 +90,10 @@ export class ApiClient {
     });
   }
 
-  assignWorkItem(ticketId: string, assigneeId: string): Promise<{ ok: boolean; ticket?: Ticket }> {
+  assignWorkItem(
+    ticketId: string,
+    assigneeId: string,
+  ): Promise<{ ok: boolean; ticket?: Ticket; writebackError?: string; message?: string }> {
     return api(`/api/work-items/${encodeURIComponent(ticketId)}/assign`, {
       method: 'POST',
       body: JSON.stringify({ assigneeId }),

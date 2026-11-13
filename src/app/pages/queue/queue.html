@@ -4,10 +4,19 @@
       <h2>คิวงานใหม่</h2>
       <p>
         ใบที่ยังไม่มีผู้รับ แยก R&D กับ Implement. คนว่าง = โควต้าสัปดาห์ − MD ของใบที่ยังไม่ปิด − 1 MD
-        ที่กันไว้นอกแผน. WIP ไม่เกิน 2 และ XL ไม่เกิน 1 ใบต่อคน. ข้อเสนอไม่ย้ายใบจนกว่าจะกดรับ.
+        ที่กันไว้นอกแผน. WIP ไม่เกิน 2 และ XL ไม่เกิน 1 ใบต่อคน. ข้อเสนอไม่ย้ายใบจนกว่าจะกดรับ · เฉพาะ
+        admin/lead
       </p>
     </div>
   </div>
+
+  @if (!canAssign()) {
+    <ejs-message
+      content="บัญชีนี้เป็น member — ดูคิวได้อย่างเดียว รับข้อเสนอได้เฉพาะ admin หรือ lead"
+      severity="Info"
+      variant="Outlined"
+    ></ejs-message>
+  }
 
   <ejs-toolbar id="queue-toolbar" cssClass="page-toolbar" overflowMode="Scroll" width="100%">
     <e-items>
@@ -73,7 +82,16 @@
         <div class="e-card-content flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
           <p class="m-0">{{ item.text }}</p>
           @if (item.personId) {
-            <button ejs-button [isPrimary]="true" type="button" [attr.data-ticket]="item.ticket.id" (click)="accept(item)">รับข้อเสนอ</button>
+            <button
+              ejs-button
+              [isPrimary]="true"
+              type="button"
+              [attr.data-ticket]="item.ticket.id"
+              [disabled]="!canAssign() || accepting()"
+              (click)="accept(item)"
+            >
+              รับข้อเสนอ
+            </button>
           }
         </div>
       </div>
@@ -86,3 +104,29 @@
     <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
   }
 </section>
+
+<ejs-dialog
+  #writebackDialog
+  header="ยืนยันเขียนกลับ OpenProject"
+  width="480px"
+  [visible]="false"
+  [isModal]="true"
+  [showCloseIcon]="true"
+  (close)="cancelWriteback()"
+>
+  <ng-template #content>
+    @if (pendingAccept(); as item) {
+      <p class="m-0">
+        รับ {{ item.ticket.id }} ให้ {{ item.personLabel }} และ
+        <strong>PATCH ผู้รับผิดชอบกลับ myProject (OpenProject)</strong> เพราะเปิด
+        OPENPROJECT_WRITEBACK อยู่
+      </p>
+    }
+  </ng-template>
+  <ng-template #footerTemplate>
+    <button ejs-button cssClass="e-flat" type="button" (click)="cancelWriteback()">ยกเลิก</button>
+    <button ejs-button cssClass="e-primary" type="button" [disabled]="accepting()" (click)="confirmWriteback()">
+      ยืนยันและรับข้อเสนอ
+    </button>
+  </ng-template>
+</ejs-dialog>

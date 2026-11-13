@@ -30,9 +30,14 @@ npm --prefix server run test
 - คง **Zone** (`provideZoneChangeDetection`) — ยังไม่ทำ zoneless เพราะ Syncfusion  
 - Syncfusion: ใช้ `[value]="x()"` + `(change)` ไม่ใช้ `[(value)]` กับ class field  
 
+## สิทธิ์ / writeback
+
+- Assign / รับคิว: `admin` | `lead` เท่านั้น (`canAssignWork`)  
+- Writeback: env `OPENPROJECT_WRITEBACK` + Dialog ยืนยันบน `/queue` เมื่อมี `opId`  
+
 ## อย่าทำ
 
 - อย่าแก้สูตรคะแนนโดยไม่ verify  
-- อย่า commit `.env`, `.agents/`, `.claude/`  
+- อย่า commit `.env`, `.agents/`, `.claude/`, `skills-lock.json`  
 - อย่าเปิด OpenProject writeback เป็นค่าเริ่ม  
 

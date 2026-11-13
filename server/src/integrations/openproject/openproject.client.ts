@@ -133,6 +133,24 @@ export class OpenProjectClient {
     }
   }
 
+  async getWorkPackage(id: number): Promise<OpWorkPackage> {
+    return this.get<OpWorkPackage>(`/api/v3/work_packages/${id}`);
+  }
+
+  /** PATCH assignee on a work package. Caller must pass the current lockVersion. */
+  async patchAssignee(opId: number, opUserId: number, lockVersion: number): Promise<OpWorkPackage> {
+    return this.request<OpWorkPackage>(`/api/v3/work_packages/${opId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lockVersion,
+        _links: {
+          assignee: { href: `/api/v3/users/${opUserId}` },
+        },
+      }),
+    });
+  }
+
   workPackageIdFromTimeEntry(entry: OpTimeEntry): number | null {
     return idFromHref(entry._links?.workPackage?.href);
   }
@@ -160,6 +178,9 @@ export class OpenProjectClient {
     if (!response.ok) {
       const body = await response.text();
       throw new Error(`OpenProject ${response.status} ${path}: ${body.slice(0, 300)}`);
+    }
+    if (response.status === 204) {
+      return undefined as T;
     }
     return (await response.json()) as T;
   }

@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import { Ticket } from '../../../shared/domain/models';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
+import { APP_CONFIG, AppConfig } from '../config';
 import { getPerson } from '../data/people.repo';
 import {
   getWorkItem,
@@ -10,10 +11,15 @@ import {
   upsertWorkItem,
 } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
+import { OpenProjectSyncService } from '../integrations/openproject/openproject.sync';
 
 @Controller('api/work-items')
 export class WorkItemsController {
-  constructor(private readonly db: Db) {}
+  constructor(
+    private readonly db: Db,
+    private readonly openProject: OpenProjectSyncService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
 
   @Get()
   async list() {
@@ -73,7 +79,7 @@ export class WorkItemsController {
   }
 
   @Post(':id/assign')
-  @Roles('admin', 'lead', 'member')
+  @Roles('admin', 'lead')
   async assign(
     @Param('id') id: string,
     @Body() body: { assigneeId?: string },
@@ -93,6 +99,29 @@ export class WorkItemsController {
     }
     const saved = await upsertWorkItem(this.db, { ...ticket, assigneeId });
     await this.db.audit(req.authUser?.person.id ?? null, 'work_item.assign', id, { assigneeId });
-    return { ok: true, ticket: saved };
+
+    let writebackError: string | undefined;
+    const opId = saved.opId;
+    const opUserId = person.openprojectUserId ?? null;
+    if (
+      this.config.openproject.writeback &&
+      saved.source === 'openproject' &&
+      typeof opId === 'number' &&
+      typeof opUserId === 'number'
+    ) {
+      const err = await this.openProject.writebackAssignee(opId, opUserId);
+      if (err) {
+        writebackError = err;
+        await this.db.audit(req.authUser?.person.id ?? null, 'work_item.assign_writeback_failed', id, {
+          opId,
+          opUserId,
+          error: err,
+        });
+      } else {
+        await this.db.audit(req.authUser?.person.id ?? null, 'work_item.assign_writeback', id, { opId, opUserId });
+      }
+    }
+
+    return writebackError ? { ok: true, ticket: saved, writebackError } : { ok: true, ticket: saved };
   }
 }

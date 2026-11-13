@@ -71,6 +71,15 @@ export const canEditAdmin = computed(() => {
   return currentViewer().access === 'lead';
 });
 
+/** Assign / accept queue proposals: admin or lead (API rejects member). */
+export const canAssignWork = computed(() => {
+  const access = sessionAccess();
+  if (access) {
+    return access === 'admin' || access === 'lead';
+  }
+  return currentViewer().access === 'lead';
+});
+
 export function setViewer(id: string): SampleViewer {
   if (SAMPLE_VIEWERS.some((viewer) => viewer.id === id)) {
     viewerId.set(id);

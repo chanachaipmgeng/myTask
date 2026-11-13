@@ -10,7 +10,7 @@ description: >-
 
 ## เมื่อไหร่ต้องรัน
 
-หลังแก้สูตรคะแนน, seed ใบงาน, roster/dashboard ที่อิง `scorePerson`/`scoreTicket`, หรือ mock scenario
+หลังแก้สูตรคะแนน, seed ใบงาน, roster/dashboard ที่อิง `scorePerson`/`scoreTicket`, mock scenario, หรือ `assignTicket` / คิว capacity
 
 ## คำสั่ง
 

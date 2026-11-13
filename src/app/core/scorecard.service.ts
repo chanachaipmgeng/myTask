@@ -304,24 +304,46 @@ export class ScorecardService {
     return updated;
   }
 
-  assignTicket(ticketId: string, assigneeId: string): boolean {
+  async assignTicket(
+    ticketId: string,
+    assigneeId: string,
+  ): Promise<{ ok: boolean; writebackError?: string; message?: string }> {
     if (!this.peopleState().some((person) => person.id === assigneeId)) {
-      return false;
+      return { ok: false, message: 'ไม่พบผู้รับ' };
     }
-    let updated = false;
+    const previous = this.ticketsState().find((ticket) => ticket.id === ticketId);
+    if (!previous || previous.assigneeId !== '') {
+      return { ok: false, message: 'ใบไม่มีหรือมีผู้รับแล้ว' };
+    }
+
     this.ticketsState.update((current) =>
-      current.map((ticket) => {
-        if (ticket.id !== ticketId || ticket.assigneeId !== '') {
-          return ticket;
-        }
-        updated = true;
-        return { ...ticket, assigneeId };
-      }),
+      current.map((ticket) => (ticket.id === ticketId ? { ...ticket, assigneeId } : ticket)),
     );
-    if (updated && !this.mockModeState() && this.apiOnline() && this.api) {
-      void this.api.assignWorkItem(ticketId, assigneeId);
+
+    if (this.mockModeState() || !this.apiOnline() || !this.api) {
+      return { ok: true };
     }
-    return updated;
+
+    try {
+      const result = await this.api.assignWorkItem(ticketId, assigneeId);
+      if (!result.ok) {
+        this.ticketsState.update((current) =>
+          current.map((ticket) => (ticket.id === ticketId ? { ...ticket, assigneeId: '' } : ticket)),
+        );
+        return { ok: false, message: result.message ?? 'แจกงานไม่สำเร็จ' };
+      }
+      if (result.ticket) {
+        this.ticketsState.update((current) =>
+          current.map((ticket) => (ticket.id === ticketId ? result.ticket! : ticket)),
+        );
+      }
+      return { ok: true, writebackError: result.writebackError };
+    } catch (err) {
+      this.ticketsState.update((current) =>
+        current.map((ticket) => (ticket.id === ticketId ? { ...ticket, assigneeId: '' } : ticket)),
+      );
+      return { ok: false, message: err instanceof Error ? err.message : 'แจกงานไม่สำเร็จ' };
+    }
   }
 
   applyMyGit(commits: readonly MyGitCommit[]): MyGitSyncResult {

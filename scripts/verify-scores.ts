@@ -327,7 +327,7 @@ assert.equal(plan.plans.find((item) => item.ticket.id === 'Q-IMP-1')?.personId, 
 assert.equal(plan.plans.find((item) => item.ticket.id === 'Q-RD-1')?.personId, 'chanachai');
 assert.ok(plan.rows.some((row) => row.id === 'paweena' && row.available && row.freeMd === 2.5));
 assert.equal(service.tickets().find((item) => item.id === 'Q-IMP-1')?.assigneeId, '');
-assert.equal(service.assignTicket('Q-IMP-1', 'paweena'), true);
+const assignPending = service.assignTicket('Q-IMP-1', 'paweena');
 assert.equal(service.tickets().find((item) => item.id === 'Q-IMP-1')?.assigneeId, 'paweena');
 assert.equal(service.tickets().find((item) => item.id === 'Q-IMP-XL')?.assigneeId, '');
 
@@ -461,6 +461,17 @@ assert.equal(blockedReview.ok, false);
 if (!blockedReview.ok) {
   assert.match(blockedReview.message, /ลิงก์ MR/);
 }
+const openForReview = seeded('RD-OPEN');
+assert.ok(!openForReview.mrLink || openForReview.mrLink.trim() === '');
+const stillBlocked = moveWorkflow(
+  { ...openForReview, workflowStatus: 'In Progress', actualStartOn: '2025-11-10', storyPoints: 2, firstDueOn: '2025-11-14' },
+  'Code Review',
+  '2025-11-12',
+);
+assert.equal(stillBlocked.ok, false);
+if (!stillBlocked.ok) {
+  assert.match(stillBlocked.message, /ลิงก์ MR/);
+}
 const blockedDone = moveWorkflow(seeded('RD-NAK-BUG'), 'Done', '2025-11-12');
 assert.equal(blockedDone.ok, false);
 if (!blockedDone.ok) {
@@ -572,4 +583,12 @@ assert.equal(weekOffsetFromDates('2025-11-07', '2025-11-20'), 2);
   assert.equal(MOCK_BLUEPRINTS.length, 6);
 }
 
-console.log('verify-scores ok');
+assignPending
+  .then((result) => {
+    assert.equal(result.ok, true);
+    console.log('verify-scores ok');
+  })
+  .catch((err: unknown) => {
+    console.error(err);
+    process.exit(1);
+  });

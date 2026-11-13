@@ -110,6 +110,51 @@ describe('mapWorkPackage', () => {
     assert.equal(ticket.actualMd, 2);
   });
 
+  it('locks firstDueOn when OpenProject dueDate changes', () => {
+    const existing: Ticket = {
+      id: 'OP-100',
+      track: 'Implement',
+      type: 'Bug-Fix',
+      module: 'Auth',
+      size: 'S',
+      estimateMd: 1,
+      actualMd: 1,
+      weekOffset: 0,
+      reviewRounds: 0,
+      blocker: false,
+      reopenCount: 0,
+      varianceCode: 'NONE',
+      closed: true,
+      dodPassed: true,
+      inTimeBox: false,
+      childTicketsSized: false,
+      unplanned: false,
+      assigneeId: 'itsara',
+      closedOn: '2026-11-27',
+      workingDaysLeft: null,
+      note: '',
+      source: 'openproject',
+      opId: 100,
+      firstDueOn: '2026-11-13',
+      dueOn: '2026-11-13',
+    };
+    const wp: OpWorkPackage = {
+      ...sampleWp(),
+      dueDate: '2026-11-27',
+      updatedAt: '2026-11-27T10:00:00Z',
+      _links: {
+        ...sampleWp()._links,
+        status: { href: '/api/v3/statuses/9', title: 'Closed' },
+      },
+      _embedded: { status: { name: 'Closed', isClosed: true } },
+    };
+    const ticket = mapWorkPackage(wp, { ...baseCtx(), existing, today: '2026-11-27' });
+    assert.equal(ticket.firstDueOn, '2026-11-13');
+    assert.equal(ticket.dueOn, '2026-11-27');
+    assert.equal(ticket.weekOffset, weekOffset('2026-11-13', '2026-11-27'));
+    assert.ok((ticket.weekOffset ?? 0) >= 1);
+  });
+
   it('reads custom fields when configured', () => {
     const mapping = {
       ...DEFAULT_OPENPROJECT_MAPPING,
@@ -166,6 +211,19 @@ describe('countReopens', () => {
         { createdAt: '2026-01-02T00:00:00Z', details: [{ raw: 'Status changed from Closed to In progress' }] },
         { createdAt: '2026-01-03T00:00:00Z', details: [{ raw: 'Status changed from In progress to Done' }] },
         { createdAt: '2026-01-04T00:00:00Z', details: [{ raw: 'Status changed from Done to Reopened' }] },
+      ],
+      DEFAULT_OPENPROJECT_MAPPING,
+    );
+    assert.equal(count, 2);
+  });
+
+  it('counts reopen transitions from Thai status titles', () => {
+    const count = countReopens(
+      [
+        { createdAt: '2026-01-01T00:00:00Z', details: [{ raw: 'Status changed from ใหม่ to ปิด' }] },
+        { createdAt: '2026-01-02T00:00:00Z', details: [{ raw: 'Status changed from ปิด to กำลังทำ' }] },
+        { createdAt: '2026-01-03T00:00:00Z', details: [{ raw: 'Status changed from กำลังทำ to เสร็จสิ้น' }] },
+        { createdAt: '2026-01-04T00:00:00Z', details: [{ raw: 'Status changed from เสร็จสิ้น to เปิดใหม่' }] },
       ],
       DEFAULT_OPENPROJECT_MAPPING,
     );
