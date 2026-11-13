@@ -122,6 +122,12 @@ function personById(people: readonly Person[]): Map<string, Person> {
   return new Map(people.map((person) => [person.id, person]));
 }
 
+interface LocalSnapshot {
+  people: Person[];
+  tickets: Ticket[];
+  sequence: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ScorecardService {
   private readonly peopleState = signal<Person[]>(SEED_PEOPLE.map((person) => ({ ...person })));
@@ -129,11 +135,14 @@ export class ScorecardService {
   private readonly sequence = signal(1);
   private readonly apiOnline = signal(false);
   private readonly readyState = signal(false);
+  private readonly mockModeState = signal(false);
+  private snapshot: LocalSnapshot | null = null;
 
   readonly people = computed(() => this.peopleState());
   readonly tickets = this.ticketsState.asReadonly();
   readonly apiReady = this.readyState.asReadonly();
   readonly usingApi = this.apiOnline.asReadonly();
+  readonly mockMode = this.mockModeState.asReadonly();
 
   readonly roster = computed(() =>
     this.peopleState().map((person) => ({
@@ -168,12 +177,20 @@ export class ScorecardService {
   }
 
   async reloadFromApi(): Promise<boolean> {
+    if (this.mockModeState()) {
+      this.readyState.set(true);
+      return false;
+    }
     if (!this.api) {
       this.readyState.set(true);
       return false;
     }
     try {
       const data = await this.api.bootstrap();
+      if (this.mockModeState()) {
+        this.readyState.set(true);
+        return false;
+      }
       this.peopleState.set(data.people.map((person) => ({ ...person })));
       this.ticketsState.set(data.tickets.map((ticket) => ({ ...ticket })));
       applyRemoteSettings(data.settings);
@@ -192,11 +209,54 @@ export class ScorecardService {
     }
   }
 
+  enterMockSandbox(people: readonly Person[], tickets: readonly Ticket[]): void {
+    if (!this.mockModeState()) {
+      this.snapshot = {
+        people: this.peopleState().map((person) => ({ ...person })),
+        tickets: this.ticketsState().map((ticket) => ({ ...ticket })),
+        sequence: this.sequence(),
+      };
+    }
+    this.mockModeState.set(true);
+    this.peopleState.set(people.map((person) => ({ ...person })));
+    this.ticketsState.set(tickets.map((ticket) => ({ ...ticket })));
+    this.readyState.set(true);
+  }
+
+  setMockTickets(tickets: readonly Ticket[]): void {
+    if (!this.mockModeState()) {
+      return;
+    }
+    this.ticketsState.set(tickets.map((ticket) => ({ ...ticket })));
+  }
+
+  setMockPeople(people: readonly Person[]): void {
+    if (!this.mockModeState()) {
+      return;
+    }
+    this.peopleState.set(people.map((person) => ({ ...person })));
+  }
+
+  exitMockSandbox(): boolean {
+    if (!this.mockModeState()) {
+      return false;
+    }
+    const saved = this.snapshot;
+    this.snapshot = null;
+    this.mockModeState.set(false);
+    if (saved) {
+      this.peopleState.set(saved.people);
+      this.ticketsState.set(saved.tickets);
+      this.sequence.set(saved.sequence);
+    }
+    return true;
+  }
+
   addTicket(input: Omit<Ticket, 'id'>): Ticket {
     const ticket: Ticket = { ...input, id: `T-${String(this.sequence()).padStart(3, '0')}` };
     this.sequence.update((value) => value + 1);
     this.ticketsState.update((current) => [...current, ticket]);
-    if (this.apiOnline() && this.api) {
+    if (!this.mockModeState() && this.apiOnline() && this.api) {
       void this.api.createWorkItem(ticket).then((result) => {
         if (result.ticket) {
           this.replaceLocal(result.ticket);
@@ -220,7 +280,7 @@ export class ScorecardService {
     }
     if (added.length > 0) {
       this.ticketsState.update((current) => [...current, ...added]);
-      if (this.apiOnline() && this.api) {
+      if (!this.mockModeState() && this.apiOnline() && this.api) {
         void this.api.importWorkItems(added);
       }
     }
@@ -238,7 +298,7 @@ export class ScorecardService {
         return { ...next, id: ticket.id };
       }),
     );
-    if (updated && this.apiOnline() && this.api) {
+    if (updated && !this.mockModeState() && this.apiOnline() && this.api) {
       void this.api.replaceWorkItem(next);
     }
     return updated;
@@ -258,7 +318,7 @@ export class ScorecardService {
         return { ...ticket, assigneeId };
       }),
     );
-    if (updated && this.apiOnline() && this.api) {
+    if (updated && !this.mockModeState() && this.apiOnline() && this.api) {
       void this.api.assignWorkItem(ticketId, assigneeId);
     }
     return updated;
@@ -306,7 +366,7 @@ export class ScorecardService {
             return ticket;
           }
           const next = { ...ticket, reviewRounds: update.reviewRounds, reopenCount: update.reopenCount };
-          if (this.apiOnline() && this.api) {
+          if (!this.mockModeState() && this.apiOnline() && this.api) {
             void this.api.replaceWorkItem(next);
           }
           return next;

@@ -39,10 +39,23 @@
         <span class="appbar-title">{{ title() }}</span>
         <span class="appbar-note">R&amp;D และ Implement</span>
       </div>
+      @if (mockMode()) {
+        <span class="e-badge e-badge-danger e-badge-pill appbar-alert-chip">โหมดจำลอง</span>
+      }
       @if (alerts().length > 0) {
         <span class="e-badge e-badge-warning e-badge-pill appbar-alert-chip">แจ้งเตือน {{ alerts().length }}</span>
       }
     </ejs-appbar>
+
+    @if (mockMode()) {
+      <section class="shell-alerts" aria-label="โหมดจำลอง">
+        <ejs-message
+          content="กำลังอยู่ในโหมดจำลอง — ข้อมูลในหน่วยความจำเท่านั้น ไม่เขียนฐานข้อมูล กดออกได้ที่เมนูโหมดจำลอง"
+          severity="Warning"
+          variant="Outlined"
+        ></ejs-message>
+      </section>
+    }
 
     <section class="shell-alerts" aria-label="แจ้งเตือน">
       @if (alerts().length === 0) {

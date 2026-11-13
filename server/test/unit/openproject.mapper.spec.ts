@@ -117,16 +117,44 @@ describe('mapWorkPackage', () => {
         ...DEFAULT_OPENPROJECT_MAPPING.customFields,
         size: 'customField3',
         track: 'customField4',
+        workCategory: 'customField5',
+        reviewRounds: 'customField6',
+        blocker: 'customField7',
+        storyPoints: 'customField8',
+        discipline: 'customField9',
+        mrLink: 'customField10',
+        weekOffset: 'customField11',
       },
     };
     const wp: OpWorkPackage = {
       ...sampleWp(),
+      startDate: '2026-11-05',
       customField3: 'L',
       customField4: 'RD',
+      customField5: 'BugInternal',
+      customField6: '2',
+      customField7: 'true',
+      customField8: '5',
+      customField9: 'BE',
+      customField10: 'https://gitlab.example/mr/9',
+      customField11: '1',
+      _embedded: { status: { name: 'Closed', isClosed: true } },
+      _links: {
+        ...sampleWp()._links,
+        status: { href: '/api/v3/statuses/9', title: 'Closed' },
+      },
     };
     const ticket = mapWorkPackage(wp, { ...baseCtx(), mapping });
     assert.equal(ticket.size, 'L');
     assert.equal(ticket.track, 'RD');
+    assert.equal(ticket.workCategory, 'BugInternal');
+    assert.equal(ticket.reviewRounds, 2);
+    assert.equal(ticket.blocker, true);
+    assert.equal(ticket.storyPoints, 5);
+    assert.equal(ticket.discipline, 'BE');
+    assert.equal(ticket.mrLink, 'https://gitlab.example/mr/9');
+    assert.equal(ticket.weekOffset, 1);
+    assert.equal(ticket.actualStartOn, '2026-11-05');
   });
 });
 

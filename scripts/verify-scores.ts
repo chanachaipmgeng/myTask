@@ -13,8 +13,15 @@ import { monthlyTrend, quotaBars } from '../src/app/core/dashboard-charts';
 import { mapMyGitCommits } from '../src/app/core/mygit-sync';
 import { aiTicketPoints, aiTrackLabel, researchSpikeShare } from '../src/app/core/ai-tracking';
 import { teamsDrafts } from '../src/app/core/teams-notify';
+import { buildPeopleRoster } from '../src/app/core/people-roster';
 import { personDashboard } from '../src/app/core/person-dashboard';
 import { ScorecardService } from '../src/app/core/scorecard.service';
+import {
+  workBacklogRows,
+  workGanttTasks,
+  workListRows,
+  workSummaryStats,
+} from '../src/app/core/work-views';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../src/app/core/ticket-file';
 import { Person, Ticket, TicketType } from '../src/app/core/models';
 import { editWorkflow, moveWorkflow, pipelineReport } from '../src/app/core/workflow';
@@ -27,6 +34,24 @@ import {
   workloadCategory,
 } from '../src/app/core/scoring';
 import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID, SEED_PEOPLE, SEED_TICKETS } from '../src/app/data/seed';
+import {
+  MOCK_BLUEPRINTS,
+  MOCK_PERSON_IDS,
+  MOCK_RETURN_TAGS,
+  MOCK_SPRINT,
+  applyEstimates,
+  applyReturnTags,
+  assignFromCapacity,
+  enterSprint,
+  estimateDrafts,
+  filterMockPeople,
+  hoursToActualMd,
+  intakeTickets,
+  openRound,
+  settleTickets,
+  sizeFromRubricTotal,
+  weekOffsetFromDates,
+} from '../shared/domain/mock-scenario';
 
 function ticket(overrides: Partial<Ticket> & Pick<Ticket, 'id' | 'assigneeId'>): Ticket {
   return {
@@ -326,6 +351,13 @@ assert.notDeepEqual(
 const itsara = SEED_PEOPLE.find((member) => member.id === 'itsara');
 const chanachai = SEED_PEOPLE.find((member) => member.id === 'chanachai');
 assert.ok(itsara && chanachai);
+const roster = buildPeopleRoster(SEED_PEOPLE, SEED_TICKETS);
+assert.equal(roster.length, SEED_PEOPLE.length);
+const itsaraRow = roster.find((row) => row.id === 'itsara');
+assert.ok(itsaraRow);
+assert.ok(itsaraRow.openCount + itsaraRow.closedCount >= 1);
+assert.ok(Number.isFinite(itsaraRow.accuracyPct));
+assert.ok(itsaraRow.planLabel.includes('%'));
 const implementView = personDashboard(itsara, SEED_TICKETS);
 const researchView = personDashboard(chanachai, SEED_TICKETS);
 assert.equal(implementView.formulaId, 'Implement');
@@ -334,8 +366,28 @@ assert.notEqual(implementView.formula, researchView.formula);
 assert.equal(implementView.index, Math.round(scorePerson(itsara, SEED_TICKETS).developmentIndex * 10) / 10);
 assert.equal(researchView.index, Math.round(scorePerson(chanachai, SEED_TICKETS).developmentIndex * 10) / 10);
 assert.ok(implementView.trend.length > 0 && researchView.trend.every((point) => point.target === INDEX_TARGET));
+assert.equal(implementView.openCount + implementView.closedCount, SEED_TICKETS.filter((t) => t.assigneeId === 'itsara').length);
+assert.equal(implementView.openWork.length, implementView.openCount);
+assert.equal(implementView.closedWork.length, implementView.closedCount);
+assert.ok(implementView.slipShare.length >= 1);
+assert.ok(implementView.categoryShare.length >= 1);
+assert.ok(implementView.effortBars.every((bar) => bar.estimateMd >= 0 && bar.actualMd >= 0));
+assert.ok(implementView.qualityBars.every((bar) => bar.reviewRounds >= 0 && bar.reopenCount >= 0));
+assert.ok(implementView.kpis.length >= 4);
 assert.equal(scoreTicket(seeded(REFERENCE_BUG_ID)).total, 100);
 assert.equal(scoreTicket(seeded(REFERENCE_SPIKE_ID)).spikeScore, 100);
+
+const workSummary = workSummaryStats(SEED_TICKETS, SEED_PEOPLE);
+assert.ok(workSummary.cards.length === 4);
+assert.ok(workSummary.statusShare.length >= 1);
+const workList = workListRows(SEED_TICKETS, SEED_PEOPLE);
+assert.equal(workList.length, SEED_TICKETS.length);
+const workBacklog = workBacklogRows(SEED_TICKETS, SEED_PEOPLE);
+assert.ok(workBacklog.every((row) => row.status === 'Backlog' || row.assignee === 'ยังไม่มีผู้รับ'));
+const workGantt = workGanttTasks(SEED_TICKETS, SEED_PEOPLE);
+assert.ok(workGantt.length >= 1);
+assert.ok(workGantt.every((task) => task.TaskID && task.TaskName));
+
 
 const mygitFixture = readFileSync(new URL('../public/fixtures/mygit-commits.json', import.meta.url), 'utf8');
 assert.equal(mygitFixture.includes('fileCount'), false);
@@ -462,5 +514,62 @@ assert.ok(rdReport.velocity.some((row) => row.points > 0));
 assert.ok(rdReport.categories.some((row) => row.key === 'R&D-PoC' && row.points > 0));
 assert.equal(scoreTicket(seeded(REFERENCE_BUG_ID)).total, 100);
 assert.equal(scoreTicket(seeded(REFERENCE_SPIKE_ID)).spikeScore, 100);
+
+assert.equal(sizeFromRubricTotal(3), 'S');
+assert.equal(sizeFromRubricTotal(5), 'M');
+assert.equal(sizeFromRubricTotal(12), 'XL');
+assert.equal(hoursToActualMd(3), 0.5);
+assert.equal(hoursToActualMd(6), 1);
+assert.equal(weekOffsetFromDates('2025-11-07', '2025-11-05'), 0);
+assert.equal(weekOffsetFromDates('2025-11-07', '2025-11-12'), 1);
+assert.equal(weekOffsetFromDates('2025-11-07', '2025-11-20'), 2);
+
+{
+  const drafts = estimateDrafts();
+  assert.equal(drafts.find((item) => item.blueprint.id === 'MOCK-ONTIME')?.size, 'S');
+  assert.equal(drafts.find((item) => item.blueprint.id === 'MOCK-SLIP')?.size, 'M');
+  assert.equal(drafts.find((item) => item.blueprint.id === 'MOCK-XL')?.size, 'XL');
+  assert.equal(drafts.find((item) => item.blueprint.id === 'MOCK-SPIKE')?.estimateMd, 0.5);
+
+  const people = filterMockPeople(SEED_PEOPLE);
+  assert.deepEqual(
+    people.map((person) => person.id).sort(),
+    [...MOCK_PERSON_IDS].slice().sort(),
+  );
+
+  let tickets = applyEstimates(intakeTickets(), drafts);
+  tickets = enterSprint(tickets, MOCK_SPRINT);
+  tickets = openRound(tickets, drafts, MOCK_SPRINT);
+  assert.ok(tickets.some((item) => item.id === 'MOCK-UNPLANNED' && item.unplanned));
+  assert.ok(tickets.every((item) => item.dueOn === MOCK_SPRINT.endOn));
+
+  const assigned = assignFromCapacity(people, tickets);
+  tickets = assigned.tickets;
+  assert.ok(assigned.skipped.includes('MOCK-XL'), 'XL stays in queue');
+  assert.equal(tickets.find((item) => item.id === 'MOCK-XL')?.assigneeId, '');
+  assert.ok((tickets.find((item) => item.id === 'MOCK-ONTIME')?.assigneeId ?? '') !== '');
+
+  tickets = applyReturnTags(tickets, MOCK_RETURN_TAGS);
+  tickets = settleTickets(tickets);
+
+  const ontime = tickets.find((item) => item.id === 'MOCK-ONTIME');
+  const slip = tickets.find((item) => item.id === 'MOCK-SLIP');
+  const rework = tickets.find((item) => item.id === 'MOCK-REWORK');
+  const spikeTicket = tickets.find((item) => item.id === 'MOCK-SPIKE');
+  const unplanned = tickets.find((item) => item.id === 'MOCK-UNPLANNED');
+  assert.ok(ontime && slip && rework && spikeTicket && unplanned);
+  assert.equal(ontime.actualMd, 0.5);
+  assert.equal(ontime.weekOffset, 0);
+  assert.equal(scoreTicket(ontime).total, 100);
+  assert.equal(slip.weekOffset, 1);
+  assert.equal(scoreTicket(slip).total, 80);
+  assert.equal(rework.reviewRounds, 3);
+  assert.equal(rework.reopenCount, 1);
+  assert.equal(scoreTicket(rework).total, 80);
+  assert.equal(scoreTicket(spikeTicket).spikeScore, 100);
+  assert.equal(unplanned.unplanned, true);
+  assert.equal(scoreTicket(unplanned).total, 100);
+  assert.equal(MOCK_BLUEPRINTS.length, 6);
+}
 
 console.log('verify-scores ok');

@@ -1,0 +1,44 @@
+<div class="flex flex-col gap-3">
+  <p class="fine m-0">รายการใบงานแนวปฏิบัติงาน (ไม่ใช่ตารางคะแนน) · คลิกแถวเพื่อดูสรุปสั้น</p>
+  <ejs-grid
+    [dataSource]="rows()"
+    [allowPaging]="true"
+    [allowSorting]="true"
+    [allowFiltering]="true"
+    [pageSettings]="pageSettings"
+    (rowSelected)="onRowSelected($event)"
+  >
+    <e-columns>
+      <e-column field="workLabel" headerText="Work" width="320"></e-column>
+      <e-column field="type" headerText="Type" width="120"></e-column>
+      <e-column field="assignee" headerText="Assignee" width="140"></e-column>
+      <e-column field="status" headerText="Status" width="120"></e-column>
+      <e-column field="size" headerText="Size" width="80"></e-column>
+      <e-column field="dueOnLabel" headerText="Due" width="120"></e-column>
+      <e-column field="closedOnLabel" headerText="Closed" width="120"></e-column>
+      <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="120"></e-column>
+      <e-column field="unplannedLabel" headerText="แผน" width="100"></e-column>
+    </e-columns>
+  </ejs-grid>
+</div>
+
+<ejs-dialog
+  #detailDialog
+  header="สรุปใบงาน"
+  width="480px"
+  [visible]="false"
+  [isModal]="true"
+  [showCloseIcon]="true"
+>
+  <ng-template #content>
+    @if (detail(); as row) {
+      <div class="grid gap-2 text-sm">
+        <p class="m-0 font-bold">{{ row.workLabel }}</p>
+        <p class="m-0">ผู้รับ: {{ row.assignee }}</p>
+        <p class="m-0">สถานะ: {{ row.status }} · ขนาด {{ row.size }}</p>
+        <p class="m-0">Due: {{ row.dueOnLabel }} · Closed: {{ row.closedOnLabel }}</p>
+        <p class="m-0">{{ row.weekOffsetLabel }} · {{ row.unplannedLabel }}</p>
+      </div>
+    }
+  </ng-template>
+</ejs-dialog>

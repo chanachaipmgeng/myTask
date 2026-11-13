@@ -1,0 +1,25 @@
+<div class="flex flex-col gap-2">
+  <p class="fine">
+    Gantt อ่านอย่างเดียว · แท่งจริงจาก start/due/closed · baseline จาก first due + estimate · ไฮไลต์ใบที่เลื่อนสัปดาห์ผ่าน
+    weekOffset
+  </p>
+  <ejs-gantt
+    id="work-gantt"
+    height="560px"
+    theme="Tailwind3Dark"
+    [dataSource]="tasks()"
+    [taskFields]="taskFields"
+    [columns]="columns"
+    [labelSettings]="labelSettings"
+    [timelineSettings]="timelineSettings"
+    [workWeek]="workWeek"
+    [splitterSettings]="splitterSettings"
+    [resources]="resources()"
+    [resourceFields]="resourceFields"
+    [renderBaseline]="true"
+    [allowSelection]="true"
+    [enableVirtualization]="false"
+    [treeColumnIndex]="1"
+    gridLines="Horizontal"
+  ></ejs-gantt>
+</div>

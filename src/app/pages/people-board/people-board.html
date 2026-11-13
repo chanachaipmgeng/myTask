@@ -1,23 +1,29 @@
 <section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
-      <h2>กระดานรายคน</h2>
+      <h2>รายชื่อพนักงาน</h2>
       <p>
-        ดัชนี Implement = คะแนนถ่วง 50% + ปิดตามแผน (เพดาน 100) 20% + สัดส่วนใบที่อัตราส่วนอยู่ใน 0.8–1.5 อีก 15% +
-        (1 − rework) 15%. ดัชนี R&D = คะแนน Feature/CR ที่ผ่าน DoD 40% + คุณภาพ Spike 25% + MD ที่รับเข้า /
-        MD ที่วางไว้ 20% + คุณภาพรีวิวและ reopen 15%. เป้าดัชนีและคะแนนถ่วงคือ {{ target }}.
+        คลิกชื่อเพื่อดูงานของคนนั้นและกราฟวิเคราะห์หลายมุม ดัชนี Implement = คะแนนถ่วง 50% + ปิดตามแผน 20% +
+        ความแม่น 15% + คุณภาพจาก rework 15%. ดัชนี R&amp;D = DoD 40% + Spike 25% + MD ที่รับเข้า 20% + รีวิว/reopen 15%.
+        เป้าดัชนีคือ {{ target }}.
       </p>
     </div>
-    <label class="filter">
-      <span>สายงาน</span>
-      <ejs-dropdownlist
-        [dataSource]="trackOptions"
-        [fields]="fields"
-        [value]="track()"
-        (change)="setTrack($event)"
-        width="180px"
-      ></ejs-dropdownlist>
-    </label>
+    <div class="flex flex-wrap gap-3 items-end">
+      <label class="filter">
+        <span>สายงาน</span>
+        <ejs-dropdownlist
+          [dataSource]="trackOptions"
+          [fields]="fields"
+          [value]="track()"
+          (change)="setTrack($event)"
+          width="180px"
+        ></ejs-dropdownlist>
+      </label>
+      <label class="filter">
+        <span>ค้นหาชื่อ</span>
+        <ejs-textbox placeholder="ชื่อหรือบทบาท" (change)="setQuery($event)" width="200px"></ejs-textbox>
+      </label>
+    </div>
   </div>
 
   <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -28,29 +34,9 @@
     }
   </div>
   <p class="fine">
-    โควต้าใช้จัดกำลังคนอย่างเดียว ไม่เข้าสูตร. ปิดตามแผนคือเปอร์เซ็นต์จริงของ MD ที่ปิดต่อ MD ที่วางไว้
-    ถ้าเกิน 100 ดัชนีใช้ 100. นอกแผนของ Implement = unplanned MD / 5 เป้าไม่เกิน 25% และไม่เข้าดัชนี.
-    อัตรา Spike ของ R&D = MD ของ Spike ต่อ MD ที่วางไว้ เป้า 15–40% และไม่เข้าดัชนี. Rework เป้าไม่เกิน 10%.
-    1 MD = 6 ชั่วโมงโฟกัส.
+    โควต้าใช้จัดกำลังคนอย่างเดียว ไม่เข้าสูตร. คอลัมน์ WIP คือใบที่ยังไม่ปิด ความแม่นคือสัดส่วนใบที่อัตราส่วน
+    actual/estimate อยู่ใน 0.8–1.5. 1 MD = 6 ชั่วโมงโฟกัส.
   </p>
-  <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-    <div class="e-card">
-      <div class="e-card-header"><div class="e-card-header-caption"><div class="e-card-header-title">ปิดตามแผน</div></div></div>
-      <div class="e-card-content p-3">ปิดได้ตาม MD ที่รับไว้</div>
-    </div>
-    <div class="e-card">
-      <div class="e-card-header"><div class="e-card-header-caption"><div class="e-card-header-title">นอกแผน</div></div></div>
-      <div class="e-card-content p-3">งานกระทันหันกินช่องนอกแผน</div>
-    </div>
-    <div class="e-card">
-      <div class="e-card-header"><div class="e-card-header-caption"><div class="e-card-header-title">Spike</div></div></div>
-      <div class="e-card-content p-3">สัดส่วนการค้นพบ ต่ำไปคือเดา มากไปคือ requirement ยังไม่พร้อม</div>
-    </div>
-    <div class="e-card">
-      <div class="e-card-header"><div class="e-card-header-caption"><div class="e-card-header-title">คะแนนถ่วง</div></div></div>
-      <div class="e-card-content p-3">40 มาจากส่งตรงสัปดาห์ และ 20 มาจากความแม่น estimate เทียบกับตัวเอง</div>
-    </div>
-  </div>
 
   <div class="chart-frame">
     <ejs-chart
@@ -101,19 +87,23 @@
     height="560"
   >
     <e-columns>
-      <e-column field="personLabel" headerText="คน" width="190">
+      <e-column field="personLabel" headerText="พนักงาน" width="190">
         <ng-template #template let-data>
           <a class="person-link" [routerLink]="['/people', data.id]">{{ data.personLabel }}</a>
         </ng-template>
       </e-column>
-      <e-column field="level" headerText="ระดับ" width="110"></e-column>
-      <e-column field="trackLabel" headerText="สาย" width="120"></e-column>
-      <e-column field="quota" headerText="โควต้า" width="100" textAlign="Right" format="N1"></e-column>
-      <e-column field="index" headerText="ดัชนี" width="100" textAlign="Right" format="N1"></e-column>
-      <e-column field="planLabel" headerText="ปิดตามแผน" width="230"></e-column>
-      <e-column field="weighted" headerText="คะแนนถ่วง" width="120" textAlign="Right" format="N1"></e-column>
-      <e-column field="reworkPct" headerText="Rework %" width="120" textAlign="Right" format="N1"></e-column>
-      <e-column field="sideLabel" headerText="นอกแผน / Spike" width="160"></e-column>
+      <e-column field="levelLabel" headerText="ระดับ" width="110"></e-column>
+      <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
+      <e-column field="quota" headerText="โควต้า" width="90" textAlign="Right" format="N1"></e-column>
+      <e-column field="openCount" headerText="WIP" width="80" textAlign="Right"></e-column>
+      <e-column field="closedCount" headerText="ปิดแล้ว" width="90" textAlign="Right"></e-column>
+      <e-column field="index" headerText="ดัชนี" width="90" textAlign="Right" format="N1"></e-column>
+      <e-column field="planLabel" headerText="ปิดตามแผน" width="200"></e-column>
+      <e-column field="accuracyLabel" headerText="ความแม่น" width="110"></e-column>
+      <e-column field="weighted" headerText="คะแนนถ่วง" width="110" textAlign="Right" format="N1"></e-column>
+      <e-column field="reworkPct" headerText="Rework %" width="100" textAlign="Right" format="N1"></e-column>
+      <e-column field="sideLabel" headerText="นอกแผน / Spike" width="150"></e-column>
+      <e-column field="alertLabel" headerText="แจ้งเตือน" width="140"></e-column>
     </e-columns>
   </ejs-grid>
 </section>

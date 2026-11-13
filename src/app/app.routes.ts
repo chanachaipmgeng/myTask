@@ -15,12 +15,40 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/person-dashboard/person-dashboard').then((m) => m.PersonDashboard),
   },
   {
+    path: 'work',
+    loadComponent: () => import('./pages/work/work-shell').then((m) => m.WorkShell),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'summary' },
+      {
+        path: 'summary',
+        loadComponent: () => import('./pages/work/work-summary').then((m) => m.WorkSummary),
+      },
+      {
+        path: 'timeline',
+        loadComponent: () => import('./pages/work/work-timeline').then((m) => m.WorkTimeline),
+      },
+      {
+        path: 'backlog',
+        loadComponent: () => import('./pages/work/work-backlog').then((m) => m.WorkBacklog),
+      },
+      {
+        path: 'board',
+        loadComponent: () => import('./pages/work/work-board').then((m) => m.WorkBoard),
+      },
+      {
+        path: 'list',
+        loadComponent: () => import('./pages/work/work-list').then((m) => m.WorkList),
+      },
+    ],
+  },
+  {
     path: 'tickets',
     loadComponent: () => import('./pages/tickets/tickets').then((m) => m.TicketsPage),
   },
+  { path: 'pipeline', redirectTo: 'work/board', pathMatch: 'full' },
   {
-    path: 'pipeline',
-    loadComponent: () => import('./pages/pipeline/pipeline').then((m) => m.PipelinePage),
+    path: 'schedule',
+    loadComponent: () => import('./pages/schedule/schedule').then((m) => m.SchedulePage),
   },
   {
     path: 'queue',
@@ -45,5 +73,9 @@ export const routes: Routes = [
   {
     path: 'admin',
     loadComponent: () => import('./pages/admin/admin').then((m) => m.AdminPage),
+  },
+  {
+    path: 'mockup',
+    loadComponent: () => import('./pages/mockup/mockup').then((m) => m.MockupPage),
   },
 ];

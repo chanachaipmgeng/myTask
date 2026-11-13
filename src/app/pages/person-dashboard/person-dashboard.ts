@@ -3,12 +3,19 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import {
+  AccumulationChartModule,
+  AccumulationDataLabelService,
+  AccumulationLegendService,
+  AccumulationTooltipService,
   CategoryService,
   ChartModule,
+  ColumnSeriesService,
   LegendService,
   LineSeriesService,
+  PieSeriesService,
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
+import { GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { map } from 'rxjs';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
@@ -17,8 +24,20 @@ import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-person-dashboard',
-  imports: [ChartModule, ButtonModule, MessageModule],
-  providers: [CategoryService, LineSeriesService, LegendService, TooltipService],
+  imports: [ChartModule, AccumulationChartModule, ButtonModule, MessageModule, GridModule],
+  providers: [
+    CategoryService,
+    LineSeriesService,
+    ColumnSeriesService,
+    LegendService,
+    TooltipService,
+    PieSeriesService,
+    AccumulationLegendService,
+    AccumulationTooltipService,
+    AccumulationDataLabelService,
+    PageService,
+    SortService,
+  ],
   templateUrl: './person-dashboard.html',
 })
 export class PersonDashboard {
@@ -29,11 +48,13 @@ export class PersonDashboard {
     initialValue: this.route.snapshot.paramMap.get('personId') ?? '',
   });
 
+  protected readonly pageSettings = { pageSize: 8 };
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px', color: '#d7e7f5' };
   protected readonly categoryAxis = {
     valueType: 'Category',
     majorGridLines: { width: 0 },
     labelStyle: this.axisFont,
+    labelRotation: -35,
   };
   protected readonly indexAxis = {
     minimum: 0,
@@ -44,10 +65,32 @@ export class PersonDashboard {
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
+  protected readonly mdAxis = {
+    title: 'MD',
+    titleStyle: this.axisFont,
+    labelStyle: this.axisFont,
+    majorTickLines: { width: 0 },
+    lineStyle: { width: 0 },
+  };
+  protected readonly countAxis = {
+    title: 'ครั้ง',
+    titleStyle: this.axisFont,
+    labelStyle: this.axisFont,
+    majorTickLines: { width: 0 },
+    lineStyle: { width: 0 },
+  };
   protected readonly tooltip = { enable: true, shared: true };
   protected readonly legend = { visible: true, position: 'Top', textStyle: this.axisFont };
   protected readonly chartArea = { border: { width: 0 } };
   protected readonly marker = { visible: true, width: 8, height: 8 };
+  protected readonly pieLegend = { visible: true, position: 'Bottom', textStyle: this.axisFont };
+  protected readonly pieTooltip = { enable: true };
+  protected readonly dataLabel = {
+    visible: true,
+    name: 'text',
+    position: 'Outside',
+    font: this.axisFont,
+  };
 
   protected readonly view = computed(() => {
     const person = this.scorecard.roster().find((item) => item.id === this.personId());

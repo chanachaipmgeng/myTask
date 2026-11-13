@@ -1,0 +1,139 @@
+<section class="page flex flex-col gap-4">
+  <div class="page-head">
+    <div>
+      <h2>โหมดจำลองโฟลว์</h2>
+      <p>
+        เดินใบงานตั้งแต่รับงาน ประเมินขนาดตามรูบริก เข้าสปรินต์ เปิดรอบ แจกงาน ดู manpower
+        รับแท็กส่งคืนแบบ mygitplus แล้วคำนวณฟิลด์ให้แดชบอร์ดและคะแนน อ่านข้อมูลในหน่วยความจำเท่านั้น
+        ไม่เขียนฐานข้อมูล และไม่ยิง myProject / mygit จริง
+      </p>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    @if (!active()) {
+      <button ejs-button [isPrimary]="true" type="button" (click)="enter()">เปิดโหมดจำลอง</button>
+    } @else {
+      <button ejs-button [isPrimary]="true" type="button" [disabled]="finished()" (click)="runStep()">
+        ทำขั้นถัดไป
+      </button>
+      <button ejs-button cssClass="e-outline" type="button" (click)="playAll()">เล่นทั้งเรื่อง</button>
+      <button ejs-button cssClass="e-flat" type="button" (click)="exit()">ออกและคืนข้อมูลเดิม</button>
+    }
+  </div>
+
+  @if (active()) {
+    <ejs-message content="กำลังอยู่ในโหมดจำลอง — หน้าอื่นอ่านใบงานชุดนี้เหมือนกัน" severity="Warning" variant="Outlined"></ejs-message>
+  }
+
+  <ejs-message [content]="message()" severity="Info" variant="Outlined"></ejs-message>
+
+  <div class="mock-progress">
+    <div class="mock-progress-bar" [style.width.%]="progress()"></div>
+  </div>
+  <p class="fine">
+    @if (finished()) {
+      จบครบ {{ steps.length }} ขั้นแล้ว
+    } @else if (active()) {
+      ขั้นถัดไป: {{ currentStep().title }} — {{ currentStep().hint }}
+    } @else {
+      ยังไม่เปิดโหมด กดเปิดโหมดจำลองเพื่อเริ่ม
+    }
+  </p>
+
+  <ol class="mock-steps">
+    @for (item of steps; track item.id; let i = $index) {
+      <li [class.is-done]="step() > i" [class.is-current]="active() && step() === i">
+        <span class="mock-step-index">{{ i + 1 }}</span>
+        <span>
+          <strong>{{ item.title }}</strong>
+          <span class="fine">{{ item.hint }}</span>
+        </span>
+      </li>
+    }
+  </ol>
+
+  @if (sprint(); as sp) {
+    <ejs-message
+      [content]="'สปรินต์ ' + sp.name + ' · ' + sp.startOn + ' → ' + sp.endOn"
+      severity="Info"
+      variant="Outlined"
+    ></ejs-message>
+  }
+
+  @if (draftRows().length > 0) {
+    <h3>ผลการประเมินรูบริก</h3>
+    <ejs-grid [dataSource]="draftRows()" [allowPaging]="true" [pageSettings]="pageSettings" height="280">
+      <e-columns>
+        <e-column field="id" headerText="ใบ" width="140"></e-column>
+        <e-column field="title" headerText="เรื่อง" width="200"></e-column>
+        <e-column field="size" headerText="ขนาด" width="80"></e-column>
+        <e-column field="estimateMd" headerText="Est MD" width="90" textAlign="Right" format="N2"></e-column>
+        <e-column field="rubricTotal" headerText="รูบริก" width="90" textAlign="Right"></e-column>
+        <e-column field="late" headerText="แผน" width="90"></e-column>
+        <e-column field="note" headerText="หมายเหตุ" width="180"></e-column>
+      </e-columns>
+    </ejs-grid>
+  }
+
+  @if (capacityRows().length > 0 && step() >= 5) {
+    <h3>แผน manpower</h3>
+    <ejs-grid [dataSource]="capacityRows()" height="220">
+      <e-columns>
+        <e-column field="personLabel" headerText="คน" width="180"></e-column>
+        <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
+        <e-column field="quota" headerText="โควต้า" width="90" textAlign="Right" format="N1"></e-column>
+        <e-column field="openMd" headerText="เปิดอยู่" width="100" textAlign="Right" format="N2"></e-column>
+        <e-column field="freeMd" headerText="ว่าง" width="90" textAlign="Right" format="N2"></e-column>
+        <e-column field="wipLabel" headerText="WIP" width="80"></e-column>
+        <e-column field="status" headerText="สถานะ" width="90"></e-column>
+      </e-columns>
+    </ejs-grid>
+    <div class="flex flex-wrap gap-2">
+      <a routerLink="/queue" class="mock-link">เปิดคิวงานใหม่</a>
+      <a routerLink="/schedule" class="mock-link">เปิดปฏิทินทีม</a>
+    </div>
+  }
+
+  @if (scoreSummary().length > 0 && step() >= 8) {
+    <h3>สรุปคะแนนหลัง settle</h3>
+    <ejs-grid [dataSource]="scoreSummary()" height="280">
+      <e-columns>
+        <e-column field="id" headerText="ใบ" width="140"></e-column>
+        <e-column field="title" headerText="เรื่อง" width="180"></e-column>
+        <e-column field="assignee" headerText="ผู้รับ" width="110"></e-column>
+        <e-column field="size" headerText="ขนาด" width="80"></e-column>
+        <e-column field="estimateMd" headerText="Est" width="80" textAlign="Right" format="N2"></e-column>
+        <e-column field="actualMd" headerText="Actual" width="90" textAlign="Right" format="N2"></e-column>
+        <e-column field="weekOffset" headerText="เลื่อน" width="80" textAlign="Right"></e-column>
+        <e-column field="score" headerText="คะแนน" width="90" textAlign="Right"></e-column>
+        <e-column field="spikeScore" headerText="Spike" width="80" textAlign="Right"></e-column>
+      </e-columns>
+    </ejs-grid>
+
+    <h3>ดัชนีรายคน</h3>
+    <ejs-grid [dataSource]="personIndexes()" height="180">
+      <e-columns>
+        <e-column field="name" headerText="คน" width="140"></e-column>
+        <e-column field="index" headerText="ดัชนี" width="100" textAlign="Right" format="N1"></e-column>
+      </e-columns>
+    </ejs-grid>
+
+    <div class="flex flex-wrap gap-2">
+      <a routerLink="/team" class="mock-link">แดชบอร์ดทีม</a>
+      <a routerLink="/people" class="mock-link">กระดานรายคน</a>
+      <a routerLink="/pipeline" class="mock-link">สถานะงาน</a>
+      <a routerLink="/queue" class="mock-link">คิวงานใหม่</a>
+      <a routerLink="/schedule" class="mock-link">ปฏิทินทีม</a>
+    </div>
+  }
+
+  @if (log().length > 0) {
+    <h3>บันทึกขั้น</h3>
+    <ul class="mock-log">
+      @for (line of log(); track $index) {
+        <li>{{ line }}</li>
+      }
+    </ul>
+  }
+</section>

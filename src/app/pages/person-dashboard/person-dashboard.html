@@ -1,12 +1,15 @@
 <section class="page flex flex-col gap-4">
-  <p><button ejs-button cssClass="e-flat" type="button" (click)="back()">กลับกระดานรายคน</button></p>
+  <p><button ejs-button cssClass="e-flat" type="button" (click)="back()">กลับรายชื่อพนักงาน</button></p>
   @if (!view().found) {
-    <h2>ไม่พบบุคคลนี้</h2>
+    <h2>ไม่พบพนักงานนี้</h2>
   } @else {
     <div class="page-head">
       <div>
         <h2>{{ view().name }} · {{ view().role }}</h2>
-        <p>{{ view().trackLabel }} · {{ view().level }} · โควต้า {{ view().quota }} MD/สัปดาห์ ใช้จัดกำลังคน ไม่เข้าสูตร</p>
+        <p>
+          {{ view().trackLabel }} · {{ view().level }} · โควต้า {{ view().quota }} MD/สัปดาห์ · งานเปิด
+          {{ view().openCount }} · ปิดแล้ว {{ view().closedCount }}
+        </p>
       </div>
     </div>
 
@@ -29,6 +32,7 @@
 
     <ejs-message [content]="view().quarterText" severity="Info" variant="Outlined"></ejs-message>
 
+    <h3>แนวโน้มดัชนีรายเดือน</h3>
     <div class="chart-frame">
       <ejs-chart
         id="self-trend"
@@ -78,5 +82,182 @@
         </div>
       }
     </div>
+
+    <h3>แผน vs จริง (ใบที่ปิด)</h3>
+    @if (view().effortBars.length === 0) {
+      <ejs-message content="ยังไม่มีใบที่ปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
+    } @else {
+      <div class="chart-frame">
+        <ejs-chart
+          id="effort-bars"
+          style="display: block; height: 320px; width: 100%"
+          theme="Tailwind3Dark"
+          [primaryXAxis]="categoryAxis"
+          [primaryYAxis]="mdAxis"
+          [tooltip]="tooltip"
+          [legendSettings]="legend"
+          [chartArea]="chartArea"
+          [enableAnimation]="false"
+        >
+          <e-series-collection>
+            <e-series
+              type="Column"
+              [dataSource]="view().effortBars"
+              xName="label"
+              yName="estimateMd"
+              name="Estimate MD"
+              fill="#7eb6ff"
+              columnWidth="0.4"
+            ></e-series>
+            <e-series
+              type="Column"
+              [dataSource]="view().effortBars"
+              xName="label"
+              yName="actualMd"
+              name="Actual MD"
+              fill="#3ec6e0"
+              columnWidth="0.4"
+            ></e-series>
+          </e-series-collection>
+        </ejs-chart>
+      </div>
+    }
+
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div>
+        <h3>ส่งตรง / เลื่อนสัปดาห์</h3>
+        @if (view().slipShare.length === 0) {
+          <ejs-message content="ยังไม่มีข้อมูล weekOffset" severity="Info" variant="Outlined"></ejs-message>
+        } @else {
+          <div class="chart-frame">
+            <ejs-accumulationchart
+              id="slip-share"
+              style="display: block; height: 300px; width: 100%"
+              theme="Tailwind3Dark"
+              [legendSettings]="pieLegend"
+              [tooltip]="pieTooltip"
+              [enableAnimation]="false"
+            >
+              <e-accumulation-series-collection>
+                <e-accumulation-series
+                  type="Pie"
+                  [dataSource]="view().slipShare"
+                  xName="x"
+                  yName="y"
+                  [dataLabel]="dataLabel"
+                  innerRadius="45%"
+                ></e-accumulation-series>
+              </e-accumulation-series-collection>
+            </ejs-accumulationchart>
+          </div>
+        }
+      </div>
+      <div>
+        <h3>สัดส่วนประเภทงาน</h3>
+        @if (view().categoryShare.length === 0) {
+          <ejs-message content="ยังไม่มีใบปิดสำหรับสัดส่วนประเภท" severity="Info" variant="Outlined"></ejs-message>
+        } @else {
+          <div class="chart-frame">
+            <ejs-accumulationchart
+              id="category-share"
+              style="display: block; height: 300px; width: 100%"
+              theme="Tailwind3Dark"
+              [legendSettings]="pieLegend"
+              [tooltip]="pieTooltip"
+              [enableAnimation]="false"
+            >
+              <e-accumulation-series-collection>
+                <e-accumulation-series
+                  type="Pie"
+                  [dataSource]="view().categoryShare"
+                  xName="x"
+                  yName="y"
+                  [dataLabel]="dataLabel"
+                  innerRadius="45%"
+                ></e-accumulation-series>
+              </e-accumulation-series-collection>
+            </ejs-accumulationchart>
+          </div>
+        }
+      </div>
+    </div>
+
+    <h3>คุณภาพส่งมอบ (รีวิว / reopen)</h3>
+    @if (view().qualityBars.length === 0) {
+      <ejs-message content="ยังไม่มีใบปิดสำหรับคุณภาพส่งมอบ" severity="Info" variant="Outlined"></ejs-message>
+    } @else {
+      <div class="chart-frame">
+        <ejs-chart
+          id="quality-bars"
+          style="display: block; height: 320px; width: 100%"
+          theme="Tailwind3Dark"
+          [primaryXAxis]="categoryAxis"
+          [primaryYAxis]="countAxis"
+          [tooltip]="tooltip"
+          [legendSettings]="legend"
+          [chartArea]="chartArea"
+          [enableAnimation]="false"
+        >
+          <e-series-collection>
+            <e-series
+              type="Column"
+              [dataSource]="view().qualityBars"
+              xName="label"
+              yName="reviewRounds"
+              name="รอบรีวิว"
+              fill="#8764b8"
+              columnWidth="0.4"
+            ></e-series>
+            <e-series
+              type="Column"
+              [dataSource]="view().qualityBars"
+              xName="label"
+              yName="reopenCount"
+              name="Reopen"
+              fill="#e3008c"
+              columnWidth="0.4"
+            ></e-series>
+          </e-series-collection>
+        </ejs-chart>
+      </div>
+    }
+
+    <h3>งานที่กำลังทำ</h3>
+    @if (view().openWork.length === 0) {
+      <ejs-message content="ไม่มีใบเปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
+    } @else {
+      <ejs-grid [dataSource]="view().openWork" [allowPaging]="true" [allowSorting]="true" [pageSettings]="pageSettings" height="280">
+        <e-columns>
+          <e-column field="id" headerText="ใบ" width="120"></e-column>
+          <e-column field="title" headerText="เรื่อง" width="200"></e-column>
+          <e-column field="type" headerText="ประเภท" width="110"></e-column>
+          <e-column field="size" headerText="ขนาด" width="80"></e-column>
+          <e-column field="status" headerText="สถานะ" width="120"></e-column>
+          <e-column field="estimateMd" headerText="Est" width="80" textAlign="Right" format="N2"></e-column>
+          <e-column field="dueOnLabel" headerText="วันส่ง" width="110"></e-column>
+          <e-column field="unplannedLabel" headerText="แผน" width="90"></e-column>
+        </e-columns>
+      </ejs-grid>
+    }
+
+    <h3>งานที่ปิดแล้ว</h3>
+    @if (view().closedWork.length === 0) {
+      <ejs-message content="ยังไม่มีใบปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
+    } @else {
+      <ejs-grid [dataSource]="view().closedWork" [allowPaging]="true" [allowSorting]="true" [pageSettings]="pageSettings" height="320">
+        <e-columns>
+          <e-column field="id" headerText="ใบ" width="120"></e-column>
+          <e-column field="title" headerText="เรื่อง" width="180"></e-column>
+          <e-column field="type" headerText="ประเภท" width="110"></e-column>
+          <e-column field="size" headerText="ขนาด" width="80"></e-column>
+          <e-column field="estimateMd" headerText="Est" width="80" textAlign="Right" format="N2"></e-column>
+          <e-column field="actualMd" headerText="Actual" width="90" textAlign="Right" format="N2"></e-column>
+          <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="110"></e-column>
+          <e-column field="reviewRounds" headerText="รีวิว" width="80" textAlign="Right"></e-column>
+          <e-column field="reopenCount" headerText="Reopen" width="90" textAlign="Right"></e-column>
+          <e-column field="score" headerText="คะแนน" width="90" textAlign="Right"></e-column>
+        </e-columns>
+      </ejs-grid>
+    }
   }
 </section>

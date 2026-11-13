@@ -9,21 +9,24 @@ import {
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
+import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
+import { FilterService, GridModule, PageService, SortService, SearchService } from '@syncfusion/ej2-angular-grids';
+import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
+import { buildPeopleRoster } from '../../core/people-roster';
 import { ScorecardService } from '../../core/scorecard.service';
 import { Track } from '../../core/models';
-import { weeklyQuotas } from '../../core/admin-settings';
 import { INDEX_TARGET } from '../../core/scoring';
 
 type TrackFilter = Track | 'All';
 
 @Component({
   selector: 'app-people-board',
-  imports: [GridModule, ChartModule, DropDownListModule, RouterLink],
+  imports: [GridModule, ChartModule, DropDownListModule, RouterLink, TextBoxModule],
   providers: [
     PageService,
     SortService,
     FilterService,
+    SearchService,
     ColumnSeriesService,
     LineSeriesService,
     CategoryService,
@@ -41,6 +44,7 @@ export class PeopleBoard {
   protected readonly pageSettings = { pageSize: 16 };
   protected readonly filterSettings = { type: 'Menu' };
   protected readonly sortSettings = { columns: [{ field: 'index', direction: 'Descending' }] };
+  protected readonly toolbar = ['Search'];
   protected readonly trackOptions = [
     { text: 'ทั้งหมด', value: 'All' },
     { text: 'R&D', value: 'RD' },
@@ -56,6 +60,7 @@ export class PeopleBoard {
     ];
   });
   protected readonly track = signal<TrackFilter>('All');
+  protected readonly query = signal('');
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px', color: '#d7e7f5' };
   protected readonly primaryXAxis = {
     valueType: 'Category',
@@ -78,9 +83,25 @@ export class PeopleBoard {
   protected readonly chartArea = { border: { width: 0 } };
   protected readonly marker = { visible: true, width: 8, height: 8, fill: '#f0b429' };
 
+  private readonly roster = computed(() =>
+    buildPeopleRoster(this.scorecard.roster(), this.scorecard.tickets(), {
+      weights: trackWeights(),
+      quotas: weeklyQuotas(),
+    }),
+  );
+
   protected readonly rows = computed(() => {
     const track = this.track();
-    return this.scorecard.personRows().filter((row) => track === 'All' || row.track === track);
+    const q = this.query().trim().toLowerCase();
+    return this.roster().filter((row) => {
+      if (track !== 'All' && row.track !== track) {
+        return false;
+      }
+      if (!q) {
+        return true;
+      }
+      return `${row.nickname} ${row.role} ${row.personLabel}`.toLowerCase().includes(q);
+    });
   });
 
   protected setTrack(event: { value?: string | null }): void {
@@ -88,6 +109,10 @@ export class PeopleBoard {
     if (value === 'All' || value === 'RD' || value === 'Implement') {
       this.track.set(value);
     }
+  }
+
+  protected setQuery(event: { value?: string | null }): void {
+    this.query.set(event.value ?? '');
   }
 
   protected openPerson(args: { data?: { id?: string } }): void {

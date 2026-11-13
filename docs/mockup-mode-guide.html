@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>คู่มือโหมดจำลองโฟลว์ — Man-day Scorecard</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm; }
+    :root {
+      --ink: #1a1f26;
+      --muted: #4a5563;
+      --line: #d7dee8;
+      --accent: #0f6cbd;
+      --paper: #fff;
+      --soft: #f4f7fb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Sarabun", "Leelawadee UI", Tahoma, sans-serif;
+      font-size: 11.5pt;
+      line-height: 1.55;
+    }
+    h1, h2, h3 { line-height: 1.25; margin: 0 0 0.45em; }
+    h1 { font-size: 22pt; color: #0b3d66; }
+    h2 {
+      font-size: 14pt;
+      margin-top: 1.4em;
+      padding-bottom: 0.25em;
+      border-bottom: 2px solid var(--accent);
+    }
+    h3 { font-size: 12pt; margin-top: 1em; color: #163a5f; }
+    p { margin: 0 0 0.7em; }
+    .muted { color: var(--muted); }
+    .cover {
+      min-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(160deg, #e8f3fc 0%, #fff 48%, #f7fafc 100%);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      page-break-after: always;
+    }
+    .eyebrow {
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 10pt;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 0.6em;
+    }
+    .meta {
+      margin-top: 1.5rem;
+      padding: 0.9rem 1rem;
+      background: var(--soft);
+      border-left: 4px solid var(--accent);
+    }
+    .meta p { margin: 0.2em 0; }
+    figure {
+      margin: 0.8em 0 1.2em;
+      page-break-inside: avoid;
+    }
+    figure img {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: block;
+    }
+    figcaption {
+      margin-top: 0.4em;
+      font-size: 10pt;
+      color: var(--muted);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.6em 0 1em;
+      font-size: 10.5pt;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 0.45em 0.55em;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--soft); }
+    ol.steps { padding-left: 1.3em; }
+    ol.steps li { margin-bottom: 0.45em; }
+    .note {
+      background: #fff8e8;
+      border: 1px solid #f0d48a;
+      border-radius: 8px;
+      padding: 0.7em 0.9em;
+      margin: 0.8em 0;
+    }
+    .ok {
+      background: #eef8ef;
+      border: 1px solid #b7dfb7;
+      border-radius: 8px;
+      padding: 0.7em 0.9em;
+      margin: 0.8em 0;
+    }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .section { page-break-inside: avoid; }
+    .pagebreak { page-break-before: always; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="eyebrow">Man-day Scorecard</div>
+    <h1>คู่มือโหมดจำลองโฟลว์<br />ใบงาน → คะแนน</h1>
+    <p class="muted">
+      อธิบายการเปิดโหมดจำลองในหน่วยความจำ เดินใบงานตั้งแต่รับงาน ประเมินขนาดตามรูบริก
+      เข้าสปรินต์ เปิดรอบ แจกงาน ดู manpower รับแท็กส่งคืนแบบ mygitplus แล้วคำนวณฟิลด์ให้แดชบอร์ดและคะแนน
+      โดยไม่เขียนฐานข้อมูลและไม่ยิง myProject / mygit จริง
+    </p>
+    <div class="meta">
+      <p><strong>เวอร์ชันเอกสาร:</strong> 2026-11-13</p>
+      <p><strong>หน้าจอ:</strong> <code>http://127.0.0.1:4200/mockup</code></p>
+      <p><strong>เมนู:</strong> ระบบ → โหมดจำลอง</p>
+      <p><strong>แคปจอ:</strong> โฟลเดอร์ <code>docs/mockup-guide-screenshots/</code></p>
+    </div>
+  </section>
+
+  <h2>สารบัญ</h2>
+  <ol class="toc">
+    <li>จุดประสงค์ของโหมดจำลอง</li>
+    <li>เปิดโหมดและเล่นทั้งเรื่อง</li>
+    <li>เก้าขั้นของโฟลว์</li>
+    <li>ผลบนคิว / ปฏิทิน / ไปป์ไลน์</li>
+    <li>แดชบอร์ดรายคนและทีม</li>
+    <li>กติกาคะแนนในเรื่องสั้น</li>
+    <li>ออกจากโหมด</li>
+  </ol>
+
+  <h2>1. จุดประสงค์ของโหมดจำลอง</h2>
+  <p>
+    โหมดนี้เป็นกระบะทรายในเบราว์เซอร์ ใช้คนตัวอย่าง 3 คน (อิสรภาพ, กัณชวีร์, นครินทร์)
+    และใบงานจำลอง 6 ใบ เพื่อให้เห็นทั้งเส้นทางก่อนคะแนนโดยไม่แตะข้อมูลจริง
+  </p>
+  <div class="note">
+    <strong>สำคัญ:</strong> ขณะเปิดโหมด จะมีแถบสีแดงว่า “โหมดจำลอง” และข้อความเตือนว่าข้อมูลอยู่ในหน่วยความจำเท่านั้น
+    การแก้ใบงาน / ซิงก์ / เขียน API จะไม่ถูกส่งออกไปจนกว่าจะกดออกจากโหมด
+  </div>
+
+  <h2>2. เปิดโหมดและเล่นทั้งเรื่อง</h2>
+  <ol>
+    <li>รันเว็บที่ <code>http://127.0.0.1:4200</code></li>
+    <li>เปิดเมนู <strong>ระบบ → โหมดจำลอง</strong> หรือไปที่ <code>/mockup</code></li>
+    <li>กด <strong>เปิดโหมดจำลอง</strong></li>
+    <li>กด <strong>เล่นทั้งเรื่อง</strong> เพื่อรันครบ 9 ขั้นในครั้งเดียว หรือกด <strong>ทำขั้นถัดไป</strong> ทีละขั้น</li>
+  </ol>
+
+  <figure>
+    <img src="mockup-guide-screenshots/02-mockup-opened.png" alt="หน้าโหมดจำลองหลังเปิดโหมด" />
+    <figcaption>ภาพที่ 1 — หน้าโหมดจำลองหลังเปิดโหมด พร้อมปุ่มทำทีละขั้น / เล่นทั้งเรื่อง / ออก</figcaption>
+  </figure>
+
+  <figure class="pagebreak">
+    <img src="mockup-guide-screenshots/03-mockup-complete.png" alt="หน้าโหมดจำลองหลังเล่นครบ 9 ขั้น" />
+    <figcaption>ภาพที่ 2 — หลังเล่นทั้งเรื่อง ระบบขึ้น “จบครบ 9 ขั้นแล้ว” พร้อมตารางรูบริก manpower และคะแนน</figcaption>
+  </figure>
+
+  <h2>3. เก้าขั้นของโฟลว์</h2>
+  <ol class="steps">
+    <li><strong>รับใบงาน</strong> — โหลดใบจำลองเข้าคิว (ยังไม่รวมงานนอกแผน)</li>
+    <li><strong>ประเมินขนาด</strong> — ให้คะแนนรูบริก 4 แกน (ขอบเขต / requirement / ระบบภายนอก / regression) แล้วได้ขนาด XS–XL และ estimate MD</li>
+    <li><strong>นำเข้าสปรินต์</strong> — ใส่ใบเข้า Mock Sprint W45 (2025-11-03 → 2025-11-07) ยังไม่แจกคน</li>
+    <li><strong>เปิดรอบ</strong> — ล็อกวันส่ง และเพิ่ม <code>MOCK-UNPLANNED</code> เป็นงานนอกแผน</li>
+    <li><strong>แจกใบงาน</strong> — รับข้อเสนอจากโควตา manpower; ใบ XL ที่ใส่ไม่ได้จะค้างคิว</li>
+    <li><strong>แผน manpower</strong> — ดูโควตาที่เหลือและลิงก์ไปปฏิทินทีม</li>
+    <li><strong>แท็กส่งคืน</strong> — จำลองแท็ก mygitplus เช่น started / returned / reviewed / reopened / done</li>
+    <li><strong>คำนวณฟิลด์</strong> — คิด <code>actualMd</code> จากชั่วโมง÷6 และ <code>weekOffset</code> จากวันส่งเทียบวันครบกำหนด</li>
+    <li><strong>แดชบอร์ดและคะแนน</strong> — เปิดหน้าทีม รายคน คิว ปฏิทิน ไปป์ไลน์เพื่อวิเคราะห์</li>
+  </ol>
+
+  <h3>เรื่องสั้น 6 ใบ</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>รหัส</th>
+        <th>บทบาทในเรื่อง</th>
+        <th>ผลที่คาด</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>MOCK-ONTIME</td>
+        <td>Feature ส่งตรงสัปดาห์</td>
+        <td>คะแนนใบ 100</td>
+      </tr>
+      <tr>
+        <td>MOCK-SLIP</td>
+        <td>Feature เลื่อน 1 สัปดาห์</td>
+        <td>คะแนนใบ 80</td>
+      </tr>
+      <tr>
+        <td>MOCK-REWORK</td>
+        <td>Bug รีวิวหลายรอบแล้ว reopen</td>
+        <td>คะแนนใบ 80</td>
+      </tr>
+      <tr>
+        <td>MOCK-SPIKE</td>
+        <td>Spike ในกรอบเวลา</td>
+        <td>คะแนนใบ 100 · spike 100</td>
+      </tr>
+      <tr>
+        <td>MOCK-UNPLANNED</td>
+        <td>งานนอกแผนหลังเปิดรอบ</td>
+        <td>คะแนนใบ 100 · ติดธงนอกแผน</td>
+      </tr>
+      <tr>
+        <td>MOCK-XL</td>
+        <td>XL ใส่โควตา Junior ไม่ได้</td>
+        <td>ค้างคิว ไม่มีผู้รับ</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 class="pagebreak">4. ผลบนคิว / ปฏิทิน / ไปป์ไลน์</h2>
+
+  <h3>คิวงานใหม่ — ใบ XL ค้าง</h3>
+  <p>
+    หลังแจกงาน ใบที่มีผู้รับจะหายจากคิว เหลือ <code>MOCK-XL</code> (3 MD) เพราะโควตา Junior ว่างได้แค่ 2 MD หลังกัน 1 MD นอกแผน
+  </p>
+  <figure>
+    <img src="mockup-guide-screenshots/04-queue-mock.png" alt="คิวงานใหม่มี MOCK-XL ค้าง" />
+    <figcaption>ภาพที่ 3 — คิว Implement เหลือ MOCK-XL และข้อความว่าใส่สัปดาห์นี้ไม่ได้</figcaption>
+  </figure>
+
+  <h3>ปฏิทินทีม — แผนคน</h3>
+  <p>
+    แท่งงานวาดจากวันเริ่มจริงถึงวันครบกำหนด ใบที่เลื่อนสัปดาห์จะขึ้นป้าย “หลุด”
+  </p>
+  <figure>
+    <img src="mockup-guide-screenshots/05-schedule-mock.png" alt="ปฏิทินทีมแสดงใบจำลอง" />
+    <figcaption>ภาพที่ 4 — ปฏิทินทีมเดือนพฤศจิกายน 2025 มี MOCK-ONTIME / SLIP / REWORK / SPIKE / UNPLANNED</figcaption>
+  </figure>
+
+  <h3>สถานะงาน — คัมบังและ KPI ไปป์ไลน์</h3>
+  <p>
+    ใบที่ปิดแล้วอยู่ในคอลัมน์ Done ส่วน MOCK-XL อยู่ Backlog ตัวเลข on-time / first-time มาจากฟิลด์ที่ settle คำนวณแล้ว
+  </p>
+  <figure>
+    <img src="mockup-guide-screenshots/08-pipeline-mock.png" alt="ไปป์ไลน์โหมดจำลอง" />
+    <figcaption>ภาพที่ 5 — สถานะงาน: velocity รายคน, ส่งตรงเวลา 80%, first-time 83%, MOCK-XL ใน Backlog</figcaption>
+  </figure>
+
+  <h2 class="pagebreak">5. แดชบอร์ดรายคนและทีม</h2>
+
+  <h3>กระดานรายคน</h3>
+  <p>หลัง settle ดัชนีตัวอย่างในเรื่องสั้นนี้คือ:</p>
+  <table>
+    <thead>
+      <tr><th>คน</th><th>สาย</th><th>ดัชนี</th><th>หมายเหตุ</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>อิสรภาพ</td><td>Implement</td><td>84.0</td><td>มีใบเลื่อนและงานนอกแผน</td></tr>
+      <tr><td>กัณชวีร์</td><td>Implement</td><td>76.5</td><td>มีใบ rework</td></tr>
+      <tr><td>นครินทร์</td><td>R&amp;D</td><td>40.0</td><td>ปิด spike 0.5 MD จากแผน 3 MD</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <img src="mockup-guide-screenshots/06b-people-scores.png" alt="ตารางคะแนนรายคน" />
+    <figcaption>ภาพที่ 6 — ตารางคะแนนรายคน 3 คนในโหมดจำลอง</figcaption>
+  </figure>
+  <figure>
+    <img src="mockup-guide-screenshots/06-people-mock.png" alt="กระดานรายคนพร้อมกราฟ" />
+    <figcaption>ภาพที่ 7 — กระดานรายคนพร้อมกราฟดัชนีและคำอธิบายสูตร</figcaption>
+  </figure>
+
+  <h3>แดชบอร์ดทีม</h3>
+  <p>
+    สรุปใบตัวอย่างในโหมดนี้ควรเป็น <strong>6 ใบ · 6.5 MD</strong>
+    (ใบปิดใช้ actual MD รวม 3.5 และใบ XL ที่ยังเปิดใช้ estimate 3 MD)
+  </p>
+  <figure>
+    <img src="mockup-guide-screenshots/07-team-mock.png" alt="แดชบอร์ดทีมโหมดจำลอง" />
+    <figcaption>ภาพที่ 8 — แดชบอร์ดทีมขณะโหมดจำลอง แสดง 6 ใบ · 6.5 MD และแถบเตือนโหมดจำลอง</figcaption>
+  </figure>
+
+  <h2>6. กติกาคะแนนในเรื่องสั้น</h2>
+  <ul>
+    <li><code>actualMd = ชั่วโมงบนแท็ก done ÷ 6</code> (โฟกัสชั่วโมงต่อ 1 MD)</li>
+    <li><code>weekOffset</code> จาก <code>devDeliveredOn</code> เทียบ <code>firstDueOn</code>: ไม่เกินกำหนด = 0, ภายใน 7 วัน = 1, เกินนั้น = 2</li>
+    <li>คะแนนใบปิดใช้สูตรเดิม: ส่งตรงสัปดาห์ 40 + ความแม่น 0–20 + รีวิว 0–20 + reopen 0–20</li>
+    <li>สูตรคะแนนไม่ถูกแก้ในโหมดจำลอง — โหมดนี้แค่เติมฟิลด์ให้สูตรเดิมอ่านได้</li>
+  </ul>
+  <div class="ok">
+    ตรวจอัตโนมัติด้วย <code>npm run verify</code> จะยืนยันขนาดจากรูบริก, XL ค้างคิว, และคะแนนใบ MOCK-ONTIME / SLIP / REWORK / SPIKE ตามตารางด้านบน
+  </div>
+
+  <h2>7. ออกจากโหมด</h2>
+  <ol>
+    <li>กลับหน้า <code>/mockup</code></li>
+    <li>กด <strong>ออกและคืนข้อมูลเดิม</strong></li>
+    <li>ระบบคืนคนและใบงานจาก snapshot ก่อนเข้าโหมด และปิดแถบ “โหมดจำลอง”</li>
+  </ol>
+  <p class="muted">
+    หากรีเฟรชทั้งหน้าขณะอยู่ในโหมด ข้อมูลจำลองในหน่วยความจำจะหาย และแอปจะโหลด seed/API ใหม่ตามปกติ
+  </p>
+
+  <h2>ไฟล์ที่เกี่ยวข้อง</h2>
+  <table>
+    <thead>
+      <tr><th>ไฟล์</th><th>หน้าที่</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>shared/domain/mock-scenario.ts</code></td><td>รูบริก สปรินต์ แท็ก settle เรื่องสั้น</td></tr>
+      <tr><td><code>src/app/core/mock-session.ts</code></td><td>สเต็ปเปอร์และเล่นทั้งเรื่อง</td></tr>
+      <tr><td><code>src/app/pages/mockup/</code></td><td>หน้า UI โหมดจำลอง</td></tr>
+      <tr><td><code>docs/mockup-guide-screenshots/</code></td><td>แคปจอประกอบคู่มือนี้</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

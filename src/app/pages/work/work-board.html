@@ -1,0 +1,189 @@
+<div class="flex flex-col gap-4">
+  <div class="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="e-card">
+      <div class="e-card-content p-4">
+        <p class="kpi-note">Velocity (Done)</p>
+        @if (report().velocity.length === 0) {
+          <p class="fine">ยังไม่มีใบ Done</p>
+        } @else {
+          @for (row of report().velocity; track row.personId) {
+            <div class="flex justify-between text-sm gap-2">
+              <span>{{ row.name }}</span>
+              <span class="text-cyan">{{ row.points }}</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+    <div class="e-card">
+      <div class="e-card-content p-4">
+        <p class="kpi-note">ส่งตรงเวลา</p>
+        <p class="kpi-value">{{ report().onTimePct }}%</p>
+        <ejs-progressbar
+          type="Linear"
+          width="100%"
+          height="28"
+          [value]="report().onTimePct"
+          [trackThickness]="12"
+          [progressThickness]="12"
+          progressColor="#3ec6e0"
+          trackColor="#1e4566"
+          [showProgressValue]="true"
+          [labelStyle]="barLabel"
+          [animation]="barAnimation"
+        ></ejs-progressbar>
+      </div>
+    </div>
+    <div class="e-card">
+      <div class="e-card-content p-4">
+        <p class="kpi-note">First-time right</p>
+        <p class="kpi-value">{{ report().firstTimePct }}%</p>
+        <ejs-progressbar
+          type="Linear"
+          width="100%"
+          height="28"
+          [value]="report().firstTimePct"
+          [trackThickness]="12"
+          [progressThickness]="12"
+          progressColor="#7ee7f7"
+          trackColor="#1e4566"
+          [showProgressValue]="true"
+          [labelStyle]="barLabel"
+          [animation]="barAnimation"
+        ></ejs-progressbar>
+      </div>
+    </div>
+    <div class="e-card">
+      <div class="e-card-content p-4">
+        <p class="kpi-note">หมวด (story points)</p>
+        @for (row of report().categories; track row.key) {
+          <div class="flex justify-between text-sm gap-2">
+            <span>{{ row.label }}</span>
+            <span>{{ row.points }} · {{ row.pct }}%</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <ejs-kanban
+    id="work-board"
+    cssClass="pipeline-board"
+    keyField="status"
+    height="560px"
+    width="100%"
+    [columns]="columns"
+    [dataSource]="cards()"
+    [cardSettings]="cardSettings"
+    [allowDragAndDrop]="true"
+    [allowColumnDragAndDrop]="false"
+    [showEmptyColumn]="true"
+    (dragStop)="onDragStop($event)"
+    (cardClick)="onCardClick($event)"
+    (dialogOpen)="onDialogOpen($event)"
+  >
+    <ng-template #cardSettingsTemplate let-data>
+      <div class="flex flex-col gap-1" [attr.data-ticket]="data.id">
+        <p class="m-0 text-sm font-bold text-cyan">{{ data.id }}</p>
+        <p class="m-0 text-xs">{{ data.summary }}</p>
+      </div>
+    </ng-template>
+  </ejs-kanban>
+
+  <form class="e-card grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-4" (submit)="$event.preventDefault(); saveFields()">
+    <div class="md:col-span-4">
+      <h3 class="m-0 text-base">รายละเอียดใบ</h3>
+      <p class="fine">
+        @if (selected(); as ticket) {
+          {{ ticket.id }} · {{ ticket.workflowStatus }} · เริ่ม {{ ticket.actualStartOn || '—' }} · Reopen
+          {{ ticket.reopenCount }}
+        } @else {
+          คลิกการ์ดบนบอร์ด
+        }
+      </p>
+    </div>
+    <label class="grid gap-1">
+      <span class="fine">สายงาน</span>
+      <ejs-dropdownlist
+        [dataSource]="disciplineOptions"
+        [fields]="fields"
+        [value]="discipline"
+        [enabled]="!!selected()"
+        (change)="setDiscipline($event)"
+      ></ejs-dropdownlist>
+    </label>
+    <label class="grid gap-1">
+      <span class="fine">หมวด</span>
+      <ejs-dropdownlist
+        [dataSource]="categoryOptions"
+        [fields]="fields"
+        [value]="workCategory"
+        [enabled]="!!selected()"
+        (change)="setCategory($event)"
+      ></ejs-dropdownlist>
+    </label>
+    <label class="grid gap-1">
+      <span class="fine">Story points</span>
+      <ejs-dropdownlist
+        [dataSource]="storyOptions"
+        [fields]="fields"
+        [value]="storyValue"
+        [enabled]="!!selected()"
+        (change)="setStory($event)"
+      ></ejs-dropdownlist>
+    </label>
+    <label class="grid gap-1">
+      <span class="fine">วันส่งครั้งแรก</span>
+      <ejs-datepicker
+        format="dd/MM/yyyy"
+        [value]="due"
+        [enabled]="!!selected() && !dueLocked"
+        (change)="setDue($event)"
+      ></ejs-datepicker>
+    </label>
+    <label class="grid gap-1 md:col-span-2">
+      <span class="fine">ลิงก์ MR</span>
+      <ejs-textbox [value]="mrLink" [enabled]="!!selected()" (change)="setMr($event)"></ejs-textbox>
+    </label>
+    @if (workCategory === 'R&D-PoC') {
+      <label class="grid gap-1">
+        <span class="fine">ผล PoC</span>
+        <ejs-dropdownlist
+          [dataSource]="pocOptions"
+          [fields]="fields"
+          [value]="pocResult"
+          [enabled]="!!selected()"
+          (change)="setPoc($event)"
+        ></ejs-dropdownlist>
+      </label>
+    }
+    @if (bugCategory()) {
+      <label class="grid gap-1">
+        <span class="fine">สาเหตุ Bug</span>
+        <ejs-dropdownlist
+          [dataSource]="causeOptions"
+          [fields]="fields"
+          [value]="bugCause"
+          [enabled]="!!selected()"
+          (change)="setCause($event)"
+        ></ejs-dropdownlist>
+      </label>
+    }
+    <div class="flex items-end">
+      <button ejs-button cssClass="e-primary" type="submit" [disabled]="!selected()">บันทึกฟิลด์</button>
+    </div>
+  </form>
+</div>
+
+<ejs-dialog
+  #blockDialog
+  header="ยังเปลี่ยนสถานะไม่ได้"
+  width="440px"
+  [visible]="false"
+  [isModal]="true"
+  [showCloseIcon]="true"
+>
+  <ng-template #content>
+    <p class="m-0">{{ blockMessage() }}</p>
+  </ng-template>
+</ejs-dialog>

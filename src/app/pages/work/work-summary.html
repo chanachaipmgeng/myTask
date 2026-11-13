@@ -1,0 +1,102 @@
+<div class="flex flex-col gap-4">
+  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    @for (card of view().cards; track card.id) {
+      <div class="e-card">
+        <div class="e-card-content p-4">
+          <p class="kpi-note">{{ card.label }}</p>
+          <p class="kpi-value">{{ card.value }}</p>
+          <p class="fine">{{ card.hint }}</p>
+        </div>
+      </div>
+    }
+  </div>
+
+  <ejs-dashboardlayout
+    [columns]="4"
+    [cellSpacing]="cellSpacing"
+    [allowDragging]="false"
+    [allowResizing]="false"
+  >
+    <div id="work-status" class="e-panel" data-row="0" data-col="0" data-sizex="2" data-sizey="2">
+      <div class="e-panel-container">
+        <div class="e-panel-header">สัดส่วนสถานะ</div>
+        <div class="e-panel-content">
+          <ejs-accumulationchart
+            style="display: block; height: 240px; width: 100%"
+            theme="Tailwind3Dark"
+            [legendSettings]="legend"
+            [tooltip]="tooltip"
+            [enableAnimation]="false"
+            [enableSmartLabels]="true"
+          >
+            <e-accumulation-series-collection>
+              <e-accumulation-series
+                type="Pie"
+                [dataSource]="view().statusShare"
+                xName="x"
+                yName="y"
+                innerRadius="55%"
+                [dataLabel]="statusLabel"
+                [palettes]="palette"
+              ></e-accumulation-series>
+            </e-accumulation-series-collection>
+          </ejs-accumulationchart>
+        </div>
+      </div>
+    </div>
+    <div id="work-track" class="e-panel" data-row="0" data-col="2" data-sizex="2" data-sizey="2">
+      <div class="e-panel-container">
+        <div class="e-panel-header">สัดส่วนสาย</div>
+        <div class="e-panel-content">
+          <ejs-accumulationchart
+            style="display: block; height: 240px; width: 100%"
+            theme="Tailwind3Dark"
+            [legendSettings]="legend"
+            [tooltip]="tooltip"
+            [enableAnimation]="false"
+            [enableSmartLabels]="true"
+          >
+            <e-accumulation-series-collection>
+              <e-accumulation-series
+                type="Pie"
+                [dataSource]="view().trackShare"
+                xName="x"
+                yName="y"
+                innerRadius="52%"
+                [dataLabel]="statusLabel"
+                [palettes]="palette"
+              ></e-accumulation-series>
+            </e-accumulation-series-collection>
+          </ejs-accumulationchart>
+        </div>
+      </div>
+    </div>
+    <div id="work-wip" class="e-panel" data-row="2" data-col="0" data-sizex="4" data-sizey="2">
+      <div class="e-panel-container">
+        <div class="e-panel-header">WIP ต่อคน (MD ประมาณ)</div>
+        <div class="e-panel-content">
+          <ejs-chart
+            style="display: block; height: 260px; width: 100%"
+            theme="Tailwind3Dark"
+            [primaryXAxis]="categoryAxis"
+            [primaryYAxis]="valueAxis"
+            [tooltip]="tooltip"
+            [legendSettings]="{ visible: false }"
+            [chartArea]="chartArea"
+            [enableAnimation]="false"
+          >
+            <e-series-collection>
+              <e-series
+                type="Column"
+                [dataSource]="view().wipBars"
+                xName="nickname"
+                yName="openMd"
+                name="WIP MD"
+              ></e-series>
+            </e-series-collection>
+          </ejs-chart>
+        </div>
+      </div>
+    </div>
+  </ejs-dashboardlayout>
+</div>

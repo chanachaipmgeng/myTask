@@ -1,0 +1,39 @@
+<section class="page flex flex-col gap-4">
+  <div class="page-head">
+    <div>
+      <h2>งาน</h2>
+      <p>สลับมุมมอง Summary · Timeline · Backlog · Board · List จากใบงานในระบบ — ไม่เปลี่ยนสูตรคะแนน</p>
+    </div>
+    <div class="flex flex-wrap gap-3 items-end">
+      <label class="filter">
+        <span>สายงาน</span>
+        <ejs-dropdownlist
+          [dataSource]="trackOptions"
+          [fields]="fields"
+          [value]="filter.track()"
+          (change)="setTrack($event)"
+          width="160px"
+        ></ejs-dropdownlist>
+      </label>
+      <label class="filter">
+        <span>ค้นหา</span>
+        <ejs-textbox placeholder="รหัสหรือชื่อใบ" (change)="setQuery($event)" width="220px"></ejs-textbox>
+      </label>
+    </div>
+  </div>
+
+  <ejs-tab
+    cssClass="work-hub-tabs"
+    heightAdjustMode="Auto"
+    [selectedItem]="selectedTab()"
+    (selected)="onTabSelected($event)"
+  >
+    <e-tabitems>
+      @for (item of tabItems; track item.header.text) {
+        <e-tabitem [header]="item.header"></e-tabitem>
+      }
+    </e-tabitems>
+  </ejs-tab>
+
+  <router-outlet />
+</section>

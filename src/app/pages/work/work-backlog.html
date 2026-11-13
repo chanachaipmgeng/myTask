@@ -1,0 +1,24 @@
+<div class="flex flex-col gap-3">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <p class="fine m-0">ใบใน Backlog หรือยังไม่มีผู้รับ · สำหรับจัดคิวเต็มรูปแบบไปที่คิวงานใหม่</p>
+    <a ejs-button cssClass="e-outline" routerLink="/queue">เปิดคิวงานใหม่</a>
+  </div>
+  <ejs-grid
+    [dataSource]="rows()"
+    [allowPaging]="true"
+    [allowSorting]="true"
+    [allowFiltering]="true"
+    [pageSettings]="pageSettings"
+  >
+    <e-columns>
+      <e-column field="id" headerText="รหัส" width="120"></e-column>
+      <e-column field="title" headerText="ชื่องาน" width="280"></e-column>
+      <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
+      <e-column field="type" headerText="ประเภท" width="130"></e-column>
+      <e-column field="size" headerText="ขนาด" width="80"></e-column>
+      <e-column field="estimateMd" headerText="Estimate MD" width="110"></e-column>
+      <e-column field="assignee" headerText="ผู้รับ" width="140"></e-column>
+      <e-column field="status" headerText="สถานะ" width="120"></e-column>
+    </e-columns>
+  </ejs-grid>
+</div>

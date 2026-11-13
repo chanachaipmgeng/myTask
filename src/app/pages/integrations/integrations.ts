@@ -9,6 +9,26 @@ import { canEditAdmin } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { WORKFLOW_STATUSES } from '../../core/models';
 
+type CustomFieldKey =
+  | 'size'
+  | 'track'
+  | 'type'
+  | 'variance'
+  | 'unplanned'
+  | 'storyPoints'
+  | 'discipline'
+  | 'workCategory'
+  | 'reviewRounds'
+  | 'blocker'
+  | 'dodPassed'
+  | 'inTimeBox'
+  | 'childTicketsSized'
+  | 'mrLink'
+  | 'bugCause'
+  | 'pocResult'
+  | 'firstDueOn'
+  | 'weekOffset';
+
 @Component({
   selector: 'app-integrations',
   imports: [
@@ -41,10 +61,46 @@ export class IntegrationsPage {
   protected hoursPerMd = 6;
   protected statusMapText = '';
   protected typeMapText = '';
-  protected customSize = '';
-  protected customTrack = '';
-  protected customType = '';
-  protected customVariance = '';
+  protected customFields: Record<CustomFieldKey, string> = {
+    size: '',
+    track: '',
+    type: '',
+    variance: '',
+    unplanned: '',
+    storyPoints: '',
+    discipline: '',
+    workCategory: '',
+    reviewRounds: '',
+    blocker: '',
+    dodPassed: '',
+    inTimeBox: '',
+    childTicketsSized: '',
+    mrLink: '',
+    bugCause: '',
+    pocResult: '',
+    firstDueOn: '',
+    weekOffset: '',
+  };
+  protected readonly customFieldRows: { key: CustomFieldKey; label: string; hint: string }[] = [
+    { key: 'size', label: 'Size', hint: 'XS S M L XL' },
+    { key: 'track', label: 'Track', hint: 'Implement / RD' },
+    { key: 'type', label: 'Type', hint: 'Feature / Bug / Spike …' },
+    { key: 'variance', label: 'Variance', hint: 'NONE REQ BLK ENV LEG' },
+    { key: 'unplanned', label: 'Unplanned', hint: 'boolean' },
+    { key: 'storyPoints', label: 'Story points', hint: '1 2 3 5 8 13' },
+    { key: 'discipline', label: 'Discipline', hint: 'FE BE Full-Stack …' },
+    { key: 'workCategory', label: 'Work category', hint: 'Feature / BugInternal …' },
+    { key: 'reviewRounds', label: 'Review rounds', hint: 'integer ≥ 0' },
+    { key: 'blocker', label: 'Blocker', hint: 'boolean' },
+    { key: 'dodPassed', label: 'DoD passed', hint: 'boolean' },
+    { key: 'inTimeBox', label: 'Spike in time-box', hint: 'boolean' },
+    { key: 'childTicketsSized', label: 'Children sized', hint: 'boolean' },
+    { key: 'mrLink', label: 'MR link', hint: 'URL' },
+    { key: 'bugCause', label: 'Bug cause', hint: 'Logic UI API …' },
+    { key: 'pocResult', label: 'PoC result', hint: 'Adopted / Dropped …' },
+    { key: 'firstDueOn', label: 'First due date', hint: 'ถ้าไม่ใช้ dueDate มาตรฐาน' },
+    { key: 'weekOffset', label: 'Week offset', hint: '0 1 2+ ถ้าคำนวณไม่ได้' },
+  ];
   protected mapPersonId = '';
   protected mapOpUserId: number | null = null;
 
@@ -67,10 +123,9 @@ export class IntegrationsPage {
       this.statusMapText = JSON.stringify(info.mapping['statusMap'] ?? {}, null, 2);
       this.typeMapText = JSON.stringify(info.mapping['typeMap'] ?? {}, null, 2);
       const custom = (info.mapping['customFields'] ?? {}) as Record<string, string>;
-      this.customSize = custom['size'] ?? '';
-      this.customTrack = custom['track'] ?? '';
-      this.customType = custom['type'] ?? '';
-      this.customVariance = custom['variance'] ?? '';
+      for (const row of this.customFieldRows) {
+        this.customFields[row.key] = custom[row.key] ?? '';
+      }
       this.message.set(
         info.configured
           ? `เชื่อมต่อได้ · writeback ${info.writeback ? 'เปิด' : 'ปิด'}`
@@ -114,16 +169,17 @@ export class IntegrationsPage {
         return;
       }
       const current = this.data()?.mapping ?? {};
+      const customFields = { ...this.customFields };
+      for (const key of Object.keys(customFields) as CustomFieldKey[]) {
+        customFields[key] = customFields[key].trim();
+      }
       const mapping = {
         ...current,
         statusMap,
         typeMap,
         customFields: {
           ...((current['customFields'] as Record<string, string> | undefined) ?? {}),
-          size: this.customSize.trim(),
-          track: this.customTrack.trim(),
-          type: this.customType.trim(),
-          variance: this.customVariance.trim(),
+          ...customFields,
         },
       };
       const result = await this.api.saveOpenProject({

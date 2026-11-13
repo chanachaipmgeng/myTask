@@ -1,11 +1,21 @@
 import { SIZE_STANDARD_MD } from '../../../../shared/domain/scoring';
 import {
+  BUG_CAUSES,
+  BugCause,
+  DISCIPLINES,
+  Discipline,
+  POC_RESULTS,
+  PocResult,
+  STORY_POINTS,
   Size,
+  StoryPoint,
   Ticket,
   TicketType,
   Track,
   VarianceCode,
+  WORK_CATEGORIES,
   WORKFLOW_STATUSES,
+  WorkCategory,
   WorkflowStatus,
 } from '../../../../shared/domain/models';
 
@@ -30,6 +40,18 @@ export interface OpenProjectMapping {
     unplanned: string;
     storyPoints: string;
     discipline: string;
+    workCategory: string;
+    reviewRounds: string;
+    blocker: string;
+    dodPassed: string;
+    inTimeBox: string;
+    childTicketsSized: string;
+    mrLink: string;
+    bugCause: string;
+    pocResult: string;
+    /** Optional override when dueDate is not the first promised date. */
+    firstDueOn: string;
+    weekOffset: string;
   };
   /** Count Done -> not-Done transitions from activities. One request per changed work package. */
   countReopens: boolean;
@@ -71,7 +93,26 @@ export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
   defaultType: 'Feature',
   projectTrack: {},
   defaultTrack: 'Implement',
-  customFields: { size: '', track: '', type: '', variance: '', unplanned: '', storyPoints: '', discipline: '' },
+  customFields: {
+    size: '',
+    track: '',
+    type: '',
+    variance: '',
+    unplanned: '',
+    storyPoints: '',
+    discipline: '',
+    workCategory: '',
+    reviewRounds: '',
+    blocker: '',
+    dodPassed: '',
+    inTimeBox: '',
+    childTicketsSized: '',
+    mrLink: '',
+    bugCause: '',
+    pocResult: '',
+    firstDueOn: '',
+    weekOffset: '',
+  },
   countReopens: true,
 };
 
@@ -135,6 +176,10 @@ export const OPENPROJECT_OWNED_FIELDS = [
   'opProject',
   'opId',
   'source',
+  'storyPoints',
+  'discipline',
+  'workCategory',
+  'actualStartOn',
 ] as const;
 
 /** ISO 8601 duration (PT8H, P1DT2H30M, PT0.5H) -> hours. OpenProject uses P1D = 24h. */
@@ -215,13 +260,28 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   const type = asType(customValue(wp, cf.type)) ?? lookup(mapping.typeMap, typeName) ?? mapping.defaultType;
   const variance = asVariance(customValue(wp, cf.variance));
   const unplanned = asBool(customValue(wp, cf.unplanned));
+  const storyPoints = asStoryPoint(customValue(wp, cf.storyPoints));
+  const discipline = asDiscipline(customValue(wp, cf.discipline));
+  const workCategory = asWorkCategory(customValue(wp, cf.workCategory));
+  const reviewRounds = asNonNegInt(customValue(wp, cf.reviewRounds));
+  const blocker = asBool(customValue(wp, cf.blocker));
+  const dodPassed = asBool(customValue(wp, cf.dodPassed));
+  const inTimeBox = asBool(customValue(wp, cf.inTimeBox));
+  const childTicketsSized = asBool(customValue(wp, cf.childTicketsSized));
+  const mrLink = customValue(wp, cf.mrLink)?.trim() || null;
+  const bugCause = asBugCause(customValue(wp, cf.bugCause));
+  const pocResult = asPocResult(customValue(wp, cf.pocResult));
+  const weekOffsetCf = asNonNegInt(customValue(wp, cf.weekOffset));
   const category = linkTitle(links['category']);
 
   const dueOn = wp.dueDate ?? null;
-  const firstDueOn = ctx.existing?.firstDueOn ?? dueOn;
+  const firstDueOverride = dateOnly(customValue(wp, cf.firstDueOn) ?? undefined);
+  const firstDueOn = ctx.existing?.firstDueOn ?? firstDueOverride ?? dueOn;
   const closedOn = closed ? (closedOnFromActivities(ctx.activities, mapping) ?? dateOnly(wp.updatedAt)) : null;
   const reopenCount =
     ctx.activities && mapping.countReopens ? countReopens(ctx.activities, mapping) : (ctx.existing?.reopenCount ?? 0);
+  const computedWeekOffset = closed ? weekOffset(firstDueOn, closedOn) : 0;
+  const actualStartOn = dateOnly(wp.startDate ?? undefined);
 
   const base: Ticket = {
     id: ticketIdFor(wp.id),
@@ -231,15 +291,15 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     size,
     estimateMd,
     actualMd,
-    weekOffset: closed ? weekOffset(firstDueOn, closedOn) : 0,
-    reviewRounds: 0,
-    blocker: false,
+    weekOffset: weekOffsetCf ?? computedWeekOffset,
+    reviewRounds: reviewRounds ?? 0,
+    blocker: blocker ?? false,
     reopenCount,
     varianceCode: variance ?? 'NONE',
     closed,
-    dodPassed: closed,
-    inTimeBox: false,
-    childTicketsSized: false,
+    dodPassed: dodPassed ?? closed,
+    inTimeBox: inTimeBox ?? false,
+    childTicketsSized: childTicketsSized ?? false,
     unplanned: unplanned ?? false,
     assigneeId,
     closedOn,
@@ -251,6 +311,13 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     title: wp.subject ?? '',
     dueOn,
     firstDueOn,
+    actualStartOn,
+    storyPoints: storyPoints ?? undefined,
+    discipline: discipline ?? undefined,
+    workCategory: workCategory ?? undefined,
+    mrLink: mrLink ?? undefined,
+    bugCause: bugCause ?? undefined,
+    pocResult: pocResult ?? undefined,
   };
   if (workflowStatus) {
     base.workflowStatus = workflowStatus;
@@ -259,7 +326,7 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   if (!ctx.existing) {
     return base;
   }
-  // Keep fields edited in the scorecard (review rounds, DoD, notes, MR link...). Overwrite the OpenProject-owned ones.
+  // Keep fields edited in the scorecard unless a mapped custom field supplies a value.
   const merged: Ticket = { ...ctx.existing };
   const target = merged as unknown as Record<string, unknown>;
   const source = base as unknown as Record<string, unknown>;
@@ -276,6 +343,33 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   }
   if (unplanned !== null) {
     merged.unplanned = unplanned;
+  }
+  if (reviewRounds !== null) {
+    merged.reviewRounds = reviewRounds;
+  }
+  if (blocker !== null) {
+    merged.blocker = blocker;
+  }
+  if (dodPassed !== null) {
+    merged.dodPassed = dodPassed;
+  }
+  if (inTimeBox !== null) {
+    merged.inTimeBox = inTimeBox;
+  }
+  if (childTicketsSized !== null) {
+    merged.childTicketsSized = childTicketsSized;
+  }
+  if (mrLink) {
+    merged.mrLink = mrLink;
+  }
+  if (bugCause) {
+    merged.bugCause = bugCause;
+  }
+  if (pocResult) {
+    merged.pocResult = pocResult;
+  }
+  if (weekOffsetCf !== null) {
+    merged.weekOffset = weekOffsetCf;
   }
   return merged;
 }
@@ -447,6 +541,62 @@ function asBool(value: string | null): boolean | null {
     return false;
   }
   return null;
+}
+
+function asNonNegInt(value: string | null): number | null {
+  if (value == null || value === '') {
+    return null;
+  }
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) {
+    return null;
+  }
+  return Math.round(n);
+}
+
+function asStoryPoint(value: string | null): StoryPoint | null {
+  const n = asNonNegInt(value);
+  return n !== null && (STORY_POINTS as readonly number[]).includes(n) ? (n as StoryPoint) : null;
+}
+
+function asDiscipline(value: string | null): Discipline | null {
+  const v = value?.trim();
+  if (!v) {
+    return null;
+  }
+  const hit = (DISCIPLINES as readonly string[]).find((d) => d.toLowerCase() === v.toLowerCase());
+  return (hit as Discipline | undefined) ?? null;
+}
+
+function asWorkCategory(value: string | null): WorkCategory | null {
+  const v = value?.trim();
+  if (!v) {
+    return null;
+  }
+  const hit = (WORK_CATEGORIES as readonly string[]).find((c) => c.toLowerCase() === v.toLowerCase());
+  return (hit as WorkCategory | undefined) ?? null;
+}
+
+function asBugCause(value: string | null): BugCause | null {
+  const v = value?.trim();
+  if (!v) {
+    return null;
+  }
+  const hit = (BUG_CAUSES as readonly string[]).find((c) => c.toLowerCase() === v.toLowerCase());
+  return (hit as BugCause | undefined) ?? null;
+}
+
+function asPocResult(value: string | null): PocResult | null {
+  const v = value?.trim();
+  if (!v) {
+    return null;
+  }
+  const lower = v.toLowerCase();
+  if (lower === 'alternative' || lower === 'alternative chosen') {
+    return 'Alternative Chosen';
+  }
+  const hit = (POC_RESULTS as readonly string[]).find((c) => c.toLowerCase() === lower);
+  return (hit as PocResult | undefined) ?? null;
 }
 
 function round2(value: number): number {

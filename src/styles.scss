@@ -214,6 +214,40 @@ button,
   display: block;
 }
 
+.schedule-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: #0f6cbd;
+}
+
+.schedule-swatch.is-slipped {
+  background: #9a3412;
+  box-shadow: inset 3px 0 0 #f0b429;
+}
+
+.team-schedule .e-appointment.ticket-slipped {
+  background-color: #9a3412 !important;
+  color: #fff7ed !important;
+  border-inline-start: 3px solid #f0b429;
+}
+
+.schedule-tip {
+  display: grid;
+  gap: 4px;
+  max-width: 280px;
+  font-family: Sarabun, Tahoma, sans-serif;
+}
+
+.schedule-tip-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.schedule-tip p {
+  margin: 0;
+}
+
 @media (min-width: 801px) {
   #app-nav.e-sidebar,
   #app-nav .e-sidebar {

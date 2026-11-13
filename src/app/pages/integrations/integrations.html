@@ -66,12 +66,18 @@
   ></ejs-textarea>
 
   <h3>Custom fields</h3>
-  <p class="fine">ใส่ชื่อ property เช่น customField12 ว่าง = ไม่ใช้</p>
+  <p class="fine">ใส่ชื่อ property เช่น customField12 · ว่าง = ไม่ใช้ · แมปจากฟิลด์ myProject ที่แนะนำในคู่มือ</p>
   <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-    <label class="field"><span>Size</span><ejs-textbox [(value)]="customSize" [enabled]="canEdit()"></ejs-textbox></label>
-    <label class="field"><span>Track</span><ejs-textbox [(value)]="customTrack" [enabled]="canEdit()"></ejs-textbox></label>
-    <label class="field"><span>Type</span><ejs-textbox [(value)]="customType" [enabled]="canEdit()"></ejs-textbox></label>
-    <label class="field"><span>Variance</span><ejs-textbox [(value)]="customVariance" [enabled]="canEdit()"></ejs-textbox></label>
+    @for (row of customFieldRows; track row.key) {
+      <label class="field">
+        <span>{{ row.label }}</span>
+        <ejs-textbox
+          [(value)]="customFields[row.key]"
+          [enabled]="canEdit()"
+          [placeholder]="row.hint"
+        ></ejs-textbox>
+      </label>
+    }
   </div>
 
   @if (canEdit()) {

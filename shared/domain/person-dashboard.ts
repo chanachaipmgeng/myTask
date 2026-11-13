@@ -1,11 +1,56 @@
 import { KpiExplanation } from './kpi-meaning';
-import { Person, Ticket } from './models';
-import { INDEX_TARGET, TrackWeights, WEEKLY_QUOTA, formatPercent, scorePerson } from './scoring';
+import { Person, Ticket, WorkCategory } from './models';
+import { CATEGORY_LABELS, workflowStatusOf } from './workflow';
+import {
+  INDEX_TARGET,
+  TrackWeights,
+  WEEKLY_QUOTA,
+  formatMd,
+  formatPercent,
+  scorePerson,
+  scoreTicket,
+} from './scoring';
 
 export interface SelfTrendPoint {
   month: string;
   index: number;
   target: number;
+}
+
+export interface EffortBar {
+  id: string;
+  label: string;
+  estimateMd: number;
+  actualMd: number;
+}
+
+export interface SharePoint {
+  x: string;
+  y: number;
+  text: string;
+}
+
+export interface QualityBar {
+  id: string;
+  label: string;
+  reviewRounds: number;
+  reopenCount: number;
+}
+
+export interface PersonWorkRow {
+  id: string;
+  title: string;
+  type: string;
+  size: string;
+  status: string;
+  estimateMd: number;
+  actualMd: number;
+  weekOffsetLabel: string;
+  reviewRounds: number;
+  reopenCount: number;
+  score: number | null;
+  dueOnLabel: string;
+  unplannedLabel: string;
 }
 
 export interface PersonDashboardView {
@@ -25,6 +70,14 @@ export interface PersonDashboardView {
   quarterText: string;
   trend: SelfTrendPoint[];
   kpis: KpiExplanation[];
+  effortBars: EffortBar[];
+  slipShare: SharePoint[];
+  categoryShare: SharePoint[];
+  qualityBars: QualityBar[];
+  openWork: PersonWorkRow[];
+  closedWork: PersonWorkRow[];
+  openCount: number;
+  closedCount: number;
 }
 
 const MONTH_LABELS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -45,6 +98,9 @@ export function personDashboard(
   const score = scorePerson(person, tickets, options?.weights);
   const research = person.track === 'RD';
   const indexLabel = formatPercent(score.developmentIndex);
+  const own = tickets.filter((ticket) => ticket.assigneeId === person.id);
+  const closed = own.filter((ticket) => ticket.closed);
+  const open = own.filter((ticket) => !ticket.closed);
   return {
     found: true,
     id: person.id,
@@ -64,6 +120,14 @@ export function personDashboard(
     quarterText: quarterText(person, tickets, options?.weights),
     trend: selfTrend(person, tickets, options?.weights),
     kpis: research ? researchKpis(score) : implementKpis(score),
+    effortBars: effortBars(closed),
+    slipShare: slipShare(closed),
+    categoryShare: categoryShare(closed),
+    qualityBars: qualityBars(closed),
+    openWork: open.map(toWorkRow),
+    closedWork: closed.map(toWorkRow),
+    openCount: open.length,
+    closedCount: closed.length,
   };
 }
 
@@ -85,7 +149,108 @@ function emptyView(): PersonDashboardView {
     quarterText: '',
     trend: [],
     kpis: [],
+    effortBars: [],
+    slipShare: [],
+    categoryShare: [],
+    qualityBars: [],
+    openWork: [],
+    closedWork: [],
+    openCount: 0,
+    closedCount: 0,
   };
+}
+
+function effortBars(closed: readonly Ticket[]): EffortBar[] {
+  return closed.slice(0, 12).map((ticket) => ({
+    id: ticket.id,
+    label: ticket.id,
+    estimateMd: ticket.estimateMd,
+    actualMd: ticket.actualMd,
+  }));
+}
+
+function slipShare(closed: readonly Ticket[]): SharePoint[] {
+  let onTime = 0;
+  let slip1 = 0;
+  let slip2 = 0;
+  for (const ticket of closed) {
+    if (ticket.weekOffset <= 0) {
+      onTime += 1;
+    } else if (ticket.weekOffset === 1) {
+      slip1 += 1;
+    } else {
+      slip2 += 1;
+    }
+  }
+  return [
+    { x: 'ตรงสัปดาห์', y: onTime, text: String(onTime) },
+    { x: 'เลื่อน 1', y: slip1, text: String(slip1) },
+    { x: 'เลื่อน 2+', y: slip2, text: String(slip2) },
+  ].filter((row) => row.y > 0);
+}
+
+function categoryShare(closed: readonly Ticket[]): SharePoint[] {
+  const counts = new Map<string, number>();
+  for (const ticket of closed) {
+    const key =
+      ticket.workCategory && ticket.workCategory in CATEGORY_LABELS
+        ? CATEGORY_LABELS[ticket.workCategory as WorkCategory]
+        : ticket.type;
+    const weight = ticket.storyPoints ?? (ticket.actualMd || ticket.estimateMd || 1);
+    counts.set(key, (counts.get(key) ?? 0) + weight);
+  }
+  return [...counts.entries()]
+    .map(([x, y]) => ({ x, y: round1(y), text: `${x} ${formatMd(y)}` }))
+    .sort((left, right) => right.y - left.y || left.x.localeCompare(right.x, 'th'));
+}
+
+function qualityBars(closed: readonly Ticket[]): QualityBar[] {
+  return closed.slice(0, 12).map((ticket) => ({
+    id: ticket.id,
+    label: ticket.id,
+    reviewRounds: ticket.reviewRounds,
+    reopenCount: ticket.reopenCount,
+  }));
+}
+
+function toWorkRow(ticket: Ticket): PersonWorkRow {
+  const scored = scoreTicket(ticket);
+  return {
+    id: ticket.id,
+    title: ticket.title?.trim() || ticket.module,
+    type: ticket.type,
+    size: ticket.size,
+    status: workflowStatusOf(ticket),
+    estimateMd: ticket.estimateMd,
+    actualMd: ticket.actualMd,
+    weekOffsetLabel: weekOffsetLabel(ticket.weekOffset),
+    reviewRounds: ticket.reviewRounds,
+    reopenCount: ticket.reopenCount,
+    score: scored.total,
+    dueOnLabel: formatDate(ticket.dueOn ?? ticket.firstDueOn ?? null),
+    unplannedLabel: ticket.unplanned ? 'นอกแผน' : 'ในแผน',
+  };
+}
+
+function weekOffsetLabel(offset: number): string {
+  if (offset <= 0) {
+    return 'ตรงสัปดาห์';
+  }
+  if (offset === 1) {
+    return 'เลื่อน 1';
+  }
+  return 'เลื่อน 2+';
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) {
+    return '—';
+  }
+  const [year, month, day] = iso.split('-');
+  if (!year || !month || !day) {
+    return iso;
+  }
+  return `${day}/${month}/${year}`;
 }
 
 function selfTrend(person: Person, tickets: readonly Ticket[], weights?: TrackWeights): SelfTrendPoint[] {

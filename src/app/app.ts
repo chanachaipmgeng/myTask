@@ -28,6 +28,7 @@ export class App implements AfterViewInit {
   protected readonly narrow = signal(false);
   protected readonly navOpen = signal(true);
   protected readonly alerts = this.scorecard.alerts;
+  protected readonly mockMode = this.scorecard.mockMode;
   protected readonly toastPosition = { X: 'Right', Y: 'Top' };
   protected readonly navFields = {
     dataSource: navGroups as object[],
@@ -115,8 +116,8 @@ const navGroups: NavGroup[] = [
     expanded: true,
     children: [
       { id: 'team', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
-      { id: 'people', text: 'กระดานรายคน', iconCss: 'e-icons e-people', route: '/people', exact: true },
-      { id: 'person-itsara', text: 'รายคน · อิสรภาพ', iconCss: 'e-icons e-user', route: '/people/itsara' },
+      { id: 'people', text: 'รายชื่อพนักงาน', iconCss: 'e-icons e-people', route: '/people', exact: true },
+      { id: 'person-itsara', text: 'พนักงาน · อิสรภาพ', iconCss: 'e-icons e-user', route: '/people/itsara' },
     ],
   },
   {
@@ -124,8 +125,9 @@ const navGroups: NavGroup[] = [
     text: 'งาน',
     expanded: true,
     children: [
+      { id: 'work-hub', text: 'งาน', iconCss: 'e-icons e-timeline-work-week', route: '/work' },
       { id: 'tickets', text: 'ใบงาน', iconCss: 'e-icons e-table-1', route: '/tickets' },
-      { id: 'pipeline', text: 'สถานะงาน', iconCss: 'e-icons e-timeline-work-week', route: '/pipeline' },
+      { id: 'schedule', text: 'ปฏิทินทีม', iconCss: 'e-icons e-date-time', route: '/schedule' },
       { id: 'queue', text: 'คิวงานใหม่', iconCss: 'e-icons e-list-unordered', route: '/queue' },
       { id: 'ai', text: 'ติดตามงาน AI', iconCss: 'e-icons e-chart', route: '/ai' },
     ],
@@ -144,7 +146,10 @@ const navGroups: NavGroup[] = [
     id: 'system',
     text: 'ระบบ',
     expanded: true,
-    children: [{ id: 'admin', text: 'หลังบ้าน', iconCss: 'e-icons e-lock', route: '/admin' }],
+    children: [
+      { id: 'mockup', text: 'โหมดจำลอง', iconCss: 'e-icons e-play', route: '/mockup' },
+      { id: 'admin', text: 'หลังบ้าน', iconCss: 'e-icons e-lock', route: '/admin' },
+    ],
   },
 ];
 
@@ -169,16 +174,19 @@ function matchNavId(url: string): string {
 
 function screenTitle(url: string): string {
   if (url.startsWith('/people/')) {
-    return 'แดชบอร์ดรายคน';
+    return 'โปรไฟล์พนักงาน';
   }
   if (url.startsWith('/people')) {
-    return 'กระดานรายคน';
+    return 'รายชื่อพนักงาน';
+  }
+  if (url.startsWith('/work')) {
+    return 'งาน';
   }
   if (url.startsWith('/tickets')) {
     return 'ใบงาน';
   }
-  if (url.startsWith('/pipeline')) {
-    return 'สถานะงาน';
+  if (url.startsWith('/schedule')) {
+    return 'ปฏิทินทีม';
   }
   if (url.startsWith('/queue')) {
     return 'คิวงานใหม่';
@@ -197,6 +205,9 @@ function screenTitle(url: string): string {
   }
   if (url.startsWith('/admin')) {
     return 'หลังบ้าน';
+  }
+  if (url.startsWith('/mockup')) {
+    return 'โหมดจำลอง';
   }
   return 'แดชบอร์ดทีม';
 }
