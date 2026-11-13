@@ -1,0 +1,13 @@
+---
+description: กฎเมื่อแก้สูตรคะแนนและโดเมน shared
+globs: shared/domain/**/*.ts,scripts/verify-scores.ts,src/app/core/scoring.ts
+alwaysApply: false
+---
+
+# โดเมนคะแนน
+
+- อ้างอิงต้องคง: IMP-100 `total === 100`, RD-SPIKE `spikeScore === 100` (และเคสใน `scripts/verify-scores.ts`)
+- หลังแก้ `scoring.ts` / seed ที่กระทบคะแนน → รัน `npm run verify` ให้ผ่านก่อนจบงาน
+- แยกสูตร Implement กับ R&D — อย่าผสมน้ำหนักข้ามสาย
+- โควตา MD/สัปดาห์ใช้จัดกำลังคน ไม่ใช่ตัวคูณดัชนีโดยตรง
+- `hoursPerMd` ค่าเริ่ม 6 (โฟกัส) — estimate/actual จากชั่วโมง ÷ ค่านี้

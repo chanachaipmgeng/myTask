@@ -1,0 +1,14 @@
+---
+description: กฎหน้าฮับงาน /work และมุมมองพนักงาน
+globs: src/app/pages/work/**/*,src/app/pages/people-board/**/*,src/app/pages/person-dashboard/**/*,shared/domain/work-views.ts,shared/domain/people-roster.ts,shared/domain/person-dashboard.ts
+alwaysApply: false
+---
+
+# มุมมองงานและพนักงาน
+
+- `/work` เป็นฮับแท็บ Summary · Timeline · Backlog · Board · List — อย่าสร้างเมนูซ้ำสำหรับ Board
+- `/pipeline` ต้อง redirect ไป `/work/board`
+- `/tickets` คงเป็นตารางคะแนน+นำเข้า — List ใน `/work` เป็นมุมมองงาน ไม่ใช่คอลัมน์คะแนนเต็ม
+- Timeline ใช้ Syncfusion Gantt อ่านอย่างเดียวจนกว่าแผนจะเปิด edit/sync
+- กรองสาย/ค้นหาใช้ `WorkHubFilter` ของ shell — อย่าทำตัวกรองซ้ำในลูกโดยไม่จำเป็น
+- ข้อมูลแถว/กราฟคำนวณใน `shared/domain/work-views.ts` หรือ `people-roster` / `person-dashboard` แล้วค่อย bind UI

@@ -4,7 +4,12 @@ Angular + Syncfusion scoreboard for closed tickets in man-days, with separate Im
 
 **Phase 0–1 is live:** NestJS API, PostgreSQL, GitLab/dev login, and OpenProject (myProject) sync. Domain scoring lives in `shared/` so web and server reuse the same rules.
 
-Full Thai guide: [docs/คู่มือ.md](docs/คู่มือ.md)
+เอกสาร:
+
+- คู่มือใช้งาน: [docs/คู่มือ.md](docs/คู่มือ.md)
+- เอกสารระบบ: [docs/ระบบ.md](docs/ระบบ.md)
+- แผนงานต่อ: [docs/แผนงาน.md](docs/แผนงาน.md)
+- สำหรับ agent: [AGENTS.md](AGENTS.md)
 
 ## Quick start (Docker)
 

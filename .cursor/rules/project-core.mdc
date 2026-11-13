@@ -1,0 +1,31 @@
+---
+description: หลักสถาปัตยกรรม Man-day Scorecard — โดเมนร่วม Syncfusion และภาษาไทยใน UI
+alwaysApply: true
+---
+
+# Man-day Scorecard — หลักโปรเจกต์
+
+## สถาปัตยกรรม
+
+- กติกาคะแนน / workflow / มุมมองคำนวณอยู่ใน `shared/domain/` เป็น pure TypeScript ใช้ร่วมเว็บและ Nest
+- อย่าใส่สูตรคะแนนใน Angular component หรือ Nest controller — เรียกโดเมนแล้วแสดงผล
+- UI ใช้ Syncfusion + ธีม Tailwind 3 Dark ที่มีอยู่ อย่าเพิ่มดีไซน์ระบบใหม่โดยไม่จำเป็น
+- คุยและข้อความ UI หลักเป็นภาษาไทย
+
+## เอกสารอ้างอิง
+
+- ภาพรวมระบบ: `docs/ระบบ.md`
+- แผนงานต่อ: `docs/แผนงาน.md`
+- คู่มือใช้งาน: `docs/คู่มือ.md`
+
+## เมื่อแก้ฟีเจอร์
+
+- รัน `npm run verify` ถ้าแตะ scoring / seed / person-dashboard / work-views / mock
+- รัน `npm --prefix server run test` ถ้าแตะ OpenProject mapper
+- อย่าแก้ไฟล์แผน `.cursor/plans/` ของผู้ใช้เว้นแต่ถูกขอ
+- อย่า commit `.agents/` `.claude/` `skills-lock.json` หรือ `.env`
+
+## ขอบเขตที่ยังไม่บังคับ
+
+- ไม่เปิด OpenProject writeback โดยค่าเริ่ม
+- ไม่เปลี่ยนสูตร Implement/R&D เว้นแต่ผู้ใช้ขอชัดเจนและอัปเดต verify

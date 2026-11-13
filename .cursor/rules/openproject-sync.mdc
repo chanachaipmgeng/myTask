@@ -1,0 +1,13 @@
+---
+description: กฎซิงก์และแมป OpenProject / myProject
+globs: server/src/integrations/openproject/**/*.ts,src/app/pages/integrations/**
+alwaysApply: false
+---
+
+# OpenProject sync
+
+- Custom field ใน mapping ต้องเป็นค่าว่างหรือรูป `customField12` เท่านั้น
+- ฟิลด์ที่ทีมแก้ในสกอร์การ์ด (เช่น reviewRounds, mrLink, note) อย่าทับตอน resync ถ้า CF ยังไม่ถูกแมป/ไม่มีค่า
+- `firstDueOn` ล็อกจากของเดิมก่อน — อย่าเลื่อนย้อนจาก due ใหม่ใน OP
+- ขยาย `OpenProjectMapping.customFields` ต้องอัปเดต `DEFAULT_OPENPROJECT_MAPPING`, Integrations UI, และตารางใน `docs/คู่มือ.md`
+- Writeback assignee ปิดเป็นค่าเริ่ม — อย่าเปิดในโค้ดโดยไม่ผ่านแผน/env ชัดเจน
