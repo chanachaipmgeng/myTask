@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
 import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
 import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
@@ -9,6 +9,7 @@ import { ShellNotice } from '../../core/shell-notice';
 
 @Component({
   selector: 'app-queue',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridModule, ToolbarModule, ButtonModule, ChipListModule, MessageModule],
   providers: [PageService, SortService, FilterService],
   templateUrl: './queue.html',

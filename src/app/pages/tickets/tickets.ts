@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
 import { ButtonModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
@@ -20,6 +20,7 @@ type TypeFilter = TicketType | 'All';
 
 @Component({
   selector: 'app-tickets',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     GridModule,
     DropDownListModule,
@@ -106,24 +107,24 @@ export class TicketsPage {
   protected readonly message = signal('');
   protected readonly error = signal('');
 
-  protected track: Track = 'Implement';
-  protected type: TicketType = 'Bug-Fix';
-  protected moduleName = '';
-  protected size: Size = 'S';
-  protected estimateMd: number | null = 0.5;
-  protected actualMd: number | null = 0.75;
-  protected weekOffset = '0';
-  protected reviewRounds: number | null = 1;
-  protected blocker = 'no';
-  protected reopenCount: number | null = 0;
-  protected variance: VarianceCode = 'LEG';
-  protected closed = 'yes';
-  protected dodPassed = 'no';
-  protected inTimeBox = 'yes';
-  protected childTicketsSized = 'yes';
-  protected unplanned = 'no';
-  protected assigneeId = 'itsara';
-  protected closedOn: Date | null = new Date(2025, 9, 31);
+  protected readonly track = signal<Track>('Implement');
+  protected readonly type = signal<TicketType>('Bug-Fix');
+  protected readonly moduleName = signal('');
+  protected readonly size = signal<Size>('S');
+  protected readonly estimateMd = signal<number | null>(0.5);
+  protected readonly actualMd = signal<number | null>(0.75);
+  protected readonly weekOffset = signal('0');
+  protected readonly reviewRounds = signal<number | null>(1);
+  protected readonly blocker = signal('no');
+  protected readonly reopenCount = signal<number | null>(0);
+  protected readonly variance = signal<VarianceCode>('LEG');
+  protected readonly closed = signal('yes');
+  protected readonly dodPassed = signal('no');
+  protected readonly inTimeBox = signal('yes');
+  protected readonly childTicketsSized = signal('yes');
+  protected readonly unplanned = signal('no');
+  protected readonly assigneeId = signal('itsara');
+  protected readonly closedOn = signal<Date | null>(new Date(2025, 9, 31));
 
   protected readonly alerts = this.scorecard.alerts;
 
@@ -171,51 +172,75 @@ export class TicketsPage {
     switch (field) {
       case 'track':
         if (value === 'Implement' || value === 'RD') {
-          this.track = value;
+          this.track.set(value);
         }
         break;
       case 'type':
         if (this.typeOptions.some((option) => option.value === value)) {
-          this.type = value as TicketType;
+          this.type.set(value as TicketType);
         }
         break;
       case 'size':
         if (value === 'XS' || value === 'S' || value === 'M' || value === 'L' || value === 'XL') {
-          this.size = value;
+          this.size.set(value);
         }
         break;
       case 'weekOffset':
-        this.weekOffset = value;
+        this.weekOffset.set(value);
         break;
       case 'variance':
         if (value === 'NONE' || value === 'REQ' || value === 'BLK' || value === 'ENV' || value === 'LEG') {
-          this.variance = value;
+          this.variance.set(value);
         }
         break;
       case 'blocker':
+        this.blocker.set(value);
+        break;
       case 'closed':
+        this.closed.set(value);
+        break;
       case 'dodPassed':
+        this.dodPassed.set(value);
+        break;
       case 'inTimeBox':
+        this.inTimeBox.set(value);
+        break;
       case 'childTicketsSized':
+        this.childTicketsSized.set(value);
+        break;
       case 'unplanned':
-        this[field] = value;
+        this.unplanned.set(value);
         break;
       case 'assigneeId':
-        this.assigneeId = value;
+        this.assigneeId.set(value);
         break;
     }
   }
 
   protected setNumber(field: 'estimateMd' | 'actualMd' | 'reviewRounds' | 'reopenCount', event: { value?: number | null }): void {
-    this[field] = typeof event.value === 'number' ? event.value : 0;
+    const next = typeof event.value === 'number' ? event.value : 0;
+    switch (field) {
+      case 'estimateMd':
+        this.estimateMd.set(next);
+        break;
+      case 'actualMd':
+        this.actualMd.set(next);
+        break;
+      case 'reviewRounds':
+        this.reviewRounds.set(next);
+        break;
+      case 'reopenCount':
+        this.reopenCount.set(next);
+        break;
+    }
   }
 
   protected setClosedOn(event: { value?: Date | null }): void {
-    this.closedOn = event.value ?? null;
+    this.closedOn.set(event.value ?? null);
   }
 
   protected onModule(event: { value?: string | null }): void {
-    this.moduleName = event.value ?? '';
+    this.moduleName.set(event.value ?? '');
   }
 
   protected markReference(args: { data?: object; row?: Element }): void {
@@ -282,25 +307,25 @@ export class TicketsPage {
   }
 
   protected add(): void {
-    const moduleName = this.moduleName.trim();
+    const moduleName = this.moduleName().trim();
     if (moduleName.length === 0) {
       this.error.set('ใส่ชื่อโมดูล');
       this.message.set('');
       return;
     }
-    if (!this.scorecard.people().some((person) => person.id === this.assigneeId)) {
+    if (!this.scorecard.people().some((person) => person.id === this.assigneeId())) {
       this.error.set('เลือกผู้รับผิดชอบ');
       this.message.set('');
       return;
     }
-    const week = Number(this.weekOffset);
+    const week = Number(this.weekOffset());
     if (week !== 0 && week !== 1 && week !== 2) {
       this.error.set('เลือกสัปดาห์ที่ commit');
       this.message.set('');
       return;
     }
     const ticket = this.scorecard.addTicket(this.draft('', moduleName, week));
-    this.moduleName = '';
+    this.moduleName.set('');
     this.error.set('');
     const hidden =
       (this.trackFilter() !== 'All' && this.trackFilter() !== ticket.track) ||
@@ -310,28 +335,28 @@ export class TicketsPage {
     this.notice.show(text);
   }
 
-  private draft(id: string, moduleName = this.moduleName.trim() || 'Preview', week = Number(this.weekOffset)): Omit<Ticket, 'id'> & { id: string } {
-    const isSpike = this.type === 'Spike';
+  private draft(id: string, moduleName = this.moduleName().trim() || 'Preview', week = Number(this.weekOffset())): Omit<Ticket, 'id'> & { id: string } {
+    const isSpike = this.type() === 'Spike';
     return {
       id,
-      track: this.track,
-      type: this.type,
+      track: this.track(),
+      type: this.type(),
       module: moduleName,
-      size: this.size,
-      estimateMd: this.estimateMd ?? 0,
-      actualMd: this.actualMd ?? 0,
+      size: this.size(),
+      estimateMd: this.estimateMd() ?? 0,
+      actualMd: this.actualMd() ?? 0,
       weekOffset: week,
-      reviewRounds: Math.round(this.reviewRounds ?? 0),
-      blocker: this.blocker === 'yes',
-      reopenCount: Math.round(this.reopenCount ?? 0),
-      varianceCode: this.variance,
-      closed: this.closed === 'yes',
-      dodPassed: this.dodPassed === 'yes',
-      inTimeBox: isSpike && this.inTimeBox === 'yes',
-      childTicketsSized: isSpike && this.childTicketsSized === 'yes',
-      unplanned: this.unplanned === 'yes',
-      assigneeId: this.assigneeId,
-      closedOn: this.closed === 'yes' ? toIsoDate(this.closedOn) : null,
+      reviewRounds: Math.round(this.reviewRounds() ?? 0),
+      blocker: this.blocker() === 'yes',
+      reopenCount: Math.round(this.reopenCount() ?? 0),
+      varianceCode: this.variance(),
+      closed: this.closed() === 'yes',
+      dodPassed: this.dodPassed() === 'yes',
+      inTimeBox: isSpike && this.inTimeBox() === 'yes',
+      childTicketsSized: isSpike && this.childTicketsSized() === 'yes',
+      unplanned: this.unplanned() === 'yes',
+      assigneeId: this.assigneeId(),
+      closedOn: this.closed() === 'yes' ? toIsoDate(this.closedOn()) : null,
       workingDaysLeft: null,
       note: '',
     };

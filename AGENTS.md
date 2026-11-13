@@ -24,8 +24,15 @@ npm run verify
 npm --prefix server run test
 ```
 
+## Angular UI
+
+- Angular **22.2.6** (pin ใน package.json) · **signals / computed / `@if` `@for`** · **OnPush** ทุก component  
+- คง **Zone** (`provideZoneChangeDetection`) — ยังไม่ทำ zoneless เพราะ Syncfusion  
+- Syncfusion: ใช้ `[value]="x()"` + `(change)` ไม่ใช้ `[(value)]` กับ class field  
+
 ## อย่าทำ
 
 - อย่าแก้สูตรคะแนนโดยไม่ verify  
 - อย่า commit `.env`, `.agents/`, `.claude/`  
 - อย่าเปิด OpenProject writeback เป็นค่าเริ่ม  
+

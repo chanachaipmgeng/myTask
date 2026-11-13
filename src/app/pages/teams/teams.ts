@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
@@ -9,6 +9,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-teams',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonModule, CheckBoxModule, TextBoxModule, GridModule, MessageModule],
   templateUrl: './teams.html',
 })

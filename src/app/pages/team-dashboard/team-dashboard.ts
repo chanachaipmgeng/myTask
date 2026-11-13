@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import {
   AccumulationChartModule,
   AccumulationDataLabelService,
@@ -25,6 +25,7 @@ type TrackFilter = Track | 'All';
 
 @Component({
   selector: 'app-team-dashboard',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DashboardLayoutModule, AccumulationChartModule, ChartModule, DropDownListModule],
   providers: [
     PieSeriesService,

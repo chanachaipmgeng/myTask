@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
@@ -8,6 +8,7 @@ import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-backlog',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridModule, ButtonModule, RouterLink],
   providers: [PageService, SortService, FilterService],
   templateUrl: './work-backlog.html',

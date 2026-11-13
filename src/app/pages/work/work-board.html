@@ -107,7 +107,7 @@
       <ejs-dropdownlist
         [dataSource]="disciplineOptions"
         [fields]="fields"
-        [value]="discipline"
+        [value]="discipline()"
         [enabled]="!!selected()"
         (change)="setDiscipline($event)"
       ></ejs-dropdownlist>
@@ -117,7 +117,7 @@
       <ejs-dropdownlist
         [dataSource]="categoryOptions"
         [fields]="fields"
-        [value]="workCategory"
+        [value]="workCategory()"
         [enabled]="!!selected()"
         (change)="setCategory($event)"
       ></ejs-dropdownlist>
@@ -127,7 +127,7 @@
       <ejs-dropdownlist
         [dataSource]="storyOptions"
         [fields]="fields"
-        [value]="storyValue"
+        [value]="storyValue()"
         [enabled]="!!selected()"
         (change)="setStory($event)"
       ></ejs-dropdownlist>
@@ -136,22 +136,22 @@
       <span class="fine">วันส่งครั้งแรก</span>
       <ejs-datepicker
         format="dd/MM/yyyy"
-        [value]="due"
-        [enabled]="!!selected() && !dueLocked"
+        [value]="due()"
+        [enabled]="!!selected() && !dueLocked()"
         (change)="setDue($event)"
       ></ejs-datepicker>
     </label>
     <label class="grid gap-1 md:col-span-2">
       <span class="fine">ลิงก์ MR</span>
-      <ejs-textbox [value]="mrLink" [enabled]="!!selected()" (change)="setMr($event)"></ejs-textbox>
+      <ejs-textbox [value]="mrLink()" [enabled]="!!selected()" (change)="setMr($event)"></ejs-textbox>
     </label>
-    @if (workCategory === 'R&D-PoC') {
+    @if (workCategory() === 'R&D-PoC') {
       <label class="grid gap-1">
         <span class="fine">ผล PoC</span>
         <ejs-dropdownlist
           [dataSource]="pocOptions"
           [fields]="fields"
-          [value]="pocResult"
+          [value]="pocResult()"
           [enabled]="!!selected()"
           (change)="setPoc($event)"
         ></ejs-dropdownlist>
@@ -163,7 +163,7 @@
         <ejs-dropdownlist
           [dataSource]="causeOptions"
           [fields]="fields"
-          [value]="bugCause"
+          [value]="bugCause()"
           [enabled]="!!selected()"
           (change)="setCause($event)"
         ></ejs-dropdownlist>

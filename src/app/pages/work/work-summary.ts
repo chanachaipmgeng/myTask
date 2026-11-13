@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import {
   AccumulationChartModule,
   AccumulationDataLabelService,
@@ -18,6 +18,7 @@ import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-summary',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DashboardLayoutModule, AccumulationChartModule, ChartModule],
   providers: [
     PieSeriesService,

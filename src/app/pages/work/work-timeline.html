@@ -3,23 +3,27 @@
     Gantt อ่านอย่างเดียว · แท่งจริงจาก start/due/closed · baseline จาก first due + estimate · ไฮไลต์ใบที่เลื่อนสัปดาห์ผ่าน
     weekOffset
   </p>
-  <ejs-gantt
-    id="work-gantt"
-    height="560px"
-    theme="Tailwind3Dark"
-    [dataSource]="tasks()"
-    [taskFields]="taskFields"
-    [columns]="columns"
-    [labelSettings]="labelSettings"
-    [timelineSettings]="timelineSettings"
-    [workWeek]="workWeek"
-    [splitterSettings]="splitterSettings"
-    [resources]="resources()"
-    [resourceFields]="resourceFields"
-    [renderBaseline]="true"
-    [allowSelection]="true"
-    [enableVirtualization]="false"
-    [treeColumnIndex]="1"
-    gridLines="Horizontal"
-  ></ejs-gantt>
+  @if (tasks().length === 0) {
+    <p class="fine">ไม่พบใบงานที่มีช่วงวันที่ตามตัวกรองปัจจุบัน</p>
+  } @else {
+    <ejs-gantt
+      id="work-gantt"
+      height="560px"
+      theme="Tailwind3Dark"
+      [dataSource]="tasks()"
+      [taskFields]="taskFields"
+      [columns]="columns"
+      [labelSettings]="labelSettings"
+      [timelineSettings]="timelineSettings"
+      [workWeek]="workWeek"
+      [splitterSettings]="splitterSettings"
+      [resources]="resources()"
+      [resourceFields]="resourceFields"
+      [renderBaseline]="true"
+      [allowSelection]="true"
+      [enableVirtualization]="false"
+      [treeColumnIndex]="1"
+      gridLines="Horizontal"
+    ></ejs-gantt>
+  }
 </div>

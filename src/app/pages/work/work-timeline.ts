@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import {
   DayMarkersService,
   GanttAllModule,
@@ -10,6 +10,7 @@ import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-timeline',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GanttAllModule],
   providers: [SelectionService, DayMarkersService],
   templateUrl: './work-timeline.html',

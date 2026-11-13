@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { NumericTextBoxModule } from '@syncfusion/ej2-angular-inputs';
@@ -28,6 +28,7 @@ import { currentSession } from '../../core/session';
 
 @Component({
   selector: 'app-admin',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DropDownListModule, NumericTextBoxModule, CheckBoxModule, ButtonModule, MessageModule],
   templateUrl: './admin.html',
 })

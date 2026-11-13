@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   CategoryService,
@@ -21,6 +21,7 @@ type TrackFilter = Track | 'All';
 
 @Component({
   selector: 'app-people-board',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridModule, ChartModule, DropDownListModule, RouterLink, TextBoxModule],
   providers: [
     PageService,

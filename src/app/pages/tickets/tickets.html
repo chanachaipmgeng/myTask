@@ -38,75 +38,75 @@
     <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
       <label class="field">
         <span>สาย</span>
-        <ejs-dropdownlist [dataSource]="trackOptions" [fields]="fields" [value]="track" (change)="setChoice('track', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="trackOptions" [fields]="fields" [value]="track()" (change)="setChoice('track', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>ชนิด</span>
-        <ejs-dropdownlist [dataSource]="typeOptions" [fields]="fields" [value]="type" (change)="setChoice('type', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="typeOptions" [fields]="fields" [value]="type()" (change)="setChoice('type', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>โมดูล</span>
-        <ejs-textbox [value]="moduleName" (input)="onModule($event)" placeholder="เช่น Billing" width="100%"></ejs-textbox>
+        <ejs-textbox [value]="moduleName()" (change)="onModule($event)" placeholder="เช่น Billing" width="100%"></ejs-textbox>
       </label>
       <label class="field">
         <span>ขนาด</span>
-        <ejs-dropdownlist [dataSource]="sizeOptions" [fields]="fields" [value]="size" (change)="setChoice('size', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="sizeOptions" [fields]="fields" [value]="size()" (change)="setChoice('size', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>ประมาณ MD</span>
-        <ejs-numerictextbox [value]="estimateMd" (change)="setNumber('estimateMd', $event)" [min]="0" [step]="0.25" format="n2" [decimals]="2" width="100%"></ejs-numerictextbox>
+        <ejs-numerictextbox [value]="estimateMd()" (change)="setNumber('estimateMd', $event)" [min]="0" [step]="0.25" format="n2" [decimals]="2" width="100%"></ejs-numerictextbox>
       </label>
       <label class="field">
         <span>ใช้จริง MD</span>
-        <ejs-numerictextbox [value]="actualMd" (change)="setNumber('actualMd', $event)" [min]="0" [step]="0.25" format="n2" [decimals]="2" width="100%"></ejs-numerictextbox>
+        <ejs-numerictextbox [value]="actualMd()" (change)="setNumber('actualMd', $event)" [min]="0" [step]="0.25" format="n2" [decimals]="2" width="100%"></ejs-numerictextbox>
       </label>
       <label class="field">
         <span>สัปดาห์ที่ commit</span>
-        <ejs-dropdownlist [dataSource]="weekOptions" [fields]="fields" [value]="weekOffset" (change)="setChoice('weekOffset', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="weekOptions" [fields]="fields" [value]="weekOffset()" (change)="setChoice('weekOffset', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>รอบรีวิว</span>
-        <ejs-numerictextbox [value]="reviewRounds" (change)="setNumber('reviewRounds', $event)" [min]="0" [step]="1" format="n0" [decimals]="0" width="100%"></ejs-numerictextbox>
+        <ejs-numerictextbox [value]="reviewRounds()" (change)="setNumber('reviewRounds', $event)" [min]="0" [step]="1" format="n0" [decimals]="0" width="100%"></ejs-numerictextbox>
       </label>
       <label class="field">
         <span>Blocker</span>
-        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="blocker" (change)="setChoice('blocker', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="blocker()" (change)="setChoice('blocker', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>จำนวน reopen</span>
-        <ejs-numerictextbox [value]="reopenCount" (change)="setNumber('reopenCount', $event)" [min]="0" [step]="1" format="n0" [decimals]="0" width="100%"></ejs-numerictextbox>
+        <ejs-numerictextbox [value]="reopenCount()" (change)="setNumber('reopenCount', $event)" [min]="0" [step]="1" format="n0" [decimals]="0" width="100%"></ejs-numerictextbox>
       </label>
       <label class="field">
         <span>Variance</span>
-        <ejs-dropdownlist [dataSource]="varianceOptions" [fields]="fields" [value]="variance" (change)="setChoice('variance', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="varianceOptions" [fields]="fields" [value]="variance()" (change)="setChoice('variance', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>ปิดใบแล้ว</span>
-        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="closed" (change)="setChoice('closed', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="closed()" (change)="setChoice('closed', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>ผ่าน DoD</span>
-        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="dodPassed" (change)="setChoice('dodPassed', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="dodPassed()" (change)="setChoice('dodPassed', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>นอกแผน</span>
-        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="unplanned" (change)="setChoice('unplanned', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="unplanned()" (change)="setChoice('unplanned', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>Spike ใน time-box</span>
-        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="inTimeBox" [enabled]="type === 'Spike'" (change)="setChoice('inTimeBox', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="inTimeBox()" [enabled]="type() === 'Spike'" (change)="setChoice('inTimeBox', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>ใบลูกตีขนาดแล้ว</span>
-        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="childTicketsSized" [enabled]="type === 'Spike'" (change)="setChoice('childTicketsSized', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="childTicketsSized()" [enabled]="type() === 'Spike'" (change)="setChoice('childTicketsSized', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>ผู้รับผิดชอบ</span>
-        <ejs-dropdownlist [dataSource]="assigneeOptions()" [fields]="fields" [value]="assigneeId" [allowFiltering]="true" (change)="setChoice('assigneeId', $event)" width="100%"></ejs-dropdownlist>
+        <ejs-dropdownlist [dataSource]="assigneeOptions()" [fields]="fields" [value]="assigneeId()" [allowFiltering]="true" (change)="setChoice('assigneeId', $event)" width="100%"></ejs-dropdownlist>
       </label>
       <label class="field">
         <span>วันที่ปิด</span>
-        <ejs-datepicker [value]="closedOn" (change)="setClosedOn($event)" format="dd/MM/yyyy" width="100%"></ejs-datepicker>
+        <ejs-datepicker [value]="closedOn()" (change)="setClosedOn($event)" format="dd/MM/yyyy" width="100%"></ejs-datepicker>
       </label>
     </div>
     <div class="form-actions">
@@ -116,7 +116,7 @@
       } @else {
         <p>
           คะแนน {{ preview().total }} = {{ previewNotes() }}
-          @if (type === 'Spike') {
+          @if (type() === 'Spike') {
             <span> · คะแนน Spike {{ preview().spikeScore }}</span>
           }
         </p>

@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import {
   AgendaService,
@@ -60,6 +60,7 @@ const COLORS = [
 
 @Component({
   selector: 'app-schedule',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ScheduleModule, DropDownListModule],
   providers: [TimelineViewsService, TimelineMonthService, AgendaService],
   templateUrl: './schedule.html',

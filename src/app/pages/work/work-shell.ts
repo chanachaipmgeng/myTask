@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
@@ -17,6 +17,7 @@ const TABS = [
 
 @Component({
   selector: 'app-work-shell',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, TabModule, DropDownListModule, TextBoxModule],
   providers: [WorkHubFilter],
   templateUrl: './work-shell.html',

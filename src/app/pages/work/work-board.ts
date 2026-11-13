@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
@@ -37,6 +37,7 @@ import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-board',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     KanbanModule,
     ProgressBarModule,
@@ -90,14 +91,14 @@ export class WorkBoard {
   protected readonly selectedId = signal<string | null>(null);
   protected readonly blockMessage = signal('');
 
-  protected discipline: Discipline | '' = '';
-  protected workCategory: WorkCategory | '' = '';
-  protected storyValue = '';
-  protected due: Date | null = null;
-  protected dueLocked = false;
-  protected mrLink = '';
-  protected pocResult: PocResult | '' = '';
-  protected bugCause: BugCause | '' = '';
+  protected readonly discipline = signal<Discipline | ''>('');
+  protected readonly workCategory = signal<WorkCategory | ''>('');
+  protected readonly storyValue = signal('');
+  protected readonly due = signal<Date | null>(null);
+  protected readonly dueLocked = signal(false);
+  protected readonly mrLink = signal('');
+  protected readonly pocResult = signal<PocResult | ''>('');
+  protected readonly bugCause = signal<BugCause | ''>('');
 
   protected readonly visibleTickets = computed(() => {
     const track = this.hub.track();
@@ -178,46 +179,48 @@ export class WorkBoard {
   }
 
   protected setDiscipline(event: { value?: string | null }): void {
-    this.discipline = event.value && this.disciplineOptions.some((option) => option.value === event.value)
-      ? (event.value as Discipline | '')
-      : '';
+    this.discipline.set(
+      event.value && this.disciplineOptions.some((option) => option.value === event.value)
+        ? (event.value as Discipline | '')
+        : '',
+    );
   }
 
   protected setCategory(event: { value?: string | null }): void {
     const value = event.value;
-    this.workCategory = value && this.categoryOptions.some((option) => option.value === value)
-      ? (value as WorkCategory | '')
-      : '';
-    if (this.workCategory !== 'R&D-PoC') {
-      this.pocResult = '';
+    const next =
+      value && this.categoryOptions.some((option) => option.value === value) ? (value as WorkCategory | '') : '';
+    this.workCategory.set(next);
+    if (next !== 'R&D-PoC') {
+      this.pocResult.set('');
     }
-    if (!isBugCategory(this.workCategory)) {
-      this.bugCause = '';
+    if (!isBugCategory(next)) {
+      this.bugCause.set('');
     }
   }
 
   protected setStory(event: { value?: string | null }): void {
-    this.storyValue = event.value ?? '';
+    this.storyValue.set(event.value ?? '');
   }
 
   protected setDue(event: { value?: Date | null }): void {
-    if (!this.dueLocked) {
-      this.due = event.value ?? null;
+    if (!this.dueLocked()) {
+      this.due.set(event.value ?? null);
     }
   }
 
   protected setMr(event: { value?: string | null }): void {
-    this.mrLink = event.value ?? '';
+    this.mrLink.set(event.value ?? '');
   }
 
   protected setPoc(event: { value?: string | null }): void {
     const value = event.value ?? '';
-    this.pocResult = this.pocOptions.some((option) => option.value === value) ? (value as PocResult | '') : '';
+    this.pocResult.set(this.pocOptions.some((option) => option.value === value) ? (value as PocResult | '') : '');
   }
 
   protected setCause(event: { value?: string | null }): void {
     const value = event.value ?? '';
-    this.bugCause = this.causeOptions.some((option) => option.value === value) ? (value as BugCause | '') : '';
+    this.bugCause.set(this.causeOptions.some((option) => option.value === value) ? (value as BugCause | '') : '');
   }
 
   protected saveFields(): void {
@@ -225,15 +228,15 @@ export class WorkBoard {
     if (!ticket) {
       return;
     }
-    const parsed = this.storyValue === '' ? null : Number(this.storyValue);
+    const parsed = this.storyValue() === '' ? null : Number(this.storyValue());
     const result = editWorkflow(ticket, {
-      discipline: this.discipline,
-      workCategory: this.workCategory,
+      discipline: this.discipline(),
+      workCategory: this.workCategory(),
       storyPoints: parsed as StoryPoint | null,
-      firstDueOn: this.dueLocked ? (ticket.firstDueOn ?? null) : toIsoDate(this.due),
-      mrLink: this.mrLink,
-      pocResult: this.pocResult,
-      bugCause: this.bugCause,
+      firstDueOn: this.dueLocked() ? (ticket.firstDueOn ?? null) : toIsoDate(this.due()),
+      mrLink: this.mrLink(),
+      pocResult: this.pocResult(),
+      bugCause: this.bugCause(),
     });
     if (!result.ok) {
       this.blockMessage.set(result.message);
@@ -245,18 +248,18 @@ export class WorkBoard {
   }
 
   protected bugCategory(): boolean {
-    return isBugCategory(this.workCategory);
+    return isBugCategory(this.workCategory());
   }
 
   private fillForm(ticket: ReturnType<WorkBoard['selected']>): void {
-    this.discipline = ticket?.discipline ?? '';
-    this.workCategory = ticket?.workCategory ?? '';
-    this.storyValue = ticket?.storyPoints ? String(ticket.storyPoints) : '';
-    this.dueLocked = Boolean(ticket?.firstDueOn);
-    this.due = toDate(ticket?.firstDueOn);
-    this.mrLink = ticket?.mrLink ?? '';
-    this.pocResult = ticket?.pocResult ?? '';
-    this.bugCause = ticket?.bugCause ?? '';
+    this.discipline.set(ticket?.discipline ?? '');
+    this.workCategory.set(ticket?.workCategory ?? '');
+    this.storyValue.set(ticket?.storyPoints ? String(ticket.storyPoints) : '');
+    this.dueLocked.set(Boolean(ticket?.firstDueOn));
+    this.due.set(toDate(ticket?.firstDueOn));
+    this.mrLink.set(ticket?.mrLink ?? '');
+    this.pocResult.set(ticket?.pocResult ?? '');
+    this.bugCause.set(ticket?.bugCause ?? '');
   }
 }
 

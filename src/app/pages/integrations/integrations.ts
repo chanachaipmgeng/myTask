@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { NumericTextBoxModule, TextAreaModule, TextBoxModule } from '@syncfusion/ej2-angular-inputs';
@@ -29,8 +29,32 @@ type CustomFieldKey =
   | 'firstDueOn'
   | 'weekOffset';
 
+function emptyCustomFields(): Record<CustomFieldKey, string> {
+  return {
+    size: '',
+    track: '',
+    type: '',
+    variance: '',
+    unplanned: '',
+    storyPoints: '',
+    discipline: '',
+    workCategory: '',
+    reviewRounds: '',
+    blocker: '',
+    dodPassed: '',
+    inTimeBox: '',
+    childTicketsSized: '',
+    mrLink: '',
+    bugCause: '',
+    pocResult: '',
+    firstDueOn: '',
+    weekOffset: '',
+  };
+}
+
 @Component({
   selector: 'app-integrations',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
     CheckBoxModule,
@@ -55,32 +79,13 @@ export class IntegrationsPage {
   protected readonly error = signal('');
   protected readonly data = signal<OpenProjectIntegration | null>(null);
 
-  protected baseUrl = '';
-  protected token = '';
-  protected enabled = true;
-  protected hoursPerMd = 6;
-  protected statusMapText = '';
-  protected typeMapText = '';
-  protected customFields: Record<CustomFieldKey, string> = {
-    size: '',
-    track: '',
-    type: '',
-    variance: '',
-    unplanned: '',
-    storyPoints: '',
-    discipline: '',
-    workCategory: '',
-    reviewRounds: '',
-    blocker: '',
-    dodPassed: '',
-    inTimeBox: '',
-    childTicketsSized: '',
-    mrLink: '',
-    bugCause: '',
-    pocResult: '',
-    firstDueOn: '',
-    weekOffset: '',
-  };
+  protected readonly baseUrl = signal('');
+  protected readonly token = signal('');
+  protected readonly enabled = signal(true);
+  protected readonly hoursPerMd = signal(6);
+  protected readonly statusMapText = signal('');
+  protected readonly typeMapText = signal('');
+  protected readonly customFields = signal<Record<CustomFieldKey, string>>(emptyCustomFields());
   protected readonly customFieldRows: { key: CustomFieldKey; label: string; hint: string }[] = [
     { key: 'size', label: 'Size', hint: 'XS S M L XL' },
     { key: 'track', label: 'Track', hint: 'Implement / RD' },
@@ -101,8 +106,8 @@ export class IntegrationsPage {
     { key: 'firstDueOn', label: 'First due date', hint: 'ถ้าไม่ใช้ dueDate มาตรฐาน' },
     { key: 'weekOffset', label: 'Week offset', hint: '0 1 2+ ถ้าคำนวณไม่ได้' },
   ];
-  protected mapPersonId = '';
-  protected mapOpUserId: number | null = null;
+  protected readonly mapPersonId = signal('');
+  protected readonly mapOpUserId = signal<number | null>(null);
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly workflowHint = WORKFLOW_STATUSES.join(', ');
@@ -117,15 +122,17 @@ export class IntegrationsPage {
     try {
       const info = await this.api.getOpenProject();
       this.data.set(info);
-      this.baseUrl = info.baseUrl;
-      this.enabled = info.enabled;
-      this.hoursPerMd = info.hoursPerMd;
-      this.statusMapText = JSON.stringify(info.mapping['statusMap'] ?? {}, null, 2);
-      this.typeMapText = JSON.stringify(info.mapping['typeMap'] ?? {}, null, 2);
+      this.baseUrl.set(info.baseUrl);
+      this.enabled.set(info.enabled);
+      this.hoursPerMd.set(info.hoursPerMd);
+      this.statusMapText.set(JSON.stringify(info.mapping['statusMap'] ?? {}, null, 2));
+      this.typeMapText.set(JSON.stringify(info.mapping['typeMap'] ?? {}, null, 2));
       const custom = (info.mapping['customFields'] ?? {}) as Record<string, string>;
+      const next = emptyCustomFields();
       for (const row of this.customFieldRows) {
-        this.customFields[row.key] = custom[row.key] ?? '';
+        next[row.key] = custom[row.key] ?? '';
       }
+      this.customFields.set(next);
       this.message.set(
         info.configured
           ? `เชื่อมต่อได้ · writeback ${info.writeback ? 'เปิด' : 'ปิด'}`
@@ -162,14 +169,14 @@ export class IntegrationsPage {
       let statusMap: Record<string, string> = {};
       let typeMap: Record<string, string> = {};
       try {
-        statusMap = JSON.parse(this.statusMapText || '{}') as Record<string, string>;
-        typeMap = JSON.parse(this.typeMapText || '{}') as Record<string, string>;
+        statusMap = JSON.parse(this.statusMapText() || '{}') as Record<string, string>;
+        typeMap = JSON.parse(this.typeMapText() || '{}') as Record<string, string>;
       } catch {
         this.error.set('statusMap / typeMap ต้องเป็น JSON object');
         return;
       }
       const current = this.data()?.mapping ?? {};
-      const customFields = { ...this.customFields };
+      const customFields = { ...this.customFields() };
       for (const key of Object.keys(customFields) as CustomFieldKey[]) {
         customFields[key] = customFields[key].trim();
       }
@@ -183,17 +190,17 @@ export class IntegrationsPage {
         },
       };
       const result = await this.api.saveOpenProject({
-        baseUrl: this.baseUrl.trim(),
-        token: this.token.trim() || undefined,
-        enabled: this.enabled,
-        hoursPerMd: this.hoursPerMd,
+        baseUrl: this.baseUrl().trim(),
+        token: this.token().trim() || undefined,
+        enabled: this.enabled(),
+        hoursPerMd: this.hoursPerMd(),
         mapping,
       });
       if (result.errors?.length) {
         this.error.set(result.errors.join('; '));
         return;
       }
-      this.token = '';
+      this.token.set('');
       this.data.set(result);
       this.message.set('บันทึกการตั้งค่าแล้ว');
       await this.scorecard.reloadFromApi();
@@ -225,16 +232,18 @@ export class IntegrationsPage {
   }
 
   protected async mapUser(): Promise<void> {
-    if (!this.canEdit() || !this.mapPersonId || this.mapOpUserId === null) {
+    const personId = this.mapPersonId();
+    const opUserId = this.mapOpUserId();
+    if (!this.canEdit() || !personId || opUserId === null) {
       return;
     }
     this.saving.set(true);
     try {
-      const result = await this.api.mapOpenProjectUser(this.mapPersonId, this.mapOpUserId);
+      const result = await this.api.mapOpenProjectUser(personId, opUserId);
       this.data.set(result);
       this.message.set('จับคู่ผู้ใช้แล้ว');
-      this.mapPersonId = '';
-      this.mapOpUserId = null;
+      this.mapPersonId.set('');
+      this.mapOpUserId.set(null);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'จับคู่ไม่สำเร็จ');
     } finally {
@@ -242,16 +251,41 @@ export class IntegrationsPage {
     }
   }
 
+  protected onBaseUrl(event: { value?: string | null }): void {
+    this.baseUrl.set(event.value ?? '');
+  }
+
+  protected onToken(event: { value?: string | null }): void {
+    this.token.set(event.value ?? '');
+  }
+
+  protected onHoursPerMd(event: { value?: number | null }): void {
+    this.hoursPerMd.set(typeof event.value === 'number' ? event.value : 6);
+  }
+
+  protected onStatusMapText(event: { value?: string | null }): void {
+    this.statusMapText.set(event.value ?? '');
+  }
+
+  protected onTypeMapText(event: { value?: string | null }): void {
+    this.typeMapText.set(event.value ?? '');
+  }
+
+  protected setCustomField(key: CustomFieldKey, event: { value?: string | null }): void {
+    const value = event.value ?? '';
+    this.customFields.update((fields) => ({ ...fields, [key]: value }));
+  }
+
   protected onEnabled(event: { checked?: boolean }): void {
-    this.enabled = !!event.checked;
+    this.enabled.set(!!event.checked);
   }
 
   protected onPerson(event: { value?: string | null }): void {
-    this.mapPersonId = event.value ?? '';
+    this.mapPersonId.set(event.value ?? '');
   }
 
   protected onOpUser(event: { value?: number | null }): void {
-    this.mapOpUserId = event.value ?? null;
+    this.mapOpUserId.set(event.value ?? null);
   }
 
   protected runErrors(errors: unknown): string {

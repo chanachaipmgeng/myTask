@@ -10,6 +10,7 @@ alwaysApply: true
 - กติกาคะแนน / workflow / มุมมองคำนวณอยู่ใน `shared/domain/` เป็น pure TypeScript ใช้ร่วมเว็บและ Nest
 - อย่าใส่สูตรคะแนนใน Angular component หรือ Nest controller — เรียกโดเมนแล้วแสดงผล
 - UI ใช้ Syncfusion + ธีม Tailwind 3 Dark ที่มีอยู่ อย่าเพิ่มดีไซน์ระบบใหม่โดยไม่จำเป็น
+- Angular 22: `signal`/`computed` + `@if`/`@for` + `ChangeDetectionStrategy.OnPush` · คง Zone (ยังไม่ zoneless)
 - คุยและข้อความ UI หลักเป็นภาษาไทย
 
 ## เอกสารอ้างอิง

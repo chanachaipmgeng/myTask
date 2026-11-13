@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
 import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
@@ -8,6 +8,7 @@ import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-list',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridModule, DialogModule, ButtonModule],
   providers: [PageService, SortService, FilterService],
   templateUrl: './work-list.html',

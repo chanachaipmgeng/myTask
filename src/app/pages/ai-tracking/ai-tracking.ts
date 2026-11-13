@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import {
   CategoryService,
   ChartModule,
@@ -11,6 +11,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-ai-tracking',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ChartModule],
   providers: [CategoryService, ColumnSeriesService, LegendService, TooltipService],
   templateUrl: './ai-tracking.html',

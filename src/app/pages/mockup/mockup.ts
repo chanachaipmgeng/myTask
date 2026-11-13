@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { GridModule, PageService } from '@syncfusion/ej2-angular-grids';
@@ -9,6 +9,7 @@ import { ShellNotice } from '../../core/shell-notice';
 
 @Component({
   selector: 'app-mockup',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonModule, GridModule, MessageModule, RouterLink],
   providers: [PageService],
   templateUrl: './mockup.html',

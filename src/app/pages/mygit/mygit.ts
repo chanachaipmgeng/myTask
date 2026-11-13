@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { GridModule, PageService } from '@syncfusion/ej2-angular-grids';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
@@ -8,6 +8,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-mygit',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [GridModule, ButtonModule, MessageModule],
   providers: [PageService],
   templateUrl: './mygit.html',

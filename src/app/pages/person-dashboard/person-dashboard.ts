@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
@@ -24,6 +24,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-person-dashboard',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ChartModule, AccumulationChartModule, ButtonModule, MessageModule, GridModule],
   providers: [
     CategoryService,

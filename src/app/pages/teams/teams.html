@@ -13,7 +13,7 @@
     <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
       <label class="field">
         <span>ช่อง Teams</span>
-        <ejs-textbox id="teams-channel" [value]="channel()" (input)="onChannel($event)" width="100%"></ejs-textbox>
+        <ejs-textbox id="teams-channel" [value]="channel()" (change)="onChannel($event)" width="100%"></ejs-textbox>
       </label>
       <ejs-checkbox id="teams-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="deadline()" (change)="onDeadline($event)"></ejs-checkbox>
       <ejs-checkbox id="teams-overrun" label="actual มีแนวโน้มเกิน estimate มากกว่า 50%" [checked]="overrun()" (change)="onOverrun($event)"></ejs-checkbox>
