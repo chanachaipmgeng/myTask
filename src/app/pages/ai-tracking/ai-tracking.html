@@ -4,7 +4,7 @@
       <h2>ติดตามงาน AI</h2>
       <p>
         เฉพาะใบ Spike, AI, myBOX และ AI Agent. ไม่ใช่คะแนนชุดใหม่.
-        สัดส่วน Spike ใช้สูตร R&D เดิม คือ MD ของใบ Spike ต่อ MD ที่วางไว้.
+        สัดส่วน Spike ใช้สูตร R&amp;D เดิม คือ MD ของใบ Spike ต่อ MD ที่วางไว้.
       </p>
     </div>
   </div>
@@ -33,63 +33,81 @@
         progressColor="#3ec6e0"
         trackColor="#1e4566"
       ></ejs-progressbar>
+      <p class="fine m-0 pt-1">MD ในมุมนี้ {{ trackedMd() }} &middot; MD ที่ปิดแล้ว {{ acceptedMd() }}</p>
     </div>
   </div>
-  <p class="fine">MD ในมุมนี้ {{ trackedMd() }} · MD ที่ปิดแล้ว {{ acceptedMd() }}</p>
 
-  <div class="chart-frame">
-    <ejs-chart
-      id="ai-md-chart"
-      style="display: block; height: 360px; width: 100%"
-      theme="Tailwind3Dark"
-      [primaryXAxis]="categoryAxis"
-      [primaryYAxis]="mdAxis"
-      [tooltip]="tooltip"
-      [legendSettings]="legend"
-      [chartArea]="chartArea"
-      [enableAnimation]="true"
-    >
-      <e-series-collection>
-        <e-series
-          type="Column"
-          [dataSource]="points()"
-          xName="id"
-          yName="md"
-          name="MD"
-          columnWidth="0.6"
-          fill="#3ec6e0"
-        ></e-series>
-      </e-series-collection>
-    </ejs-chart>
-  </div>
+  <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+    <div class="section-card xl:col-span-5">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>กราฟเปรียบเทียบ MD รายใบงาน AI / Spike</h3>
+          <p class="fine">ปริมาณ Man-day ที่ใช้ในงานวิจัยและ AI</p>
+        </div>
+      </div>
+      <div class="chart-frame m-0">
+        <ejs-chart
+          id="ai-md-chart"
+          style="display: block; height: 320px; width: 100%"
+          theme="Tailwind3Dark"
+          [primaryXAxis]="categoryAxis"
+          [primaryYAxis]="mdAxis"
+          [tooltip]="tooltip"
+          [legendSettings]="legend"
+          [chartArea]="chartArea"
+          [enableAnimation]="true"
+        >
+          <e-series-collection>
+            <e-series
+              type="Column"
+              [dataSource]="points()"
+              xName="id"
+              yName="md"
+              name="MD"
+              columnWidth="0.6"
+              fill="#3ec6e0"
+            ></e-series>
+          </e-series-collection>
+        </ejs-chart>
+      </div>
+    </div>
 
-  <h3>รายการใบงาน AI และ Spike</h3>
-  <ejs-grid
-    id="ai-tickets-grid"
-    [dataSource]="points()"
-    [allowPaging]="true"
-    [allowSorting]="true"
-    [allowResizing]="true"
-    [pageSettings]="{ pageSize: 8 }"
-    height="280"
-  >
-    <e-columns>
-      <e-column field="id" headerText="รหัส" width="130"></e-column>
-      <e-column field="label" headerText="ผู้รับผิดชอบ" width="160"></e-column>
-      <e-column field="module" headerText="โมดูล / หัวข้อ" width="220"></e-column>
-      <e-column field="md" headerText="MD" width="110" textAlign="Right" format="N2"></e-column>
-    </e-columns>
-    <e-aggregates>
-      <e-aggregate>
+    <div class="section-card xl:col-span-7">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>รายการใบงาน AI และ Spike</h3>
+          <p class="fine">ตารางรายละเอียดใบงานพร้อมผลรวม MD ท้ายตาราง</p>
+        </div>
+        <span class="e-badge e-badge-info e-badge-pill">{{ points().length }} ใบ</span>
+      </div>
+      <ejs-grid
+        id="ai-tickets-grid"
+        [dataSource]="points()"
+        [allowPaging]="true"
+        [allowSorting]="true"
+        [allowResizing]="true"
+        [pageSettings]="{ pageSize: 8 }"
+        height="320"
+      >
         <e-columns>
-          <e-column type="Count" field="id">
-            <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
-          </e-column>
-          <e-column type="Sum" field="md" format="N2">
-            <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
-          </e-column>
+          <e-column field="id" headerText="รหัส" width="130"></e-column>
+          <e-column field="label" headerText="ผู้รับผิดชอบ" width="160"></e-column>
+          <e-column field="module" headerText="โมดูล / หัวข้อ" width="220"></e-column>
+          <e-column field="md" headerText="MD" width="110" textAlign="Right" format="N2"></e-column>
         </e-columns>
-      </e-aggregate>
-    </e-aggregates>
-  </ejs-grid>
+        <e-aggregates>
+          <e-aggregate>
+            <e-columns>
+              <e-column type="Count" field="id">
+                <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
+              </e-column>
+              <e-column type="Sum" field="md" format="N2">
+                <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
+              </e-column>
+            </e-columns>
+          </e-aggregate>
+        </e-aggregates>
+      </ejs-grid>
+    </div>
+  </div>
 </section>

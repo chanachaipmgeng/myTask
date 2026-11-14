@@ -14,22 +14,29 @@
     }
   </div>
 
-  <form class="ticket-form" (submit)="$event.preventDefault(); testSend()">
-    <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+  <form class="section-card" (submit)="$event.preventDefault(); testSend()">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>ตั้งค่าเงื่อนไขและช่องทางแจ้งเตือน</h3>
+        <p class="fine">เลือกประเภทเหตุการณ์ที่ต้องการส่งแจ้งเตือนไปยังช่อง Microsoft Teams</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button ejs-button [isPrimary]="true" type="submit" id="teams-test">จำลองร่างข้อความ (ไม่ส่งจริง)</button>
+        @if (canSend()) {
+          <button ejs-button cssClass="e-success" type="button" id="teams-send-webhook" [disabled]="sending()" (click)="sendWebhook()">
+            ส่งเข้า Teams จริง (Webhook)
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 items-end">
       <label class="field">
         <span>ช่อง Teams</span>
         <ejs-textbox id="teams-channel" [value]="channel()" (change)="onChannel($event)" width="100%"></ejs-textbox>
       </label>
       <ejs-checkbox id="teams-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="deadline()" (change)="onDeadline($event)"></ejs-checkbox>
       <ejs-checkbox id="teams-overrun" label="actual มีแนวโน้มเกิน estimate มากกว่า 50%" [checked]="overrun()" (change)="onOverrun($event)"></ejs-checkbox>
-    </div>
-    <div class="form-actions flex flex-wrap gap-2">
-      <button ejs-button [isPrimary]="true" type="submit" id="teams-test">จำลองร่างข้อความ (ไม่ส่งจริง)</button>
-      @if (canSend()) {
-        <button ejs-button cssClass="e-success" type="button" id="teams-send-webhook" [disabled]="sending()" (click)="sendWebhook()">
-          ส่งเข้า Teams จริง (Webhook)
-        </button>
-      }
     </div>
     @if (message()) {
       <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
@@ -39,16 +46,24 @@
     }
   </form>
 
-  <h3>บันทึกข้อความที่จะส่ง</h3>
-  @if (logRows().length === 0) {
-    <ejs-message content="ยังไม่มีการทดสอบ ข้อความจะถูกเก็บในหน้านี้ ไม่ได้ส่งออกไป" severity="Info" variant="Outlined"></ejs-message>
-  } @else {
-    <ejs-grid [dataSource]="logRows()" height="240">
-      <e-columns>
-        <e-column field="ticketId" headerText="ใบงาน" width="140"></e-column>
-        <e-column field="text" headerText="ข้อความ" width="420"></e-column>
-        <e-column field="statusLabel" headerText="สถานะ" width="180"></e-column>
-      </e-columns>
-    </ejs-grid>
-  }
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>บันทึกข้อความที่จะส่ง</h3>
+        <p class="fine">ตัวอย่างข้อความแจ้งเตือนที่สร้างจากใบงานเสี่ยงปัจจุบัน</p>
+      </div>
+      <span class="e-badge e-badge-info e-badge-pill">{{ logRows().length }} ข้อความ</span>
+    </div>
+    @if (logRows().length === 0) {
+      <ejs-message content="ยังไม่มีการทดสอบ ข้อความจะถูกเก็บในหน้านี้ ไม่ได้ส่งออกไป" severity="Info" variant="Outlined"></ejs-message>
+    } @else {
+      <ejs-grid [dataSource]="logRows()" [allowResizing]="true" height="240">
+        <e-columns>
+          <e-column field="ticketId" headerText="ใบงาน" width="140"></e-column>
+          <e-column field="text" headerText="ข้อความ" width="420"></e-column>
+          <e-column field="statusLabel" headerText="สถานะ" width="180"></e-column>
+        </e-columns>
+      </ejs-grid>
+    }
+  </div>
 </section>

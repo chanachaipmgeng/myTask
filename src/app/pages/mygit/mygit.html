@@ -14,48 +14,74 @@
     }
   </div>
 
-  <div class="form-actions flex flex-wrap gap-2">
-    <button ejs-button [isPrimary]="true" type="button" id="mygit-sync" (click)="sync()">ซิงก์จากไฟล์ตัวอย่าง</button>
-    @if (canSyncApi()) {
-      <button ejs-button cssClass="e-info" type="button" id="mygit-sync-api" [disabled]="syncing()" (click)="syncFromGitLabApi()">
-        ซิงก์ MR จาก GitLab API
-      </button>
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>สั่งซิงก์ข้อมูล Merge Request</h3>
+        <p class="fine">เลือกดึงจากไฟล์ตัวอย่างในเครื่องเพื่อทดสอบ หรือดึงจาก GitLab API v4 จริง</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button ejs-button [isPrimary]="true" type="button" id="mygit-sync" (click)="sync()">ซิงก์จากไฟล์ตัวอย่าง</button>
+        @if (canSyncApi()) {
+          <button ejs-button cssClass="e-info" type="button" id="mygit-sync-api" [disabled]="syncing()" (click)="syncFromGitLabApi()">
+            ซิงก์ MR จาก GitLab API
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (message()) {
+      <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
+    }
+    @if (error()) {
+      <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
+    }
+
+    @if (!synced()) {
+      <ejs-message content="ยังไม่ได้ซิงก์ กดปุ่มด้านบนเพื่ออ่านไฟล์ตัวอย่างในเครื่อง หรือดึงจาก GitLab API" severity="Info" variant="Outlined"></ejs-message>
     }
   </div>
-  @if (message()) {
-    <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
-  }
-  @if (error()) {
-    <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
-  }
 
-  @if (!synced()) {
-    <ejs-message content="ยังไม่ได้ซิงก์ กดปุ่มด้านบนเพื่ออ่านไฟล์ตัวอย่างในเครื่อง หรือดึงจาก GitLab API" severity="Info" variant="Outlined"></ejs-message>
-  }
   @if (synced()) {
-    <h3>ใบที่จับคู่ได้</h3>
-    <ejs-grid [dataSource]="matched()" [allowPaging]="true" [pageSettings]="pageSettings" height="220">
-      <e-columns>
-        <e-column field="sha" headerText="Commit / MR" width="120"></e-column>
-        <e-column field="ticketId" headerText="ใบงาน" width="140"></e-column>
-        <e-column field="reviewRounds" headerText="รอบรีวิว" width="110" textAlign="Right"></e-column>
-        <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right"></e-column>
-        <e-column field="reviewBefore" headerText="คะแนนรีวิวก่อน" width="140" textAlign="Right"></e-column>
-        <e-column field="reviewAfter" headerText="คะแนนรีวิวหลัง" width="140" textAlign="Right"></e-column>
-        <e-column field="mrLink" headerText="ลิงก์ MR" width="220"></e-column>
-        <e-column field="mergedAt" headerText="เวลา merge" width="190"></e-column>
-        <e-column field="message" headerText="ข้อความ" width="260"></e-column>
-      </e-columns>
-    </ejs-grid>
+    <div class="section-card">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>ใบงานที่จับคู่ MR ได้</h3>
+          <p class="fine">อัปเดตลิงก์ MR, รอบรีวิว และจำนวน Reopen ลงในใบงานอัตโนมัติ</p>
+        </div>
+        <span class="e-badge e-badge-success e-badge-pill">{{ matched().length }} รายการ</span>
+      </div>
+      <ejs-grid [dataSource]="matched()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="220">
+        <e-columns>
+          <e-column field="sha" headerText="Commit / MR" width="120"></e-column>
+          <e-column field="ticketId" headerText="ใบงาน" width="140"></e-column>
+          <e-column field="reviewRounds" headerText="รอบรีวิว" width="110" textAlign="Right"></e-column>
+          <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right"></e-column>
+          <e-column field="reviewBefore" headerText="คะแนนรีวิวก่อน" width="140" textAlign="Right"></e-column>
+          <e-column field="reviewAfter" headerText="คะแนนรีวิวหลัง" width="140" textAlign="Right"></e-column>
+          <e-column field="mrLink" headerText="ลิงก์ MR" width="220"></e-column>
+          <e-column field="mergedAt" headerText="เวลา merge" width="190"></e-column>
+          <e-column field="message" headerText="ข้อความ" width="260"></e-column>
+        </e-columns>
+      </ejs-grid>
+    </div>
 
-    <h3>Commit / MR ที่จับใบไม่ได้</h3>
-    <ejs-grid [dataSource]="unmatched()" [allowPaging]="true" [pageSettings]="pageSettings" height="180">
-      <e-columns>
-        <e-column field="sha" headerText="Commit / MR" width="120"></e-column>
-        <e-column field="ticketId" headerText="รหัสที่อ้าง" width="140"></e-column>
-        <e-column field="mergedAt" headerText="เวลา merge" width="200"></e-column>
-        <e-column field="message" headerText="ข้อความ" width="320"></e-column>
-      </e-columns>
-    </ejs-grid>
+    <div class="section-card">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>Commit / MR ที่จับใบงานไม่ได้</h3>
+          <p class="fine">รายการที่ไม่มีรหัสใบงานตรงกับระบบ</p>
+        </div>
+        <span class="e-badge e-badge-warning e-badge-pill">{{ unmatched().length }} รายการ</span>
+      </div>
+      <ejs-grid [dataSource]="unmatched()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="180">
+        <e-columns>
+          <e-column field="sha" headerText="Commit / MR" width="120"></e-column>
+          <e-column field="ticketId" headerText="รหัสที่อ้าง" width="140"></e-column>
+          <e-column field="mergedAt" headerText="เวลา merge" width="200"></e-column>
+          <e-column field="message" headerText="ข้อความ" width="320"></e-column>
+        </e-columns>
+      </ejs-grid>
+    </div>
   }
 </section>

@@ -1,7 +1,13 @@
-<div class="flex flex-col gap-3">
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <p class="fine m-0">ใบใน Backlog หรือยังไม่มีผู้รับ · สำหรับจัดคิวเต็มรูปแบบไปที่คิวงานใหม่</p>
-    <a ejs-button cssClass="e-outline" routerLink="/queue">เปิดคิวงานใหม่</a>
+<div class="section-card">
+  <div class="section-card-head">
+    <div class="section-card-copy">
+      <h3>รายการงานรอจัดสรร (Backlog)</h3>
+      <p class="fine">ใบใน Backlog หรือยังไม่มีผู้รับ &middot; สำหรับจัดคิวเต็มรูปแบบไปที่คิวงานใหม่</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="e-badge e-badge-info e-badge-pill">{{ rows().length }} ใบ</span>
+      <a ejs-button cssClass="e-outline e-small" routerLink="/queue">เปิดคิวงานใหม่</a>
+    </div>
   </div>
   @if (rows().length === 0) {
     <p class="fine">ไม่มีใบใน Backlog ตามตัวกรองปัจจุบัน</p>

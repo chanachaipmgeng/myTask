@@ -31,10 +31,13 @@
     <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
   }
 
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  <div class="kpi-grid-4">
     <div class="e-card">
-      <div class="e-card-content flex flex-col gap-2 p-4">
-        <p class="kpi-note">ความสมบูรณ์ข้อมูลซิงก์ (Sync Readiness)</p>
+      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
+        <div class="kpi-card-top">
+          <p class="kpi-note m-0">ความสมบูรณ์ข้อมูลซิงก์</p>
+          <span class="e-badge e-badge-success e-badge-pill">Sync Readiness</span>
+        </div>
         <p class="kpi-value">{{ report().syncHygiene.readinessScore }}%</p>
         <ejs-progressbar
           id="sync-readiness-progress"
@@ -53,208 +56,254 @@
     </div>
 
     <div class="e-card">
-      <div class="e-card-content flex flex-col gap-1 p-4">
-        <p class="kpi-note">ประเด็นข้อมูลไม่สอดคล้อง (Data Hygiene)</p>
+      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
+        <div class="kpi-card-top">
+          <p class="kpi-note m-0">ประเด็นข้อมูลไม่สอดคล้อง</p>
+          <span class="e-badge e-badge-warning e-badge-pill">Data Hygiene</span>
+        </div>
         <p class="kpi-value">{{ report().syncHygiene.issueCount }} รายการ</p>
         <p class="fine m-0">ใบงานสมบูรณ์ {{ report().syncHygiene.cleanTickets }} / {{ report().syncHygiene.totalTickets }} ใบ</p>
       </div>
     </div>
 
     <div class="e-card">
-      <div class="e-card-content flex flex-col gap-1 p-4">
-        <p class="kpi-note">ค่าผิดปกติทางสถิติ (Z-Score Outliers)</p>
+      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
+        <div class="kpi-card-top">
+          <p class="kpi-note m-0">ค่าผิดปกติทางสถิติ</p>
+          <span class="e-badge e-badge-info e-badge-pill">|Z-Score| &ge; 1.8</span>
+        </div>
         <p class="kpi-value">{{ report().syncHygiene.outlierCount }} ใบ</p>
         <p class="fine m-0">ใบที่ Actual/Estimate สูงผิดปกติเทียบกับขนาดเดียวกัน</p>
       </div>
     </div>
 
     <div class="e-card">
-      <div class="e-card-content flex flex-col gap-1 p-4">
-        <p class="kpi-note">ใบงานเปิดที่เสี่ยงหลุดแผนสูง</p>
+      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
+        <div class="kpi-card-top">
+          <p class="kpi-note m-0">ใบงานเปิดเสี่ยงหลุดแผนสูง</p>
+          <span class="e-badge e-badge-danger e-badge-pill">Risk Radar</span>
+        </div>
         <p class="kpi-value">{{ highRiskCount() }} ใบ</p>
         <p class="fine m-0">จากใบงานที่เปิดอยู่ทั้งหมด {{ report().deliveryRisks.length }} ใบ</p>
       </div>
     </div>
   </div>
 
-  <ejs-tab id="analytics-tabs">
-    <e-tabitems>
-      <e-tabitem>
-        <ng-template #headerText>
-          <div>1. ตรวจสอบข้อมูลซิงก์ &amp; Outliers ({{ report().syncHygiene.issueCount }})</div>
-        </ng-template>
-        <ng-template #content>
-          <div class="flex flex-col gap-3 pt-3">
-            <p class="fine m-0">
-              ตรวจสอบความครบถ้วนของข้อมูลระหว่าง OpenProject และ GitLab MR เช่น ใบงานที่อยู่ขั้นรีวิว/ปิดแล้วแต่ไม่มีลิงก์ MR,
-              ใบงานที่ยังไม่ล็อกวันส่งครั้งแรก (firstDueOn) และใบงานที่มีอัตราส่วนเวลาจริงเป็น Outlier (Z-Score &ge; 1.8)
-            </p>
-            <ejs-grid
-              id="hygiene-issues-grid"
-              [dataSource]="report().syncHygiene.issues"
-              [allowPaging]="true"
-              [allowSorting]="true"
-              [allowFiltering]="true"
-              [allowResizing]="true"
-              [showColumnChooser]="true"
-              [allowExcelExport]="true"
-              [toolbar]="gridToolbar"
-              [pageSettings]="pageSettings"
-              height="360"
-            >
-              <e-columns>
-                <e-column field="ticketId" headerText="รหัสใบงาน" width="120"></e-column>
-                <e-column field="title" headerText="ชื่องาน / โมดูล" width="200"></e-column>
-                <e-column field="trackLabel" headerText="สายงาน" width="110"></e-column>
-                <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="140"></e-column>
-                <e-column field="severity" headerText="ระดับความสำคัญ" width="130"></e-column>
-                <e-column field="issueType" headerText="ชนิดประเด็น" width="160"></e-column>
-                <e-column field="detail" headerText="รายละเอียดสิ่งที่ตรวจพบ" width="360"></e-column>
-              </e-columns>
-            </ejs-grid>
-          </div>
-        </ng-template>
-      </e-tabitem>
-
-      <e-tabitem>
-        <ng-template #headerText>
-          <div>2. เรดาร์ติดตามความเสี่ยงใบงานเปิด ({{ report().deliveryRisks.length }})</div>
-        </ng-template>
-        <ng-template #content>
-          <div class="flex flex-col gap-3 pt-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <p class="fine m-0">
-                จัดลำดับความเสี่ยงใบงานที่ยังไม่ปิด (Risk Score 0–100) คำนวณจากเวลาจริงเทียบ Estimate, วันทำงานคงเหลือในสัปดาห์,
-                จำนวน WIP ของผู้รับ และประวัติการตีกลับ (Reopen)
-              </p>
-              <div class="flex gap-2">
-                <a ejs-button cssClass="e-outline" routerLink="/teams">ส่งแจ้งเตือนเข้า Teams</a>
-                <a ejs-button cssClass="e-primary" routerLink="/work/board">ไปที่กระดานงาน</a>
+  <div class="section-card">
+    <ejs-tab id="analytics-tabs">
+      <e-tabitems>
+        <e-tabitem>
+          <ng-template #headerText>
+            <div>1. ตรวจสอบข้อมูลซิงก์ &amp; Outliers ({{ report().syncHygiene.issueCount }})</div>
+          </ng-template>
+          <ng-template #content>
+            <div class="flex flex-col gap-3 pt-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="fine m-0">
+                  ตรวจสอบความครบถ้วนของข้อมูลระหว่าง OpenProject และ GitLab MR เช่น ใบงานที่อยู่ขั้นรีวิว/ปิดแล้วแต่ไม่มีลิงก์ MR,
+                  ใบงานที่ยังไม่ล็อกวันส่งครั้งแรก (firstDueOn) และใบงานที่มีอัตราส่วนเวลาจริงเป็น Outlier (Z-Score &ge; 1.8)
+                </p>
+                <a ejs-button cssClass="e-outline e-small" routerLink="/mygit">ซิงก์ GitLab MR</a>
               </div>
-            </div>
-            <ejs-grid
-              id="delivery-risk-grid"
-              [dataSource]="report().deliveryRisks"
-              [allowPaging]="true"
-              [allowSorting]="true"
-              [allowResizing]="true"
-              [pageSettings]="pageSettings"
-              height="360"
-            >
-              <e-columns>
-                <e-column field="ticketId" headerText="รหัสใบงาน" width="120"></e-column>
-                <e-column field="title" headerText="เรื่อง" width="200"></e-column>
-                <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="130"></e-column>
-                <e-column field="status" headerText="สถานะ" width="130"></e-column>
-                <e-column field="estimateMd" headerText="Est MD" width="95" textAlign="Right" format="N2"></e-column>
-                <e-column field="actualMd" headerText="Actual MD" width="105" textAlign="Right" format="N2"></e-column>
-                <e-column field="riskScore" headerText="Risk Score" width="110" textAlign="Right"></e-column>
-                <e-column field="riskLevel" headerText="ระดับความเสี่ยง" width="130"></e-column>
-              </e-columns>
-            </ejs-grid>
-          </div>
-        </ng-template>
-      </e-tabitem>
-
-      <e-tabitem>
-        <ng-template #headerText>
-          <div>3. วิเคราะห์พัฒนาการ &amp; โค้ชรายคน (1-on-1 Coaching)</div>
-        </ng-template>
-        <ng-template #content>
-          <div class="flex flex-col gap-3 pt-3">
-            <p class="fine m-0">
-              วิเคราะห์ความชันแนวโน้มรายเดือน (OLS Regression Slope) และสรุปจุดแข็งกับประเด็นที่หัวหน้าสายงานควรใช้พูดคุย
-              1-on-1 เพื่อพัฒนาบุคลากรแต่ละคนอย่างตรงจุด
-            </p>
-            <ejs-grid
-              id="coaching-insights-grid"
-              [dataSource]="report().coachingInsights"
-              [allowPaging]="true"
-              [allowSorting]="true"
-              [allowResizing]="true"
-              [showColumnChooser]="true"
-              [allowExcelExport]="true"
-              [toolbar]="gridToolbar"
-              [pageSettings]="{ pageSize: 15 }"
-              height="400"
-            >
-              <e-columns>
-                <e-column field="nickname" headerText="พนักงาน" width="120"></e-column>
-                <e-column field="trackLabel" headerText="สายงาน" width="105"></e-column>
-                <e-column field="developmentIndex" headerText="ดัชนีพัฒนา" width="105" textAlign="Right" format="N1"></e-column>
-                <e-column field="trendSlope" headerText="Slope แนวโน้ม" width="120" textAlign="Right" format="N2"></e-column>
-                <e-column field="trendLabel" headerText="สถานะแนวโน้ม" width="190"></e-column>
-                <e-column field="onTimePct" headerText="ตรงสัปดาห์ %" width="120" textAlign="Right" format="N1"></e-column>
-                <e-column field="estimationAccuracyPct" headerText="แม่นขนาด %" width="115" textAlign="Right" format="N1"></e-column>
-                <e-column field="firstPassPct" headerText="ผ่านรอบแรก %" width="125" textAlign="Right" format="N1"></e-column>
-                <e-column field="strengthNote" headerText="จุดแข็งที่พบ" width="240"></e-column>
-                <e-column field="coachingFocus" headerText="คำแนะนำสำหรับการโค้ช (1-on-1)" width="340"></e-column>
-              </e-columns>
-            </ejs-grid>
-          </div>
-        </ng-template>
-      </e-tabitem>
-
-      <e-tabitem>
-        <ng-template #headerText>
-          <div>4. วิเคราะห์คอขวดโมดูล &amp; สาเหตุปัญหา (Bottlenecks)</div>
-        </ng-template>
-        <ng-template #content>
-          <div class="flex flex-col gap-4 pt-3">
-            <div class="chart-frame">
-              <ejs-chart
-                id="bottleneck-module-chart"
-                style="display: block; height: 280px; width: 100%"
-                theme="Tailwind3Dark"
-                [primaryXAxis]="categoryAxis"
-                [primaryYAxis]="countAxis"
-                [tooltip]="tooltip"
-                [legendSettings]="legend"
-                [chartArea]="chartArea"
-                [enableAnimation]="true"
+              <ejs-grid
+                id="hygiene-issues-grid"
+                [dataSource]="report().syncHygiene.issues"
+                [allowPaging]="true"
+                [allowSorting]="true"
+                [allowFiltering]="true"
+                [allowResizing]="true"
+                [showColumnChooser]="true"
+                [allowExcelExport]="true"
+                [toolbar]="gridToolbar"
+                [pageSettings]="pageSettings"
+                height="360"
               >
-                <e-series-collection>
-                  <e-series
-                    type="Column"
-                    [dataSource]="report().bottlenecks.modules"
-                    xName="module"
-                    yName="avgReviewRounds"
-                    name="รอบรีวิวเฉลี่ย"
-                    fill="#38bdf8"
-                    columnWidth="0.45"
-                  ></e-series>
-                  <e-series
-                    type="Column"
-                    [dataSource]="report().bottlenecks.modules"
-                    xName="module"
-                    yName="reopenTotal"
-                    name="จำนวน Reopen รวม"
-                    fill="#f43f5e"
-                    columnWidth="0.45"
-                  ></e-series>
-                </e-series-collection>
-              </ejs-chart>
+                <e-columns>
+                  <e-column field="ticketId" headerText="รหัสใบงาน" width="120"></e-column>
+                  <e-column field="title" headerText="ชื่องาน / โมดูล" width="200"></e-column>
+                  <e-column field="trackLabel" headerText="สายงาน" width="110"></e-column>
+                  <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="140"></e-column>
+                  <e-column field="severity" headerText="ระดับความสำคัญ" width="130"></e-column>
+                  <e-column field="issueType" headerText="ชนิดประเด็น" width="160"></e-column>
+                  <e-column field="detail" headerText="รายละเอียดสิ่งที่ตรวจพบ" width="360"></e-column>
+                </e-columns>
+              </ejs-grid>
             </div>
+          </ng-template>
+        </e-tabitem>
 
-            <ejs-grid
-              id="bottleneck-module-grid"
-              [dataSource]="report().bottlenecks.modules"
-              [allowSorting]="true"
-              [allowResizing]="true"
-              height="260"
-            >
-              <e-columns>
-                <e-column field="module" headerText="โมดูล / ระบบงาน" width="180"></e-column>
-                <e-column field="ticketCount" headerText="จำนวนใบงาน" width="120" textAlign="Right"></e-column>
-                <e-column field="avgReviewRounds" headerText="รอบรีวิวเฉลี่ย" width="130" textAlign="Right" format="N2"></e-column>
-                <e-column field="reopenTotal" headerText="Reopen รวม" width="120" textAlign="Right"></e-column>
-                <e-column field="avgRatio" headerText="Actual/Est เฉลี่ย" width="140" textAlign="Right" format="N2"></e-column>
-                <e-column field="slipRatePct" headerText="อัตราหลุดสัปดาห์ %" width="150" textAlign="Right" format="N1"></e-column>
-              </e-columns>
-            </ejs-grid>
-          </div>
-        </ng-template>
-      </e-tabitem>
-    </e-tabitems>
-  </ejs-tab>
+        <e-tabitem>
+          <ng-template #headerText>
+            <div>2. เรดาร์ติดตามความเสี่ยงใบงานเปิด ({{ report().deliveryRisks.length }})</div>
+          </ng-template>
+          <ng-template #content>
+            <div class="flex flex-col gap-3 pt-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="fine m-0">
+                  จัดลำดับความเสี่ยงใบงานที่ยังไม่ปิด (Risk Score 0–100) คำนวณจากเวลาจริงเทียบ Estimate, วันทำงานคงเหลือในสัปดาห์,
+                  จำนวน WIP ของผู้รับ และประวัติการตีกลับ (Reopen)
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <a ejs-button cssClass="e-outline e-small" routerLink="/teams">ส่งแจ้งเตือนเข้า Teams</a>
+                  <a ejs-button cssClass="e-primary e-small" routerLink="/work/board">ไปที่กระดานงาน</a>
+                </div>
+              </div>
+              <ejs-grid
+                id="delivery-risk-grid"
+                [dataSource]="report().deliveryRisks"
+                [allowPaging]="true"
+                [allowSorting]="true"
+                [allowResizing]="true"
+                [pageSettings]="pageSettings"
+                height="360"
+              >
+                <e-columns>
+                  <e-column field="ticketId" headerText="รหัสใบงาน" width="120"></e-column>
+                  <e-column field="title" headerText="เรื่อง" width="200"></e-column>
+                  <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="130"></e-column>
+                  <e-column field="status" headerText="สถานะ" width="130"></e-column>
+                  <e-column field="estimateMd" headerText="Est MD" width="95" textAlign="Right" format="N2"></e-column>
+                  <e-column field="actualMd" headerText="Actual MD" width="105" textAlign="Right" format="N2"></e-column>
+                  <e-column field="riskScore" headerText="Risk Score" width="110" textAlign="Right"></e-column>
+                  <e-column field="riskLevel" headerText="ระดับความเสี่ยง" width="130"></e-column>
+                </e-columns>
+              </ejs-grid>
+            </div>
+          </ng-template>
+        </e-tabitem>
+
+        <e-tabitem>
+          <ng-template #headerText>
+            <div>3. วิเคราะห์พัฒนาการ &amp; โค้ชรายคน (1-on-1 Coaching)</div>
+          </ng-template>
+          <ng-template #content>
+            <div class="flex flex-col gap-3 pt-4">
+              <p class="fine m-0">
+                วิเคราะห์ความชันแนวโน้มรายเดือน (OLS Regression Slope) และสรุปจุดแข็งกับประเด็นที่หัวหน้าสายงานควรใช้พูดคุย
+                1-on-1 เพื่อพัฒนาบุคลากรแต่ละคนอย่างตรงจุด
+              </p>
+              <ejs-grid
+                id="coaching-insights-grid"
+                [dataSource]="report().coachingInsights"
+                [allowPaging]="true"
+                [allowSorting]="true"
+                [allowResizing]="true"
+                [showColumnChooser]="true"
+                [allowExcelExport]="true"
+                [toolbar]="gridToolbar"
+                [pageSettings]="{ pageSize: 15 }"
+                height="400"
+              >
+                <e-columns>
+                  <e-column field="nickname" headerText="พนักงาน" width="120"></e-column>
+                  <e-column field="trackLabel" headerText="สายงาน" width="105"></e-column>
+                  <e-column field="developmentIndex" headerText="ดัชนีพัฒนา" width="105" textAlign="Right" format="N1"></e-column>
+                  <e-column field="trendSlope" headerText="Slope แนวโน้ม" width="120" textAlign="Right" format="N2"></e-column>
+                  <e-column field="trendLabel" headerText="สถานะแนวโน้ม" width="190"></e-column>
+                  <e-column field="onTimePct" headerText="ตรงสัปดาห์ %" width="120" textAlign="Right" format="N1"></e-column>
+                  <e-column field="estimationAccuracyPct" headerText="แม่นขนาด %" width="115" textAlign="Right" format="N1"></e-column>
+                  <e-column field="firstPassPct" headerText="ผ่านรอบแรก %" width="125" textAlign="Right" format="N1"></e-column>
+                  <e-column field="strengthNote" headerText="จุดแข็งที่พบ" width="240"></e-column>
+                  <e-column field="coachingFocus" headerText="คำแนะนำสำหรับการโค้ช (1-on-1)" width="340"></e-column>
+                </e-columns>
+              </ejs-grid>
+            </div>
+          </ng-template>
+        </e-tabitem>
+
+        <e-tabitem>
+          <ng-template #headerText>
+            <div>4. วิเคราะห์คอขวดโมดูล &amp; สาเหตุปัญหา (Bottlenecks)</div>
+          </ng-template>
+          <ng-template #content>
+            <div class="flex flex-col gap-4 pt-4">
+              <div class="card-grid-2">
+                <div class="e-card">
+                  <div class="e-card-content flex flex-col gap-2.5 p-4">
+                    <div class="kpi-card-top">
+                      <strong class="text-base">สัดส่วนรหัสความคลาดเคลื่อน (Variance Code)</strong>
+                      <span class="e-badge e-badge-info e-badge-pill">จากใบปิดทั้งหมด</span>
+                    </div>
+                    @for (item of report().bottlenecks.varianceBreakdown; track item.code) {
+                      <div class="flex items-center justify-between gap-2 text-sm">
+                        <span>รหัส <strong>{{ item.code }}</strong></span>
+                        <span class="e-badge e-badge-secondary e-badge-pill">{{ item.count }} ใบ ({{ item.pct }}%)</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <div class="e-card">
+                  <div class="e-card-content flex flex-col gap-2.5 p-4">
+                    <div class="kpi-card-top">
+                      <strong class="text-base">สัดส่วนสาเหตุ Bug (Bug Cause Analysis)</strong>
+                      <span class="e-badge e-badge-warning e-badge-pill">Root Cause</span>
+                    </div>
+                    @for (item of report().bottlenecks.bugCauseBreakdown; track item.cause) {
+                      <div class="flex items-center justify-between gap-2 text-sm">
+                        <span>สาเหตุ <strong>{{ item.cause }}</strong></span>
+                        <span class="e-badge e-badge-secondary e-badge-pill">{{ item.count }} ใบ ({{ item.pct }}%)</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div class="chart-frame m-0">
+                <ejs-chart
+                  id="bottleneck-module-chart"
+                  style="display: block; height: 280px; width: 100%"
+                  theme="Tailwind3Dark"
+                  [primaryXAxis]="categoryAxis"
+                  [primaryYAxis]="countAxis"
+                  [tooltip]="tooltip"
+                  [legendSettings]="legend"
+                  [chartArea]="chartArea"
+                  [enableAnimation]="true"
+                >
+                  <e-series-collection>
+                    <e-series
+                      type="Column"
+                      [dataSource]="report().bottlenecks.modules"
+                      xName="module"
+                      yName="avgReviewRounds"
+                      name="รอบรีวิวเฉลี่ย"
+                      fill="#38bdf8"
+                      columnWidth="0.45"
+                    ></e-series>
+                    <e-series
+                      type="Column"
+                      [dataSource]="report().bottlenecks.modules"
+                      xName="module"
+                      yName="reopenTotal"
+                      name="จำนวน Reopen รวม"
+                      fill="#f43f5e"
+                      columnWidth="0.45"
+                    ></e-series>
+                  </e-series-collection>
+                </ejs-chart>
+              </div>
+
+              <ejs-grid
+                id="bottleneck-module-grid"
+                [dataSource]="report().bottlenecks.modules"
+                [allowSorting]="true"
+                [allowResizing]="true"
+                height="260"
+              >
+                <e-columns>
+                  <e-column field="module" headerText="โมดูล / ระบบงาน" width="180"></e-column>
+                  <e-column field="ticketCount" headerText="จำนวนใบงาน" width="120" textAlign="Right"></e-column>
+                  <e-column field="avgReviewRounds" headerText="รอบรีวิวเฉลี่ย" width="130" textAlign="Right" format="N2"></e-column>
+                  <e-column field="reopenTotal" headerText="Reopen รวม" width="120" textAlign="Right"></e-column>
+                  <e-column field="avgRatio" headerText="Actual/Est เฉลี่ย" width="140" textAlign="Right" format="N2"></e-column>
+                  <e-column field="slipRatePct" headerText="อัตราหลุดสัปดาห์ %" width="150" textAlign="Right" format="N1"></e-column>
+                </e-columns>
+              </ejs-grid>
+            </div>
+          </ng-template>
+        </e-tabitem>
+      </e-tabitems>
+    </ejs-tab>
+  </div>
 </section>

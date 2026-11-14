@@ -13,190 +13,250 @@
     </div>
   </div>
 
-  <label class="field">
-    <span>ผู้ที่กำลังดู (ตัวอย่างออฟไลน์)</span>
-    <ejs-dropdownlist
-      id="viewer-role"
-      [dataSource]="viewerOptions"
-      [fields]="fields"
-      [value]="viewer().id"
-      [enabled]="!session()"
-      (change)="onViewer($event)"
-      width="280px"
-    ></ejs-dropdownlist>
-  </label>
-  <ejs-message id="access-flag" [content]="accessBanner()" severity="Info" variant="Outlined"></ejs-message>
-  <div class="flex flex-wrap gap-2">
-    <button ejs-button type="button" cssClass="e-outline" (click)="devLogin('paweena')">Dev login · ปวีณา (admin)</button>
-    <button ejs-button type="button" cssClass="e-outline" (click)="devLogin('watchara')">Dev login · วัชระ (lead)</button>
-    <button ejs-button type="button" cssClass="e-outline" (click)="devLogin('itsara')">Dev login · อิสรภาพ (member)</button>
-    <button ejs-button type="button" cssClass="e-flat" (click)="logout()">Logout</button>
-  </div>
-  @if (status()) {
-    <ejs-message [content]="status()" severity="Info" variant="Outlined"></ejs-message>
-  }
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>สลับผู้ใช้งานจำลอง &amp; ทดสอบสิทธิ์ (Session &amp; Persona)</h3>
+        <p class="fine">ทดสอบมุมมองและสิทธิ์การแก้ไขของแต่ละบทบาททั้งโหมดออฟไลน์และ Dev Session</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button ejs-button type="button" cssClass="e-outline e-small" (click)="devLogin('paweena')">Dev login · ปวีณา (admin)</button>
+        <button ejs-button type="button" cssClass="e-outline e-small" (click)="devLogin('watchara')">Dev login · วัชระ (lead)</button>
+        <button ejs-button type="button" cssClass="e-outline e-small" (click)="devLogin('itsara')">Dev login · อิสรภาพ (member)</button>
+        <button ejs-button type="button" cssClass="e-flat e-small" (click)="logout()">Logout</button>
+      </div>
+    </div>
 
-  <h3>โควต้ารายสัปดาห์</h3>
-  <p class="fine">ใช้คำนวณคนว่างบนคิว. ไม่เปลี่ยน MD ที่วางไว้ของดัชนี และไม่เปลี่ยนคะแนนใบ.</p>
-  <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-    <label class="field">
-      <span>Senior</span>
-      <ejs-numerictextbox id="quota-senior" [value]="quotas().Senior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Senior', $event)"></ejs-numerictextbox>
-    </label>
-    <label class="field">
-      <span>Mid</span>
-      <ejs-numerictextbox id="quota-mid" [value]="quotas().Mid" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Mid', $event)"></ejs-numerictextbox>
-    </label>
-    <label class="field">
-      <span>Junior</span>
-      <ejs-numerictextbox id="quota-junior" [attr.data-quota]="quotas().Junior" [value]="quotas().Junior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Junior', $event)"></ejs-numerictextbox>
-    </label>
-    <label class="field">
-      <span>เดือนแรก</span>
-      <ejs-numerictextbox id="quota-first" [value]="quotas().FirstMonth" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('FirstMonth', $event)"></ejs-numerictextbox>
-    </label>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-end">
+      <label class="field">
+        <span>ผู้ที่กำลังดู (ตัวอย่างออฟไลน์)</span>
+        <ejs-dropdownlist
+          id="viewer-role"
+          [dataSource]="viewerOptions"
+          [fields]="fields"
+          [value]="viewer().id"
+          [enabled]="!session()"
+          (change)="onViewer($event)"
+          width="100%"
+        ></ejs-dropdownlist>
+      </label>
+      <ejs-message id="access-flag" [content]="accessBanner()" severity="Info" variant="Outlined"></ejs-message>
+    </div>
+    @if (status()) {
+      <ejs-message [content]="status()" severity="Info" variant="Outlined"></ejs-message>
+    }
   </div>
 
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <h3>คน ระดับ และสิทธิ์การใช้งาน (Role Matrix)</h3>
-    <div style="width: 240px;">
-      <ejs-textbox
-        placeholder="ค้นหาชื่อ / สายงาน / สิทธิ์..."
-        [value]="personQuery()"
-        (input)="personQuery.set($any($event).value ?? '')"
-      ></ejs-textbox>
+  <div class="card-grid-2">
+    <div class="section-card">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>โควต้ารายสัปดาห์</h3>
+          <p class="fine">ใช้คำนวณคนว่างบนคิว ไม่เปลี่ยน MD ที่วางไว้ของดัชนี และไม่เปลี่ยนคะแนนใบ</p>
+        </div>
+        <span class="e-badge e-badge-info e-badge-pill">MD / สัปดาห์</span>
+      </div>
+      <div class="form-grid grid grid-cols-1 sm:grid-cols-2">
+        <label class="field">
+          <span>Senior</span>
+          <ejs-numerictextbox id="quota-senior" [value]="quotas().Senior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Senior', $event)"></ejs-numerictextbox>
+        </label>
+        <label class="field">
+          <span>Mid</span>
+          <ejs-numerictextbox id="quota-mid" [value]="quotas().Mid" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Mid', $event)"></ejs-numerictextbox>
+        </label>
+        <label class="field">
+          <span>Junior</span>
+          <ejs-numerictextbox id="quota-junior" [attr.data-quota]="quotas().Junior" [value]="quotas().Junior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Junior', $event)"></ejs-numerictextbox>
+        </label>
+        <label class="field">
+          <span>เดือนแรก</span>
+          <ejs-numerictextbox id="quota-first" [value]="quotas().FirstMonth" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('FirstMonth', $event)"></ejs-numerictextbox>
+        </label>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>กฎแจ้งเตือนใบงานเสี่ยง</h3>
+          <p class="fine">กำหนดเงื่อนไขการแจ้งเตือนใบงานใกล้ครบกำหนดและใบที่เวลาจริงเกินแผน</p>
+        </div>
+        <span class="e-badge e-badge-warning e-badge-pill">Alert Rules</span>
+      </div>
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-wrap gap-4">
+          <ejs-checkbox id="rule-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="rules().deadline" [disabled]="!canEdit()" (change)="onDeadline($event)"></ejs-checkbox>
+          <ejs-checkbox id="rule-overrun" label="actual มีแนวโน้มเกิน estimate" [checked]="rules().overrun" [disabled]="!canEdit()" (change)="onOverrun($event)"></ejs-checkbox>
+        </div>
+        <label class="field">
+          <span>เกณฑ์เกิน (เท่าของ estimate)</span>
+          <ejs-numerictextbox id="rule-overrun-limit" [value]="rules().overrunLimit" [enabled]="canEdit()" [min]="1.1" [max]="5" [step]="0.1" format="n1" (change)="onOverrunLimit($event)"></ejs-numerictextbox>
+        </label>
+      </div>
     </div>
   </div>
-  <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-    @for (person of filteredRoster(); track person.id) {
-      <div class="e-card">
-        <div class="e-card-content flex flex-wrap items-center justify-between gap-3 p-3">
-          <div class="flex flex-col gap-0.5">
-            <span class="font-bold">{{ person.nickname }} · {{ person.track === 'RD' ? 'R&D' : 'Implement' }}</span>
-            <span class="fine m-0">{{ person.role }} · @{{ person.gitlabUsername || person.id }}</span>
+
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>คน ระดับ และสิทธิ์การใช้งาน (Role Matrix)</h3>
+        <p class="fine">ปรับสิทธิ์การเข้าถึง (admin / lead / member) และระดับโควตาของพนักงานแต่ละคน</p>
+      </div>
+      <div class="w-full sm:w-64">
+        <ejs-textbox
+          placeholder="ค้นหาชื่อ / สายงาน / สิทธิ์..."
+          [value]="personQuery()"
+          (input)="personQuery.set($any($event).value ?? '')"
+          width="100%"
+        ></ejs-textbox>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      @for (person of filteredRoster(); track person.id) {
+        <div class="e-card">
+          <div class="e-card-content flex flex-col justify-between gap-3 p-3.5 sm:flex-row sm:items-center">
+            <div class="flex items-center gap-3">
+              <div class="avatar-badge">{{ person.nickname.slice(0, 2) }}</div>
+              <div class="flex flex-col gap-0.5">
+                <span class="font-bold">{{ person.nickname }} · {{ person.track === 'RD' ? 'R&D' : 'Implement' }}</span>
+                <span class="fine m-0">{{ person.role }} · @{{ person.gitlabUsername || person.id }}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:w-auto">
+              <ejs-dropdownlist
+                cssClass="access-list"
+                [attr.data-person-access]="person.id"
+                [dataSource]="accessOptions"
+                [fields]="fields"
+                [value]="person.access ?? 'member'"
+                [enabled]="canEdit()"
+                (change)="onAccess(person.id, $event)"
+                width="175px"
+              ></ejs-dropdownlist>
+              <ejs-dropdownlist
+                cssClass="level-list"
+                [attr.data-person]="person.id"
+                [dataSource]="levelOptions"
+                [fields]="fields"
+                [value]="person.level"
+                [enabled]="canEdit()"
+                (change)="onLevel(person.id, $event)"
+                width="135px"
+              ></ejs-dropdownlist>
+            </div>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>น้ำหนักคะแนนแยกสาย</h3>
+        <p class="fine">ค่าเริ่มต้นคือสูตรเดิม · ผลรวมแต่ละสายควรเท่ากับ 100%</p>
+      </div>
+      @if (canEdit()) {
+        <button ejs-button cssClass="e-outline" type="button" (click)="resetWeights()">คืนค่าเริ่มต้นมาตรฐาน (100%)</button>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div class="e-card p-3.5 flex flex-col gap-1.5">
+        <div class="flex justify-between items-center">
+          <strong>ผลรวมสาย Implement</strong>
+          <span class="e-badge" [class.e-badge-success]="implementWeightSum() === 100" [class.e-badge-warning]="implementWeightSum() !== 100">
+            {{ implementWeightSum() }}%
+          </span>
+        </div>
+        <ejs-progressbar id="imp-weight-progress" type="Linear" height="12" [minimum]="0" [maximum]="100" [value]="implementWeightSum()"></ejs-progressbar>
+      </div>
+      <div class="e-card p-3.5 flex flex-col gap-1.5">
+        <div class="flex justify-between items-center">
+          <strong>ผลรวมสาย R&amp;D</strong>
+          <span class="e-badge" [class.e-badge-success]="researchWeightSum() === 100" [class.e-badge-warning]="researchWeightSum() !== 100">
+            {{ researchWeightSum() }}%
+          </span>
+        </div>
+        <ejs-progressbar id="rd-weight-progress" type="Linear" height="12" [minimum]="0" [maximum]="100" [value]="researchWeightSum()"></ejs-progressbar>
+      </div>
+    </div>
+
+    @if (implementWeightSum() !== 100 || researchWeightSum() !== 100) {
+      <ejs-message
+        content="คำเตือน: ผลรวมน้ำหนักคะแนนไม่เท่ากับ 100% คะแนนรวมรายบุคคลจะถูกถ่วงน้ำหนักตามสัดส่วนที่ตั้งไว้"
+        severity="Warning"
+        variant="Outlined"
+      ></ejs-message>
+    }
+
+    <div class="form-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+      <label class="field"><span>Implement คะแนนใบ</span><ejs-numerictextbox id="weight-imp-ticket" [value]="weights().implementTicket" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'ticket' }, $event)"></ejs-numerictextbox></label>
+      <label class="field"><span>Implement แผน</span><ejs-numerictextbox id="weight-imp-plan" [value]="weights().implementPlan" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'plan' }, $event)"></ejs-numerictextbox></label>
+      <label class="field"><span>Implement ความแม่น</span><ejs-numerictextbox id="weight-imp-accuracy" [value]="weights().implementAccuracy" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'accuracy' }, $event)"></ejs-numerictextbox></label>
+      <label class="field"><span>Implement คุณภาพ</span><ejs-numerictextbox id="weight-imp-quality" [value]="weights().implementQuality" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'quality' }, $event)"></ejs-numerictextbox></label>
+      <label class="field"><span>R&amp;D DoD</span><ejs-numerictextbox id="weight-rd-dod" [value]="weights().researchDod" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'dod' }, $event)"></ejs-numerictextbox></label>
+      <label class="field"><span>R&amp;D Spike</span><ejs-numerictextbox id="weight-rd-spike" [value]="weights().researchSpike" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'spike' }, $event)"></ejs-numerictextbox></label>
+      <label class="field"><span>R&amp;D รับเข้า</span><ejs-numerictextbox id="weight-rd-outcome" [value]="weights().researchOutcome" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'outcome' }, $event)"></ejs-numerictextbox></label>
+      <label class="field"><span>R&amp;D รีวิว</span><ejs-numerictextbox id="weight-rd-review" [value]="weights().researchReview" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'review' }, $event)"></ejs-numerictextbox></label>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>สถานะการเชื่อมต่อระบบภายนอก</h3>
+        <p class="fine">โหมดการเชื่อมต่อของ myProject, GitLab และ Microsoft Teams</p>
+      </div>
+      <a ejs-button cssClass="e-outline e-small" routerLink="/integrations">ตั้งค่าละเอียด (/integrations)</a>
+    </div>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      @for (link of links(); track link.id) {
+        <div class="e-card">
+          <div class="e-card-content flex flex-wrap items-center justify-between gap-3 p-3.5">
+            <span>{{ link.label }} · {{ link.detail }}</span>
             <ejs-dropdownlist
-              cssClass="access-list"
-              [attr.data-person-access]="person.id"
-              [dataSource]="accessOptions"
+              [id]="'connection-' + link.id"
+              [dataSource]="connectionOptions"
               [fields]="fields"
-              [value]="person.access ?? 'member'"
+              [value]="link.state"
               [enabled]="canEdit()"
-              (change)="onAccess(person.id, $event)"
-              width="190px"
-            ></ejs-dropdownlist>
-            <ejs-dropdownlist
-              cssClass="level-list"
-              [attr.data-person]="person.id"
-              [dataSource]="levelOptions"
-              [fields]="fields"
-              [value]="person.level"
-              [enabled]="canEdit()"
-              (change)="onLevel(person.id, $event)"
-              width="140px"
+              (change)="onConnection(link.id, $event)"
+              width="180px"
             ></ejs-dropdownlist>
           </div>
         </div>
-      </div>
-    }
-  </div>
-
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <div>
-      <h3>น้ำหนักคะแนนแยกสาย</h3>
-      <p class="fine">ค่าเริ่มต้นคือสูตรเดิม · ผลรวมแต่ละสายควรเท่ากับ 100%</p>
-    </div>
-    @if (canEdit()) {
-      <button ejs-button cssClass="e-outline" type="button" (click)="resetWeights()">คืนค่าเริ่มต้นมาตรฐาน (100%)</button>
-    }
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-    <div class="e-card p-3 flex flex-col gap-1">
-      <div class="flex justify-between items-center">
-        <strong>ผลรวมสาย Implement</strong>
-        <span class="e-badge" [class.e-badge-success]="implementWeightSum() === 100" [class.e-badge-warning]="implementWeightSum() !== 100">
-          {{ implementWeightSum() }}%
-        </span>
-      </div>
-      <ejs-progressbar id="imp-weight-progress" type="Linear" height="12" [minimum]="0" [maximum]="100" [value]="implementWeightSum()"></ejs-progressbar>
-    </div>
-    <div class="e-card p-3 flex flex-col gap-1">
-      <div class="flex justify-between items-center">
-        <strong>ผลรวมสาย R&amp;D</strong>
-        <span class="e-badge" [class.e-badge-success]="researchWeightSum() === 100" [class.e-badge-warning]="researchWeightSum() !== 100">
-          {{ researchWeightSum() }}%
-        </span>
-      </div>
-      <ejs-progressbar id="rd-weight-progress" type="Linear" height="12" [minimum]="0" [maximum]="100" [value]="researchWeightSum()"></ejs-progressbar>
+      }
     </div>
   </div>
-  @if (implementWeightSum() !== 100 || researchWeightSum() !== 100) {
-    <ejs-message
-      content="คำเตือน: ผลรวมน้ำหนักคะแนนไม่เท่ากับ 100% คะแนนรวมรายบุคคลจะถูกถ่วงน้ำหนักตามสัดส่วนที่ตั้งไว้"
-      severity="Warning"
-      variant="Outlined"
-    ></ejs-message>
-  }
-  <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-    <label class="field"><span>Implement คะแนนใบ</span><ejs-numerictextbox id="weight-imp-ticket" [value]="weights().implementTicket" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'ticket' }, $event)"></ejs-numerictextbox></label>
-    <label class="field"><span>Implement แผน</span><ejs-numerictextbox id="weight-imp-plan" [value]="weights().implementPlan" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'plan' }, $event)"></ejs-numerictextbox></label>
-    <label class="field"><span>Implement ความแม่น</span><ejs-numerictextbox id="weight-imp-accuracy" [value]="weights().implementAccuracy" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'accuracy' }, $event)"></ejs-numerictextbox></label>
-    <label class="field"><span>Implement คุณภาพ</span><ejs-numerictextbox id="weight-imp-quality" [value]="weights().implementQuality" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'quality' }, $event)"></ejs-numerictextbox></label>
-    <label class="field"><span>R&amp;D DoD</span><ejs-numerictextbox id="weight-rd-dod" [value]="weights().researchDod" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'dod' }, $event)"></ejs-numerictextbox></label>
-    <label class="field"><span>R&amp;D Spike</span><ejs-numerictextbox id="weight-rd-spike" [value]="weights().researchSpike" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'spike' }, $event)"></ejs-numerictextbox></label>
-    <label class="field"><span>R&amp;D รับเข้า</span><ejs-numerictextbox id="weight-rd-outcome" [value]="weights().researchOutcome" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'outcome' }, $event)"></ejs-numerictextbox></label>
-    <label class="field"><span>R&amp;D รีวิว</span><ejs-numerictextbox id="weight-rd-review" [value]="weights().researchReview" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'review' }, $event)"></ejs-numerictextbox></label>
-  </div>
 
-  <h3>กฎแจ้งเตือน</h3>
-  <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-    <ejs-checkbox id="rule-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="rules().deadline" [disabled]="!canEdit()" (change)="onDeadline($event)"></ejs-checkbox>
-    <ejs-checkbox id="rule-overrun" label="actual มีแนวโน้มเกิน estimate" [checked]="rules().overrun" [disabled]="!canEdit()" (change)="onOverrun($event)"></ejs-checkbox>
-    <label class="field">
-      <span>เกณฑ์เกิน (เท่าของ estimate)</span>
-      <ejs-numerictextbox id="rule-overrun-limit" [value]="rules().overrunLimit" [enabled]="canEdit()" [min]="1.1" [max]="5" [step]="0.1" format="n1" (change)="onOverrunLimit($event)"></ejs-numerictextbox>
-    </label>
-  </div>
-
-  <h3>สถานะการเชื่อม</h3>
-  <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-    @for (link of links(); track link.id) {
-      <div class="e-card">
-        <div class="e-card-content flex flex-wrap items-center justify-between gap-3 p-3">
-          <span>{{ link.label }} · {{ link.detail }}</span>
-          <ejs-dropdownlist
-            [id]="'connection-' + link.id"
-            [dataSource]="connectionOptions"
-            [fields]="fields"
-            [value]="link.state"
-            [enabled]="canEdit()"
-            (change)="onConnection(link.id, $event)"
-            width="180px"
-          ></ejs-dropdownlist>
-        </div>
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>ประวัติตรวจสอบระบบ (Audit Log)</h3>
+        <p class="fine">บันทึกการแก้ไขสิทธิ์ผู้ใช้งาน การตั้งค่า และการสั่งรันวิเคราะห์ข้อมูล</p>
       </div>
-    }
+      <span class="e-badge e-badge-secondary e-badge-pill">{{ auditLogs().length }} รายการล่าสุด</span>
+    </div>
+    <ejs-grid
+      id="admin-audit-grid"
+      [dataSource]="auditLogs()"
+      [allowPaging]="true"
+      [allowSorting]="true"
+      [allowResizing]="true"
+      [pageSettings]="{ pageSize: 8 }"
+      height="260"
+    >
+      <e-columns>
+        <e-column field="id" headerText="ID" width="80" textAlign="Right"></e-column>
+        <e-column field="actorName" headerText="ผู้ดำเนินการ" width="130"></e-column>
+        <e-column field="action" headerText="การกระทำ" width="180"></e-column>
+        <e-column field="target" headerText="เป้าหมาย" width="140"></e-column>
+        <e-column field="detail" headerText="รายละเอียด" width="280"></e-column>
+        <e-column field="createdAt" headerText="เวลา" width="190"></e-column>
+      </e-columns>
+    </ejs-grid>
   </div>
-
-  <h3>ประวัติตรวจสอบระบบ (Audit Log)</h3>
-  <ejs-grid
-    id="admin-audit-grid"
-    [dataSource]="auditLogs()"
-    [allowPaging]="true"
-    [allowSorting]="true"
-    [allowResizing]="true"
-    [pageSettings]="{ pageSize: 8 }"
-    height="260"
-  >
-    <e-columns>
-      <e-column field="id" headerText="ID" width="80" textAlign="Right"></e-column>
-      <e-column field="actorName" headerText="ผู้ดำเนินการ" width="130"></e-column>
-      <e-column field="action" headerText="การกระทำ" width="180"></e-column>
-      <e-column field="target" headerText="เป้าหมาย" width="140"></e-column>
-      <e-column field="detail" headerText="รายละเอียด" width="280"></e-column>
-      <e-column field="createdAt" headerText="เวลา" width="190"></e-column>
-    </e-columns>
-  </ejs-grid>
 </section>

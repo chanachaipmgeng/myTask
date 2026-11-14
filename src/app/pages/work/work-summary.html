@@ -1,11 +1,11 @@
 <div class="flex flex-col gap-4">
-  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  <div class="kpi-grid-4">
     @for (card of view().cards; track card.id) {
       <div class="e-card">
         <div class="e-card-content p-4">
           <p class="kpi-note">{{ card.label }}</p>
           <p class="kpi-value">{{ card.value }}</p>
-          <p class="fine">{{ card.hint }}</p>
+          <p class="fine m-0">{{ card.hint }}</p>
         </div>
       </div>
     }
@@ -14,8 +14,12 @@
   <ejs-dashboardlayout
     [columns]="4"
     [cellSpacing]="cellSpacing"
+    [cellAspectRatio]="1.25"
     [allowDragging]="false"
     [allowResizing]="false"
+    [allowFloating]="false"
+    [showGridLines]="false"
+    mediaQuery="max-width: 800px"
   >
     <div id="work-status" class="e-panel" data-row="0" data-col="0" data-sizex="2" data-sizey="2">
       <div class="e-panel-container">

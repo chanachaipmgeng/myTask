@@ -1,5 +1,11 @@
-<div class="flex flex-col gap-3">
-  <p class="fine m-0">รายการใบงานแนวปฏิบัติงาน (ไม่ใช่ตารางคะแนน) · คลิกแถวเพื่อดูสรุปสั้น</p>
+<div class="section-card">
+  <div class="section-card-head">
+    <div class="section-card-copy">
+      <h3>รายการใบงานปฏิบัติการ (Work List)</h3>
+      <p class="fine">รายการใบงานแนวปฏิบัติงาน (ไม่ใช่ตารางคะแนน) &middot; คลิกแถวเพื่อดูสรุปสั้น</p>
+    </div>
+    <span class="e-badge e-badge-info e-badge-pill">{{ rows().length }} ใบ</span>
+  </div>
   <ejs-grid
     #listGrid
     [dataSource]="rows()"

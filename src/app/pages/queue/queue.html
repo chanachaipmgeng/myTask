@@ -3,8 +3,8 @@
     <div>
       <h2>คิวงานใหม่</h2>
       <p>
-        ใบที่ยังไม่มีผู้รับ แยก R&D กับ Implement. คนว่าง = โควต้าสัปดาห์ − MD ของใบที่ยังไม่ปิด − 1 MD
-        ที่กันไว้นอกแผน. WIP ไม่เกิน 2 และ XL ไม่เกิน 1 ใบต่อคน. ข้อเสนอไม่ย้ายใบจนกว่าจะกดรับ · เฉพาะ
+        ใบที่ยังไม่มีผู้รับ แยก R&amp;D กับ Implement. คนว่าง = โควต้าสัปดาห์ &minus; MD ของใบที่ยังไม่ปิด &minus; 1 MD
+        ที่กันไว้นอกแผน. WIP ไม่เกิน 2 และ XL ไม่เกิน 1 ใบต่อคน. ข้อเสนอไม่ย้ายใบจนกว่าจะกดรับ &middot; เฉพาะ
         admin/lead
       </p>
     </div>
@@ -36,67 +36,102 @@
     </div>
   </ng-template>
 
-  <h3>กำลังที่เหลือ</h3>
-  <ejs-grid [dataSource]="plan().rows" [allowPaging]="true" [pageSettings]="pageSettings" height="320">
-    <e-columns>
-      <e-column field="personLabel" headerText="คน" width="180"></e-column>
-      <e-column field="trackLabel" headerText="สาย" width="120"></e-column>
-      <e-column field="level" headerText="ระดับ" width="110"></e-column>
-      <e-column field="quota" headerText="โควต้า" width="100" textAlign="Right" format="N1"></e-column>
-      <e-column field="openMd" headerText="MD ที่เปิดอยู่" width="130" textAlign="Right" format="N2"></e-column>
-      <e-column field="freeMd" headerText="ว่างหลังกัน 1 MD" width="150" textAlign="Right" format="N2"></e-column>
-      <e-column field="wipLabel" headerText="WIP" width="90"></e-column>
-      <e-column field="xlLabel" headerText="XL" width="80"></e-column>
-      <e-column field="status" headerText="สถานะ" width="110"></e-column>
-    </e-columns>
-  </ejs-grid>
-
-  <h3>คิว Implement</h3>
-  <ejs-grid class="queue-grid" [dataSource]="implementQueue()" [allowPaging]="true" [pageSettings]="pageSettings" height="240">
-    <e-columns>
-      <e-column field="id" headerText="รหัส" width="120"></e-column>
-      <e-column field="type" headerText="ชนิด" width="140"></e-column>
-      <e-column field="module" headerText="โมดูล" width="120"></e-column>
-      <e-column field="size" headerText="ขนาด" width="80"></e-column>
-      <e-column field="estimateMd" headerText="Est" width="90" textAlign="Right" format="N2"></e-column>
-      <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
-    </e-columns>
-  </ejs-grid>
-
-  <h3>คิว R&amp;D</h3>
-  <ejs-grid class="queue-grid" [dataSource]="researchQueue()" [allowPaging]="true" [pageSettings]="pageSettings" height="240">
-    <e-columns>
-      <e-column field="id" headerText="รหัส" width="120"></e-column>
-      <e-column field="type" headerText="ชนิด" width="140"></e-column>
-      <e-column field="module" headerText="โมดูล" width="120"></e-column>
-      <e-column field="size" headerText="ขนาด" width="80"></e-column>
-      <e-column field="estimateMd" headerText="Est" width="90" textAlign="Right" format="N2"></e-column>
-      <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
-    </e-columns>
-  </ejs-grid>
-
-  <h3>วิเคราะห์แผนและข้อเสนอ</h3>
-  <div class="grid grid-cols-1 gap-3">
-    @for (item of plan().plans; track item.ticket.id) {
-      <div class="e-card">
-        <div class="e-card-content flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-          <p class="m-0">{{ item.text }}</p>
-          @if (item.personId) {
-            <button
-              ejs-button
-              [isPrimary]="true"
-              type="button"
-              [attr.data-ticket]="item.ticket.id"
-              [disabled]="!canAssign() || accepting()"
-              (click)="accept(item)"
-            >
-              รับข้อเสนอ
-            </button>
-          }
-        </div>
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>กำลังคนที่เหลือในสัปดาห์</h3>
+        <p class="fine">ตรวจสอบโควตาคงเหลือหลังหักใบงานเปิดและสำรองนอกแผน 1 MD</p>
       </div>
-    }
+      <span class="e-badge e-badge-info e-badge-pill">ว่าง {{ freePeople().length }} คน</span>
+    </div>
+    <ejs-grid [dataSource]="plan().rows" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="320">
+      <e-columns>
+        <e-column field="personLabel" headerText="คน" width="180"></e-column>
+        <e-column field="trackLabel" headerText="สาย" width="120"></e-column>
+        <e-column field="level" headerText="ระดับ" width="110"></e-column>
+        <e-column field="quota" headerText="โควต้า" width="100" textAlign="Right" format="N1"></e-column>
+        <e-column field="openMd" headerText="MD ที่เปิดอยู่" width="130" textAlign="Right" format="N2"></e-column>
+        <e-column field="freeMd" headerText="ว่างหลังกัน 1 MD" width="150" textAlign="Right" format="N2"></e-column>
+        <e-column field="wipLabel" headerText="WIP" width="90"></e-column>
+        <e-column field="xlLabel" headerText="XL" width="80"></e-column>
+        <e-column field="status" headerText="สถานะ" width="110"></e-column>
+      </e-columns>
+    </ejs-grid>
   </div>
+
+  <div class="card-grid-2">
+    <div class="section-card">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>คิวสาย Implement</h3>
+          <p class="fine">ใบงานสาย Implement ที่รอจัดสรรผู้รับผิดชอบ</p>
+        </div>
+        <span class="e-badge e-badge-primary e-badge-pill">{{ implementQueue().length }} ใบ</span>
+      </div>
+      <ejs-grid class="queue-grid" [dataSource]="implementQueue()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
+        <e-columns>
+          <e-column field="id" headerText="รหัส" width="120"></e-column>
+          <e-column field="type" headerText="ชนิด" width="140"></e-column>
+          <e-column field="module" headerText="โมดูล" width="120"></e-column>
+          <e-column field="size" headerText="ขนาด" width="80"></e-column>
+          <e-column field="estimateMd" headerText="Est" width="90" textAlign="Right" format="N2"></e-column>
+          <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
+        </e-columns>
+      </ejs-grid>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>คิวสาย R&amp;D</h3>
+          <p class="fine">ใบงานสาย R&amp;D / Spike ที่รอจัดสรรผู้รับผิดชอบ</p>
+        </div>
+        <span class="e-badge e-badge-info e-badge-pill">{{ researchQueue().length }} ใบ</span>
+      </div>
+      <ejs-grid class="queue-grid" [dataSource]="researchQueue()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
+        <e-columns>
+          <e-column field="id" headerText="รหัส" width="120"></e-column>
+          <e-column field="type" headerText="ชนิด" width="140"></e-column>
+          <e-column field="module" headerText="โมดูล" width="120"></e-column>
+          <e-column field="size" headerText="ขนาด" width="80"></e-column>
+          <e-column field="estimateMd" headerText="Est" width="90" textAlign="Right" format="N2"></e-column>
+          <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
+        </e-columns>
+      </ejs-grid>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>วิเคราะห์แผนและข้อเสนอรับงาน</h3>
+        <p class="fine">ข้อเสนอการจับคู่ใบงานกับพนักงานที่โควตาว่างและ WIP ยังไม่เต็ม</p>
+      </div>
+      <span class="e-badge e-badge-secondary e-badge-pill">{{ plan().plans.length }} รายการ</span>
+    </div>
+    <div class="grid grid-cols-1 gap-3">
+      @for (item of plan().plans; track item.ticket.id) {
+        <div class="e-card">
+          <div class="e-card-content flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+            <p class="m-0">{{ item.text }}</p>
+            @if (item.personId) {
+              <button
+                ejs-button
+                [isPrimary]="true"
+                type="button"
+                [attr.data-ticket]="item.ticket.id"
+                [disabled]="!canAssign() || accepting()"
+                (click)="accept(item)"
+              >
+                รับข้อเสนอ
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
   @if (message()) {
     <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
   }

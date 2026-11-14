@@ -167,98 +167,108 @@
     </e-accordionitems>
   </ejs-accordion>
 
-  <ejs-toolbar id="ticket-toolbar" cssClass="page-toolbar" overflowMode="Scroll" width="100%">
-    <e-items>
-      <e-item [template]="searchTemplate"></e-item>
-      <e-item [template]="trackTemplate"></e-item>
-      <e-item [template]="typeTemplate"></e-item>
-    </e-items>
-  </ejs-toolbar>
-  <ng-template #searchTemplate>
-    <label class="toolbar-field">
-      <span>ค้นหา</span>
-      <ejs-textbox id="ticket-search" placeholder="รหัส โมดูล หรือผู้รับ" width="220px" (input)="onSearch($event)"></ejs-textbox>
-    </label>
-  </ng-template>
-  <ng-template #trackTemplate>
-    <label class="toolbar-field">
-      <span>สาย</span>
-      <ejs-dropdownlist id="ticket-track-filter" [dataSource]="trackFilters" [fields]="fields" [value]="trackFilter()" (change)="setTrackFilter($event)" width="160px"></ejs-dropdownlist>
-    </label>
-  </ng-template>
-  <ng-template #typeTemplate>
-    <label class="toolbar-field">
-      <span>ชนิด</span>
-      <ejs-dropdownlist id="ticket-type-filter" [dataSource]="typeFilters" [fields]="fields" [value]="typeFilter()" (change)="setTypeFilter($event)" width="180px"></ejs-dropdownlist>
-    </label>
-  </ng-template>
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>รายการใบงานและผลคะแนน</h3>
+        <p class="fine">กรองตามสายงาน ชนิดใบงาน หรือค้นหารหัส/โมดูล พร้อมส่งออกเป็น Excel หรือ CSV</p>
+      </div>
+      <span class="e-badge e-badge-info e-badge-pill">{{ rows().length }} ใบ</span>
+    </div>
 
-  <ejs-grid
-    #ticketGrid
-    id="tickets-score-grid"
-    [dataSource]="rows()"
-    [allowPaging]="true"
-    [allowSorting]="true"
-    [allowFiltering]="true"
-    [allowResizing]="true"
-    [showColumnChooser]="true"
-    [allowExcelExport]="true"
-    [frozenColumns]="2"
-    [toolbar]="gridToolbar"
-    [pageSettings]="pageSettings"
-    [filterSettings]="filterSettings"
-    [sortSettings]="sortSettings"
-    (toolbarClick)="onGridToolbarClick($event)"
-    (rowDataBound)="markReference($event)"
-    height="520"
-  >
-    <e-columns>
-      <e-column field="id" headerText="รหัส" width="120"></e-column>
-      <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
-      <e-column field="type" headerText="ชนิด" width="140"></e-column>
-      <e-column field="module" headerText="โมดูล" width="120"></e-column>
-      <e-column field="size" headerText="ขนาด" width="80"></e-column>
-      <e-column field="points" headerText="Points" width="90" textAlign="Right"></e-column>
-      <e-column field="assignee" headerText="ผู้รับ" width="170"></e-column>
-      <e-column field="estimateMd" headerText="Est" width="95" textAlign="Right" format="N2"></e-column>
-      <e-column field="actualMd" headerText="Actual" width="95" textAlign="Right" format="N2"></e-column>
-      <e-column field="ratioLabel" headerText="อัตราส่วน" width="110"></e-column>
-      <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="120"></e-column>
-      <e-column field="weekPoints" headerText="คะแนนสัปดาห์" width="130" textAlign="Right"></e-column>
-      <e-column field="accuracyPoints" headerText="คะแนนแม่น" width="120" textAlign="Right"></e-column>
-      <e-column field="reviewRounds" headerText="รอบรีวิว" width="110" textAlign="Right"></e-column>
-      <e-column field="blockerLabel" headerText="Blocker" width="100"></e-column>
-      <e-column field="reviewPoints" headerText="คะแนนรีวิว" width="120" textAlign="Right"></e-column>
-      <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right"></e-column>
-      <e-column field="reopenPoints" headerText="คะแนนเปิดซ้ำ" width="130" textAlign="Right"></e-column>
-      <e-column field="varianceCode" headerText="Variance" width="110"></e-column>
-      <e-column field="closedLabel" headerText="ปิด" width="80"></e-column>
-      <e-column field="dodLabel" headerText="DoD" width="80"></e-column>
-      <e-column field="spikeLabel" headerText="Spike" width="90"></e-column>
-      <e-column field="unplannedLabel" headerText="นอกแผน" width="100"></e-column>
-      <e-column field="score" headerText="คะแนน" width="100" textAlign="Right"></e-column>
-      <e-column field="scoreMeaning" headerText="ที่มาของคะแนน" width="420"></e-column>
-      <e-column field="alertLabel" headerText="แจ้งเตือน" width="180"></e-column>
-      <e-column field="closedOnLabel" headerText="วันที่ปิด" width="120"></e-column>
-      <e-column field="note" headerText="หมายเหตุ" width="260"></e-column>
-    </e-columns>
-    <e-aggregates>
-      <e-aggregate>
-        <e-columns>
-          <e-column type="Count" field="id">
-            <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
-          </e-column>
-          <e-column type="Sum" field="estimateMd" format="N2">
-            <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
-          </e-column>
-          <e-column type="Sum" field="actualMd" format="N2">
-            <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
-          </e-column>
-          <e-column type="Average" field="score" format="N1">
-            <ng-template #footerTemplate let-data>เฉลี่ย {{ data.Average }}</ng-template>
-          </e-column>
-        </e-columns>
-      </e-aggregate>
-    </e-aggregates>
-  </ejs-grid>
+    <ejs-toolbar id="ticket-toolbar" cssClass="page-toolbar m-0" overflowMode="Scroll" width="100%">
+      <e-items>
+        <e-item [template]="searchTemplate"></e-item>
+        <e-item [template]="trackTemplate"></e-item>
+        <e-item [template]="typeTemplate"></e-item>
+      </e-items>
+    </ejs-toolbar>
+    <ng-template #searchTemplate>
+      <label class="toolbar-field">
+        <span>ค้นหา</span>
+        <ejs-textbox id="ticket-search" placeholder="รหัส โมดูล หรือผู้รับ" width="220px" (input)="onSearch($event)"></ejs-textbox>
+      </label>
+    </ng-template>
+    <ng-template #trackTemplate>
+      <label class="toolbar-field">
+        <span>สาย</span>
+        <ejs-dropdownlist id="ticket-track-filter" [dataSource]="trackFilters" [fields]="fields" [value]="trackFilter()" (change)="setTrackFilter($event)" width="160px"></ejs-dropdownlist>
+      </label>
+    </ng-template>
+    <ng-template #typeTemplate>
+      <label class="toolbar-field">
+        <span>ชนิด</span>
+        <ejs-dropdownlist id="ticket-type-filter" [dataSource]="typeFilters" [fields]="fields" [value]="typeFilter()" (change)="setTypeFilter($event)" width="180px"></ejs-dropdownlist>
+      </label>
+    </ng-template>
+
+    <ejs-grid
+      #ticketGrid
+      id="tickets-score-grid"
+      [dataSource]="rows()"
+      [allowPaging]="true"
+      [allowSorting]="true"
+      [allowFiltering]="true"
+      [allowResizing]="true"
+      [showColumnChooser]="true"
+      [allowExcelExport]="true"
+      [frozenColumns]="2"
+      [toolbar]="gridToolbar"
+      [pageSettings]="pageSettings"
+      [filterSettings]="filterSettings"
+      [sortSettings]="sortSettings"
+      (toolbarClick)="onGridToolbarClick($event)"
+      (rowDataBound)="markReference($event)"
+      height="520"
+    >
+      <e-columns>
+        <e-column field="id" headerText="รหัส" width="120"></e-column>
+        <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
+        <e-column field="type" headerText="ชนิด" width="140"></e-column>
+        <e-column field="module" headerText="โมดูล" width="120"></e-column>
+        <e-column field="size" headerText="ขนาด" width="80"></e-column>
+        <e-column field="points" headerText="Points" width="90" textAlign="Right"></e-column>
+        <e-column field="assignee" headerText="ผู้รับ" width="170"></e-column>
+        <e-column field="estimateMd" headerText="Est" width="95" textAlign="Right" format="N2"></e-column>
+        <e-column field="actualMd" headerText="Actual" width="95" textAlign="Right" format="N2"></e-column>
+        <e-column field="ratioLabel" headerText="อัตราส่วน" width="110"></e-column>
+        <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="120"></e-column>
+        <e-column field="weekPoints" headerText="คะแนนสัปดาห์" width="130" textAlign="Right"></e-column>
+        <e-column field="accuracyPoints" headerText="คะแนนแม่น" width="120" textAlign="Right"></e-column>
+        <e-column field="reviewRounds" headerText="รอบรีวิว" width="110" textAlign="Right"></e-column>
+        <e-column field="blockerLabel" headerText="Blocker" width="100"></e-column>
+        <e-column field="reviewPoints" headerText="คะแนนรีวิว" width="120" textAlign="Right"></e-column>
+        <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right"></e-column>
+        <e-column field="reopenPoints" headerText="คะแนนเปิดซ้ำ" width="130" textAlign="Right"></e-column>
+        <e-column field="varianceCode" headerText="Variance" width="110"></e-column>
+        <e-column field="closedLabel" headerText="ปิด" width="80"></e-column>
+        <e-column field="dodLabel" headerText="DoD" width="80"></e-column>
+        <e-column field="spikeLabel" headerText="Spike" width="90"></e-column>
+        <e-column field="unplannedLabel" headerText="นอกแผน" width="100"></e-column>
+        <e-column field="score" headerText="คะแนน" width="100" textAlign="Right"></e-column>
+        <e-column field="scoreMeaning" headerText="ที่มาของคะแนน" width="420"></e-column>
+        <e-column field="alertLabel" headerText="แจ้งเตือน" width="180"></e-column>
+        <e-column field="closedOnLabel" headerText="วันที่ปิด" width="120"></e-column>
+        <e-column field="note" headerText="หมายเหตุ" width="260"></e-column>
+      </e-columns>
+      <e-aggregates>
+        <e-aggregate>
+          <e-columns>
+            <e-column type="Count" field="id">
+              <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
+            </e-column>
+            <e-column type="Sum" field="estimateMd" format="N2">
+              <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
+            </e-column>
+            <e-column type="Sum" field="actualMd" format="N2">
+              <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
+            </e-column>
+            <e-column type="Average" field="score" format="N1">
+              <ng-template #footerTemplate let-data>เฉลี่ย {{ data.Average }}</ng-template>
+            </e-column>
+          </e-columns>
+        </e-aggregate>
+      </e-aggregates>
+    </ejs-grid>
+  </div>
 </section>

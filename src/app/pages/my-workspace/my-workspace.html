@@ -20,10 +20,13 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  <div class="kpi-grid-4">
     <div class="e-card">
-      <div class="e-card-content flex flex-col gap-2 p-4">
-        <p class="kpi-note">ดัชนีพัฒนาของฉัน (เป้า {{ view().target }})</p>
+      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
+        <div class="kpi-card-top">
+          <p class="kpi-note m-0">ดัชนีพัฒนาของฉัน</p>
+          <span class="e-badge e-badge-info e-badge-pill">เป้า {{ view().target }}</span>
+        </div>
         <p class="kpi-value">{{ view().indexLabel }}</p>
         @if (view().index !== null) {
           <ejs-progressbar
@@ -43,56 +46,78 @@
     </div>
 
     <div class="e-card">
-      <div class="e-card-content flex flex-col gap-1 p-4">
-        <p class="kpi-note">งานที่กำลังถืออยู่ (WIP)</p>
+      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
+        <div class="kpi-card-top">
+          <p class="kpi-note m-0">งานที่กำลังถืออยู่ (WIP)</p>
+          <span
+            class="e-badge e-badge-pill"
+            [class.e-badge-success]="view().openCount <= 2"
+            [class.e-badge-warning]="view().openCount > 2"
+          >
+            เพดาน &le; 2 ใบ
+          </span>
+        </div>
         <p class="kpi-value">{{ view().openCount }} ใบ</p>
         <p class="fine m-0">เพดาน WIP มาตรฐานไม่เกิน 2 ใบพร้อมกัน</p>
       </div>
     </div>
 
     <div class="e-card">
-      <div class="e-card-content flex flex-col gap-1 p-4">
-        <p class="kpi-note">โควตาสัปดาห์คงเหลือ (หลังกัน 1 MD)</p>
+      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
+        <div class="kpi-card-top">
+          <p class="kpi-note m-0">โควตาสัปดาห์คงเหลือ</p>
+          <span class="e-badge e-badge-secondary e-badge-pill">กันนอกแผน 1 MD</span>
+        </div>
         <p class="kpi-value">{{ freeMdLabel() }} MD</p>
         <p class="fine m-0">โควตาระดับ {{ view().level }}: {{ view().quota }} MD/สัปดาห์</p>
       </div>
     </div>
 
     <div class="e-card">
-      <div class="e-card-content flex flex-col gap-1 p-4">
-        <p class="kpi-note">ใบงานที่ปิดแล้วสะสม</p>
+      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
+        <div class="kpi-card-top">
+          <p class="kpi-note m-0">ใบงานที่ปิดแล้วสะสม</p>
+          <span class="e-badge e-badge-primary e-badge-pill">{{ view().trackLabel }}</span>
+        </div>
         <p class="kpi-value">{{ view().closedCount }} ใบ</p>
-        <p class="fine m-0">{{ view().trackLabel }}</p>
+        <p class="fine m-0">คำนวณดัชนีจากใบงานที่ปิดแล้วทั้งหมดของฉัน</p>
       </div>
     </div>
   </div>
 
   @if (myCoaching(); as coach) {
-    <div class="e-card">
-      <div class="e-card-content flex flex-col gap-3 p-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <strong class="text-base text-cyan">สรุปวิเคราะห์พัฒนาการและคำแนะนำส่วนตัว (Self-Coaching Insight)</strong>
+    <div class="section-card">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <div class="flex flex-wrap items-center gap-2">
+            <h3>สรุปวิเคราะห์พัฒนาการและคำแนะนำส่วนตัว (Self-Coaching Insight)</h3>
             <span class="e-badge e-badge-info e-badge-pill">{{ coach.trendLabel }} (Slope {{ coach.trendSlope }})</span>
           </div>
-          <div class="flex flex-wrap gap-2 text-xs">
-            <span class="e-badge e-badge-success">ส่งตรงสัปดาห์ {{ coach.onTimePct }}%</span>
-            <span class="e-badge e-badge-info">ความแม่นประเมินขนาด {{ coach.estimationAccuracyPct }}%</span>
-            <span class="e-badge e-badge-primary">ผ่านรีวิวรอบแรก {{ coach.firstPassPct }}%</span>
+          <p class="fine">วิเคราะห์จากสถิติการส่งมอบ ความแม่นยำการประเมินขนาด และคุณภาพการรีวิวของตัวเอง</p>
+        </div>
+        <div class="flex flex-wrap gap-2 text-xs">
+          <span class="e-badge e-badge-success e-badge-pill">ส่งตรงสัปดาห์ {{ coach.onTimePct }}%</span>
+          <span class="e-badge e-badge-info e-badge-pill">ความแม่นประเมินขนาด {{ coach.estimationAccuracyPct }}%</span>
+          <span class="e-badge e-badge-primary e-badge-pill">ผ่านรีวิวรอบแรก {{ coach.firstPassPct }}%</span>
+        </div>
+      </div>
+      <div class="card-grid-2">
+        <div class="e-card">
+          <div class="e-card-content flex flex-col gap-1.5 p-4">
+            <div class="kpi-card-top">
+              <span class="kpi-note m-0">จุดแข็งปัจจุบัน</span>
+              <span class="e-badge e-badge-success e-badge-pill">Strength</span>
+            </div>
+            <p class="m-0 font-medium">{{ coach.strengthNote }}</p>
           </div>
         </div>
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div class="e-card">
-            <div class="e-card-content p-3">
-              <p class="kpi-note">จุดแข็งปัจจุบัน</p>
-              <p class="m-0 font-medium">{{ coach.strengthNote }}</p>
+        <div class="e-card">
+          <div class="e-card-content flex flex-col gap-1.5 p-4">
+            <div class="kpi-card-top">
+              <span class="kpi-note m-0">คำแนะนำเพื่อยกระดับในสปรินต์ถัดไป</span>
+              <span class="e-badge e-badge-info e-badge-pill">Next Sprint Focus</span>
             </div>
-          </div>
-          <div class="e-card">
-            <div class="e-card-content p-3">
-              <p class="kpi-note">คำแนะนำเพื่อยกระดับในสปรินต์ถัดไป</p>
-              <p class="m-0 font-medium">{{ coach.coachingFocus }}</p>
-            </div>
+            <p class="m-0 font-medium">{{ coach.coachingFocus }}</p>
           </div>
         </div>
       </div>
@@ -100,132 +125,166 @@
   }
 
   @if (myRisks().length > 0) {
-    <h3>ใบงานที่กำลังทำและสถานะความเสี่ยง</h3>
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-      @for (risk of myRisks(); track risk.ticketId) {
-        <div class="e-card">
-          <div class="e-card-content flex flex-col gap-2 p-4">
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-bold text-cyan">{{ risk.ticketId }} · {{ risk.title }}</span>
-              <span
-                class="e-badge e-badge-pill"
-                [class.e-badge-danger]="risk.riskLevel === 'สูงมาก'"
-                [class.e-badge-warning]="risk.riskLevel === 'ปานกลาง'"
-                [class.e-badge-success]="risk.riskLevel === 'ต่ำ'"
-              >
-                ความเสี่ยง {{ risk.riskLevel }} ({{ risk.riskScore }}/100)
-              </span>
-            </div>
-            <p class="fine m-0">สถานะ: {{ risk.status }} · Est {{ risk.estimateMd }} MD / ใช้จริง {{ risk.actualMd }} MD</p>
-            <p class="m-0 text-sm">{{ risk.reasons.join(' · ') }}</p>
-          </div>
+    <div class="section-card">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>ใบงานที่กำลังทำและสถานะความเสี่ยง ({{ myRisks().length }})</h3>
+          <p class="fine">ใบงานเปิดของคุณพร้อมระดับความเสี่ยง เพื่อวางแผนส่งมอบและแนบลิงก์ MR ล่วงหน้า</p>
         </div>
-      }
+        <a ejs-button cssClass="e-outline e-small" routerLink="/work/board">ไปที่กระดานงาน</a>
+      </div>
+      <div class="card-grid-2">
+        @for (risk of myRisks(); track risk.ticketId) {
+          <div class="e-card">
+            <div class="e-card-content flex flex-col gap-2 p-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="font-bold text-cyan">{{ risk.ticketId }} · {{ risk.title }}</span>
+                <span
+                  class="e-badge e-badge-pill"
+                  [class.e-badge-danger]="risk.riskLevel === 'สูงมาก'"
+                  [class.e-badge-warning]="risk.riskLevel === 'ปานกลาง'"
+                  [class.e-badge-success]="risk.riskLevel === 'ต่ำ'"
+                >
+                  ความเสี่ยง {{ risk.riskLevel }} ({{ risk.riskScore }}/100)
+                </span>
+              </div>
+              <p class="fine m-0">สถานะ: {{ risk.status }} · Est {{ risk.estimateMd }} MD / ใช้จริง {{ risk.actualMd }} MD</p>
+              <p class="m-0 text-sm">{{ risk.reasons.join(' · ') }}</p>
+            </div>
+          </div>
+        }
+      </div>
     </div>
   }
 
-  <h3>ตารางงานที่กำลังทำของฉัน</h3>
-  @if (view().openWork.length === 0) {
-    <ejs-message content="ตอนนี้ไม่มีใบงานเปิดอยู่ของคุณ" severity="Success" variant="Outlined"></ejs-message>
-  } @else {
-    <ejs-grid
-      [dataSource]="view().openWork"
-      [allowPaging]="true"
-      [allowSorting]="true"
-      [allowResizing]="true"
-      [pageSettings]="pageSettings"
-      height="240"
-    >
-      <e-columns>
-        <e-column field="id" headerText="รหัสใบงาน" width="120"></e-column>
-        <e-column field="title" headerText="ชื่องาน / โมดูล" width="220"></e-column>
-        <e-column field="type" headerText="ประเภท" width="120"></e-column>
-        <e-column field="size" headerText="ขนาด" width="80"></e-column>
-        <e-column field="status" headerText="สถานะ" width="130"></e-column>
-        <e-column field="estimateMd" headerText="Est MD" width="95" textAlign="Right" format="N2"></e-column>
-        <e-column field="dueOnLabel" headerText="กำหนดส่ง" width="120"></e-column>
-        <e-column field="unplannedLabel" headerText="แผน" width="100"></e-column>
-      </e-columns>
-    </ejs-grid>
-  }
+  <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+    <div class="section-card xl:col-span-7">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>ตารางงานที่กำลังทำของฉัน</h3>
+          <p class="fine">รายการใบงานที่ยังเปิดอยู่และผู้รับผิดชอบเป็นคุณ</p>
+        </div>
+        <span class="e-badge e-badge-info e-badge-pill">{{ view().openWork.length }} ใบ</span>
+      </div>
+      @if (view().openWork.length === 0) {
+        <ejs-message content="ตอนนี้ไม่มีใบงานเปิดอยู่ของคุณ" severity="Success" variant="Outlined"></ejs-message>
+      } @else {
+        <ejs-grid
+          [dataSource]="view().openWork"
+          [allowPaging]="true"
+          [allowSorting]="true"
+          [allowResizing]="true"
+          [pageSettings]="pageSettings"
+          height="260"
+        >
+          <e-columns>
+            <e-column field="id" headerText="รหัสใบงาน" width="120"></e-column>
+            <e-column field="title" headerText="ชื่องาน / โมดูล" width="200"></e-column>
+            <e-column field="type" headerText="ประเภท" width="115"></e-column>
+            <e-column field="size" headerText="ขนาด" width="75"></e-column>
+            <e-column field="status" headerText="สถานะ" width="125"></e-column>
+            <e-column field="estimateMd" headerText="Est MD" width="90" textAlign="Right" format="N2"></e-column>
+            <e-column field="dueOnLabel" headerText="กำหนดส่ง" width="115"></e-column>
+            <e-column field="unplannedLabel" headerText="แผน" width="95"></e-column>
+          </e-columns>
+        </ejs-grid>
+      }
+    </div>
 
-  <h3>แนวโน้มดัชนีพัฒนาของฉันรายเดือน</h3>
-  <div class="chart-frame">
-    <ejs-chart
-      id="my-self-trend"
-      style="display: block; height: 280px; width: 100%"
-      theme="Tailwind3Dark"
-      [primaryXAxis]="categoryAxis"
-      [primaryYAxis]="indexAxis"
-      [tooltip]="tooltip"
-      [legendSettings]="legend"
-      [chartArea]="chartArea"
-      [enableAnimation]="true"
-    >
-      <e-series-collection>
-        <e-series
-          type="Line"
-          [dataSource]="view().trend"
-          xName="month"
-          yName="index"
-          name="ดัชนีของฉัน"
-          width="2"
-          fill="#38bdf8"
-          [marker]="marker"
-        ></e-series>
-        <e-series
-          type="Line"
-          [dataSource]="view().trend"
-          xName="month"
-          yName="target"
-          name="เป้ามาตรฐาน 75"
-          width="2"
-          fill="#f59e0b"
-          [marker]="marker"
-        ></e-series>
-      </e-series-collection>
-    </ejs-chart>
+    <div class="section-card xl:col-span-5">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>แนวโน้มดัชนีพัฒนาของฉันรายเดือน</h3>
+          <p class="fine">เทียบพัฒนาการของตัวเองรายเดือนกับเกณฑ์มาตรฐาน 75</p>
+        </div>
+        <span class="e-badge e-badge-secondary e-badge-pill">เป้า 75</span>
+      </div>
+      <div class="chart-frame m-0">
+        <ejs-chart
+          id="my-self-trend"
+          style="display: block; height: 260px; width: 100%"
+          theme="Tailwind3Dark"
+          [primaryXAxis]="categoryAxis"
+          [primaryYAxis]="indexAxis"
+          [tooltip]="tooltip"
+          [legendSettings]="legend"
+          [chartArea]="chartArea"
+          [enableAnimation]="true"
+        >
+          <e-series-collection>
+            <e-series
+              type="Line"
+              [dataSource]="view().trend"
+              xName="month"
+              yName="index"
+              name="ดัชนีของฉัน"
+              width="2"
+              fill="#38bdf8"
+              [marker]="marker"
+            ></e-series>
+            <e-series
+              type="Line"
+              [dataSource]="view().trend"
+              xName="month"
+              yName="target"
+              name="เป้ามาตรฐาน 75"
+              width="2"
+              fill="#f59e0b"
+              [marker]="marker"
+            ></e-series>
+          </e-series-collection>
+        </ejs-chart>
+      </div>
+    </div>
   </div>
 
-  <h3>ประวัติใบงานที่ปิดแล้วของฉัน</h3>
-  @if (view().closedWork.length === 0) {
-    <ejs-message content="ยังไม่มีใบงานที่ปิดแล้ว" severity="Info" variant="Outlined"></ejs-message>
-  } @else {
-    <ejs-grid
-      [dataSource]="view().closedWork"
-      [allowPaging]="true"
-      [allowSorting]="true"
-      [allowResizing]="true"
-      [pageSettings]="pageSettings"
-      height="280"
-    >
-      <e-columns>
-        <e-column field="id" headerText="ใบงาน" width="120"></e-column>
-        <e-column field="title" headerText="เรื่อง" width="200"></e-column>
-        <e-column field="type" headerText="ประเภท" width="110"></e-column>
-        <e-column field="size" headerText="ขนาด" width="80"></e-column>
-        <e-column field="estimateMd" headerText="Est" width="85" textAlign="Right" format="N2"></e-column>
-        <e-column field="actualMd" headerText="Actual" width="90" textAlign="Right" format="N2"></e-column>
-        <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="110"></e-column>
-        <e-column field="reviewRounds" headerText="รีวิว" width="85" textAlign="Right"></e-column>
-        <e-column field="reopenCount" headerText="Reopen" width="90" textAlign="Right"></e-column>
-        <e-column field="score" headerText="คะแนน" width="95" textAlign="Right"></e-column>
-      </e-columns>
-      <e-aggregates>
-        <e-aggregate>
-          <e-columns>
-            <e-column type="Count" field="id">
-              <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
-            </e-column>
-            <e-column type="Sum" field="actualMd" format="N2">
-              <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
-            </e-column>
-            <e-column type="Average" field="score" format="N1">
-              <ng-template #footerTemplate let-data>เฉลี่ย {{ data.Average }}</ng-template>
-            </e-column>
-          </e-columns>
-        </e-aggregate>
-      </e-aggregates>
-    </ejs-grid>
-  }
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>ประวัติใบงานที่ปิดแล้วของฉัน</h3>
+        <p class="fine">สรุปผลคะแนนใบงานที่ปิดแล้ว พร้อมผลรวม MD และค่าเฉลี่ยคะแนนท้ายตาราง</p>
+      </div>
+      <span class="e-badge e-badge-success e-badge-pill">ปิดแล้ว {{ view().closedWork.length }} ใบ</span>
+    </div>
+    @if (view().closedWork.length === 0) {
+      <ejs-message content="ยังไม่มีใบงานที่ปิดแล้ว" severity="Info" variant="Outlined"></ejs-message>
+    } @else {
+      <ejs-grid
+        [dataSource]="view().closedWork"
+        [allowPaging]="true"
+        [allowSorting]="true"
+        [allowResizing]="true"
+        [pageSettings]="pageSettings"
+        height="280"
+      >
+        <e-columns>
+          <e-column field="id" headerText="ใบงาน" width="120"></e-column>
+          <e-column field="title" headerText="เรื่อง" width="200"></e-column>
+          <e-column field="type" headerText="ประเภท" width="110"></e-column>
+          <e-column field="size" headerText="ขนาด" width="80"></e-column>
+          <e-column field="estimateMd" headerText="Est" width="85" textAlign="Right" format="N2"></e-column>
+          <e-column field="actualMd" headerText="Actual" width="90" textAlign="Right" format="N2"></e-column>
+          <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="110"></e-column>
+          <e-column field="reviewRounds" headerText="รีวิว" width="85" textAlign="Right"></e-column>
+          <e-column field="reopenCount" headerText="Reopen" width="90" textAlign="Right"></e-column>
+          <e-column field="score" headerText="คะแนน" width="95" textAlign="Right"></e-column>
+        </e-columns>
+        <e-aggregates>
+          <e-aggregate>
+            <e-columns>
+              <e-column type="Count" field="id">
+                <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
+              </e-column>
+              <e-column type="Sum" field="actualMd" format="N2">
+                <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
+              </e-column>
+              <e-column type="Average" field="score" format="N1">
+                <ng-template #footerTemplate let-data>เฉลี่ย {{ data.Average }}</ng-template>
+              </e-column>
+            </e-columns>
+          </e-aggregate>
+        </e-aggregates>
+      </ejs-grid>
+    }
+  </div>
 </section>

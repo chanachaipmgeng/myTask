@@ -20,70 +20,72 @@
     </label>
   </div>
 
-  <ejs-toolbar cssClass="page-toolbar" overflowMode="Scroll" width="100%">
-    <e-items>
-      <e-item [template]="summaryTemplate"></e-item>
-      <e-item type="Separator"></e-item>
-      <e-item [template]="legendTemplate"></e-item>
-    </e-items>
-  </ejs-toolbar>
-  <ng-template #summaryTemplate>
-    <div id="schedule-summary" class="flex flex-wrap items-center gap-2 text-sm">
-      <span class="e-badge e-badge-info">แสดง {{ boardModel().shown }} ใบ</span>
-      <span class="e-badge e-badge-warning">หลุดสัปดาห์ {{ boardModel().slipped }} ใบ</span>
-      <span class="e-badge e-badge-secondary">ไม่แสดง {{ boardModel().hidden }} ใบที่ไม่มีผู้รับหรือไม่มีวัน</span>
-    </div>
-  </ng-template>
-  <ng-template #legendTemplate>
-    <div id="schedule-legend" class="flex flex-wrap items-center gap-3 text-sm">
-      <span class="e-badge e-badge-primary">สีแถบตามคน · ตรงสัปดาห์</span>
-      <span class="inline-flex items-center gap-2"
-        ><span class="schedule-swatch is-slipped"></span>สีส้ม · หลุดจากสัปดาห์ที่ commit</span
-      >
-    </div>
-  </ng-template>
+  <div class="section-card">
+    <ejs-toolbar cssClass="page-toolbar m-0" overflowMode="Scroll" width="100%">
+      <e-items>
+        <e-item [template]="summaryTemplate"></e-item>
+        <e-item type="Separator"></e-item>
+        <e-item [template]="legendTemplate"></e-item>
+      </e-items>
+    </ejs-toolbar>
+    <ng-template #summaryTemplate>
+      <div id="schedule-summary" class="flex flex-wrap items-center gap-2 text-sm">
+        <span class="e-badge e-badge-info">แสดง {{ boardModel().shown }} ใบ</span>
+        <span class="e-badge e-badge-warning">หลุดสัปดาห์ {{ boardModel().slipped }} ใบ</span>
+        <span class="e-badge e-badge-secondary">ไม่แสดง {{ boardModel().hidden }} ใบที่ไม่มีผู้รับหรือไม่มีวัน</span>
+      </div>
+    </ng-template>
+    <ng-template #legendTemplate>
+      <div id="schedule-legend" class="flex flex-wrap items-center gap-3 text-sm">
+        <span class="e-badge e-badge-primary">สีแถบตามคน · ตรงสัปดาห์</span>
+        <span class="inline-flex items-center gap-2"
+          ><span class="schedule-swatch is-slipped"></span>สีส้ม · หลุดจากสัปดาห์ที่ commit</span
+        >
+      </div>
+    </ng-template>
 
-  @if (boardModel().shown === 0) {
-    <p class="fine">ไม่มีใบงานที่แสดงในปฏิทินตามสายที่เลือก (ต้องมีผู้รับและช่วงวันที่)</p>
-  } @else {
-    <ejs-schedule
-      #board
-      id="team-schedule"
-      cssClass="team-schedule"
-      width="100%"
-      height="720px"
-      [readonly]="true"
-      [selectedDate]="initialDate"
-      currentView="TimelineMonth"
-      [firstDayOfWeek]="1"
-      [group]="group"
-      [eventSettings]="eventSettings()"
-      [rowAutoHeight]="true"
-      (navigating)="onNavigating($event)"
-      (eventRendered)="onEventRendered($event)"
-    >
-      <e-views>
-        <e-view option="TimelineMonth"></e-view>
-        <e-view option="TimelineWeek"></e-view>
-        <e-view option="Agenda"></e-view>
-      </e-views>
-      <e-resources>
-        <e-resource
-          field="OwnerId"
-          title="คน"
-          name="People"
-          [dataSource]="boardModel().people"
-          textField="Text"
-          idField="Id"
-          colorField="Color"
-        ></e-resource>
-      </e-resources>
-      <ng-template #eventSettingsTooltipTemplate let-data>
-        <div class="schedule-tip">
-          <p class="schedule-tip-title">{{ data.Subject }}</p>
-          <p>{{ data.Description }}</p>
-        </div>
-      </ng-template>
-    </ejs-schedule>
-  }
+    @if (boardModel().shown === 0) {
+      <p class="fine">ไม่มีใบงานที่แสดงในปฏิทินตามสายที่เลือก (ต้องมีผู้รับและช่วงวันที่)</p>
+    } @else {
+      <ejs-schedule
+        #board
+        id="team-schedule"
+        cssClass="team-schedule"
+        width="100%"
+        height="700px"
+        [readonly]="true"
+        [selectedDate]="initialDate"
+        currentView="TimelineMonth"
+        [firstDayOfWeek]="1"
+        [group]="group"
+        [eventSettings]="eventSettings()"
+        [rowAutoHeight]="true"
+        (navigating)="onNavigating($event)"
+        (eventRendered)="onEventRendered($event)"
+      >
+        <e-views>
+          <e-view option="TimelineMonth"></e-view>
+          <e-view option="TimelineWeek"></e-view>
+          <e-view option="Agenda"></e-view>
+        </e-views>
+        <e-resources>
+          <e-resource
+            field="OwnerId"
+            title="คน"
+            name="People"
+            [dataSource]="boardModel().people"
+            textField="Text"
+            idField="Id"
+            colorField="Color"
+          ></e-resource>
+        </e-resources>
+        <ng-template #eventSettingsTooltipTemplate let-data>
+          <div class="schedule-tip">
+            <p class="schedule-tip-title">{{ data.Subject }}</p>
+            <p>{{ data.Description }}</p>
+          </div>
+        </ng-template>
+      </ejs-schedule>
+    }
+  </div>
 </section>

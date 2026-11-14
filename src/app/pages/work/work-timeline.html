@@ -1,14 +1,18 @@
-<div class="flex flex-col gap-3">
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <p class="fine m-0">
-      แสดงโครงสร้างแม่-ลูก (Hierarchy {{ hierarchyCount() }} ใบลูก) · แท่งจริงจาก start/due/closed · baseline จาก
-      <strong>firstDueOn</strong> + estimate ·
-      @if (canEdit()) {
-        <span>สิทธิ์ admin/lead แก้ไขวันเริ่ม/วันครบกำหนดของใบที่ยังไม่ปิดได้ (ไม่ทับ firstDueOn)</span>
-      } @else {
-        <span>สิทธิ์ member ดูได้อย่างเดียว (แก้ไขวันได้เฉพาะ admin/lead)</span>
-      }
-    </p>
+<div class="section-card">
+  <div class="section-card-head">
+    <div class="section-card-copy">
+      <h3>ไทม์ไลน์แผนงานและโครงสร้างแม่-ลูก (Gantt Timeline)</h3>
+      <p class="fine">
+        แสดงโครงสร้างแม่-ลูก (Hierarchy {{ hierarchyCount() }} ใบลูก) &middot; แท่งจริงจาก start/due/closed &middot; baseline จาก
+        <strong>firstDueOn</strong> + estimate &middot;
+        @if (canEdit()) {
+          <span>สิทธิ์ admin/lead แก้ไขวันเริ่ม/วันครบกำหนดของใบที่ยังไม่ปิดได้ (ไม่ทับ firstDueOn)</span>
+        } @else {
+          <span>สิทธิ์ member ดูได้อย่างเดียว (แก้ไขวันได้เฉพาะ admin/lead)</span>
+        }
+      </p>
+    </div>
+    <span class="e-badge e-badge-info e-badge-pill">{{ tasks().length }} รายการ</span>
   </div>
 
   @if (statusMessage()) {
