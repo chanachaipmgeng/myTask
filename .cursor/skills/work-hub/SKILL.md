@@ -31,5 +31,8 @@ description: >-
 - มีปุ่มสลับหน้าระหว่าง `/work` กับ `/tickets`
 - `/pipeline` → `/work/board`
 - Gantt เปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin`/`lead` (`canAssignWork`) โดยใช้ `applyGanttDateEdit` ที่ห้ามทับ `firstDueOn` เด็ดขาด
-- บน Board: `member` ย้ายการ์ดได้ถึง `Ready for QA` / `In QA` ห้ามปิดเข้า `Done` เอง และแก้ได้เฉพาะฟิลด์ส่งมอบ (`mrLink`, `pocResult`, `bugCause`)
+- บน Board: `member` ย้ายการ์ดได้ถึง `Ready for QA` / `In QA` ห้ามปิดเข้า `Done` เอง และแก้ได้เฉพาะฟิลด์ส่งมอบ (`mrLink`, `pocResult`, `bugCause`) พร้อมแสดง Delivery & Activity Log ใน Dialog
+- ตารางหลัก (`/tickets`, `/work/list`): เปิด `[enablePersistence]="true"` เพื่อจดจำการตั้งค่าคอลัมน์ของผู้ใช้
+- โครงสร้าง Sidebar: รองรับ Sticky Pinning (100vh) และสลับ Mini-Sidebar 68px/260px ผ่าน `.nav-toggle` เพื่อเพิ่มพื้นที่ทำงาน
+- การตรวจผลงาน 1-on-1 (`/people/:id`): มีปุ่ม `prevPerson` / `nextPerson` ให้ตรวจประเมินต่อเนื่องได้ครบทั้ง 15 คน
 - หลังแก้โดเมน มุมมอง: เพิ่ม assert ใน `scripts/verify-scores.ts` แล้ว `npm run verify`

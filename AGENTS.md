@@ -41,6 +41,7 @@ npm --prefix server run build
 - **Sidebar & Layout Pinning (Desktop & Mobile)**:
   - `.app-frame` ต้องกำหนด `align-items: start;`
   - บน Desktop (`@media (min-width: 801px)`): `#app-nav` ต้องใช้ `position: sticky !important; top: 0 !important; height: 100vh !important; max-height: 100vh !important; align-self: start; overflow-y: auto !important; overscroll-behavior: contain;` ห้ามใช้ `position: relative` หรือ `height: auto` ที่ทำให้ Sidebar เลื่อนหลุดออกนอกจอเวลาหน้ายาว
+  - **Desktop Mini-Sidebar**: รองรับการพับเมนูเหลือ 68px (เฉพาะไอคอน) ผ่านปุ่ม `.nav-toggle` โดย `.app-frame.is-collapsed` ปรับเป็น `grid-template-columns: 68px minmax(0, 1fr)` เพื่อเพิ่มพื้นที่ทำงานให้กับ Gantt และตาราง Grid
   - `<ejs-sidebar>` บน Desktop ต้องใช้ `[type]="narrow() ? 'Over' : 'Push'"` และ `[showBackdrop]="false"`
   - บน Mobile (`@media (max-width: 800px)`): เมนู Sidebar ต้องเป็น `position: fixed !important; height: 100vh !important; z-index: 1200 !important;` อยู่เหนือ Backdrop (`z-index: 1050`) เสมอ และห้ามใช้ `backdrop-filter: blur` บน Backdrop ที่อาจทำให้ Sidebar มัว
 - **Syncfusion Tailwind 3 Theming Standards**:

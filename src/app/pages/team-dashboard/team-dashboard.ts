@@ -104,6 +104,11 @@ export class TeamDashboard implements AfterViewInit {
   protected readonly snapshotRows = signal<KpiSnapshotRowDto[]>([]);
   protected readonly captureType = signal<KpiPeriodType>('month');
   protected readonly captureKey = signal(previousMonthKey(todayInBangkok()));
+  protected readonly isExistingSnapshot = computed(() => {
+    const type = this.captureType();
+    const key = this.captureKey().trim();
+    return this.periods().some((p) => p.periodType === type && p.periodKey === key);
+  });
   protected readonly capturing = signal(false);
   protected readonly snapshotMessage = signal('');
   protected readonly snapshotError = signal('');

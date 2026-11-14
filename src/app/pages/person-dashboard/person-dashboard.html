@@ -15,7 +15,32 @@
           {{ view().openCount }} · ปิดแล้ว {{ view().closedCount }}
         </p>
       </div>
-      <div class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        @if (prevPerson(); as prev) {
+          <button
+            ejs-button
+            cssClass="e-outline"
+            iconCss="e-icons e-chevron-left"
+            type="button"
+            title="ดูคนก่อนหน้า: {{ prev.nickname }}"
+            (click)="goToPerson(prev.id)"
+          >
+            {{ prev.nickname }}
+          </button>
+        }
+        @if (nextPerson(); as next) {
+          <button
+            ejs-button
+            cssClass="e-outline"
+            iconCss="e-icons e-chevron-right"
+            iconPosition="Right"
+            type="button"
+            title="ดูคนถัดไป: {{ next.nickname }}"
+            (click)="goToPerson(next.id)"
+          >
+            {{ next.nickname }}
+          </button>
+        }
         <button ejs-button cssClass="e-outline" iconCss="e-icons e-arrow-left" type="button" (click)="back()">
           กลับรายชื่อพนักงาน
         </button>

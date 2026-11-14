@@ -2,6 +2,7 @@ import { AfterViewInit, ChangeDetectionStrategy, Component, ViewChild, computed,
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { AppBarModule, SidebarModule, TreeViewModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule, ToastComponent, ToastModule } from '@syncfusion/ej2-angular-notifications';
 import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
@@ -32,7 +33,7 @@ type NavGroup = { id: string; text: string; expanded: boolean; children: NavLeaf
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, SidebarModule, AppBarModule, TreeViewModule, ToastModule, ButtonModule, MessageModule, DialogModule],
+  imports: [RouterOutlet, SidebarModule, AppBarModule, TreeViewModule, ToastModule, ButtonModule, MessageModule, DialogModule, TextBoxModule],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -46,7 +47,21 @@ export class App implements AfterViewInit {
 
   protected readonly narrow = signal(false);
   protected readonly navOpen = signal(true);
+  protected readonly collapsed = signal(false);
+  protected readonly alertSearch = signal('');
   protected readonly alerts = this.scorecard.alerts;
+  protected readonly filteredAlerts = computed(() => {
+    const query = this.alertSearch().trim().toLowerCase();
+    if (!query) {
+      return this.alerts();
+    }
+    return this.alerts().filter(
+      (a) =>
+        a.ticketId.toLowerCase().includes(query) ||
+        a.message.toLowerCase().includes(query) ||
+        a.shortLabel.toLowerCase().includes(query),
+    );
+  });
   protected readonly mockMode = this.scorecard.mockMode;
   protected readonly usingApi = this.scorecard.usingApi;
   protected readonly role = effectiveRole;
@@ -112,7 +127,22 @@ export class App implements AfterViewInit {
   }
 
   protected toggleNav(): void {
-    this.navOpen.update((open) => !open);
+    if (this.narrow()) {
+      this.navOpen.update((open) => !open);
+    } else {
+      this.collapsed.update((c) => !c);
+    }
+  }
+
+  protected onAlertSearch(event: { value?: string } | Event): void {
+    if ('value' in event && typeof event.value === 'string') {
+      this.alertSearch.set(event.value);
+    } else if ('target' in event) {
+      const target = (event as Event).target as HTMLInputElement | null;
+      this.alertSearch.set(target?.value ?? '');
+    } else {
+      this.alertSearch.set('');
+    }
   }
 
   protected onNavClose(): void {

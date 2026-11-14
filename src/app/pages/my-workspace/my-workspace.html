@@ -151,6 +151,14 @@
               </div>
               <p class="fine m-0">สถานะ: {{ risk.status }} · Est {{ risk.estimateMd }} MD / ใช้จริง {{ risk.actualMd }} MD</p>
               <p class="m-0 text-sm">{{ risk.reasons.join(' · ') }}</p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-kanban" routerLink="/work/board">
+                  เปิดบนกระดานงาน
+                </a>
+                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-warning" routerLink="/work/board">
+                  แจ้งติดปัญหา / แก้ไขการ์ด
+                </a>
+              </div>
             </div>
           </div>
         }

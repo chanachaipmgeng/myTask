@@ -63,6 +63,11 @@
         >
           จับ snapshot ช่วงนี้
         </button>
+        @if (isExistingSnapshot()) {
+          <span class="e-badge e-badge-warning e-badge-pill" title="ช่วงเวลานี้เคยจับ snapshot ไปแล้ว การจับใหม่จะอัปเดตข้อมูลเป็นชุดล่าสุด">
+            ช่วงเวลานี้เคยบันทึกแล้ว (จับซ้ำเพื่ออัปเดต)
+          </span>
+        }
       </div>
     </div>
   }

@@ -750,6 +750,13 @@ ejs-chart,
     z-index: 50 !important;
   }
 
+  .app-frame.is-collapsed #app-nav.e-sidebar,
+  .app-frame.is-collapsed #app-nav .e-sidebar,
+  .app-frame.is-collapsed #app-nav,
+  .app-frame.is-collapsed .e-sidebar.e-left {
+    width: 68px !important;
+  }
+
   .nav-backdrop {
     display: none !important;
   }

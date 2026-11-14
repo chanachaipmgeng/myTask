@@ -104,6 +104,30 @@ export class PersonDashboard {
     });
   });
 
+  protected readonly prevPerson = computed(() => {
+    const list = this.scorecard.people();
+    const currId = this.personId();
+    const idx = list.findIndex((p) => p.id === currId);
+    if (idx > 0) {
+      return list[idx - 1];
+    }
+    return null;
+  });
+
+  protected readonly nextPerson = computed(() => {
+    const list = this.scorecard.people();
+    const currId = this.personId();
+    const idx = list.findIndex((p) => p.id === currId);
+    if (idx >= 0 && idx < list.length - 1) {
+      return list[idx + 1];
+    }
+    return null;
+  });
+
+  protected goToPerson(id: string): void {
+    void this.router.navigate(['/people', id]);
+  }
+
   protected back(): void {
     void this.router.navigate(['/people']);
   }
