@@ -61,7 +61,7 @@ export class WorkTimeline {
     bottomTier: { unit: 'Day' as const, count: 1 },
   };
   protected readonly workWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  protected readonly splitterSettings = { columnIndex: 3 };
+  protected readonly splitterSettings = { position: '620px' };
 
   protected readonly tasks = computed(() =>
     workGanttTasks(this.scorecard.tickets(), this.scorecard.people(), {
@@ -69,6 +69,17 @@ export class WorkTimeline {
       query: this.hub.query(),
     }),
   );
+
+  protected readonly projectStartDate = computed(() => {
+    const list = this.tasks();
+    const timestamps = list
+      .map((t) => (t.StartDate ? new Date(t.StartDate).getTime() : NaN))
+      .filter((n) => !isNaN(n));
+    if (timestamps.length === 0) return undefined;
+    const earliest = new Date(Math.min(...timestamps));
+    earliest.setDate(earliest.getDate() - 3);
+    return earliest;
+  });
 
   protected readonly hierarchyCount = computed(
     () => this.tasks().filter((task) => task.ParentID !== null).length,

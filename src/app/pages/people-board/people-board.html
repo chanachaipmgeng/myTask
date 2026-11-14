@@ -112,21 +112,21 @@
       height="540"
     >
       <e-columns>
-        <e-column field="personLabel" headerText="พนักงาน" width="190">
+        <e-column field="personLabel" headerText="พนักงาน" width="190" [isFrozen]="true">
           <ng-template #template let-data>
             <a class="person-link" [routerLink]="['/people', data.id]">{{ data.personLabel }}</a>
           </ng-template>
         </e-column>
         <e-column field="levelLabel" headerText="ระดับ" width="110"></e-column>
         <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
-        <e-column field="quota" headerText="โควต้า" width="90" textAlign="Right" format="N1"></e-column>
-        <e-column field="openCount" headerText="WIP" width="80" textAlign="Right"></e-column>
-        <e-column field="closedCount" headerText="ปิดแล้ว" width="90" textAlign="Right"></e-column>
-        <e-column field="index" headerText="ดัชนี" width="90" textAlign="Right" format="N1"></e-column>
+        <e-column field="quota" headerText="โควต้า" width="95" textAlign="Right" format="N1"></e-column>
+        <e-column field="openCount" headerText="WIP" width="85" textAlign="Right"></e-column>
+        <e-column field="closedCount" headerText="ปิดแล้ว" width="105" textAlign="Right"></e-column>
+        <e-column field="index" headerText="ดัชนี" width="105" textAlign="Right" format="N1"></e-column>
         <e-column field="planLabel" headerText="ปิดตามแผน" width="200"></e-column>
         <e-column field="accuracyLabel" headerText="ความแม่น" width="110"></e-column>
-        <e-column field="weighted" headerText="คะแนนถ่วง" width="110" textAlign="Right" format="N1"></e-column>
-        <e-column field="reworkPct" headerText="Rework %" width="100" textAlign="Right" format="N1"></e-column>
+        <e-column field="weighted" headerText="คะแนนถ่วง" width="115" textAlign="Right" format="N1"></e-column>
+        <e-column field="reworkPct" headerText="Rework %" width="115" textAlign="Right" format="N1"></e-column>
         <e-column field="sideLabel" headerText="นอกแผน / Spike" width="150"></e-column>
         <e-column field="alertLabel" headerText="แจ้งเตือน" width="140"></e-column>
       </e-columns>

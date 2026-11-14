@@ -12,5 +12,9 @@ alwaysApply: false
 - Timeline (`/work/timeline`) ใช้ Syncfusion Gantt แสดงโครงสร้างแม่-ลูก (`parentID: 'ParentID'`), มี Toolbar (`ExpandAll`, `CollapseAll`, `ZoomIn`, `ZoomOut`, `ZoomToFit`, `Search`), และเปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin` | `lead` (`canAssignWork`) ผ่าน `applyGanttDateEdit` + `POST /api/work-items/:id/dates` (ห้ามทับ `firstDueOn`)
 - Board (`/work/board`) รองรับตัวสลับ Swimlane (`none`/`assignee`/`track`), Rich Card Template, คลิกการ์ดเปิด `ejs-dialog` แก้ไขฟิลด์, และแยกสิทธิ์ `canMoveWorkflowByRole` / `canEditBoardPlanning`
 - ตารางหลัก (`/tickets`, `/people`, `/work/list`) รองรับ `ColumnChooser`, `ExcelExport`, `CsvExport`, `ResizeService` และแถวสรุป `AggregateService`
+- การตรึงคอลัมน์ (`Frozen Columns`): ต้องมีสไตล์พื้นหลังทึบสีเดียวกับธีม (`#0f172a`) ทั้งใน `e-gridheader`, `e-rowcell`, และ `e-summarycell` เพื่อไม่ให้คอลัมน์เคลื่อนที่เลื่อนมาซ้อนทับกัน
+- การจัด Layout กราฟและแดชบอร์ด: ป้องกันปัญหา SVG Sizing โดยผูก `ResizeObserver` และเรียก `chart.refresh()` เสมอเมื่อ Layout พร้อม (`(created)` / `ngAfterViewInit`)
+- Gantt Timeline (`/work/timeline`): กำหนดตำแหน่ง `splitterSettings` เริ่มต้นให้กว้างพอ (เช่น 620px) เพื่อให้คอลัมน์รหัส, งาน, เริ่ม, และ ครบกำหนด แสดงผลครบถ้วนไม่ถูกตัด
+- Sidebar: เมนูระดับย่อยต้องกำหนดขนาดไอคอนคงที่ (18-22px) ไม่ให้โดนยืดขยาย และข้อความเมนูต้องใช้สีสว่างคมชัด (`#e2e8f0` / `#ffffff`)
 - กรองสาย/ค้นหาใน `/work` ใช้ `WorkHubFilter` ของ shell — อย่าทำตัวกรองซ้ำในลูกโดยไม่จำเป็น
 - ข้อมูลแถว/กราฟคำนวณใน `shared/domain/work-views.ts` หรือ `people-roster` / `person-dashboard` แล้วค่อย bind UI

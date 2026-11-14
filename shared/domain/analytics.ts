@@ -364,7 +364,11 @@ export function buildAnalyticsReport(
     const months = ['2025-08', '2025-09', '2025-10'];
     const yValues: number[] = [];
     for (const m of months) {
-      const mTickets = closed.filter((t) => (t.closedOn ?? '').startsWith(m));
+      const mTickets = closed.filter((t) => {
+        const raw = t.closedOn as unknown;
+        const d = raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '');
+        return d.startsWith(m);
+      });
       if (mTickets.length > 0) {
         const sub = scorePerson(person, mTickets);
         if (sub.developmentIndex !== null) {

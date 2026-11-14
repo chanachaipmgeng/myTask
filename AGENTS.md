@@ -33,6 +33,16 @@ npm --prefix server run build
 - Syncfusion: ใช้ `[value]="x()"` + `(change)` ไม่ใช้ `[(value)]` กับ class field  
 - AppBar (`app.html`): แสดงชิปสถานะระบบ + ชิปผู้ใช้/สิทธิ์ + ปุ่มแจ้งเตือนพร้อม `e-badge` เปิด `ejs-dialog` (`#alertDialog`)  
 - ตารางหลัก (`/tickets`, `/people`, `/work/list`): ใช้ `FreezeService` (`frozenColumns="2"` บน `/tickets`), `ColumnChooserService`, `ExcelExportService`, `ResizeService`, `AggregateService`  
+- **Syncfusion Frozen Columns (Dark Theme)**: คอลัมน์ที่ถูกตรึง (`.e-leftfreeze`, `.e-fixedfreeze`, `.e-frozenheader`) ต้องมีพื้นหลังทึบ (`#0f172a`) เสมอ ป้องกันข้อความของคอลัมน์ที่เลื่อนทะลุมาซ้อนทับ
+- **SCSS Selector Safety**:
+  - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion
+  - ห้ามใช้คลาส `.e-chart` โดดๆ เพราะจะไปชนกับไอคอน `e-icons.e-chart` ในเมนู ให้ใช้ `ejs-chart, .e-control.e-chart` แทน
+  - ห้ามใส่ `transform: translateY(...)` บน `.e-dashboardlayout .e-panel:hover` หรือ `.e-card:hover` เพื่อไม่ให้รบกวนพิกัดคำนวณภายในของ DashboardLayout และ Kanban
+- **Sidebar & Backdrop Layering**:
+  - `<ejs-sidebar>` บน Desktop ต้องใช้ `[type]="narrow() ? 'Over' : 'Push'"` และ `[showBackdrop]="false"`
+  - บน Mobile เมนู Sidebar ต้องมี `z-index: 1200 !important` อยู่เหนือ Backdrop (`z-index: 1050`) เสมอ และห้ามใช้ `backdrop-filter: blur` บน Backdrop ที่อาจทำให้ Sidebar มัว
+- **DashboardLayout Chart Timing**: กราฟที่อยู่ใน DashboardLayout ต้องสั่ง `chart.refresh()` หลังเลย์เอาต์เสร็จผ่าน `(created)="onDashboardCreated()"` และ `ngAfterViewInit` พร้อม `ResizeObserver`
+- **Date Type-Safety**: ฟิลด์วันที่ (`closedOn`, `dueDate`, `startDate`) ที่มาจากฐานข้อมูลอาจเป็นได้ทั้ง `string` หรือ `Date` object ให้ normalize ด้วย `raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '')` ก่อนใช้ string methods เสมอ  
 
 ## สิทธิ์ / Board / Gantt / Writeback / KPI snapshot / Integrations
 

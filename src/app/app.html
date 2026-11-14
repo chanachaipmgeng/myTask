@@ -1,10 +1,10 @@
 <div class="app-frame" [class.is-narrow]="narrow()" [class.nav-open]="navOpen()">
   <ejs-sidebar
     id="app-nav"
-    type="Over"
+    [type]="narrow() ? 'Over' : 'Push'"
     width="260px"
     [isOpen]="navOpen()"
-    [showBackdrop]="narrow()"
+    [showBackdrop]="false"
     [closeOnDocumentClick]="narrow()"
     [enableGestures]="false"
     [animate]="false"
