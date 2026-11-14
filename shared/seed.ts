@@ -217,6 +217,7 @@ export const SEED_TICKETS: readonly Ticket[] = [
     weekOffset: 1,
     reviewRounds: 2,
     dodPassed: true,
+    parentId: 'IMP-PAW-FEAT',
     note: 'เลื่อน 1 สัปดาห์',
   }),
   ticket({
@@ -411,6 +412,7 @@ export const SEED_TICKETS: readonly Ticket[] = [
     estimateMd: 2,
     actualMd: 1.9,
     dodPassed: true,
+    parentId: REFERENCE_SPIKE_ID,
     note: 'Feature ผ่าน DoD',
   }),
   ticket({
@@ -482,6 +484,7 @@ export const SEED_TICKETS: readonly Ticket[] = [
     actualMd: 0,
     closed: false,
     closedOn: null,
+    parentId: 'RD-NAK-SP',
     note: 'ยังไม่ปิด จึงยังไม่คิดคะแนน',
     workflowStatus: 'In Progress',
     discipline: 'BE',

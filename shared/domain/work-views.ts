@@ -33,6 +33,7 @@ export interface WorkSummaryView {
 export interface WorkGanttTask {
   TaskID: string;
   TaskName: string;
+  ParentID: string | null;
   StartDate: Date | null;
   EndDate: Date | null;
   BaselineStartDate: Date | null;
@@ -41,6 +42,7 @@ export interface WorkGanttTask {
   Progress: number;
   ResourceInfo: { resourceId: string; resourceName: string }[];
   slipped: boolean;
+  closed: boolean;
   track: Track;
 }
 
@@ -182,46 +184,83 @@ export function workGanttTasks(
   options?: { track?: WorkTrackFilter; query?: string },
 ): WorkGanttTask[] {
   const names = new Map(people.map((person) => [person.id, person.nickname]));
-  return filterWorkTickets(tickets, options)
-    .filter((ticket) => !!(ticket.actualStartOn || ticket.firstDueOn || ticket.dueOn || ticket.closedOn))
-    .map((ticket) => {
-      const start =
-        parseDay(ticket.actualStartOn) ??
-        parseDay(ticket.firstDueOn) ??
-        parseDay(ticket.dueOn) ??
-        parseDay(ticket.closedOn);
-      const end =
-        parseDay(ticket.closedOn) ??
-        parseDay(ticket.dueOn) ??
-        parseDay(ticket.firstDueOn) ??
-        (start ? addDays(start, Math.max(1, Math.ceil(ticket.estimateMd || 1))) : null);
-      const baselineStart = parseDay(ticket.firstDueOn) ?? start;
-      const baselineEnd =
-        baselineStart && ticket.estimateMd > 0
-          ? addDays(baselineStart, Math.max(1, Math.ceil(ticket.estimateMd)))
-          : parseDay(ticket.dueOn) ?? end;
-      const duration =
-        start && end
-          ? Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) || 1)
-          : ticket.estimateMd > 0
-            ? Math.max(1, Math.ceil(ticket.estimateMd))
-            : null;
-      return {
-        TaskID: ticket.id,
-        TaskName: (ticket.title?.trim() || ticket.module || ticket.id).slice(0, 80),
-        StartDate: start,
-        EndDate: end,
-        BaselineStartDate: baselineStart,
-        BaselineEndDate: baselineEnd,
-        Duration: duration,
-        Progress: ticket.closed ? 100 : workflowStatusOf(ticket) === 'Backlog' ? 0 : 40,
-        ResourceInfo: ticket.assigneeId
-          ? [{ resourceId: ticket.assigneeId, resourceName: names.get(ticket.assigneeId) ?? ticket.assigneeId }]
-          : [],
-        slipped: ticket.weekOffset > 0,
-        track: ticket.track,
-      };
-    });
+  const visible = filterWorkTickets(tickets, options).filter(
+    (ticket) => !!(ticket.actualStartOn || ticket.firstDueOn || ticket.dueOn || ticket.closedOn),
+  );
+  const visibleIds = new Set(visible.map((ticket) => ticket.id));
+  return visible.map((ticket) => {
+    const start =
+      parseDay(ticket.actualStartOn) ??
+      parseDay(ticket.firstDueOn) ??
+      parseDay(ticket.dueOn) ??
+      parseDay(ticket.closedOn);
+    const end =
+      parseDay(ticket.closedOn) ??
+      parseDay(ticket.dueOn) ??
+      parseDay(ticket.firstDueOn) ??
+      (start ? addDays(start, Math.max(1, Math.ceil(ticket.estimateMd || 1))) : null);
+    const baselineStart = parseDay(ticket.firstDueOn) ?? start;
+    const baselineEnd =
+      baselineStart && ticket.estimateMd > 0
+        ? addDays(baselineStart, Math.max(1, Math.ceil(ticket.estimateMd)))
+        : parseDay(ticket.dueOn) ?? end;
+    const duration =
+      start && end
+        ? Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) || 1)
+        : ticket.estimateMd > 0
+          ? Math.max(1, Math.ceil(ticket.estimateMd))
+          : null;
+    const rawParent = ticket.parentId?.trim() || null;
+    const parentId = rawParent && rawParent !== ticket.id && visibleIds.has(rawParent) ? rawParent : null;
+    return {
+      TaskID: ticket.id,
+      TaskName: (ticket.title?.trim() || ticket.module || ticket.id).slice(0, 80),
+      ParentID: parentId,
+      StartDate: start,
+      EndDate: end,
+      BaselineStartDate: baselineStart,
+      BaselineEndDate: baselineEnd,
+      Duration: duration,
+      Progress: ticket.closed ? 100 : workflowStatusOf(ticket) === 'Backlog' ? 0 : 40,
+      ResourceInfo: ticket.assigneeId
+        ? [{ resourceId: ticket.assigneeId, resourceName: names.get(ticket.assigneeId) ?? ticket.assigneeId }]
+        : [],
+      slipped: ticket.weekOffset > 0,
+      closed: ticket.closed,
+      track: ticket.track,
+    };
+  });
+}
+
+export type GanttDateEditResult =
+  | { ok: true; ticket: Ticket }
+  | { ok: false; message: string };
+
+/**
+ * Updates actualStartOn and dueOn on an open ticket from Gantt timeline edits.
+ * Never overwrites firstDueOn (locked initial promise) and rejects edits on closed tickets.
+ */
+export function applyGanttDateEdit(
+  ticket: Ticket,
+  edit: { startDate?: string | null; dueDate?: string | null },
+): GanttDateEditResult {
+  if (ticket.closed) {
+    return { ok: false, message: 'ใบงานปิดแล้ว แก้ไขวันบน Timeline ไม่ได้' };
+  }
+  const nextStart = edit.startDate !== undefined ? edit.startDate : (ticket.actualStartOn ?? null);
+  const nextDue = edit.dueDate !== undefined ? edit.dueDate : (ticket.dueOn ?? null);
+  if (nextStart && nextDue && nextDue < nextStart) {
+    return { ok: false, message: 'วันครบกำหนดต้องไม่ก่อนวันเริ่ม' };
+  }
+  return {
+    ok: true,
+    ticket: {
+      ...ticket,
+      actualStartOn: nextStart,
+      dueOn: nextDue,
+      firstDueOn: ticket.firstDueOn ?? nextDue ?? null,
+    },
+  };
 }
 
 export function workBacklogRows(

@@ -98,6 +98,10 @@ export interface Ticket {
   /** OpenProject work package id when source is openproject. */
   opId?: number | null;
   opProject?: string;
+  /** Parent ticket ID in the scorecard (e.g. OP-10 or RD-SPIKE) for Gantt hierarchy. */
+  parentId?: string | null;
+  /** Parent work package ID in OpenProject when source is openproject. */
+  opParentId?: number | null;
   title?: string;
   dueOn?: string | null;
 }

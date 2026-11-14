@@ -1,18 +1,35 @@
-<div class="flex flex-col gap-2">
-  <p class="fine">
-    Gantt อ่านอย่างเดียว · แท่งจริงจาก start/due/closed · baseline จาก first due + estimate · ไฮไลต์ใบที่เลื่อนสัปดาห์ผ่าน
-    weekOffset
-  </p>
+<div class="flex flex-col gap-3">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <p class="fine m-0">
+      แสดงโครงสร้างแม่-ลูก (Hierarchy {{ hierarchyCount() }} ใบลูก) · แท่งจริงจาก start/due/closed · baseline จาก
+      <strong>firstDueOn</strong> + estimate ·
+      @if (canEdit()) {
+        <span>สิทธิ์ admin/lead แก้ไขวันเริ่ม/วันครบกำหนดของใบที่ยังไม่ปิดได้ (ไม่ทับ firstDueOn)</span>
+      } @else {
+        <span>สิทธิ์ member ดูได้อย่างเดียว (แก้ไขวันได้เฉพาะ admin/lead)</span>
+      }
+    </p>
+  </div>
+
+  @if (statusMessage()) {
+    <ejs-message [content]="statusMessage()" severity="Success" variant="Outlined"></ejs-message>
+  }
+  @if (errorMessage()) {
+    <ejs-message [content]="errorMessage()" severity="Error" variant="Outlined"></ejs-message>
+  }
+
   @if (tasks().length === 0) {
     <p class="fine">ไม่พบใบงานที่มีช่วงวันที่ตามตัวกรองปัจจุบัน</p>
   } @else {
     <ejs-gantt
       id="work-gantt"
-      height="560px"
+      height="580px"
       theme="Tailwind3Dark"
       [dataSource]="tasks()"
       [taskFields]="taskFields"
       [columns]="columns"
+      [toolbar]="toolbar"
+      [editSettings]="editSettings()"
       [labelSettings]="labelSettings"
       [timelineSettings]="timelineSettings"
       [workWeek]="workWeek"
@@ -24,6 +41,7 @@
       [enableVirtualization]="false"
       [treeColumnIndex]="1"
       gridLines="Horizontal"
+      (actionComplete)="onActionComplete($event)"
     ></ejs-gantt>
   }
 </div>

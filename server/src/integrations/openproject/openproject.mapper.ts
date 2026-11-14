@@ -190,6 +190,8 @@ export const OPENPROJECT_OWNED_FIELDS = [
   'dueOn',
   'opProject',
   'opId',
+  'opParentId',
+  'parentId',
   'source',
   'storyPoints',
   'discipline',
@@ -267,6 +269,8 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   const assigneeUser = idFromHref(singleLink(links['assignee'])?.href);
   const assigneeId =
     assigneeUser === null ? '' : (ctx.personByOpUser.get(assigneeUser) ?? unlinkedAssignee(assigneeUser));
+  const opParentId = idFromHref(singleLink(links['parent'])?.href);
+  const parentId = opParentId !== null ? ticketIdFor(opParentId) : null;
 
   const cf = mapping.customFields;
   const size = asSize(customValue(wp, cf.size)) ?? sizeFromEstimate(estimateMd);
@@ -323,6 +327,8 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     source: 'openproject',
     opId: wp.id,
     opProject: project,
+    opParentId,
+    parentId,
     title: wp.subject ?? '',
     dueOn,
     firstDueOn,

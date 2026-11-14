@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { SAMPLE_VIEWERS, SampleViewer } from '../data/seed';
-import { Level } from './models';
+import { AccessRole, Level } from './models';
 import { DEFAULT_TRACK_WEIGHTS, TrackWeights, WEEKLY_QUOTA, roundMd } from './scoring';
 import { currentSession, sessionAccess } from './session';
 
@@ -63,6 +63,14 @@ export const currentViewer = computed(() => {
   return SAMPLE_VIEWERS.find((viewer) => viewer.id === viewerId()) ?? SAMPLE_VIEWERS[0];
 });
 
+export const effectiveRole = computed<AccessRole>(() => {
+  const access = sessionAccess();
+  if (access) {
+    return access;
+  }
+  return currentViewer().access === 'lead' ? 'lead' : 'member';
+});
+
 export const canEditAdmin = computed(() => {
   const access = sessionAccess();
   if (access) {
@@ -79,6 +87,9 @@ export const canAssignWork = computed(() => {
   }
   return currentViewer().access === 'lead';
 });
+
+/** Capture KPI snapshots for a period: same gate as assign. */
+export const canCaptureKpi = canAssignWork;
 
 export function setViewer(id: string): SampleViewer {
   if (SAMPLE_VIEWERS.some((viewer) => viewer.id === id)) {

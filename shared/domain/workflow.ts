@@ -1,4 +1,5 @@
 import {
+  AccessRole,
   BUG_CAUSES,
   BugCause,
   DISCIPLINES,
@@ -146,6 +147,37 @@ export function todayInBangkok(now = new Date()): string {
     month: '2-digit',
     day: '2-digit',
   }).format(now);
+}
+
+export type RoleCheckResult = { ok: true } | { ok: false; message: string };
+
+/**
+ * Checks whether a user with `role` is allowed to transition a card between columns on /work/board.
+ * - admin / lead: can move between any valid workflow statuses (including closing to Done).
+ * - member: can move cards through active work up to Ready for QA / In QA, but cannot close into Done
+ *   or reopen a Done ticket.
+ */
+export function canMoveWorkflowByRole(
+  role: AccessRole | null | undefined,
+  from: WorkflowStatus,
+  target: WorkflowStatus,
+): RoleCheckResult {
+  const effective: AccessRole = role ?? 'member';
+  if (effective === 'admin' || effective === 'lead') {
+    return { ok: true };
+  }
+  if (from === 'Done') {
+    return { ok: false, message: 'ใบที่ Done แล้ว เฉพาะหัวหน้าทีม (lead) หรือ admin เท่านั้นที่ย้ายสถานะได้' };
+  }
+  if (target === 'Done') {
+    return { ok: false, message: 'เฉพาะหัวหน้าทีม (lead) หรือ admin เท่านั้นที่ตรวจปิดงานเข้า Done ได้' };
+  }
+  return { ok: true };
+}
+
+/** Only admin and lead can edit planning fields (story points, first due date, discipline, work category) on /work/board. */
+export function canEditBoardPlanning(role: AccessRole | null | undefined): boolean {
+  return role === 'admin' || role === 'lead';
 }
 
 export function moveWorkflow(ticket: Ticket, target: WorkflowStatus, today: string): MoveResult {

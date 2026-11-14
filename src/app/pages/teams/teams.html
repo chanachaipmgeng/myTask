@@ -3,10 +3,15 @@
     <div>
       <h2>แจ้งเตือน Teams</h2>
       <p>
-        ตั้งชื่อช่องและชนิดเหตุ ปุ่มทดสอบเก็บบันทึกข้อความที่จะส่ง เป็นเหตุและรหัสใบงาน
-        ไม่ยิง webhook และไม่ใส่ลำดับคน
+        ตั้งชื่อช่องและชนิดเหตุ เลือกจำลองร่างข้อความในหน้านี้ หรือส่งเข้า Microsoft Teams จริงผ่าน Incoming Webhook
+        (แสดงเฉพาะเหตุและรหัสใบงาน ไม่ใส่ลำดับคะแนนพนักงาน)
       </p>
     </div>
+    @if (teamsInfo(); as info) {
+      <span class="e-badge" [class.e-badge-success]="info.configured && info.enabled" [class.e-badge-secondary]="!info.configured || !info.enabled">
+        {{ info.configured && info.enabled ? 'Webhook พร้อมส่ง' : 'ยังไม่ได้เปิด Webhook' }}
+      </span>
+    }
   </div>
 
   <form class="ticket-form" (submit)="$event.preventDefault(); testSend()">
@@ -18,8 +23,13 @@
       <ejs-checkbox id="teams-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="deadline()" (change)="onDeadline($event)"></ejs-checkbox>
       <ejs-checkbox id="teams-overrun" label="actual มีแนวโน้มเกิน estimate มากกว่า 50%" [checked]="overrun()" (change)="onOverrun($event)"></ejs-checkbox>
     </div>
-    <div class="form-actions">
-      <button ejs-button [isPrimary]="true" type="submit" id="teams-test">ทดสอบส่ง</button>
+    <div class="form-actions flex flex-wrap gap-2">
+      <button ejs-button [isPrimary]="true" type="submit" id="teams-test">จำลองร่างข้อความ (ไม่ส่งจริง)</button>
+      @if (canSend()) {
+        <button ejs-button cssClass="e-success" type="button" id="teams-send-webhook" [disabled]="sending()" (click)="sendWebhook()">
+          ส่งเข้า Teams จริง (Webhook)
+        </button>
+      }
     </div>
     @if (message()) {
       <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>

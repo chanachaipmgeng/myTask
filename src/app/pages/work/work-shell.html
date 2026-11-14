@@ -1,10 +1,11 @@
 <section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
-      <h2>งาน</h2>
+      <h2>ฮับบริหารงาน (Work Hub)</h2>
       <p>สลับมุมมอง Summary · Timeline · Backlog · Board · List จากใบงานในระบบ — ไม่เปลี่ยนสูตรคะแนน</p>
     </div>
     <div class="flex flex-wrap gap-3 items-end">
+      <a ejs-button cssClass="e-outline" routerLink="/tickets">ตารางคะแนนใบงาน (/tickets)</a>
       <label class="filter">
         <span>สายงาน</span>
         <ejs-dropdownlist
@@ -22,18 +23,21 @@
     </div>
   </div>
 
-  <ejs-tab
-    cssClass="work-hub-tabs"
-    heightAdjustMode="Auto"
-    [selectedItem]="selectedTab()"
-    (selected)="onTabSelected($event)"
-  >
-    <e-tabitems>
-      @for (item of tabItems; track item.header.text) {
-        <e-tabitem [header]="item.header"></e-tabitem>
-      }
-    </e-tabitems>
-  </ejs-tab>
+  <nav class="work-hub-tabs flex flex-wrap gap-2 border-b border-slate-700 pb-2" role="tablist" aria-label="มุมมองฮับบริหารงาน">
+    @for (tab of tabs; track tab.path) {
+      <a
+        ejs-button
+        role="tab"
+        [id]="'work-tab-' + tab.path"
+        [routerLink]="['/work', tab.path]"
+        routerLinkActive="e-primary"
+        [attr.aria-selected]="activePath() === tab.path"
+        [cssClass]="activePath() === tab.path ? 'e-primary' : 'e-flat'"
+      >
+        {{ tab.text }}
+      </a>
+    }
+  </nav>
 
   <router-outlet />
 </section>

@@ -1,7 +1,26 @@
 import { Injectable } from '@angular/core';
 import { AccessRole, Department, Person, Team, Ticket } from './models';
-import { TrackWeights } from './scoring';
+import { KpiPeriodType } from './kpi-snapshot';
+import { PersonScore, TrackWeights } from './scoring';
 import { AlertRules } from './admin-settings';
+
+export interface KpiSnapshotPeriodDto {
+  periodType: KpiPeriodType;
+  periodKey: string;
+  capturedAt: string;
+  rowCount: number;
+}
+
+export interface KpiSnapshotRowDto {
+  personId: string;
+  nickname: string;
+  track: string;
+  periodType: KpiPeriodType;
+  periodKey: string;
+  score: PersonScore;
+  capturedAt: string;
+  capturedBy: string | null;
+}
 
 export interface BootstrapSettings {
   weeklyQuotas: Record<string, number>;
@@ -52,6 +71,35 @@ export interface OpenProjectIntegration {
   people: { id: string; nickname: string; openprojectUserId: number | null }[];
 }
 
+export interface SyncRunDto {
+  id: string;
+  status: string;
+  started_at: string;
+  finished_at: string | null;
+  added: number;
+  updated: number;
+  unchanged: number;
+  errors: unknown;
+}
+
+export interface GitLabIntegration {
+  configured: boolean;
+  enabled: boolean;
+  baseUrl: string;
+  projectIds: string[];
+  hasToken: boolean;
+  lastRuns: SyncRunDto[];
+}
+
+export interface TeamsIntegration {
+  configured: boolean;
+  enabled: boolean;
+  channel: string;
+  hasWebhook: boolean;
+  source: 'env' | 'db' | 'none';
+  lastRuns: SyncRunDto[];
+}
+
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     credentials: 'include',
@@ -100,6 +148,16 @@ export class ApiClient {
     });
   }
 
+  updateWorkItemDates(
+    ticketId: string,
+    dates: { startDate?: string | null; dueDate?: string | null },
+  ): Promise<{ ok: boolean; ticket?: Ticket; writebackError?: string; message?: string }> {
+    return api(`/api/work-items/${encodeURIComponent(ticketId)}/dates`, {
+      method: 'POST',
+      body: JSON.stringify(dates),
+    });
+  }
+
   saveSettings(settings: Partial<BootstrapSettings>): Promise<{ ok: boolean }> {
     return api('/api/settings', { method: 'PUT', body: JSON.stringify({ settings }) });
   }
@@ -126,6 +184,94 @@ export class ApiClient {
     return api('/api/integrations/openproject/user-map', {
       method: 'PUT',
       body: JSON.stringify({ personId, opUserId }),
+    });
+  }
+
+  getGitLab(): Promise<GitLabIntegration> {
+    return api('/api/integrations/gitlab');
+  }
+
+  saveGitLab(body: {
+    baseUrl?: string;
+    projectIds?: string[];
+    token?: string;
+    enabled?: boolean;
+  }): Promise<GitLabIntegration> {
+    return api('/api/integrations/gitlab', { method: 'PUT', body: JSON.stringify(body) });
+  }
+
+  syncGitLab(): Promise<{
+    ok: boolean;
+    message?: string;
+    matched?: {
+      sha: string;
+      message: string;
+      mergedAt: string;
+      ticketId: string;
+      reviewRounds: number;
+      reopenCount: number;
+      reviewBefore: number | null;
+      reviewAfter: number | null;
+      mrLink?: string;
+    }[];
+    unmatched?: {
+      sha: string;
+      message: string;
+      mergedAt: string;
+      ticketId: string;
+    }[];
+    updated?: number;
+    errors?: string[];
+  }> {
+    return api('/api/integrations/gitlab/sync', { method: 'POST', body: '{}' });
+  }
+
+  getTeams(): Promise<TeamsIntegration> {
+    return api('/api/integrations/teams');
+  }
+
+  saveTeams(body: {
+    channel?: string;
+    webhookUrl?: string;
+    enabled?: boolean;
+  }): Promise<TeamsIntegration> {
+    return api('/api/integrations/teams', { method: 'PUT', body: JSON.stringify(body) });
+  }
+
+  sendTeams(body: {
+    channel?: string;
+    deadline?: boolean;
+    overrun?: boolean;
+    dryRun?: boolean;
+  }): Promise<{
+    ok: boolean;
+    sent: boolean;
+    count?: number;
+    message?: string;
+    messages?: { kind: 'deadline' | 'overrun'; ticketId: string; text: string }[];
+  }> {
+    return api('/api/integrations/teams/send', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  listKpiSnapshotPeriods(): Promise<{ periods: KpiSnapshotPeriodDto[] }> {
+    return api('/api/kpi-snapshots/periods');
+  }
+
+  listKpiSnapshots(
+    periodType: KpiPeriodType,
+    periodKey: string,
+  ): Promise<{ ok: boolean; rows: KpiSnapshotRowDto[]; message?: string }> {
+    const query = new URLSearchParams({ periodType, periodKey });
+    return api(`/api/kpi-snapshots?${query.toString()}`);
+  }
+
+  captureKpiSnapshot(
+    periodType: KpiPeriodType,
+    periodKey: string,
+  ): Promise<{ ok: boolean; count?: number; message?: string }> {
+    return api('/api/kpi-snapshots/capture', {
+      method: 'POST',
+      body: JSON.stringify({ periodType, periodKey }),
     });
   }
 

@@ -67,6 +67,8 @@ export interface AppConfig {
     url: string;
     clientId: string;
     clientSecret: string;
+    apiToken: string;
+    projectIds: string[];
     bootstrapAdmins: string[];
   };
   openproject: {
@@ -75,6 +77,10 @@ export interface AppConfig {
     writeback: boolean;
     /** Cron for scheduled sync. Empty disables it. */
     cron: string;
+  };
+  teams: {
+    webhookUrl: string;
+    defaultChannel: string;
   };
 }
 
@@ -97,6 +103,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       url: trimSlash(env['GITLAB_URL'] ?? ''),
       clientId: env['GITLAB_OAUTH_CLIENT_ID'] ?? '',
       clientSecret: env['GITLAB_OAUTH_CLIENT_SECRET'] ?? '',
+      apiToken: (env['GITLAB_API_TOKEN'] ?? '').trim(),
+      projectIds: list(env['GITLAB_PROJECT_IDS']),
       bootstrapAdmins: list(env['BOOTSTRAP_ADMIN_GITLAB_USERNAMES']).map((name) => name.toLowerCase()),
     },
     openproject: {
@@ -104,6 +112,10 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       token: env['OPENPROJECT_API_TOKEN'] ?? '',
       writeback: bool(env['OPENPROJECT_WRITEBACK'], false),
       cron: env['OPENPROJECT_SYNC_CRON'] ?? '*/15 * * * *',
+    },
+    teams: {
+      webhookUrl: (env['TEAMS_WEBHOOK_URL'] ?? '').trim(),
+      defaultChannel: (env['TEAMS_DEFAULT_CHANNEL'] ?? 'dev-alerts').trim() || 'dev-alerts',
     },
   };
 }

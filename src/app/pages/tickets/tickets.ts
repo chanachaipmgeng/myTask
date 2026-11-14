@@ -1,10 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
 import { ButtonModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
+import {
+  AggregateService,
+  ColumnChooserService,
+  ExcelExportService,
+  FilterService,
+  FreezeService,
+  GridComponent,
+  GridModule,
+  PageService,
+  ResizeService,
+  SortService,
+  ToolbarService,
+} from '@syncfusion/ej2-angular-grids';
 import { NumericTextBoxModule, TextBoxModule, UploaderModule } from '@syncfusion/ej2-angular-inputs';
-import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
+import { AccordionModule, ToolbarModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { scorePartNotes } from '../../core/kpi-meaning';
 import { MyProjectSyncAdapter } from '../../core/myproject-sync';
@@ -22,18 +35,30 @@ type TypeFilter = TicketType | 'All';
   selector: 'app-tickets',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    RouterLink,
     GridModule,
     DropDownListModule,
     NumericTextBoxModule,
     TextBoxModule,
     UploaderModule,
     DatePickerModule,
+    AccordionModule,
     ToolbarModule,
     ButtonModule,
     ChipListModule,
     MessageModule,
   ],
-  providers: [PageService, SortService, FilterService],
+  providers: [
+    PageService,
+    SortService,
+    FilterService,
+    FreezeService,
+    ResizeService,
+    ColumnChooserService,
+    ExcelExportService,
+    AggregateService,
+    ToolbarService,
+  ],
   templateUrl: './tickets.html',
 })
 export class TicketsPage {
@@ -41,10 +66,13 @@ export class TicketsPage {
   private readonly myProject = inject(MyProjectSyncAdapter);
   private readonly notice = inject(ShellNotice);
 
+  @ViewChild('ticketGrid') private ticketGrid?: GridComponent;
+
   protected readonly fields = { text: 'text', value: 'value' };
-  protected readonly pageSettings = { pageSize: 8 };
+  protected readonly pageSettings = { pageSize: 10 };
   protected readonly filterSettings = { type: 'Menu' };
   protected readonly sortSettings = { columns: [{ field: 'score', direction: 'Descending' }] };
+  protected readonly gridToolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
   protected readonly sizes = (['XS', 'S', 'M', 'L', 'XL'] as const).map((size) => ({
     size,
     points: SIZE_POINTS[size],
@@ -254,6 +282,15 @@ export class TicketsPage {
     }
     if (data && 'alertLabel' in data && data.alertLabel !== '—') {
       args.row.classList.add('alert-row');
+    }
+  }
+
+  protected onGridToolbarClick(args: { item?: { id?: string } }): void {
+    const id = args.item?.id ?? '';
+    if (id.endsWith('_excelexport')) {
+      void this.ticketGrid?.excelExport();
+    } else if (id.endsWith('_csvexport')) {
+      void this.ticketGrid?.csvExport();
     }
   }
 

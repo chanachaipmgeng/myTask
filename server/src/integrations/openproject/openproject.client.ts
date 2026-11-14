@@ -151,6 +151,26 @@ export class OpenProjectClient {
     });
   }
 
+  /** PATCH startDate / dueDate on a work package. Caller must pass the current lockVersion. */
+  async patchDates(
+    opId: number,
+    dates: { startDate?: string | null; dueDate?: string | null },
+    lockVersion: number,
+  ): Promise<OpWorkPackage> {
+    const payload: Record<string, unknown> = { lockVersion };
+    if (dates.startDate !== undefined) {
+      payload['startDate'] = dates.startDate;
+    }
+    if (dates.dueDate !== undefined) {
+      payload['dueDate'] = dates.dueDate;
+    }
+    return this.request<OpWorkPackage>(`/api/v3/work_packages/${opId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
+
   workPackageIdFromTimeEntry(entry: OpTimeEntry): number | null {
     return idFromHref(entry._links?.workPackage?.href);
   }

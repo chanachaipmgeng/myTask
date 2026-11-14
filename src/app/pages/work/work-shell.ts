@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { TabModule } from '@syncfusion/ej2-angular-navigations';
 import { filter, map, startWith } from 'rxjs';
 import { WorkHubFilter } from './work-hub-filter';
 
@@ -18,13 +18,12 @@ const TABS = [
 @Component({
   selector: 'app-work-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, TabModule, DropDownListModule, TextBoxModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, DropDownListModule, TextBoxModule],
   providers: [WorkHubFilter],
   templateUrl: './work-shell.html',
 })
 export class WorkShell {
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   protected readonly filter = inject(WorkHubFilter);
 
   protected readonly fields = { text: 'text', value: 'value' };
@@ -33,7 +32,7 @@ export class WorkShell {
     { text: 'Implement', value: 'Implement' },
     { text: 'R&D', value: 'RD' },
   ];
-  protected readonly tabItems = TABS.map((tab) => ({ header: { text: tab.text }, content: '' }));
+  protected readonly tabs = TABS;
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -44,20 +43,11 @@ export class WorkShell {
     { initialValue: this.router.url },
   );
 
-  protected readonly selectedTab = computed(() => {
+  protected readonly activePath = computed(() => {
     const path = this.url().split('?')[0] ?? '';
-    const index = TABS.findIndex((tab) => path.endsWith(`/work/${tab.path}`) || path.includes(`/work/${tab.path}`));
-    return index >= 0 ? index : 0;
+    const found = TABS.find((tab) => path.endsWith(`/work/${tab.path}`) || path.includes(`/work/${tab.path}`));
+    return found?.path ?? 'summary';
   });
-
-  protected onTabSelected(event: { selectedIndex?: number }): void {
-    const index = event.selectedIndex ?? 0;
-    const tab = TABS[index];
-    if (!tab) {
-      return;
-    }
-    void this.router.navigate([tab.path], { relativeTo: this.route });
-  }
 
   protected setTrack(event: { value?: string | null }): void {
     const value = event.value;

@@ -1,0 +1,395 @@
+{
+  "version": 2,
+  "skills": {
+    "syncfusion-angular-3d-chart": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-3d-chart/SKILL.md",
+      "computedHash": "91112b8ec612e97bb091fc6df85c1ec6fffcfe9b5eda408ee0ee563d47b76f43"
+    },
+    "syncfusion-angular-accordion": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-accordion/SKILL.md",
+      "computedHash": "b3896560d42acd70e2cd3225a915fa42b33e2cce0f7c7e530da8356f6f29f131"
+    },
+    "syncfusion-angular-accumulation-chart": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-accumulation-chart/SKILL.md",
+      "computedHash": "0cd9360d54ecff32d12e17cc95013fcb6fbeeb450295e660b83a8da79db416da"
+    },
+    "syncfusion-angular-ai-assistview": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-ai-assistview/SKILL.md",
+      "computedHash": "551576c3ecc72f4f72f4e9bab5c2da88153271dd75401657d657ae917f68d81a"
+    },
+    "syncfusion-angular-appbar": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-appbar/SKILL.md",
+      "computedHash": "0dad7a803318e233acb9472cd056632470a43abd4b9d147a38e712d70b76cc52"
+    },
+    "syncfusion-angular-barcode": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-barcode/SKILL.md",
+      "computedHash": "263058d2825189cc5dbe3c5397ca9a058f27cbd1765bea160b8a4e8825b00fe6"
+    },
+    "syncfusion-angular-blockeditor": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-blockeditor/SKILL.md",
+      "computedHash": "2253a423db26f35baa53977f27daa00b7a6b21339640426e488c166c906e76c3"
+    },
+    "syncfusion-angular-breadcrumb": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-breadcrumb/SKILL.md",
+      "computedHash": "a7f90335fea8ddd298a5bd21319068b31927acba331493bbc6b3c1805f41382b"
+    },
+    "syncfusion-angular-bullet-chart": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-bullet-chart/SKILL.md",
+      "computedHash": "a6ad73432613344750b2d2367e0a4e61205b54b0f38dbfd011736344765818c9"
+    },
+    "syncfusion-angular-buttons": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-buttons/SKILL.md",
+      "computedHash": "cd47230fc53e71e7a8243426fcca58e923e9abb69464373d7627bd3dc3ecc6d1"
+    },
+    "syncfusion-angular-calendars": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-calendars/SKILL.md",
+      "computedHash": "116c2132ea51769c84822c93b8d60a5a7981095c007431f1906ad7fb65d5d34c"
+    },
+    "syncfusion-angular-card": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-card/SKILL.md",
+      "computedHash": "bbc01038e2351c630644d78720bf1450b042196f4224f71fdeecb1a819bc9886"
+    },
+    "syncfusion-angular-carousel": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-carousel/SKILL.md",
+      "computedHash": "b019fdb56c5e5be6f8a2abaf1596d16cf0cb68bf5e440b25b7d41646daf99a33"
+    },
+    "syncfusion-angular-chart": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-chart/SKILL.md",
+      "computedHash": "be1b8ac8f8b2e13dabc16918e4b690e40c3d383f719687be504d10af506a7308"
+    },
+    "syncfusion-angular-chat-ui": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-chat-ui/SKILL.md",
+      "computedHash": "80fefc9dc9db48995027fafbcf6a57936fc5e1c6724e12d9b43a66cd07a53e1a"
+    },
+    "syncfusion-angular-circular-3d-chart": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-circular-3d-chart/SKILL.md",
+      "computedHash": "908d432a222d8b2b7823084fe3a45a194a542a3104a8ae8ebd75d05c96e72336"
+    },
+    "syncfusion-angular-circular-gauge": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-circular-gauge/SKILL.md",
+      "computedHash": "b60ccdded7f51baeb9d5bce02afdbdf96444789664ad8359a5bf5145391cebe3"
+    },
+    "syncfusion-angular-common": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-common/SKILL.md",
+      "computedHash": "5ca93c4b0d511e5a07739ad1ba1bf437fa8472da9509369f033f3a2dc95b8f6d"
+    },
+    "syncfusion-angular-context-menu": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-context-menu/SKILL.md",
+      "computedHash": "5aac8d29b9ed06cefdb024a28808aa14a67a86fa0b134f5c279ad1563eb88543"
+    },
+    "syncfusion-angular-dashboard-layout": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-dashboard-layout/SKILL.md",
+      "computedHash": "1fa1a62fcfbc4efbb353ec2e38ce4ab360bbb47ef4be2a38cf63cfa7c99ceca9"
+    },
+    "syncfusion-angular-data-manager": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-data-manager/SKILL.md",
+      "computedHash": "bffd6f2acccd73164e1e1d3cbba847f8b83ad22ae61c2f04b64a844994b51259"
+    },
+    "syncfusion-angular-diagram": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-diagram/SKILL.md",
+      "computedHash": "cca86477119c6373818307117918b89ede07612f900a669f90257072d0964949"
+    },
+    "syncfusion-angular-dropdowns": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-dropdowns/SKILL.md",
+      "computedHash": "dee2cc8febadf80827d847d1dbf3017929d4ef3af6359bfc78b68fada89e66a0"
+    },
+    "syncfusion-angular-dropdowntree": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-dropdowntree/SKILL.md",
+      "computedHash": "bad646268f639ddc164a2ad8e2eebcb6078536c112bada50c8e6d942b2b2a23e"
+    },
+    "syncfusion-angular-file-manager": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-file-manager/SKILL.md",
+      "computedHash": "dd092893ad7fe47f7a3d1b87962e561d027db8ebdc8fd14b9cc90d60ef410203"
+    },
+    "syncfusion-angular-form-builder": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-form-builder/SKILL.md",
+      "computedHash": "0361aa7548c5c2d23822ba89e92c4f3fa94b09ebaae7e9393c27d358856c27ae"
+    },
+    "syncfusion-angular-form-renderer": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-form-renderer/SKILL.md",
+      "computedHash": "fb2ea77285e0be69e2d50c13b161bd47648caf966e9667ae1442a69ab2f17d3d"
+    },
+    "syncfusion-angular-gantt-chart": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-gantt-chart/SKILL.md",
+      "computedHash": "87239b034676b1073b8e6c427e54b387336f9b037c3962cbcb245e18a08b4d16"
+    },
+    "syncfusion-angular-grid": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-grid/SKILL.md",
+      "computedHash": "3c46c3cbce1a1bfa27355a45122151f92c69e1004948b838e41af97a663e819b"
+    },
+    "syncfusion-angular-heatmap": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-heatmap/SKILL.md",
+      "computedHash": "fba79a275904c4d227d1dd01eedb40b506482fa7949143f59d97d749750091e8"
+    },
+    "syncfusion-angular-image-editor": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-image-editor/SKILL.md",
+      "computedHash": "8a282df43b414a8e631ab9045c683991004d90a989ec46bf15b7b2d5ec525d32"
+    },
+    "syncfusion-angular-inline-ai-assist": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-inline-ai-assist/SKILL.md",
+      "computedHash": "1c344f3d0c894cc5eae8d64ebc686ba61418c268e8404c74d185c20df09276aa"
+    },
+    "syncfusion-angular-inputs": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-inputs/SKILL.md",
+      "computedHash": "3e3a3b2f22bda77ab642fd6981d0f6210c0d83d297351602bec8754b9a1c1671"
+    },
+    "syncfusion-angular-kanban": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-kanban/SKILL.md",
+      "computedHash": "4a20a70e9e464e5ae4efb6dd203792cba0ad5fb034aa49ea8f653fe620e4df54"
+    },
+    "syncfusion-angular-license": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-license/SKILL.md",
+      "computedHash": "9bbd31e25101feb1a2c4144ba25f66416e570d4a1de4bb27477950b5745d7a31"
+    },
+    "syncfusion-angular-linear-gauge": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-linear-gauge/SKILL.md",
+      "computedHash": "048de7c6ae8c4b3a5b85c27f309cc3515a570443850d10fe0a53004abca4bee3"
+    },
+    "syncfusion-angular-listview": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-listview/SKILL.md",
+      "computedHash": "5ae10f364676a41296529c6492b729ab6d328415ddb12332df443757e50ff117"
+    },
+    "syncfusion-angular-maps": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-maps/SKILL.md",
+      "computedHash": "1011de1ce64bdd63454e9d43ad9285e0990503ee4922c4794b6a50b08f19b30e"
+    },
+    "syncfusion-angular-markdown-converter": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-markdown-converter/SKILL.md",
+      "computedHash": "131aeecd2e1ab2214cb01c25e45a894cfafb48f3514c5d6a8bc7293e0831d2bb"
+    },
+    "syncfusion-angular-menu": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-menu/SKILL.md",
+      "computedHash": "c15b3b603c5e7cb30dfca3bdefca760c67772a34abf7681aa634a58aec2f68b6"
+    },
+    "syncfusion-angular-modern-rich-text-editor": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-modern-rich-text-editor/SKILL.md",
+      "computedHash": "8c7197ebc9b8fa19d4daf444be96f69ec399ff614e9c8f80ae7af7008ed8d24a"
+    },
+    "syncfusion-angular-notifications": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-notifications/SKILL.md",
+      "computedHash": "ca7de1ab9f4de4f35cad365d22ec1573e940a26913a66b2a2aa7b9139c37fe15"
+    },
+    "syncfusion-angular-pivot-table": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-pivot-table/SKILL.md",
+      "computedHash": "c6d7244a6ea8155970ffb9e96ed029141f7b1322090d9683a623635352680769"
+    },
+    "syncfusion-angular-popups": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-popups/SKILL.md",
+      "computedHash": "01eaddcf1ac60f870687325ea54b3400ba12ba0d8cc1f86cb3acd0133aee3904"
+    },
+    "syncfusion-angular-progress-bar": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-progress-bar/SKILL.md",
+      "computedHash": "585eb2f854e81ecc39f8bc7ab8f597ac6cda1b7d0b94e28c2246437c701ec737"
+    },
+    "syncfusion-angular-query-builder": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-query-builder/SKILL.md",
+      "computedHash": "31d110d40005dedb7efaff2705d9f31debe084738abcf4f4d07be20829cee785"
+    },
+    "syncfusion-angular-range-navigator": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-range-navigator/SKILL.md",
+      "computedHash": "88d70efdf37e47e1b36f60726347dee22a75628ffd7cc09dcbfa07c2c5a63623"
+    },
+    "syncfusion-angular-ribbon": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-ribbon/SKILL.md",
+      "computedHash": "8ba771650829462f2985c0450d867f26d7905fc8ab3b659d3e2151f54c64c345"
+    },
+    "syncfusion-angular-rich-text-editor": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-rich-text-editor/SKILL.md",
+      "computedHash": "95ffec0188124866702178c06130a30ef19b7d91b71ffe6a52fbaae081152ffc"
+    },
+    "syncfusion-angular-sankey": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-sankey/SKILL.md",
+      "computedHash": "b5db76f544c57cfce5c9ce2497aa68a965693c8e3b5ff0b4cb8911caecbd1227"
+    },
+    "syncfusion-angular-scheduler": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-scheduler/SKILL.md",
+      "computedHash": "7539ecf7cc22efcd7254f302996c2246abdb19d06cc291a503d3a1a6fede4394"
+    },
+    "syncfusion-angular-sidebar": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-sidebar/SKILL.md",
+      "computedHash": "71f509048ad35c6518e2ae52e4d7b6143eee184c190a0d3fecbd543b4574662c"
+    },
+    "syncfusion-angular-smith-chart": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-smith-chart/SKILL.md",
+      "computedHash": "24d84ef637c2d7f95d0b01c911e1fff575327b3e9e86f7ce29e455b8cfe67f9c"
+    },
+    "syncfusion-angular-sparkline": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-sparkline/SKILL.md",
+      "computedHash": "ee8b89d20cfa1cad8c8ee8b231f1b27ecbe5647721ca27150d35dd18ff1e4069"
+    },
+    "syncfusion-angular-speech-to-text": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-speech-to-text/SKILL.md",
+      "computedHash": "22a4bc361281d7f071da74805ced09240ce4450ff52e2468351c25c09a9624b8"
+    },
+    "syncfusion-angular-splitter": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-splitter/SKILL.md",
+      "computedHash": "ca355e76f6be871ba70675f64466fe04394046304dd53aac2f2e219b720a47f1"
+    },
+    "syncfusion-angular-stepper": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-stepper/SKILL.md",
+      "computedHash": "6140bd5ae82bf33ceb677787abf899ab6fababa431e3dadc6dc191263fa40447"
+    },
+    "syncfusion-angular-stock-chart": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-stock-chart/SKILL.md",
+      "computedHash": "f94205016a88ff960160fb45ab320bb5bd1f3d275c6d0577cdaea3686c3d7be4"
+    },
+    "syncfusion-angular-tab": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-tab/SKILL.md",
+      "computedHash": "767558ebe29cee245d13ffe1af8a2f41052aae7ac97941e86dac6af0f9781108"
+    },
+    "syncfusion-angular-themes": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-themes/SKILL.md",
+      "computedHash": "74d29393965a6d3cc74da411e4076f37ad41706bb8c8adbdfc87b790e067b5cb"
+    },
+    "syncfusion-angular-timeline": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-timeline/SKILL.md",
+      "computedHash": "9ea81ad0e8eeffe44c52da872826c50b17bfd3a479019a9ccd0b752e23efdfa8"
+    },
+    "syncfusion-angular-toolbar": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-toolbar/SKILL.md",
+      "computedHash": "1525008b5da919cb5c57134474c79e5599f0a3a526fbc9dde358ddecc5913dfd"
+    },
+    "syncfusion-angular-treegrid": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-treegrid/SKILL.md",
+      "computedHash": "c62458657732eb7a87830e19e8cbfdd9ff9fa39c1b5b8cf1581e8f025394e21e"
+    },
+    "syncfusion-angular-treemap": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-treemap/SKILL.md",
+      "computedHash": "68700f6731e1cbbce71dec5dcef6244d07e2bcfc6548245eb126b5d30826327a"
+    },
+    "syncfusion-angular-treeview": {
+      "source": "syncfusion/angular-ui-components-skills",
+      "sourceType": "github",
+      "skillPath": "skills/syncfusion-angular-treeview/SKILL.md",
+      "computedHash": "44b5c66eb6e1b8eb935b9b66341615b889c20af6e4e74a5cec2c9c4ba4e83487"
+    }
+  }
+}

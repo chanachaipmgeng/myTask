@@ -2,14 +2,14 @@
   <div class="page-head">
     <div>
       <h2>Integrations</h2>
-      <p>เชื่อม myProject (OpenProject) ตั้ง field mapping และซิงก์ work package / time entry</p>
+      <p>เชื่อมระบบภายนอก: OpenProject (myProject), GitLab (mygit MR) และ Microsoft Teams Webhook</p>
     </div>
     <div class="flex flex-wrap gap-2">
       <button ejs-button cssClass="e-outline" type="button" [disabled]="loading() || saving()" (click)="reload()">
         รีเฟรช
       </button>
       <button ejs-button cssClass="e-primary" type="button" [disabled]="loading() || saving()" (click)="syncNow()">
-        Sync now
+        Sync OpenProject
       </button>
     </div>
   </div>
@@ -21,94 +21,231 @@
     <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
   }
 
-  <h3>การเชื่อมต่อ</h3>
-  <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
-    <label class="field">
-      <span>OpenProject URL</span>
-      <ejs-textbox [value]="baseUrl()" (change)="onBaseUrl($event)" [enabled]="canEdit()" placeholder="https://myproject.example.com"></ejs-textbox>
-    </label>
-    <label class="field">
-      <span>API token (ว่าง = คงค่าเดิม / ใช้จาก env)</span>
-      <ejs-textbox [value]="token()" (change)="onToken($event)" [enabled]="canEdit()" type="password" autocomplete="off"></ejs-textbox>
-    </label>
-    <label class="field">
-      <span>ชั่วโมงต่อ 1 man-day</span>
-      <ejs-numerictextbox [value]="hoursPerMd()" (change)="onHoursPerMd($event)" [enabled]="canEdit()" [min]="1" [max]="24" [step]="0.5" format="n1"></ejs-numerictextbox>
-    </label>
-    <div class="field flex items-end">
-      <ejs-checkbox
-        id="op-enabled"
-        label="เปิดการเชื่อมต่อในฐานข้อมูล"
-        [checked]="enabled()"
-        [disabled]="!canEdit()"
-        (change)="onEnabled($event)"
-      ></ejs-checkbox>
-    </div>
-  </div>
+  <ejs-tab id="integrations-tabs">
+    <e-tabitems>
+      <e-tabitem>
+        <ng-template #headerText>
+          <div>OpenProject (myProject)</div>
+        </ng-template>
+        <ng-template #content>
+          <div class="flex flex-col gap-4 pt-3">
+            <h3>การเชื่อมต่อ OpenProject</h3>
+            <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label class="field">
+                <span>OpenProject URL</span>
+                <ejs-textbox [value]="baseUrl()" (change)="onBaseUrl($event)" [enabled]="canEdit()" placeholder="https://myproject.example.com"></ejs-textbox>
+              </label>
+              <label class="field">
+                <span>API token (ว่าง = คงค่าเดิม / ใช้จาก env)</span>
+                <ejs-textbox [value]="token()" (change)="onToken($event)" [enabled]="canEdit()" type="password" autocomplete="off"></ejs-textbox>
+              </label>
+              <label class="field">
+                <span>ชั่วโมงต่อ 1 man-day</span>
+                <ejs-numerictextbox [value]="hoursPerMd()" (change)="onHoursPerMd($event)" [enabled]="canEdit()" [min]="1" [max]="24" [step]="0.5" format="n1"></ejs-numerictextbox>
+              </label>
+              <div class="field flex items-end">
+                <ejs-checkbox
+                  id="op-enabled"
+                  label="เปิดการเชื่อมต่อในฐานข้อมูล"
+                  [checked]="enabled()"
+                  [disabled]="!canEdit()"
+                  (change)="onEnabled($event)"
+                ></ejs-checkbox>
+              </div>
+            </div>
 
-  <h3>Status → workflow</h3>
-  <p class="fine">JSON object · ค่าที่ใช้ได้: {{ workflowHint }}</p>
-  <ejs-textarea
-    [value]="statusMapText()"
-    (change)="onStatusMapText($event)"
-    [enabled]="canEdit()"
-    [rows]="10"
-    cssClass="map-textarea"
-    width="100%"
-  ></ejs-textarea>
+            <h3>Status → workflow</h3>
+            <p class="fine">เพิ่ม/ลบคู่สถานะจากตารางด้านล่าง หรือแก้ JSON โดยตรง · ค่าที่ใช้ได้: {{ workflowHint }}</p>
+            <div class="flex flex-wrap gap-2 items-center">
+              @for (item of statusMapEntries(); track item.key) {
+                <span class="e-badge e-badge-info flex items-center gap-1">
+                  {{ item.key }} → {{ item.value }}
+                  @if (canEdit()) {
+                    <button type="button" class="ml-1 font-bold" (click)="removeStatusMapping(item.key)">×</button>
+                  }
+                </span>
+              }
+            </div>
+            @if (canEdit()) {
+              <div class="form-grid grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
+                <label class="field">
+                  <span>ชื่อสถานะใน OpenProject</span>
+                  <ejs-textbox [value]="newStatusKey()" (change)="newStatusKey.set($any($event).value ?? '')" placeholder="เช่น In testing"></ejs-textbox>
+                </label>
+                <label class="field">
+                  <span>Workflow ในระบบ</span>
+                  <ejs-dropdownlist [dataSource]="workflowOptions" [fields]="fields" [value]="newStatusValue()" (change)="newStatusValue.set($any($event).value ?? '')"></ejs-dropdownlist>
+                </label>
+                <button ejs-button cssClass="e-outline" type="button" (click)="addStatusMapping()">+ เพิ่มคู่สถานะ</button>
+              </div>
+            }
+            <ejs-textarea
+              [value]="statusMapText()"
+              (change)="onStatusMapText($event)"
+              [enabled]="canEdit()"
+              [rows]="8"
+              cssClass="map-textarea"
+              width="100%"
+            ></ejs-textarea>
 
-  <h3>Type map</h3>
-  <ejs-textarea
-    [value]="typeMapText()"
-    (change)="onTypeMapText($event)"
-    [enabled]="canEdit()"
-    [rows]="8"
-    cssClass="map-textarea"
-    width="100%"
-  ></ejs-textarea>
+            <h3>Type map</h3>
+            <ejs-textarea
+              [value]="typeMapText()"
+              (change)="onTypeMapText($event)"
+              [enabled]="canEdit()"
+              [rows]="6"
+              cssClass="map-textarea"
+              width="100%"
+            ></ejs-textarea>
 
-  <h3>Custom fields</h3>
-  <p class="fine">ใส่ชื่อ property เช่น customField12 · ว่าง = ไม่ใช้ · แมปจากฟิลด์ myProject ที่แนะนำในคู่มือ</p>
-  <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-    @for (row of customFieldRows; track row.key) {
-      <label class="field">
-        <span>{{ row.label }}</span>
-        <ejs-textbox
-          [value]="customFields()[row.key]"
-          (change)="setCustomField(row.key, $event)"
-          [enabled]="canEdit()"
-          [placeholder]="row.hint"
-        ></ejs-textbox>
-      </label>
-    }
-  </div>
+            <h3>Custom fields</h3>
+            <p class="fine">ใส่ชื่อ property เช่น customField12 · ว่าง = ไม่ใช้ · แมปจากฟิลด์ myProject ที่แนะนำในคู่มือ</p>
+            <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+              @for (row of customFieldRows; track row.key) {
+                <label class="field">
+                  <span>{{ row.label }}</span>
+                  <ejs-textbox
+                    [value]="customFields()[row.key]"
+                    (change)="setCustomField(row.key, $event)"
+                    [enabled]="canEdit()"
+                    [placeholder]="row.hint"
+                  ></ejs-textbox>
+                </label>
+              }
+            </div>
 
-  @if (canEdit()) {
-    <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="save()">บันทึกการตั้งค่า</button>
-  }
+            @if (canEdit()) {
+              <div>
+                <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="save()">บันทึกการตั้งค่า OpenProject</button>
+              </div>
+            }
 
-  <h3>User mapping</h3>
-  <div class="form-grid grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-    <label class="field">
-      <span>คนในระบบ</span>
-      <ejs-dropdownlist [dataSource]="personOptions()" [fields]="fields" [value]="mapPersonId()" (change)="onPerson($event)" [enabled]="canEdit()"></ejs-dropdownlist>
-    </label>
-    <label class="field">
-      <span>ผู้ใช้ OpenProject ที่ยังไม่จับคู่</span>
-      <ejs-dropdownlist [dataSource]="unmappedOptions()" [fields]="fields" [value]="mapOpUserId()" (change)="onOpUser($event)" [enabled]="canEdit()"></ejs-dropdownlist>
-    </label>
-    <button ejs-button type="button" [disabled]="!canEdit() || saving()" (click)="mapUser()">จับคู่</button>
-  </div>
+            <h3>User mapping</h3>
+            <div class="form-grid grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <label class="field">
+                <span>คนในระบบ</span>
+                <ejs-dropdownlist [dataSource]="personOptions()" [fields]="fields" [value]="mapPersonId()" (change)="onPerson($event)" [enabled]="canEdit()"></ejs-dropdownlist>
+              </label>
+              <label class="field">
+                <span>ผู้ใช้ OpenProject ที่ยังไม่จับคู่</span>
+                <ejs-dropdownlist [dataSource]="unmappedOptions()" [fields]="fields" [value]="mapOpUserId()" (change)="onOpUser($event)" [enabled]="canEdit()"></ejs-dropdownlist>
+              </label>
+              <button ejs-button type="button" [disabled]="!canEdit() || saving()" (click)="mapUser()">จับคู่</button>
+            </div>
 
-  <h3>ประวัติ sync</h3>
-  <ejs-grid [dataSource]="data()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
-    <e-columns>
-      <e-column field="id" headerText="ID" width="80"></e-column>
-      <e-column field="status" headerText="สถานะ" width="100"></e-column>
-      <e-column field="started_at" headerText="เริ่ม" width="180"></e-column>
-      <e-column field="added" headerText="เพิ่ม" width="80"></e-column>
-      <e-column field="updated" headerText="อัปเดต" width="80"></e-column>
-      <e-column field="unchanged" headerText="ไม่เปลี่ยน" width="100"></e-column>
-    </e-columns>
-  </ejs-grid>
+            <h3>ประวัติ sync OpenProject</h3>
+            <ejs-grid [dataSource]="data()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
+              <e-columns>
+                <e-column field="id" headerText="ID" width="80"></e-column>
+                <e-column field="status" headerText="สถานะ" width="100"></e-column>
+                <e-column field="started_at" headerText="เริ่ม" width="180"></e-column>
+                <e-column field="added" headerText="เพิ่ม" width="80"></e-column>
+                <e-column field="updated" headerText="อัปเดต" width="80"></e-column>
+                <e-column field="unchanged" headerText="ไม่เปลี่ยน" width="100"></e-column>
+              </e-columns>
+            </ejs-grid>
+          </div>
+        </ng-template>
+      </e-tabitem>
+
+      <e-tabitem>
+        <ng-template #headerText>
+          <div>GitLab (mygit MR)</div>
+        </ng-template>
+        <ng-template #content>
+          <div class="flex flex-col gap-4 pt-3">
+            <h3>ตั้งค่าเชื่อมต่อ GitLab API v4</h3>
+            <p class="fine">ดึง Merge Requests ที่ merged แล้ว เพื่อจับคู่รหัสใบงาน (เช่น IMP-100, OP-42) จากชื่อ MR / branch / description</p>
+            <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label class="field">
+                <span>GitLab Base URL</span>
+                <ejs-textbox [value]="gitlabBaseUrl()" (change)="gitlabBaseUrl.set($any($event).value ?? '')" [enabled]="canEdit()" placeholder="https://gitlab.example.com"></ejs-textbox>
+              </label>
+              <label class="field">
+                <span>Project IDs (คั่นด้วยจุลภาค เช่น 12, 34)</span>
+                <ejs-textbox [value]="gitlabProjectIdsText()" (change)="gitlabProjectIdsText.set($any($event).value ?? '')" [enabled]="canEdit()" placeholder="12, 34"></ejs-textbox>
+              </label>
+              <label class="field">
+                <span>Personal / Project Access Token (ว่าง = คงค่าเดิม)</span>
+                <ejs-textbox [value]="gitlabToken()" (change)="gitlabToken.set($any($event).value ?? '')" [enabled]="canEdit()" type="password" autocomplete="off"></ejs-textbox>
+              </label>
+              <div class="field flex items-end">
+                <ejs-checkbox
+                  id="gitlab-enabled"
+                  label="เปิดการเชื่อมต่อ GitLab API"
+                  [checked]="gitlabEnabled()"
+                  [disabled]="!canEdit()"
+                  (change)="gitlabEnabled.set(!!$any($event).checked)"
+                ></ejs-checkbox>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              @if (canEdit()) {
+                <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveGitLabConfig()">บันทึก GitLab</button>
+              }
+              <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="syncGitLabNow()">ซิงก์ MR ตอนนี้</button>
+            </div>
+
+            <h3>ประวัติซิงก์ GitLab</h3>
+            <ejs-grid [dataSource]="gitlabData()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
+              <e-columns>
+                <e-column field="id" headerText="ID" width="80"></e-column>
+                <e-column field="status" headerText="สถานะ" width="100"></e-column>
+                <e-column field="started_at" headerText="เริ่ม" width="180"></e-column>
+                <e-column field="updated" headerText="จับคู่ใบงาน" width="110"></e-column>
+                <e-column field="unchanged" headerText="ไม่ตรงรหัส" width="110"></e-column>
+              </e-columns>
+            </ejs-grid>
+          </div>
+        </ng-template>
+      </e-tabitem>
+
+      <e-tabitem>
+        <ng-template #headerText>
+          <div>Microsoft Teams</div>
+        </ng-template>
+        <ng-template #content>
+          <div class="flex flex-col gap-4 pt-3">
+            <h3>ตั้งค่า Microsoft Teams Incoming Webhook</h3>
+            <p class="fine">ส่งข้อความแจ้งเตือนใบงานใกล้ครบกำหนดและใบที่ actual เกิน estimate เข้าช่อง Teams (ไม่ส่งลำดับคะแนนคน)</p>
+            <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label class="field">
+                <span>ชื่อช่องเริ่มต้น</span>
+                <ejs-textbox [value]="teamsChannel()" (change)="teamsChannel.set($any($event).value ?? '')" [enabled]="canEdit()" placeholder="scorecard-alerts"></ejs-textbox>
+              </label>
+              <label class="field">
+                <span>Incoming Webhook URL (ว่าง = คงค่าเดิม / ใช้จาก env)</span>
+                <ejs-textbox [value]="teamsWebhookUrl()" (change)="teamsWebhookUrl.set($any($event).value ?? '')" [enabled]="canEdit()" type="password" autocomplete="off" placeholder="https://...webhook.office.com/..."></ejs-textbox>
+              </label>
+              <div class="field flex items-end">
+                <ejs-checkbox
+                  id="teams-enabled"
+                  label="เปิดใช้งานการส่งเข้า Teams Webhook"
+                  [checked]="teamsEnabled()"
+                  [disabled]="!canEdit()"
+                  (change)="teamsEnabled.set(!!$any($event).checked)"
+                ></ejs-checkbox>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              @if (canEdit()) {
+                <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveTeamsConfig()">บันทึก Teams Webhook</button>
+              }
+              <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="sendTeamsNow()">ยิงแจ้งเตือนเข้า Teams ตอนนี้</button>
+            </div>
+
+            <h3>ประวัติส่งแจ้งเตือน Teams</h3>
+            <ejs-grid [dataSource]="teamsData()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
+              <e-columns>
+                <e-column field="id" headerText="ID" width="80"></e-column>
+                <e-column field="status" headerText="สถานะ" width="100"></e-column>
+                <e-column field="started_at" headerText="เวลาส่ง" width="180"></e-column>
+                <e-column field="added" headerText="จำนวนข้อความ" width="130"></e-column>
+              </e-columns>
+            </ejs-grid>
+          </div>
+        </ng-template>
+      </e-tabitem>
+    </e-tabitems>
+  </ejs-tab>
 </section>

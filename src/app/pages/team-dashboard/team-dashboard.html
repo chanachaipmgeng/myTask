@@ -4,20 +4,102 @@
       <h2>แดชบอร์ดทีม</h2>
       <p>
         ตัวเลขปี {{ context.yearLabel }} เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง
-        เส้นรายเดือน และแท่งโควตา เป้า {{ target }} อยู่บนเส้นรายเดือน
+        เส้นรายเดือน และแท่งโควตา เป้า {{ target }} อยู่บนเส้นรายเดือน · เลือก snapshot
+        เพื่อดูดัชนีที่แช่แข็งตามเดือน/ไตรมาส
       </p>
     </div>
-    <label class="filter">
-      <span>สายงาน</span>
-      <ejs-dropdownlist
-        [dataSource]="trackOptions"
-        [fields]="fields"
-        [value]="track()"
-        (change)="setTrack($event)"
-        width="180px"
-      ></ejs-dropdownlist>
-    </label>
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="filter">
+        <span>มุมมองคะแนน</span>
+        <ejs-dropdownlist
+          [dataSource]="periodOptions()"
+          [fields]="fields"
+          [value]="periodMode()"
+          (change)="setPeriodMode($event)"
+          width="260px"
+        ></ejs-dropdownlist>
+      </label>
+      <label class="filter">
+        <span>สายงาน</span>
+        <ejs-dropdownlist
+          [dataSource]="trackOptions"
+          [fields]="fields"
+          [value]="track()"
+          (change)="setTrack($event)"
+          width="180px"
+        ></ejs-dropdownlist>
+      </label>
+    </div>
   </div>
+
+  @if (canCapture()) {
+    <div class="e-card">
+      <div class="e-card-content flex flex-col gap-3 p-4 md:flex-row md:flex-wrap md:items-end">
+        <label class="filter">
+          <span>จับ snapshot</span>
+          <ejs-dropdownlist
+            [dataSource]="captureTypeOptions"
+            [fields]="fields"
+            [value]="captureType()"
+            (change)="setCaptureType($event)"
+            width="140px"
+          ></ejs-dropdownlist>
+        </label>
+        <label class="filter grow">
+          <span>รหัสช่วง</span>
+          <ejs-textbox
+            [value]="captureKey()"
+            (change)="onCaptureKey($event)"
+            placeholder="2025-10 หรือ 2025-Q3"
+            width="100%"
+          ></ejs-textbox>
+        </label>
+        <button
+          ejs-button
+          [isPrimary]="true"
+          type="button"
+          [disabled]="capturing()"
+          (click)="captureSnapshot()"
+        >
+          จับ snapshot ช่วงนี้
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (snapshotMessage()) {
+    <ejs-message [content]="snapshotMessage()" severity="Success" variant="Outlined"></ejs-message>
+  }
+  @if (snapshotError()) {
+    <ejs-message [content]="snapshotError()" severity="Error" variant="Outlined"></ejs-message>
+  }
+
+  @if (!viewingLive()) {
+    <div class="e-card">
+      <div class="e-card-header">
+        <div class="e-card-title">ดัชนีแช่แข็งจาก snapshot</div>
+      </div>
+      <div class="e-card-content p-4">
+        @if (loadingSnapshot()) {
+          <p class="kpi-note m-0">กำลังโหลด…</p>
+        } @else if (snapshotTableRows().length === 0) {
+          <p class="kpi-note m-0">ยังไม่มีแถวในช่วงนี้</p>
+        } @else {
+          <ejs-grid [dataSource]="snapshotTableRows()" height="320">
+            <e-columns>
+              <e-column field="nickname" headerText="คน" width="140"></e-column>
+              <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
+              <e-column field="index" headerText="ดัชนี" width="100" textAlign="Right" format="N1"></e-column>
+              <e-column field="closedCount" headerText="ใบปิด" width="90" textAlign="Right"></e-column>
+              <e-column field="closedMd" headerText="MD ปิด" width="100" textAlign="Right" format="N2"></e-column>
+              <e-column field="planIndex" headerText="แผน %" width="100" textAlign="Right" format="N1"></e-column>
+              <e-column field="weighted" headerText="ถ่วงใบ" width="100" textAlign="Right" format="N1"></e-column>
+            </e-columns>
+          </ejs-grid>
+        }
+      </div>
+    </div>
+  }
 
   <ejs-dashboardlayout
     [columns]="4"
@@ -122,91 +204,93 @@
         </div>
       </div>
     </div>
-    <div id="kpi-alerts" class="e-panel" data-row="3" data-col="0" data-sizex="2" data-sizey="2">
-      <div class="e-panel-container">
-        <div class="e-panel-header">แจ้งเตือนใบที่เปิดอยู่</div>
-        <div class="e-panel-content panel-scroll">
-          @if (alerts().length === 0) {
-            <p class="kpi-note">ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate</p>
-          } @else {
-            <div class="grid grid-cols-1 gap-2">
-              @for (alert of alerts(); track alert.id) {
-                <div class="e-card">
-                  <div class="e-card-content p-3">{{ alert.message }}</div>
-                </div>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-    <div id="kpi-meaning" class="e-panel" data-row="3" data-col="2" data-sizex="2" data-sizey="2">
-      <div class="e-panel-container">
-        <div class="e-panel-header">ความหมายของ KPI จากใบในกระดาน</div>
-        <div class="e-panel-content panel-scroll">
-          <div class="grid grid-cols-1 gap-2">
-            @for (item of explanations(); track item.id) {
-              <div class="e-card">
-                <div class="e-card-content flex flex-col gap-1 p-3">
-                  <span class="kpi-inline">{{ item.value }} {{ item.label }}</span>
-                  <span>{{ item.meaning }}</span>
-                  <span class="kpi-note">{{ item.criterion }}</span>
-                </div>
+    @if (viewingLive()) {
+      <div id="kpi-alerts" class="e-panel" data-row="3" data-col="0" data-sizex="2" data-sizey="2">
+        <div class="e-panel-container">
+          <div class="e-panel-header">แจ้งเตือนใบที่เปิดอยู่</div>
+          <div class="e-panel-content panel-scroll">
+            @if (alerts().length === 0) {
+              <p class="kpi-note">ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate</p>
+            } @else {
+              <div class="grid grid-cols-1 gap-2">
+                @for (alert of alerts(); track alert.id) {
+                  <div class="e-card">
+                    <div class="e-card-content p-3">{{ alert.message }}</div>
+                  </div>
+                }
               </div>
             }
           </div>
         </div>
       </div>
-    </div>
-    <div id="chart-monthly" class="e-panel" data-row="5" data-col="0" data-sizex="2" data-sizey="2">
-      <div class="e-panel-container">
-        <div class="e-panel-header">เส้นรายเดือน</div>
-        <div class="e-panel-content">
-          <p class="kpi-note">ปิดตามแผน ความแม่น และ rework ของใบที่ปิดในเดือนนั้น เป้า {{ target }}</p>
-          <ejs-chart
-            id="monthly-line"
-            style="display: block; height: 260px; width: 100%"
-            theme="Tailwind3Dark"
-            [primaryXAxis]="categoryAxis"
-            [primaryYAxis]="percentAxis"
-            [tooltip]="chartTooltip"
-            [legendSettings]="chartLegend"
-            [chartArea]="chartArea"
-            [enableAnimation]="false"
-          >
-            <e-series-collection>
-              <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="plan" name="ปิดตามแผน" width="2" fill="#7eb6ff"></e-series>
-              <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="accuracy" name="ความแม่น" width="2" fill="#3ec6e0"></e-series>
-              <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="rework" name="Rework" width="2" fill="#9f3a2f"></e-series>
-              <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="target" name="เป้า 75" width="2" fill="#f0b429" [marker]="targetMarker"></e-series>
-            </e-series-collection>
-          </ejs-chart>
+      <div id="kpi-meaning" class="e-panel" data-row="3" data-col="2" data-sizex="2" data-sizey="2">
+        <div class="e-panel-container">
+          <div class="e-panel-header">ความหมายของ KPI จากใบในกระดาน</div>
+          <div class="e-panel-content panel-scroll">
+            <div class="grid grid-cols-1 gap-2">
+              @for (item of explanations(); track item.id) {
+                <div class="e-card">
+                  <div class="e-card-content flex flex-col gap-1 p-3">
+                    <span class="kpi-inline">{{ item.value }} {{ item.label }}</span>
+                    <span>{{ item.meaning }}</span>
+                    <span class="kpi-note">{{ item.criterion }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <div id="chart-quota" class="e-panel" data-row="5" data-col="2" data-sizex="2" data-sizey="2">
-      <div class="e-panel-container">
-        <div class="e-panel-header">โควตาที่ใช้กับที่ว่าง</div>
-        <div class="e-panel-content">
-          <p class="kpi-note">ใช้แล้วคือ MD ของใบที่ยังไม่ปิด ที่ว่างคือโควต้าสัปดาห์หักใบที่เปิดอยู่และกัน 1 MD</p>
-          <ejs-chart
-            id="quota-bars"
-            style="display: block; height: 260px; width: 100%"
-            theme="Tailwind3Dark"
-            [primaryXAxis]="categoryAxis"
-            [primaryYAxis]="quotaAxis"
-            [tooltip]="chartTooltip"
-            [legendSettings]="chartLegend"
-            [chartArea]="chartArea"
-            [enableAnimation]="false"
-          >
-            <e-series-collection>
-              <e-series type="Column" [dataSource]="quotaPoints()" xName="nickname" yName="used" name="ใช้แล้ว" fill="#7eb6ff" columnWidth="0.5"></e-series>
-              <e-series type="Column" [dataSource]="quotaPoints()" xName="nickname" yName="free" name="ว่าง" fill="#3ec6e0" columnWidth="0.5"></e-series>
-            </e-series-collection>
-          </ejs-chart>
+      <div id="chart-monthly" class="e-panel" data-row="5" data-col="0" data-sizex="2" data-sizey="2">
+        <div class="e-panel-container">
+          <div class="e-panel-header">เส้นรายเดือน</div>
+          <div class="e-panel-content">
+            <p class="kpi-note">ปิดตามแผน ความแม่น และ rework ของใบที่ปิดในเดือนนั้น เป้า {{ target }}</p>
+            <ejs-chart
+              id="monthly-line"
+              style="display: block; height: 260px; width: 100%"
+              theme="Tailwind3Dark"
+              [primaryXAxis]="categoryAxis"
+              [primaryYAxis]="percentAxis"
+              [tooltip]="chartTooltip"
+              [legendSettings]="chartLegend"
+              [chartArea]="chartArea"
+              [enableAnimation]="false"
+            >
+              <e-series-collection>
+                <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="plan" name="ปิดตามแผน" width="2" fill="#7eb6ff"></e-series>
+                <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="accuracy" name="ความแม่น" width="2" fill="#3ec6e0"></e-series>
+                <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="rework" name="Rework" width="2" fill="#9f3a2f"></e-series>
+                <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="target" name="เป้า 75" width="2" fill="#f0b429" [marker]="targetMarker"></e-series>
+              </e-series-collection>
+            </ejs-chart>
+          </div>
         </div>
       </div>
-    </div>
+      <div id="chart-quota" class="e-panel" data-row="5" data-col="2" data-sizex="2" data-sizey="2">
+        <div class="e-panel-container">
+          <div class="e-panel-header">โควตาที่ใช้กับที่ว่าง</div>
+          <div class="e-panel-content">
+            <p class="kpi-note">ใช้แล้วคือ MD ของใบที่ยังไม่ปิด ที่ว่างคือโควต้าสัปดาห์หักใบที่เปิดอยู่และกัน 1 MD</p>
+            <ejs-chart
+              id="quota-bars"
+              style="display: block; height: 260px; width: 100%"
+              theme="Tailwind3Dark"
+              [primaryXAxis]="categoryAxis"
+              [primaryYAxis]="quotaAxis"
+              [tooltip]="chartTooltip"
+              [legendSettings]="chartLegend"
+              [chartArea]="chartArea"
+              [enableAnimation]="false"
+            >
+              <e-series-collection>
+                <e-series type="Column" [dataSource]="quotaPoints()" xName="nickname" yName="used" name="ใช้แล้ว" fill="#7eb6ff" columnWidth="0.5"></e-series>
+                <e-series type="Column" [dataSource]="quotaPoints()" xName="nickname" yName="free" name="ว่าง" fill="#3ec6e0" columnWidth="0.5"></e-series>
+              </e-series-collection>
+            </ejs-chart>
+          </div>
+        </div>
+      </div>
+    }
   </ejs-dashboardlayout>
 </section>

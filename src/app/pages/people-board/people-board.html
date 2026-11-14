@@ -75,13 +75,19 @@
   </div>
 
   <ejs-grid
+    #peopleGrid
     [dataSource]="rows()"
     [allowPaging]="true"
     [allowSorting]="true"
     [allowFiltering]="true"
+    [allowResizing]="true"
+    [showColumnChooser]="true"
+    [allowExcelExport]="true"
+    [toolbar]="toolbar"
     [pageSettings]="pageSettings"
     [filterSettings]="filterSettings"
     [sortSettings]="sortSettings"
+    (toolbarClick)="onToolbarClick($event)"
     (queryCellInfo)="paintIndex($event)"
     (rowSelected)="openPerson($event)"
     height="560"
@@ -105,5 +111,26 @@
       <e-column field="sideLabel" headerText="นอกแผน / Spike" width="150"></e-column>
       <e-column field="alertLabel" headerText="แจ้งเตือน" width="140"></e-column>
     </e-columns>
+    <e-aggregates>
+      <e-aggregate>
+        <e-columns>
+          <e-column type="Count" field="personLabel">
+            <ng-template #footerTemplate let-data>รวม {{ data.Count }} คน</ng-template>
+          </e-column>
+          <e-column type="Sum" field="quota" format="N1">
+            <ng-template #footerTemplate let-data>รวม {{ data.Sum }}</ng-template>
+          </e-column>
+          <e-column type="Sum" field="openCount">
+            <ng-template #footerTemplate let-data>รวม {{ data.Sum }}</ng-template>
+          </e-column>
+          <e-column type="Sum" field="closedCount">
+            <ng-template #footerTemplate let-data>รวม {{ data.Sum }}</ng-template>
+          </e-column>
+          <e-column type="Average" field="index" format="N1">
+            <ng-template #footerTemplate let-data>เฉลี่ย {{ data.Average }}</ng-template>
+          </e-column>
+        </e-columns>
+      </e-aggregate>
+    </e-aggregates>
   </ejs-grid>
 </section>

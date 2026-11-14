@@ -13,6 +13,7 @@ import { planNewWork } from './capacity';
 import { MyGitCommit, MyGitMatch, MyGitSyncResult, MyGitUnmatched } from './mygit-sync';
 import { scorePartNotes } from './kpi-meaning';
 import { Level, Person, Ticket, Track } from './models';
+import { applyGanttDateEdit } from './work-views';
 import {
   INDEX_TARGET,
   UNPLANNED_TARGET,
@@ -346,9 +347,49 @@ export class ScorecardService {
     }
   }
 
-  applyMyGit(commits: readonly MyGitCommit[]): MyGitSyncResult {
+  async updateTicketDates(
+    ticketId: string,
+    dates: { startDate?: string | null; dueDate?: string | null },
+  ): Promise<{ ok: boolean; writebackError?: string; message?: string }> {
+    const previous = this.ticketsState().find((ticket) => ticket.id === ticketId);
+    if (!previous) {
+      return { ok: false, message: 'ไม่พบใบงาน' };
+    }
+    const edited = applyGanttDateEdit(previous, dates);
+    if (!edited.ok) {
+      return { ok: false, message: edited.message };
+    }
+    this.ticketsState.update((current) =>
+      current.map((ticket) => (ticket.id === ticketId ? edited.ticket : ticket)),
+    );
+    if (this.mockModeState() || !this.apiOnline() || !this.api) {
+      return { ok: true };
+    }
+    try {
+      const result = await this.api.updateWorkItemDates(ticketId, dates);
+      if (!result.ok) {
+        this.ticketsState.update((current) =>
+          current.map((ticket) => (ticket.id === ticketId ? previous : ticket)),
+        );
+        return { ok: false, message: result.message ?? 'บันทึกวันที่ไม่สำเร็จ' };
+      }
+      if (result.ticket) {
+        this.ticketsState.update((current) =>
+          current.map((ticket) => (ticket.id === ticketId ? result.ticket! : ticket)),
+        );
+      }
+      return { ok: true, writebackError: result.writebackError };
+    } catch (err) {
+      this.ticketsState.update((current) =>
+        current.map((ticket) => (ticket.id === ticketId ? previous : ticket)),
+      );
+      return { ok: false, message: err instanceof Error ? err.message : 'บันทึกวันที่ไม่สำเร็จ' };
+    }
+  }
+
+  applyMyGit(commits: readonly (MyGitCommit & { mrLink?: string })[]): MyGitSyncResult {
     const byId = new Map(this.ticketsState().map((ticket) => [ticket.id, ticket]));
-    const pending = new Map<string, { reviewRounds: number; reopenCount: number }>();
+    const pending = new Map<string, { reviewRounds: number; reopenCount: number; mrLink?: string }>();
     const matched: MyGitMatch[] = [];
     const unmatched: MyGitUnmatched[] = [];
     for (const commit of commits) {
@@ -363,7 +404,11 @@ export class ScorecardService {
         continue;
       }
       const reviewBefore = scoreTicket(ticket).review;
-      pending.set(ticket.id, { reviewRounds: commit.reviewRounds, reopenCount: commit.reopenCount });
+      pending.set(ticket.id, {
+        reviewRounds: commit.reviewRounds,
+        reopenCount: commit.reopenCount,
+        mrLink: commit.mrLink,
+      });
       const reviewAfter = scoreTicket({
         ...ticket,
         reviewRounds: commit.reviewRounds,
@@ -378,6 +423,7 @@ export class ScorecardService {
         reopenCount: commit.reopenCount,
         reviewBefore,
         reviewAfter,
+        mrLink: commit.mrLink || ticket.mrLink,
       });
     }
     if (pending.size > 0) {
@@ -387,7 +433,12 @@ export class ScorecardService {
           if (!update) {
             return ticket;
           }
-          const next = { ...ticket, reviewRounds: update.reviewRounds, reopenCount: update.reopenCount };
+          const next = {
+            ...ticket,
+            reviewRounds: update.reviewRounds,
+            reopenCount: update.reopenCount,
+            mrLink: update.mrLink || ticket.mrLink,
+          };
           if (!this.mockModeState() && this.apiOnline() && this.api) {
             void this.api.replaceWorkItem(next);
           }

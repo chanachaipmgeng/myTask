@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   CategoryService,
@@ -10,7 +10,19 @@ import {
 } from '@syncfusion/ej2-angular-charts';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { FilterService, GridModule, PageService, SortService, SearchService } from '@syncfusion/ej2-angular-grids';
+import {
+  AggregateService,
+  ColumnChooserService,
+  ExcelExportService,
+  FilterService,
+  GridComponent,
+  GridModule,
+  PageService,
+  ResizeService,
+  SearchService,
+  SortService,
+  ToolbarService,
+} from '@syncfusion/ej2-angular-grids';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { buildPeopleRoster } from '../../core/people-roster';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -28,6 +40,11 @@ type TrackFilter = Track | 'All';
     SortService,
     FilterService,
     SearchService,
+    ResizeService,
+    ColumnChooserService,
+    ExcelExportService,
+    AggregateService,
+    ToolbarService,
     ColumnSeriesService,
     LineSeriesService,
     CategoryService,
@@ -40,12 +57,14 @@ export class PeopleBoard {
   private readonly scorecard = inject(ScorecardService);
   private readonly router = inject(Router);
 
+  @ViewChild('peopleGrid') private peopleGrid?: GridComponent;
+
   protected readonly target = INDEX_TARGET;
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly pageSettings = { pageSize: 16 };
   protected readonly filterSettings = { type: 'Menu' };
   protected readonly sortSettings = { columns: [{ field: 'index', direction: 'Descending' }] };
-  protected readonly toolbar = ['Search'];
+  protected readonly toolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
   protected readonly trackOptions = [
     { text: 'ทั้งหมด', value: 'All' },
     { text: 'R&D', value: 'RD' },
@@ -120,6 +139,15 @@ export class PeopleBoard {
     const id = args.data?.id;
     if (id) {
       void this.router.navigate(['/people', id]);
+    }
+  }
+
+  protected onToolbarClick(args: { item?: { id?: string } }): void {
+    const id = args.item?.id ?? '';
+    if (id.endsWith('_excelexport')) {
+      void this.peopleGrid?.excelExport();
+    } else if (id.endsWith('_csvexport')) {
+      void this.peopleGrid?.csvExport();
     }
   }
 

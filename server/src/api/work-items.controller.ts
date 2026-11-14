@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import { Ticket } from '../../../shared/domain/models';
+import { applyGanttDateEdit } from '../../../shared/domain/work-views';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { APP_CONFIG, AppConfig } from '../config';
 import { getPerson } from '../data/people.repo';
@@ -119,6 +120,52 @@ export class WorkItemsController {
         });
       } else {
         await this.db.audit(req.authUser?.person.id ?? null, 'work_item.assign_writeback', id, { opId, opUserId });
+      }
+    }
+
+    return writebackError ? { ok: true, ticket: saved, writebackError } : { ok: true, ticket: saved };
+  }
+
+  @Post(':id/dates')
+  @Roles('admin', 'lead')
+  async updateDates(
+    @Param('id') id: string,
+    @Body() body: { startDate?: string | null; dueDate?: string | null },
+    @Req() req: AuthedRequest,
+  ) {
+    const ticket = await getWorkItem(this.db, id);
+    if (!ticket) {
+      return { ok: false, message: 'ไม่พบใบงาน' };
+    }
+    const edited = applyGanttDateEdit(ticket, {
+      startDate: body.startDate,
+      dueDate: body.dueDate,
+    });
+    if (!edited.ok) {
+      return { ok: false, message: edited.message };
+    }
+    const saved = await upsertWorkItem(this.db, edited.ticket);
+    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.dates', id, {
+      startDate: saved.actualStartOn ?? null,
+      dueDate: saved.dueOn ?? null,
+      firstDueOn: saved.firstDueOn ?? null,
+    });
+
+    let writebackError: string | undefined;
+    const opId = saved.opId;
+    if (this.config.openproject.writeback && saved.source === 'openproject' && typeof opId === 'number') {
+      const err = await this.openProject.writebackDates(opId, {
+        startDate: saved.actualStartOn ?? null,
+        dueDate: saved.dueOn ?? null,
+      });
+      if (err) {
+        writebackError = err;
+        await this.db.audit(req.authUser?.person.id ?? null, 'work_item.dates_writeback_failed', id, {
+          opId,
+          error: err,
+        });
+      } else {
+        await this.db.audit(req.authUser?.person.id ?? null, 'work_item.dates_writeback', id, { opId });
       }
     }
 

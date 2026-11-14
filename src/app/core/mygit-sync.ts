@@ -23,8 +23,9 @@ export interface MyGitMatch {
   ticketId: string;
   reviewRounds: number;
   reopenCount: number;
-  reviewBefore: number;
-  reviewAfter: number;
+  reviewBefore: number | null;
+  reviewAfter: number | null;
+  mrLink?: string;
 }
 
 export interface MyGitUnmatched {

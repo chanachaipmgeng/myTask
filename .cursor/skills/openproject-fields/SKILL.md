@@ -2,18 +2,22 @@
 name: openproject-fields
 description: >-
   Map myProject (OpenProject) standard and custom fields into Ticket model and
-  Integrations UI. Use when adding CF keys, changing openproject.mapper,
-  Integrations page, or documenting recommended OP fields for KPI.
+  Integrations UI, plus GitLab MR sync and Teams Webhook configuration. Use when
+  adding CF keys, changing openproject.mapper/client/sync, Integrations page,
+  or documenting recommended OP fields for KPI.
 ---
 
-# แมปฟิลด์ myProject
+# แมปฟิลด์ myProject & Integrations
 
 ## ไฟล์หลัก
 
-- `server/src/integrations/openproject/openproject.mapper.ts` — `OpenProjectMapping`, `mapWorkPackage`, helpers
-- `src/app/pages/integrations/` — ฟอร์ม `customFields`
-- `docs/คู่มือ.md` — ตารางฟิลด์แนะนำ
-- `server/test/unit/openproject.mapper.spec.ts` — เทสแมป
+- `server/src/integrations/openproject/openproject.mapper.ts` — `OpenProjectMapping`, `mapWorkPackage` (รวม `_links.parent` → `opParentId`/`parentId`), helpers
+- `server/src/integrations/openproject/openproject.client.ts` — `patchAssignee`, `patchDates`
+- `server/src/integrations/openproject/openproject.sync.ts` — `sync`, `writebackAssignee`, `writebackDates`
+- `server/src/api/integrations.controller.ts` — OpenProject, GitLab MR sync (`gitlab`), Teams Webhook (`teams`)
+- `src/app/pages/integrations/` — `ejs-tab` 3 ระบบ (OpenProject, GitLab, Microsoft Teams) + ตัวช่วย `statusMap` + ฟอร์ม `customFields`
+- `docs/คู่มือ.md` — ตารางฟิลด์แนะนำและตัวอย่าง `.env`
+- `server/test/unit/openproject.mapper.spec.ts` & `openproject.client.spec.ts` — เทสแมปและ PATCH
 
 ## ขั้นตอนขยาย CF
 
@@ -24,15 +28,16 @@ description: >-
 5. อัปเดตตารางในคู่มือ
 6. เพิ่ม/ขยาย unit test แล้ว `npm --prefix server run test`
 
-## Assign / writeback (P1 ปิดแล้ว)
+## Assign / Dates Writeback & Integrations (P1–P2 ปิดแล้ว)
 
-- API assign: `@Roles('admin', 'lead')` ใน `work-items.controller.ts`
-- UI: `canAssignWork` + ปุ่มรับข้อเสนอใน `/queue`; Dialog ยืนยันเมื่อ `writeback && opId`
-- `OPENPROJECT_WRITEBACK=true` → PATCH assignee หลัง assign สำเร็จ; ล้มแล้วคืน `writebackError`
+- API assign & dates: `@Roles('admin', 'lead')` ใน `work-items.controller.ts` (`POST /api/work-items/:id/assign` และ `POST /api/work-items/:id/dates`)
+- UI: `canAssignWork` + ปุ่มรับข้อเสนอใน `/queue` (Dialog ยืนยันเมื่อ `writeback && opId`) + แก้วันเริ่ม/ส่งบน `/work/timeline`
+- `OPENPROJECT_WRITEBACK=true` → PATCH assignee หรือ startDate/dueDate หลังอัปเดตสำเร็จ; ล้มแล้วคืน `writebackError` (ไม่ทับ `firstDueOn`)
 - อย่าเปิด writeback เป็นค่าเริ่ม; อย่าทำ toggle จาก UI โดยไม่ผ่านแผน
+- GitLab MR sync (`POST /api/integrations/gitlab/sync`) ใช้ `shared/domain/gitlab-mr.ts` จับคู่รหัสใบงานและอัปเดต `mrLink`/`reviewRounds`/`reopenCount`
+- Teams Webhook (`POST /api/integrations/teams/send`) ส่งแจ้งเตือน `deadline`/`overrun` ผ่าน `TEAMS_WEBHOOK_URL` หรือค่าที่ตั้งในตาราง `connections` (`id='teams'`)
 
 ## ข้อจำกัด
 
 - ค่า mapping ว่างหรือ `customField\d+` เท่านั้น (`validateMapping`)
 - `hoursPerMd` ค่าเริ่ม 6
-- P2 Teams จะใช้ `TEAMS_WEBHOOK_URL` (ยังไม่ implement)

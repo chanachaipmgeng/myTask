@@ -4,11 +4,13 @@ globs: src/app/pages/work/**/*,src/app/pages/people-board/**/*,src/app/pages/per
 alwaysApply: false
 ---
 
-# มุมมองงานและพนักงาน
+# มุมมองงานและพนักงาน (`/work`, `/tickets`, `/people`)
 
-- `/work` เป็นฮับแท็บ Summary · Timeline · Backlog · Board · List — อย่าสร้างเมนูซ้ำสำหรับ Board
+- `/work` (ฮับบริหารงาน) เป็นฮับแท็บ Summary · Timeline · Backlog · Board · List — อย่าสร้างเมนูซ้ำสำหรับ Board
 - `/pipeline` ต้อง redirect ไป `/work/board`
-- `/tickets` คงเป็นตารางคะแนน+นำเข้า — List ใน `/work` เป็นมุมมองงาน ไม่ใช่คอลัมน์คะแนนเต็ม
-- Timeline ใช้ Syncfusion Gantt อ่านอย่างเดียวจนกว่าแผนจะเปิด edit/sync
-- กรองสาย/ค้นหาใช้ `WorkHubFilter` ของ shell — อย่าทำตัวกรองซ้ำในลูกโดยไม่จำเป็น
+- `/tickets` (ตารางคะแนนใบงาน) คงเป็นตารางคะแนน+นำเข้าไฟล์ (ยุบฟอร์มนำเข้า/เพิ่มใบงาน/เกณฑ์คะแนนใน `ejs-accordion` และตรึง 2 คอลัมน์แรก `frozenColumns="2"`) — ส่วน List ใน `/work` เป็นมุมมองบริหารงาน ไม่ใช่คอลัมน์คะแนนเต็ม
+- Timeline (`/work/timeline`) ใช้ Syncfusion Gantt แสดงโครงสร้างแม่-ลูก (`parentID: 'ParentID'`), มี Toolbar (`ExpandAll`, `CollapseAll`, `ZoomIn`, `ZoomOut`, `ZoomToFit`, `Search`), และเปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin` | `lead` (`canAssignWork`) ผ่าน `applyGanttDateEdit` + `POST /api/work-items/:id/dates` (ห้ามทับ `firstDueOn`)
+- Board (`/work/board`) รองรับตัวสลับ Swimlane (`none`/`assignee`/`track`), Rich Card Template, คลิกการ์ดเปิด `ejs-dialog` แก้ไขฟิลด์, และแยกสิทธิ์ `canMoveWorkflowByRole` / `canEditBoardPlanning`
+- ตารางหลัก (`/tickets`, `/people`, `/work/list`) รองรับ `ColumnChooser`, `ExcelExport`, `CsvExport`, `ResizeService` และแถวสรุป `AggregateService`
+- กรองสาย/ค้นหาใน `/work` ใช้ `WorkHubFilter` ของ shell — อย่าทำตัวกรองซ้ำในลูกโดยไม่จำเป็น
 - ข้อมูลแถว/กราฟคำนวณใน `shared/domain/work-views.ts` หรือ `people-roster` / `person-dashboard` แล้วค่อย bind UI

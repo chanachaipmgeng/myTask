@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BootstrapController } from './api/bootstrap.controller';
 import { IntegrationsController } from './api/integrations.controller';
+import { KpiSnapshotsController } from './api/kpi-snapshots.controller';
 import { OrgController } from './api/org.controller';
 import { SettingsController } from './api/settings.controller';
 import { WorkItemsController } from './api/work-items.controller';
@@ -10,6 +11,7 @@ import { AuthGuard } from './auth/auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { DbModule } from './db/db.module';
 import { OpenProjectSyncService } from './integrations/openproject/openproject.sync';
+import { KpiSnapshotService } from './kpi/kpi-snapshot.service';
 
 @Module({
   imports: [DbModule, ScheduleModule.forRoot(), AuthModule],
@@ -19,7 +21,12 @@ import { OpenProjectSyncService } from './integrations/openproject/openproject.s
     SettingsController,
     IntegrationsController,
     OrgController,
+    KpiSnapshotsController,
   ],
-  providers: [OpenProjectSyncService, { provide: APP_GUARD, useClass: AuthGuard }],
+  providers: [
+    OpenProjectSyncService,
+    KpiSnapshotService,
+    { provide: APP_GUARD, useClass: AuthGuard },
+  ],
 })
 export class AppModule {}

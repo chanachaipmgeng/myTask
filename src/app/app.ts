@@ -4,10 +4,13 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { AppBarModule, SidebarModule, TreeViewModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule, ToastComponent, ToastModule } from '@syncfusion/ej2-angular-notifications';
+import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { NodeClickEventArgs, NodeSelectEventArgs } from '@syncfusion/ej2-navigations';
 import { filter, map, startWith } from 'rxjs';
+import { currentViewer, effectiveRole } from './core/admin-settings';
 import { ShellNotice } from './core/shell-notice';
 import { ScorecardService } from './core/scorecard.service';
+import { currentSession } from './core/session';
 
 type NavLeaf = { id: string; text: string; iconCss: string; route: string; exact?: boolean };
 type NavGroup = { id: string; text: string; expanded: boolean; children: NavLeaf[] };
@@ -15,7 +18,7 @@ type NavGroup = { id: string; text: string; expanded: boolean; children: NavLeaf
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, SidebarModule, AppBarModule, TreeViewModule, ToastModule, ButtonModule, MessageModule],
+  imports: [RouterOutlet, SidebarModule, AppBarModule, TreeViewModule, ToastModule, ButtonModule, MessageModule, DialogModule],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -25,11 +28,26 @@ export class App implements AfterViewInit {
   private readonly scorecard = inject(ScorecardService);
 
   @ViewChild('toast') private toast?: ToastComponent;
+  @ViewChild('alertDialog') private alertDialog?: DialogComponent;
 
   protected readonly narrow = signal(false);
   protected readonly navOpen = signal(true);
   protected readonly alerts = this.scorecard.alerts;
   protected readonly mockMode = this.scorecard.mockMode;
+  protected readonly usingApi = this.scorecard.usingApi;
+  protected readonly role = effectiveRole;
+  protected readonly activeUserLabel = computed(() => {
+    const sess = currentSession();
+    if (sess) {
+      return `${sess.person.nickname} (${sess.access})`;
+    }
+    const viewer = currentViewer();
+    return `${viewer.nickname} (${viewer.access})`;
+  });
+  protected readonly activePersonId = computed(() => {
+    const sess = currentSession();
+    return sess?.person.id ?? currentViewer().id;
+  });
   protected readonly toastPosition = { X: 'Right', Y: 'Top' };
   protected readonly navFields = {
     dataSource: navGroups as object[],
@@ -95,12 +113,41 @@ export class App implements AfterViewInit {
   }
 
   protected onNavSelect(event: NodeSelectEventArgs): void {
+    if (!event.isInteracted) {
+      return;
+    }
     const id = String(event.nodeData?.['id'] ?? '');
     const leaf = navLeaves.find((item) => item.id === id);
     if (!leaf) {
       return;
     }
     void this.router.navigateByUrl(leaf.route);
+  }
+
+  protected openAlerts(): void {
+    this.alertDialog?.show();
+  }
+
+  protected closeAlerts(): void {
+    this.alertDialog?.hide();
+  }
+
+  protected goToTicketBoard(): void {
+    this.alertDialog?.hide();
+    void this.router.navigate(['/work/board']);
+  }
+
+  protected goToTicketScores(): void {
+    this.alertDialog?.hide();
+    void this.router.navigate(['/tickets']);
+  }
+
+  protected openMyProfile(): void {
+    void this.router.navigate(['/people', this.activePersonId()]);
+  }
+
+  protected openAdmin(): void {
+    void this.router.navigate(['/admin']);
   }
 
   ngAfterViewInit(): void {
@@ -118,7 +165,6 @@ const navGroups: NavGroup[] = [
     children: [
       { id: 'team', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
       { id: 'people', text: 'รายชื่อพนักงาน', iconCss: 'e-icons e-people', route: '/people', exact: true },
-      { id: 'person-itsara', text: 'พนักงาน · อิสรภาพ', iconCss: 'e-icons e-user', route: '/people/itsara' },
     ],
   },
   {
@@ -126,8 +172,8 @@ const navGroups: NavGroup[] = [
     text: 'งาน',
     expanded: true,
     children: [
-      { id: 'work-hub', text: 'งาน', iconCss: 'e-icons e-timeline-work-week', route: '/work' },
-      { id: 'tickets', text: 'ใบงาน', iconCss: 'e-icons e-table-1', route: '/tickets' },
+      { id: 'work-hub', text: 'ฮับบริหารงาน', iconCss: 'e-icons e-timeline-work-week', route: '/work' },
+      { id: 'tickets', text: 'ตารางคะแนนใบงาน', iconCss: 'e-icons e-table-1', route: '/tickets' },
       { id: 'schedule', text: 'ปฏิทินทีม', iconCss: 'e-icons e-date-time', route: '/schedule' },
       { id: 'queue', text: 'คิวงานใหม่', iconCss: 'e-icons e-list-unordered', route: '/queue' },
       { id: 'ai', text: 'ติดตามงาน AI', iconCss: 'e-icons e-chart', route: '/ai' },
@@ -138,7 +184,7 @@ const navGroups: NavGroup[] = [
     text: 'เชื่อมต่อ',
     expanded: true,
     children: [
-      { id: 'mygit', text: 'ซิงก์ mygit', iconCss: 'e-icons e-refresh', route: '/mygit' },
+      { id: 'mygit', text: 'ซิงก์ mygit (MR)', iconCss: 'e-icons e-refresh', route: '/mygit' },
       { id: 'teams', text: 'แจ้งเตือน Teams', iconCss: 'e-icons e-comment-show', route: '/teams' },
       { id: 'integrations', text: 'Integrations', iconCss: 'e-icons e-settings', route: '/integrations' },
     ],
@@ -158,9 +204,6 @@ const navLeaves = navGroups.flatMap((group) => group.children);
 
 function matchNavId(url: string): string {
   const path = url.split('?')[0] || '/';
-  if (path.startsWith('/people/itsara')) {
-    return 'person-itsara';
-  }
   if (path.startsWith('/people/') && path !== '/people') {
     return 'people';
   }
@@ -181,10 +224,10 @@ function screenTitle(url: string): string {
     return 'รายชื่อพนักงาน';
   }
   if (url.startsWith('/work')) {
-    return 'งาน';
+    return 'ฮับบริหารงาน';
   }
   if (url.startsWith('/tickets')) {
-    return 'ใบงาน';
+    return 'ตารางคะแนนใบงาน';
   }
   if (url.startsWith('/schedule')) {
     return 'ปฏิทินทีม';

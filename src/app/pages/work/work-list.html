@@ -1,11 +1,17 @@
 <div class="flex flex-col gap-3">
   <p class="fine m-0">รายการใบงานแนวปฏิบัติงาน (ไม่ใช่ตารางคะแนน) · คลิกแถวเพื่อดูสรุปสั้น</p>
   <ejs-grid
+    #listGrid
     [dataSource]="rows()"
     [allowPaging]="true"
     [allowSorting]="true"
     [allowFiltering]="true"
+    [allowResizing]="true"
+    [showColumnChooser]="true"
+    [allowExcelExport]="true"
+    [toolbar]="toolbar"
     [pageSettings]="pageSettings"
+    (toolbarClick)="onToolbarClick($event)"
     (rowSelected)="onRowSelected($event)"
   >
     <e-columns>
@@ -40,5 +46,8 @@
         <p class="m-0">{{ row.weekOffsetLabel }} · {{ row.unplannedLabel }}</p>
       </div>
     }
+  </ng-template>
+  <ng-template #footerTemplate>
+    <button ejs-button cssClass="e-primary" type="button" (click)="goToBoard()">เปิดในกระดานงาน (Board)</button>
   </ng-template>
 </ejs-dialog>

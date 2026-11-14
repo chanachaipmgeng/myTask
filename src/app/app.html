@@ -39,12 +39,52 @@
         <span class="appbar-title">{{ title() }}</span>
         <span class="appbar-note">R&amp;D และ Implement</span>
       </div>
-      @if (mockMode()) {
-        <span class="e-badge e-badge-danger e-badge-pill appbar-alert-chip">โหมดจำลอง</span>
-      }
-      @if (alerts().length > 0) {
-        <span class="e-badge e-badge-warning e-badge-pill appbar-alert-chip">แจ้งเตือน {{ alerts().length }}</span>
-      }
+
+      <div class="appbar-actions">
+        @if (mockMode()) {
+          <span class="e-badge e-badge-danger e-badge-pill">โหมดจำลอง</span>
+        } @else if (usingApi()) {
+          <span class="e-badge e-badge-success e-badge-pill">ต่อ API</span>
+        } @else {
+          <span class="e-badge e-badge-info e-badge-pill">ออฟไลน์ (Seed)</span>
+        }
+
+        <button
+          ejs-button
+          cssClass="e-flat e-small appbar-chip-btn"
+          iconCss="e-icons e-user"
+          type="button"
+          title="ดูโปรไฟล์ของฉัน"
+          (click)="openMyProfile()"
+        >
+          {{ activeUserLabel() }}
+        </button>
+
+        <button
+          ejs-button
+          cssClass="e-flat e-small appbar-chip-btn"
+          iconCss="e-icons e-lock"
+          type="button"
+          title="สลับสิทธิ์ / ตั้งค่าหลังบ้าน"
+          (click)="openAdmin()"
+        >
+          สิทธิ์: {{ role() }}
+        </button>
+
+        <button
+          ejs-button
+          id="appbar-alerts-btn"
+          [cssClass]="alerts().length > 0 ? 'e-warning e-small appbar-alert-btn' : 'e-flat e-small appbar-alert-btn'"
+          iconCss="e-icons e-Bell"
+          type="button"
+          (click)="openAlerts()"
+        >
+          แจ้งเตือน
+          <span class="e-badge e-badge-pill ml-1" [class.e-badge-danger]="alerts().length > 0" [class.e-badge-secondary]="alerts().length === 0">
+            {{ alerts().length }}
+          </span>
+        </button>
+      </div>
     </ejs-appbar>
 
     @if (mockMode()) {
@@ -57,21 +97,52 @@
       </section>
     }
 
-    <section class="shell-alerts" aria-label="แจ้งเตือน">
-      @if (alerts().length === 0) {
-        <ejs-message content="ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate" severity="Info" variant="Outlined"></ejs-message>
-      } @else {
-        @for (alert of alerts(); track alert.id) {
-          <ejs-message [content]="alert.message" severity="Warning" variant="Outlined"></ejs-message>
-        }
-      }
-    </section>
-
     <main class="shell-main">
       <router-outlet />
     </main>
   </div>
 </div>
+
+<ejs-dialog
+  #alertDialog
+  id="shell-alert-dialog"
+  header="รายการแจ้งเตือนใบงานที่ต้องเฝ้าระวัง"
+  width="560px"
+  [visible]="false"
+  [isModal]="true"
+  [showCloseIcon]="true"
+  (close)="closeAlerts()"
+>
+  <ng-template #content>
+    @if (alerts().length === 0) {
+      <ejs-message
+        content="ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate"
+        severity="Success"
+        variant="Outlined"
+      ></ejs-message>
+    } @else {
+      <div class="flex flex-col gap-3">
+        @for (alert of alerts(); track alert.id) {
+          <div class="e-card">
+            <div class="e-card-content flex flex-col gap-2 p-3">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-bold text-cyan">{{ alert.ticketId }}</span>
+                <span class="e-badge e-badge-warning e-badge-pill">{{ alert.shortLabel }}</span>
+              </div>
+              <p class="m-0 text-sm">{{ alert.message }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </ng-template>
+  <ng-template #footerTemplate>
+    <div class="flex flex-wrap justify-end gap-2">
+      <button ejs-button cssClass="e-outline" type="button" (click)="goToTicketScores()">ดูตารางคะแนน</button>
+      <button ejs-button cssClass="e-primary" type="button" (click)="goToTicketBoard()">เปิดกระดานงาน (Board)</button>
+    </div>
+  </ng-template>
+</ejs-dialog>
 
 <ejs-toast
   #toast

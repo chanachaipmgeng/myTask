@@ -1,16 +1,20 @@
 ---
-description: กฎซิงก์และแมป OpenProject / myProject
-globs: server/src/integrations/openproject/**/*.ts,src/app/pages/integrations/**
+description: กฎซิงก์และแมป OpenProject / myProject, GitLab MR และ Teams Webhook
+globs: server/src/integrations/**/*.ts,server/src/api/integrations.controller.ts,src/app/pages/integrations/**,src/app/pages/mygit/**,src/app/pages/teams/**
 alwaysApply: false
 ---
 
-# OpenProject sync
+# Integrations: OpenProject, GitLab MR & Teams Webhook
 
 - Custom field ใน mapping ต้องเป็นค่าว่างหรือรูป `customField12` เท่านั้น
-- ฟิลด์ที่ทีมแก้ในสกอร์การ์ด (เช่น reviewRounds, mrLink, note) อย่าทับตอน resync ถ้า CF ยังไม่ถูกแมป/ไม่มีค่า
-- `firstDueOn` ล็อกจากของเดิมก่อน — อย่าเลื่อนย้อนจาก due ใหม่ใน OP
+- ฟิลด์ที่ทีมแก้ในสกอร์การ์ด (เช่น `reviewRounds`, `mrLink`, `note`) อย่าทับตอน resync ถ้า CF ยังไม่ถูกแมป/ไม่มีค่า
+- `_links.parent` แมปเป็น `opParentId` และ `parentId` (`OP-<id>`) สำหรับแสดง Hierarchy บน Gantt Timeline
+- `firstDueOn` ล็อกจากของเดิมก่อน — อย่าเลื่อนย้อนจาก due ใหม่ใน OP หรือจากการแก้วันบน Gantt
 - ขยาย `OpenProjectMapping.customFields` ต้องอัปเดต `DEFAULT_OPENPROJECT_MAPPING`, Integrations UI, และตารางใน `docs/คู่มือ.md`
-- Writeback assignee ปิดเป็นค่าเริ่ม (`OPENPROJECT_WRITEBACK=false`) — อย่าเปิดในโค้ดโดยไม่ผ่านแผน/env ชัดเจน
-- `POST /api/work-items/:id/assign` จำกัด `@Roles('admin', 'lead')` เท่านั้น
-- เมื่อ writeback เปิดและใบมี `opId` → UI คิวต้อง Dialog ยืนยันก่อนเรียก assign; แสดง `writebackError` ถ้า PATCH ล้ม
-- Teams จริงยังไม่ทำ — รอบ P2 ใช้ `TEAMS_WEBHOOK_URL`
+- Writeback (`OPENPROJECT_WRITEBACK=false` เป็นค่าเริ่ม) ใช้กับทั้ง `writebackAssignee` (`patchAssignee`) และ `writebackDates` (`patchDates`) — อย่าเปิดเป็นค่าเริ่มในโค้ด
+- `POST /api/work-items/:id/assign` และ `POST /api/work-items/:id/dates` จำกัด `@Roles('admin', 'lead')` เท่านั้น
+- เมื่อ writeback เปิดและใบมี `opId` → UI คิวต้องแสดง Dialog ยืนยันก่อนเรียก assign; แสดง `writebackError` ถ้า PATCH ล้ม
+- หน้า `/integrations` แบ่งเป็น 3 แท็บ (`ejs-tab`):
+  1. **OpenProject (myProject)**: URL/token, `statusMap` (ตัวช่วยเพิ่ม/ลบคู่สถานะ + JSON), `typeMap`, `customFields`, `user-map`, `lastRuns`
+  2. **GitLab (mygit MR)**: `GET/PUT /api/integrations/gitlab` + `POST /api/integrations/gitlab/sync` (ดึง MR ที่ merged แล้วจับคู่รหัสใบงานผ่าน `shared/domain/gitlab-mr.ts` โดยไม่นับจำนวนไฟล์/commit เป็นคะแนน)
+  3. **Microsoft Teams**: `GET/PUT /api/integrations/teams` + `POST /api/integrations/teams/send` (ส่งแจ้งเตือน `deadline`/`overrun` ผ่าน `TEAMS_WEBHOOK_URL` โดยไม่ส่งลำดับคะแนนคน)

@@ -10,6 +10,14 @@ import {
 import { collectAlerts, projectedActual } from '../src/app/core/alerts';
 import { planNewWork } from '../src/app/core/capacity';
 import { monthlyTrend, quotaBars } from '../src/app/core/dashboard-charts';
+import {
+  buildPeriodSnapshots,
+  periodBounds,
+  previousMonthKey,
+  previousQuarterKey,
+  shouldCapturePreviousQuarter,
+  ticketsClosedInPeriod,
+} from '../src/app/core/kpi-snapshot';
 import { mapMyGitCommits } from '../src/app/core/mygit-sync';
 import { aiTicketPoints, aiTrackLabel, researchSpikeShare } from '../src/app/core/ai-tracking';
 import { teamsDrafts } from '../src/app/core/teams-notify';
@@ -17,14 +25,22 @@ import { buildPeopleRoster } from '../src/app/core/people-roster';
 import { personDashboard } from '../src/app/core/person-dashboard';
 import { ScorecardService } from '../src/app/core/scorecard.service';
 import {
+  applyGanttDateEdit,
   workBacklogRows,
   workGanttTasks,
   workListRows,
   workSummaryStats,
 } from '../src/app/core/work-views';
+import { extractTicketIdFromText, mapGitLabMergeRequests } from '../src/app/core/gitlab-mr';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../src/app/core/ticket-file';
 import { Person, Ticket, TicketType } from '../src/app/core/models';
-import { editWorkflow, moveWorkflow, pipelineReport } from '../src/app/core/workflow';
+import {
+  canEditBoardPlanning,
+  canMoveWorkflowByRole,
+  editWorkflow,
+  moveWorkflow,
+  pipelineReport,
+} from '../src/app/core/workflow';
 import {
   INDEX_TARGET,
   SIZE_POINTS,
@@ -387,7 +403,84 @@ assert.ok(workBacklog.every((row) => row.status === 'Backlog' || row.assignee ==
 const workGantt = workGanttTasks(SEED_TICKETS, SEED_PEOPLE);
 assert.ok(workGantt.length >= 1);
 assert.ok(workGantt.every((task) => task.TaskID && task.TaskName));
+const ganttChild = workGantt.find((task) => task.TaskID === 'IMP-SLIP');
+assert.equal(ganttChild?.ParentID, 'IMP-PAW-FEAT', 'Gantt resolves ParentID when parent is in visible set');
+const ganttEdited = applyGanttDateEdit(
+  { ...seeded('RD-OPEN'), firstDueOn: '2025-11-10', dueOn: '2025-11-14', actualStartOn: '2025-11-03' },
+  { startDate: '2025-11-04', dueDate: '2025-11-18' },
+);
+assert.equal(ganttEdited.ok, true);
+if (ganttEdited.ok) {
+  assert.equal(ganttEdited.ticket.firstDueOn, '2025-11-10', 'firstDueOn is never overwritten by Gantt edit');
+  assert.equal(ganttEdited.ticket.actualStartOn, '2025-11-04');
+  assert.equal(ganttEdited.ticket.dueOn, '2025-11-18');
+}
+const ganttClosedEdit = applyGanttDateEdit(seeded('IMP-100'), { dueDate: '2025-11-30' });
+assert.equal(ganttClosedEdit.ok, false, 'Closed ticket cannot be edited on Gantt');
 
+assert.equal(canMoveWorkflowByRole('member', 'In Progress', 'Ready for QA').ok, true);
+assert.equal(canMoveWorkflowByRole('member', 'In QA', 'Done').ok, false, 'member cannot close to Done');
+assert.equal(canMoveWorkflowByRole('lead', 'In QA', 'Done').ok, true);
+assert.equal(canEditBoardPlanning('member'), false);
+assert.equal(canEditBoardPlanning('admin'), true);
+
+assert.equal(extractTicketIdFromText('feat(IMP-100): fix bug'), 'IMP-100');
+const glMapped = mapGitLabMergeRequests([
+  {
+    iid: 12,
+    title: 'feat(IMP-ITS-CR): add payment gateway',
+    source_branch: 'feature/IMP-ITS-CR',
+    merged_at: '2025-11-12T10:00:00Z',
+    web_url: 'https://gitlab.example/mr/12',
+    user_notes_count: 4,
+  },
+  {
+    iid: 99,
+    title: 'chore: bump deps',
+    source_branch: 'chore/deps',
+    merged_at: '2025-11-12T11:00:00Z',
+    web_url: 'https://gitlab.example/mr/99',
+  },
+]);
+assert.equal(glMapped.length, 2);
+assert.equal(glMapped[0]?.ticketId, 'IMP-ITS-CR');
+assert.equal(glMapped[0]?.mrLink, 'https://gitlab.example/mr/12');
+assert.equal(glMapped[0]?.reviewRounds, 2);
+assert.equal(glMapped[1]?.ticketId, '');
+
+assert.deepEqual(periodBounds('month', '2025-08'), {
+  startOn: '2025-08-01',
+  endOnExclusive: '2025-09-01',
+});
+assert.deepEqual(periodBounds('quarter', '2025-Q3'), {
+  startOn: '2025-07-01',
+  endOnExclusive: '2025-10-01',
+});
+assert.equal(previousMonthKey('2025-11-13'), '2025-10');
+assert.equal(previousQuarterKey('2025-11-13'), '2025-Q3');
+assert.equal(shouldCapturePreviousQuarter('2025-10-01'), true);
+assert.equal(shouldCapturePreviousQuarter('2025-11-01'), false);
+const augustBounds = periodBounds('month', '2025-08');
+const augustTickets = ticketsClosedInPeriod(SEED_TICKETS, augustBounds);
+assert.ok(augustTickets.some((ticket) => ticket.id === 'IMP-100'));
+assert.equal(
+  augustTickets.some((ticket) => ticket.id === 'IMP-SLIP'),
+  false,
+);
+const augustSnapshots = buildPeriodSnapshots(SEED_PEOPLE, SEED_TICKETS, 'month', '2025-08');
+assert.equal(augustSnapshots.length, SEED_PEOPLE.length);
+const itsaraAugust = augustSnapshots.find((row) => row.personId === 'itsara');
+assert.ok(itsaraAugust);
+assert.ok(itsaraAugust.score.closedCount >= 1);
+assert.equal(
+  itsaraAugust.score.developmentIndex,
+  scorePerson(
+    itsara,
+    augustTickets.filter((ticket) => ticket.assigneeId === 'itsara'),
+  ).developmentIndex,
+);
+const q3Snapshots = buildPeriodSnapshots(SEED_PEOPLE, SEED_TICKETS, 'quarter', '2025-Q3');
+assert.ok(q3Snapshots.some((row) => row.personId === 'itsara' && row.score.closedCount >= 1));
 
 const mygitFixture = readFileSync(new URL('../public/fixtures/mygit-commits.json', import.meta.url), 'utf8');
 assert.equal(mygitFixture.includes('fileCount'), false);

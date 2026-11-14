@@ -1,10 +1,16 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { NumericTextBoxModule, TextAreaModule, TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { GridModule, PageService } from '@syncfusion/ej2-angular-grids';
+import { TabModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { ApiClient, OpenProjectIntegration } from '../../core/api-client';
+import {
+  ApiClient,
+  GitLabIntegration,
+  OpenProjectIntegration,
+  TeamsIntegration,
+} from '../../core/api-client';
 import { canEditAdmin } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { WORKFLOW_STATUSES } from '../../core/models';
@@ -63,6 +69,7 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
     TextAreaModule,
     TextBoxModule,
     GridModule,
+    TabModule,
     MessageModule,
   ],
   providers: [PageService],
@@ -78,13 +85,18 @@ export class IntegrationsPage {
   protected readonly message = signal('');
   protected readonly error = signal('');
   protected readonly data = signal<OpenProjectIntegration | null>(null);
+  protected readonly gitlabData = signal<GitLabIntegration | null>(null);
+  protected readonly teamsData = signal<TeamsIntegration | null>(null);
 
+  // OpenProject state
   protected readonly baseUrl = signal('');
   protected readonly token = signal('');
   protected readonly enabled = signal(true);
   protected readonly hoursPerMd = signal(6);
   protected readonly statusMapText = signal('');
   protected readonly typeMapText = signal('');
+  protected readonly newStatusKey = signal('');
+  protected readonly newStatusValue = signal<string>(WORKFLOW_STATUSES[0]);
   protected readonly customFields = signal<Record<CustomFieldKey, string>>(emptyCustomFields());
   protected readonly customFieldRows: { key: CustomFieldKey; label: string; hint: string }[] = [
     { key: 'size', label: 'Size', hint: 'XS S M L XL' },
@@ -109,8 +121,32 @@ export class IntegrationsPage {
   protected readonly mapPersonId = signal('');
   protected readonly mapOpUserId = signal<number | null>(null);
 
+  // GitLab state
+  protected readonly gitlabBaseUrl = signal('');
+  protected readonly gitlabProjectIdsText = signal('');
+  protected readonly gitlabToken = signal('');
+  protected readonly gitlabEnabled = signal(true);
+
+  // Teams state
+  protected readonly teamsChannel = signal('scorecard-alerts');
+  protected readonly teamsWebhookUrl = signal('');
+  protected readonly teamsEnabled = signal(true);
+
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly workflowHint = WORKFLOW_STATUSES.join(', ');
+  protected readonly workflowOptions = WORKFLOW_STATUSES.map((status) => ({
+    text: status,
+    value: status,
+  }));
+
+  protected readonly statusMapEntries = computed(() => {
+    try {
+      const parsed = JSON.parse(this.statusMapText() || '{}') as Record<string, string>;
+      return Object.entries(parsed).map(([key, value]) => ({ key, value }));
+    } catch {
+      return [];
+    }
+  });
 
   constructor() {
     void this.reload();
@@ -120,7 +156,11 @@ export class IntegrationsPage {
     this.loading.set(true);
     this.error.set('');
     try {
-      const info = await this.api.getOpenProject();
+      const [info, glInfo, tmInfo] = await Promise.all([
+        this.api.getOpenProject(),
+        this.api.getGitLab().catch(() => null),
+        this.api.getTeams().catch(() => null),
+      ]);
       this.data.set(info);
       this.baseUrl.set(info.baseUrl);
       this.enabled.set(info.enabled);
@@ -133,6 +173,20 @@ export class IntegrationsPage {
         next[row.key] = custom[row.key] ?? '';
       }
       this.customFields.set(next);
+
+      if (glInfo) {
+        this.gitlabData.set(glInfo);
+        this.gitlabBaseUrl.set(glInfo.baseUrl);
+        this.gitlabProjectIdsText.set(glInfo.projectIds.join(', '));
+        this.gitlabEnabled.set(glInfo.enabled);
+      }
+
+      if (tmInfo) {
+        this.teamsData.set(tmInfo);
+        this.teamsChannel.set(tmInfo.channel);
+        this.teamsEnabled.set(tmInfo.enabled);
+      }
+
       this.message.set(
         info.configured
           ? `เชื่อมต่อได้ · writeback ${info.writeback ? 'เปิด' : 'ปิด'}`
@@ -142,6 +196,32 @@ export class IntegrationsPage {
       this.error.set(err instanceof Error ? err.message : 'โหลดสถานะ integrations ไม่ได้');
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  protected addStatusMapping(): void {
+    const key = this.newStatusKey().trim();
+    const val = this.newStatusValue();
+    if (!key || !val) {
+      return;
+    }
+    try {
+      const current = JSON.parse(this.statusMapText() || '{}') as Record<string, string>;
+      current[key] = val;
+      this.statusMapText.set(JSON.stringify(current, null, 2));
+      this.newStatusKey.set('');
+    } catch {
+      this.error.set('แก้ไข JSON statusMap ให้ถูกต้องก่อนเพิ่มรายการ');
+    }
+  }
+
+  protected removeStatusMapping(key: string): void {
+    try {
+      const current = JSON.parse(this.statusMapText() || '{}') as Record<string, string>;
+      delete current[key];
+      this.statusMapText.set(JSON.stringify(current, null, 2));
+    } catch {
+      // ignore invalid JSON
     }
   }
 
@@ -246,6 +326,107 @@ export class IntegrationsPage {
       this.mapOpUserId.set(null);
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'จับคู่ไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async saveGitLabConfig(): Promise<void> {
+    if (!this.canEdit()) {
+      return;
+    }
+    this.saving.set(true);
+    this.error.set('');
+    try {
+      const projectIds = this.gitlabProjectIdsText()
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean);
+      const info = await this.api.saveGitLab({
+        baseUrl: this.gitlabBaseUrl().trim(),
+        projectIds,
+        token: this.gitlabToken().trim() || undefined,
+        enabled: this.gitlabEnabled(),
+      });
+      this.gitlabToken.set('');
+      this.gitlabData.set(info);
+      this.message.set('บันทึกการตั้งค่า GitLab แล้ว');
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'บันทึก GitLab ไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async syncGitLabNow(): Promise<void> {
+    this.saving.set(true);
+    this.error.set('');
+    try {
+      const result = await this.api.syncGitLab();
+      if (!result.ok && result.message) {
+        this.error.set(result.message);
+        return;
+      }
+      await this.scorecard.reloadFromApi();
+      await this.reload();
+      const unmatchedCount = result.unmatched?.length ?? 0;
+      const errorsList = result.errors ?? [];
+      this.message.set(`ซิงก์ GitLab MR เสร็จ · จับคู่ได้ ${result.updated ?? 0} ใบ · ไม่ตรง ${unmatchedCount} รายการ`);
+      if (errorsList.length) {
+        this.error.set(errorsList.join(' | '));
+      }
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'ซิงก์ GitLab ไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async saveTeamsConfig(): Promise<void> {
+    if (!this.canEdit()) {
+      return;
+    }
+    this.saving.set(true);
+    this.error.set('');
+    try {
+      const info = await this.api.saveTeams({
+        channel: this.teamsChannel().trim(),
+        webhookUrl: this.teamsWebhookUrl().trim() || undefined,
+        enabled: this.teamsEnabled(),
+      });
+      this.teamsWebhookUrl.set('');
+      this.teamsData.set(info);
+      this.message.set('บันทึกการตั้งค่า Teams Webhook แล้ว');
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'บันทึก Teams ไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async sendTeamsNow(): Promise<void> {
+    this.saving.set(true);
+    this.error.set('');
+    try {
+      const result = await this.api.sendTeams({
+        channel: this.teamsChannel(),
+        deadline: true,
+        overrun: true,
+        dryRun: false,
+      });
+      await this.reload();
+      const count = result.messages?.length ?? result.count ?? 0;
+      if (!result.ok && result.message) {
+        this.error.set(`ส่ง Teams ไม่สำเร็จ: ${result.message}`);
+      } else {
+        this.message.set(
+          result.sent
+            ? `ส่งแจ้งเตือนเข้า Teams แล้ว (${count} ข้อความ)`
+            : `ร่างข้อความ ${count} รายการ (ยังไม่ได้เปิดส่งจริงหรือไม่มีใบเข้าเกณฑ์)`,
+        );
+      }
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'ส่ง Teams ไม่สำเร็จ');
     } finally {
       this.saving.set(false);
     }

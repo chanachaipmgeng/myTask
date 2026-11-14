@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { NumericTextBoxModule } from '@syncfusion/ej2-angular-inputs';
+import { NumericTextBoxModule, TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { SAMPLE_VIEWERS } from '../../data/seed';
 import {
   alertRules,
@@ -23,13 +24,22 @@ import {
 } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
 import { Level } from '../../core/models';
+import { DEFAULT_TRACK_WEIGHTS } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 
 @Component({
   selector: 'app-admin',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DropDownListModule, NumericTextBoxModule, CheckBoxModule, ButtonModule, MessageModule],
+  imports: [
+    DropDownListModule,
+    NumericTextBoxModule,
+    TextBoxModule,
+    CheckBoxModule,
+    ButtonModule,
+    MessageModule,
+    ProgressBarModule,
+  ],
   templateUrl: './admin.html',
 })
 export class AdminPage {
@@ -61,6 +71,20 @@ export class AdminPage {
   protected readonly rules = alertRules;
   protected readonly links = connections;
   protected readonly roster = this.scorecard.roster;
+  protected readonly personQuery = signal('');
+  protected readonly filteredRoster = computed(() => {
+    const q = this.personQuery().trim().toLowerCase();
+    if (!q) {
+      return this.roster();
+    }
+    return this.roster().filter(
+      (person) =>
+        person.nickname.toLowerCase().includes(q) ||
+        person.id.toLowerCase().includes(q) ||
+        person.track.toLowerCase().includes(q) ||
+        person.level.toLowerCase().includes(q),
+    );
+  });
   protected readonly usingApi = this.scorecard.usingApi;
   protected readonly status = signal('');
   protected readonly accessBanner = computed(() => {
@@ -77,16 +101,32 @@ export class AdminPage {
   protected readonly weights = computed(() => {
     const current = trackWeights();
     return {
-      implementTicket: current.implement.ticket * 100,
-      implementPlan: current.implement.plan * 100,
-      implementAccuracy: current.implement.accuracy * 100,
-      implementQuality: current.implement.quality * 100,
-      researchDod: current.research.dod * 100,
-      researchSpike: current.research.spike * 100,
-      researchOutcome: current.research.outcome * 100,
-      researchReview: current.research.review * 100,
+      implementTicket: Math.round(current.implement.ticket * 100),
+      implementPlan: Math.round(current.implement.plan * 100),
+      implementAccuracy: Math.round(current.implement.accuracy * 100),
+      implementQuality: Math.round(current.implement.quality * 100),
+      researchDod: Math.round(current.research.dod * 100),
+      researchSpike: Math.round(current.research.spike * 100),
+      researchOutcome: Math.round(current.research.outcome * 100),
+      researchReview: Math.round(current.research.review * 100),
     };
   });
+  protected readonly implementWeightSum = computed(() => {
+    const w = this.weights();
+    return w.implementTicket + w.implementPlan + w.implementAccuracy + w.implementQuality;
+  });
+  protected readonly researchWeightSum = computed(() => {
+    const w = this.weights();
+    return w.researchDod + w.researchSpike + w.researchOutcome + w.researchReview;
+  });
+
+  protected resetWeights(): void {
+    if (!this.canEdit()) {
+      return;
+    }
+    setTrackWeights(DEFAULT_TRACK_WEIGHTS);
+    void this.persistSettings();
+  }
 
   protected onViewer(event: { value?: string | null }): void {
     if (event.value) {

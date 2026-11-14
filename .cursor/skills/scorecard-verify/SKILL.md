@@ -10,7 +10,7 @@ description: >-
 
 ## เมื่อไหร่ต้องรัน
 
-หลังแก้สูตรคะแนน, seed ใบงาน, roster/dashboard ที่อิง `scorePerson`/`scoreTicket`, mock scenario, หรือ `assignTicket` / คิว capacity
+หลังแก้สูตรคะแนน, seed ใบงาน, roster/dashboard ที่อิง `scorePerson`/`scoreTicket`, mock scenario, `assignTicket` / คิว capacity, `kpi-snapshot` / ช่วงเดือน-ไตรมาส, `work-views` (Gantt `ParentID` & `applyGanttDateEdit`), `workflow` (`canMoveWorkflowByRole` & `canEditBoardPlanning`), หรือ `gitlab-mr` (`mapGitLabMergeRequests`)
 
 ## คำสั่ง
 
@@ -19,14 +19,14 @@ npm run verify
 npm --prefix server run test
 ```
 
-รันเทสเซิร์ฟเวอร์เมื่อแตะ OpenProject mapper ด้วย
+รันเทสเซิร์ฟเวอร์เมื่อแตะ OpenProject mapper/client ด้วย (`15/15` unit tests)
 
 ## สิ่งที่ต้องผ่าน
 
 - สคริปต์จบด้วย `verify-scores ok`
 - IMP-100 `total` = 100
 - RD-SPIKE `spikeScore` = 100
-- เคส roster / person dashboard / work-views ใน verify ต้องไม่พัง
+- เคส roster / person dashboard / work-views (รวม Gantt `ParentID` และ `applyGanttDateEdit` ที่ห้ามทับ `firstDueOn`) / workflow permissions (`canMoveWorkflowByRole`) / GitLab MR parser (`mapGitLabMergeRequests`) ใน verify ต้องไม่พัง
 
 ## ถ้า fail
 

@@ -16,18 +16,20 @@ description: >-
 
 ## มุมมอง
 
-| แท็บ | UI | โดเมน |
+| แท็บ | UI | โดเมน / บริการ |
 |---|---|---|
 | Summary | Chart / DashboardLayout | `workSummaryStats` |
-| Timeline | `ejs-gantt` | `workGanttTasks` |
+| Timeline | `ejs-gantt` (`parentID: 'ParentID'`, Toolbar, `EditService` เฉพาะ `admin`/`lead`) | `workGanttTasks`, `applyGanttDateEdit`, `updateTicketDates` |
 | Backlog | Grid | `workBacklogRows` |
-| Board | Kanban + ฟอร์มฟิลด์ | `workflow` + ScorecardService |
-| List | Grid งาน | `workListRows` |
+| Board | Kanban + ตัวสลับ Swimlane + Rich Card + `#editDialog` (`ejs-dialog`) | `workflow` (`canMoveWorkflowByRole`, `canEditBoardPlanning`) + `ScorecardService` |
+| List | Grid งาน (`ColumnChooser`, `ExcelExport`, `CsvExport`, `ResizeService`, ปุ่มไป Board) | `workListRows` |
 
 ## กฎ
 
 - คำนวณแถวในโดเมนก่อน bind UI
-- เก็บ `/tickets` เป็นตารางคะแนน — อย่าทำ List ให้เป็นตารางคะแนนซ้ำ
+- เก็บ `/tickets` เป็นตารางคะแนน (มี `ejs-accordion` ยุบฟอร์มนำเข้า/เพิ่มใบงาน, `frozenColumns="2"`, Export/Aggregate) — อย่าทำ List ใน `/work` ให้เป็นตารางคะแนนซ้ำ
+- มีปุ่มสลับหน้าระหว่าง `/work` กับ `/tickets`
 - `/pipeline` → `/work/board`
-- Gantt อ่านอย่างเดียวจนกว่าแผนจะเปิด edit
+- Gantt เปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin`/`lead` (`canAssignWork`) โดยใช้ `applyGanttDateEdit` ที่ห้ามทับ `firstDueOn` เด็ดขาด
+- บน Board: `member` ย้ายการ์ดได้ถึง `Ready for QA` / `In QA` ห้ามปิดเข้า `Done` เอง และแก้ได้เฉพาะฟิลด์ส่งมอบ (`mrLink`, `pocResult`, `bugCause`)
 - หลังแก้โดเมน มุมมอง: เพิ่ม assert ใน `scripts/verify-scores.ts` แล้ว `npm run verify`

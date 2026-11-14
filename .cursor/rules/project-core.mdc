@@ -26,13 +26,18 @@ alwaysApply: true
 - อย่าแก้ไฟล์แผน `.cursor/plans/` ของผู้ใช้เว้นแต่ถูกขอ
 - อย่า commit `.agents/` `.claude/` `skills-lock.json` หรือ `.env`
 
-## สิทธิ์แจกงาน / writeback
+## สิทธิ์แจกงาน / Board / Gantt / writeback / KPI snapshot
 
-- รับข้อเสนอคิว / assign ได้เฉพาะ `admin` | `lead` (API + `canAssignWork`)
-- Writeback เปิดด้วย env เท่านั้น; บนคิวต้องยืนยันก่อน PATCH เมื่อมี `opId`
+- รับข้อเสนอคิว / assign และแก้วันเริ่ม-วันส่งบน Gantt Timeline ได้เฉพาะ `admin` | `lead` (API + `canAssignWork`)
+- บน `/work/board`:
+  - `admin` | `lead` ย้ายได้ทุกสถานะรวม `Done` และแก้ฟิลด์วางแผนได้ครบ (`canEditBoardPlanning`)
+  - `member` ย้ายการ์ดได้ถึง `Ready for QA` / `In QA` ห้ามปิดเข้า `Done` เอง (`canMoveWorkflowByRole`) และแก้ได้เฉพาะฟิลด์ส่งมอบ (`mrLink`, `pocResult`, `bugCause`)
+- Writeback เปิดด้วย env `OPENPROJECT_WRITEBACK` เท่านั้น (รองรับทั้ง PATCH assignee และ PATCH startDate/dueDate); บนคิวต้องยืนยันก่อน PATCH เมื่อมี `opId`
+- จับ KPI snapshot (เดือน/ไตรมาส) ด้วย `canCaptureKpi` = admin|lead · โดเมนใน `shared/domain/kpi-snapshot.ts` · อย่าคำนวณย้อนจากใบปัจจุบันแทนแถวที่แช่แข็ง
 
-## ขอบเขตที่ยังไม่บังคับ
+## ขอบเขตและความปลอดภัย
 
-- ไม่เปิด OpenProject writeback โดยค่าเริ่ม
+- ไม่เปิด OpenProject writeback โดยค่าเริ่ม (`OPENPROJECT_WRITEBACK=false`)
 - ไม่เปลี่ยนสูตร Implement/R&D เว้นแต่ผู้ใช้ขอชัดเจนและอัปเดต verify
-- Teams / KPI snapshot / GitLab MR จริง — ตาม `docs/แผนงาน.md` (P2+)
+- แจ้งเตือนบน AppBar ใช้ปุ่มพร้อม `e-badge` เปิด `ejs-dialog` (`#alertDialog`) ไม่วางแถบแจ้งเตือนยาวทุกหน้า
+- GitLab MR sync (`shared/domain/gitlab-mr.ts`) และ Teams Webhook (`POST /api/integrations/teams/send`) รองรับทั้งโหมดจำลอง (ออฟไลน์/dry-run) และโหมดยิงจริงผ่าน API

@@ -52,9 +52,18 @@
     </label>
   </div>
 
-  <h3>คนและระดับ</h3>
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h3>คนและระดับ</h3>
+    <div style="width: 240px;">
+      <ejs-textbox
+        placeholder="ค้นหาชื่อ / สายงาน / ระดับ..."
+        [value]="personQuery()"
+        (input)="personQuery.set($any($event).value ?? '')"
+      ></ejs-textbox>
+    </div>
+  </div>
   <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-    @for (person of roster(); track person.id) {
+    @for (person of filteredRoster(); track person.id) {
       <div class="e-card">
         <div class="e-card-content flex flex-wrap items-center justify-between gap-3 p-3">
           <span>{{ person.nickname }} · {{ person.track === 'RD' ? 'R&D' : 'Implement' }}</span>
@@ -73,8 +82,43 @@
     }
   </div>
 
-  <h3>น้ำหนักคะแนนแยกสาย</h3>
-  <p class="fine">ค่าเริ่มต้นคือสูตรเดิม. ช่องเป็นเปอร์เซ็นต์.</p>
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div>
+      <h3>น้ำหนักคะแนนแยกสาย</h3>
+      <p class="fine">ค่าเริ่มต้นคือสูตรเดิม · ผลรวมแต่ละสายควรเท่ากับ 100%</p>
+    </div>
+    @if (canEdit()) {
+      <button ejs-button cssClass="e-outline" type="button" (click)="resetWeights()">คืนค่าเริ่มต้นมาตรฐาน (100%)</button>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div class="e-card p-3 flex flex-col gap-1">
+      <div class="flex justify-between items-center">
+        <strong>ผลรวมสาย Implement</strong>
+        <span class="e-badge" [class.e-badge-success]="implementWeightSum() === 100" [class.e-badge-warning]="implementWeightSum() !== 100">
+          {{ implementWeightSum() }}%
+        </span>
+      </div>
+      <ejs-progressbar id="imp-weight-progress" type="Linear" height="12" [minimum]="0" [maximum]="100" [value]="implementWeightSum()"></ejs-progressbar>
+    </div>
+    <div class="e-card p-3 flex flex-col gap-1">
+      <div class="flex justify-between items-center">
+        <strong>ผลรวมสาย R&amp;D</strong>
+        <span class="e-badge" [class.e-badge-success]="researchWeightSum() === 100" [class.e-badge-warning]="researchWeightSum() !== 100">
+          {{ researchWeightSum() }}%
+        </span>
+      </div>
+      <ejs-progressbar id="rd-weight-progress" type="Linear" height="12" [minimum]="0" [maximum]="100" [value]="researchWeightSum()"></ejs-progressbar>
+    </div>
+  </div>
+  @if (implementWeightSum() !== 100 || researchWeightSum() !== 100) {
+    <ejs-message
+      content="คำเตือน: ผลรวมน้ำหนักคะแนนไม่เท่ากับ 100% คะแนนรวมรายบุคคลจะถูกถ่วงน้ำหนักตามสัดส่วนที่ตั้งไว้"
+      severity="Warning"
+      variant="Outlined"
+    ></ejs-message>
+  }
   <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
     <label class="field"><span>Implement คะแนนใบ</span><ejs-numerictextbox id="weight-imp-ticket" [value]="weights().implementTicket" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'ticket' }, $event)"></ejs-numerictextbox></label>
     <label class="field"><span>Implement แผน</span><ejs-numerictextbox id="weight-imp-plan" [value]="weights().implementPlan" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'plan' }, $event)"></ejs-numerictextbox></label>

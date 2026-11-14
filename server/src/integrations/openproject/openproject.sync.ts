@@ -213,6 +213,34 @@ export class OpenProjectSyncService {
     }
   }
 
+  /**
+   * When OPENPROJECT_WRITEBACK is true, PATCH startDate / dueDate on the work package.
+   * Never touches firstDueOn (scorecard-owned locked promise).
+   */
+  async writebackDates(
+    opId: number,
+    dates: { startDate?: string | null; dueDate?: string | null },
+  ): Promise<string | null> {
+    if (!this.config.openproject.writeback) {
+      return null;
+    }
+    const creds = await this.resolveCredentials();
+    if (!creds) {
+      return 'OpenProject URL/token is not configured';
+    }
+    try {
+      const client = new OpenProjectClient(creds.url, creds.token);
+      const wp = await client.getWorkPackage(opId);
+      const lockVersion = typeof wp.lockVersion === 'number' ? wp.lockVersion : 0;
+      await client.patchDates(opId, dates, lockVersion);
+      return null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.log.warn(`writeback dates OP-${opId} failed: ${message}`);
+      return message;
+    }
+  }
+
   private async resolveCredentials(): Promise<{ url: string; token: string } | null> {
     const envUrl = this.config.openproject.url;
     const envToken = this.config.openproject.token;

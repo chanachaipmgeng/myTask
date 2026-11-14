@@ -73,6 +73,19 @@ describe('mapWorkPackage', () => {
     assert.equal(ticket.source, 'openproject');
   });
 
+  it('maps _links.parent to opParentId and parentId', () => {
+    const wpWithParent: OpWorkPackage = {
+      ...sampleWp(),
+      _links: {
+        ...sampleWp()._links,
+        parent: { href: '/api/v3/work_packages/42', title: 'Parent Epic' },
+      },
+    };
+    const ticket = mapWorkPackage(wpWithParent, baseCtx());
+    assert.equal(ticket.opParentId, 42);
+    assert.equal(ticket.parentId, 'OP-42');
+  });
+
   it('keeps local-only fields on resync', () => {
     const existing: Ticket = {
       id: 'OP-100',

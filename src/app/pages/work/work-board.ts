@@ -4,9 +4,11 @@ import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { KanbanModule } from '@syncfusion/ej2-angular-kanban';
+import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
-import { DragEventArgs } from '@syncfusion/ej2-kanban';
+import { DragEventArgs, SwimlaneSettingsModel } from '@syncfusion/ej2-kanban';
+import { effectiveRole } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import {
@@ -25,6 +27,8 @@ import {
 import {
   CATEGORY_LABELS,
   DISCIPLINE_LABELS,
+  canEditBoardPlanning,
+  canMoveWorkflowByRole,
   editWorkflow,
   isBugCategory,
   isWorkflowStatus,
@@ -34,6 +38,8 @@ import {
   workflowStatusOf,
 } from '../../core/workflow';
 import { WorkHubFilter } from './work-hub-filter';
+
+type SwimlaneMode = 'none' | 'assignee' | 'track';
 
 @Component({
   selector: 'app-work-board',
@@ -46,6 +52,7 @@ import { WorkHubFilter } from './work-hub-filter';
     DatePickerModule,
     TextBoxModule,
     ButtonModule,
+    MessageModule,
   ],
   templateUrl: './work-board.html',
 })
@@ -56,8 +63,34 @@ export class WorkBoard {
   private readonly boardRevision = signal(0);
 
   @ViewChild('blockDialog') private blockDialog?: DialogComponent;
+  @ViewChild('editDialog') private editDialog?: DialogComponent;
+
+  protected readonly role = effectiveRole;
+  protected readonly canEditPlanning = computed(() => canEditBoardPlanning(this.role()));
+  protected readonly roleBanner = computed(() =>
+    this.canEditPlanning()
+      ? `สิทธิ์ ${this.role()}: ลากการ์ดได้ทุกสถานะ (รวมปิดงานเข้า Done) และแก้ไขฟิลด์วางแผน/ส่งมอบได้ครบ`
+      : 'สิทธิ์ member: ลากสถานะทำงานได้ถึง Ready for QA / In QA และบันทึกได้เฉพาะลิงก์ MR / ผล PoC / สาเหตุ Bug (การปิดเข้า Done และการตั้ง Story Points/วันส่งครั้งแรกเป็นสิทธิ์ของ lead/admin)',
+  );
 
   protected readonly fields = { text: 'text', value: 'value' };
+  protected readonly swimlaneOptions = [
+    { text: 'ไม่จัดกลุ่ม Swimlane', value: 'none' },
+    { text: 'แยกตามผู้รับผิดชอบ', value: 'assignee' },
+    { text: 'แยกตามสายงาน (Track)', value: 'track' },
+  ];
+  protected readonly swimlaneMode = signal<SwimlaneMode>('none');
+  protected readonly swimlaneSettings = computed<SwimlaneSettingsModel>(() => {
+    const mode = this.swimlaneMode();
+    if (mode === 'assignee') {
+      return { keyField: 'assigneeKey', textField: 'assigneeLabel', showItemCount: true };
+    }
+    if (mode === 'track') {
+      return { keyField: 'trackKey', textField: 'trackLabel', showItemCount: true };
+    }
+    return {};
+  });
+
   protected readonly columns = WORKFLOW_STATUSES.map((status) => ({
     headerText: status,
     keyField: status,
@@ -117,11 +150,26 @@ export class WorkBoard {
   protected readonly cards = computed(() => {
     this.boardRevision();
     const names = new Map(this.scorecard.people().map((person) => [person.id, person.nickname]));
-    return this.visibleTickets().map((ticket) => ({
-      id: ticket.id,
-      status: workflowStatusOf(ticket),
-      summary: `${ticket.module} · ${names.get(ticket.assigneeId) ?? 'ยังไม่มีผู้รับ'} · ${ticket.storyPoints ?? '—'} pts`,
-    }));
+    return this.visibleTickets().map((ticket) => {
+      const assigneeLabel = names.get(ticket.assigneeId) ?? 'ยังไม่มีผู้รับ';
+      const trackLabel = ticket.track === 'RD' ? 'R&D' : 'Implement';
+      return {
+        id: ticket.id,
+        status: workflowStatusOf(ticket),
+        title: ticket.title?.trim() || ticket.module,
+        module: ticket.module,
+        size: ticket.size,
+        trackKey: ticket.track,
+        trackLabel,
+        assigneeKey: ticket.assigneeId || 'unassigned',
+        assigneeLabel,
+        storyPoints: ticket.storyPoints ?? '—',
+        dueLabel: ticket.dueOn ?? ticket.firstDueOn ?? '—',
+        hasMr: Boolean(ticket.mrLink?.trim()),
+        reopenCount: ticket.reopenCount,
+        summary: `${ticket.module} · ${assigneeLabel} · ${ticket.storyPoints ?? '—'} pts`,
+      };
+    });
   });
 
   protected readonly report = computed(() => pipelineReport(this.visibleTickets(), this.scorecard.people()));
@@ -136,11 +184,23 @@ export class WorkBoard {
     });
   }
 
+  protected setSwimlane(event: { value?: string | null }): void {
+    const val = event.value;
+    if (val === 'none' || val === 'assignee' || val === 'track') {
+      this.swimlaneMode.set(val);
+    }
+  }
+
   protected onCardClick(args: { data?: { id?: string } }): void {
     const id = args.data?.id;
     if (id) {
       this.selectedId.set(id);
+      this.editDialog?.show();
     }
+  }
+
+  protected closeEditDialog(): void {
+    this.editDialog?.hide();
   }
 
   protected onDialogOpen(args: { cancel?: boolean }): void {
@@ -157,7 +217,16 @@ export class WorkBoard {
       this.boardRevision.update((value) => value + 1);
       return;
     }
-    if (target === workflowStatusOf(current)) {
+    const from = workflowStatusOf(current);
+    if (target === from) {
+      return;
+    }
+    const roleCheck = canMoveWorkflowByRole(this.role(), from, target);
+    if (!roleCheck.ok) {
+      args.cancel = true;
+      this.blockMessage.set(roleCheck.message);
+      this.boardRevision.update((value) => value + 1);
+      this.blockDialog?.show();
       return;
     }
     const result = moveWorkflow(current, target, todayInBangkok());
@@ -228,12 +297,14 @@ export class WorkBoard {
     if (!ticket) {
       return;
     }
+    const allowPlanning = this.canEditPlanning();
     const parsed = this.storyValue() === '' ? null : Number(this.storyValue());
     const result = editWorkflow(ticket, {
-      discipline: this.discipline(),
-      workCategory: this.workCategory(),
-      storyPoints: parsed as StoryPoint | null,
-      firstDueOn: this.dueLocked() ? (ticket.firstDueOn ?? null) : toIsoDate(this.due()),
+      discipline: allowPlanning ? this.discipline() : (ticket.discipline ?? ''),
+      workCategory: allowPlanning ? this.workCategory() : (ticket.workCategory ?? ''),
+      storyPoints: allowPlanning ? (parsed as StoryPoint | null) : (ticket.storyPoints ?? null),
+      firstDueOn:
+        !allowPlanning || this.dueLocked() ? (ticket.firstDueOn ?? null) : toIsoDate(this.due()),
       mrLink: this.mrLink(),
       pocResult: this.pocResult(),
       bugCause: this.bugCause(),
@@ -244,6 +315,7 @@ export class WorkBoard {
       return;
     }
     this.scorecard.replaceTicket(result.ticket);
+    this.editDialog?.hide();
     this.notice.show(`บันทึกฟิลด์ ${ticket.id} แล้ว`);
   }
 
