@@ -731,16 +731,21 @@ ejs-chart,
 
 @media (min-width: 801px) {
   #app-nav.e-sidebar,
-  #app-nav .e-sidebar {
-    position: relative !important;
+  #app-nav .e-sidebar,
+  #app-nav,
+  .e-sidebar.e-left {
+    position: sticky !important;
+    top: 0 !important;
     width: 260px !important;
-    height: auto !important;
-    min-height: 100%;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    align-self: start;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
     transform: none !important;
     visibility: visible !important;
-    left: auto !important;
-    right: auto !important;
-    top: auto !important;
+    left: 0 !important;
     box-shadow: none !important;
     z-index: 50 !important;
   }
@@ -752,18 +757,25 @@ ejs-chart,
 
 @media (max-width: 800px) {
   #app-nav.e-sidebar,
-  #app-nav .e-sidebar {
+  #app-nav .e-sidebar,
+  #app-nav,
+  .e-sidebar.e-left {
     position: fixed !important;
     z-index: 1200 !important;
     width: 260px !important;
     height: 100vh !important;
+    max-height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
     top: 0 !important;
     left: 0 !important;
     transition: transform 0.28s var(--ease-out-expo), visibility 0.28s ease !important;
   }
 
   .app-frame:not(.nav-open) #app-nav.e-sidebar,
-  .app-frame:not(.nav-open) #app-nav .e-sidebar {
+  .app-frame:not(.nav-open) #app-nav .e-sidebar,
+  .app-frame:not(.nav-open) #app-nav {
     visibility: hidden !important;
     transform: translateX(-100%) !important;
     pointer-events: none;

@@ -38,9 +38,14 @@ npm --prefix server run build
   - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion
   - ห้ามใช้คลาส `.e-chart` โดดๆ เพราะจะไปชนกับไอคอน `e-icons.e-chart` ในเมนู ให้ใช้ `ejs-chart, .e-control.e-chart` แทน
   - ห้ามใส่ `transform: translateY(...)` บน `.e-dashboardlayout .e-panel:hover` หรือ `.e-card:hover` เพื่อไม่ให้รบกวนพิกัดคำนวณภายในของ DashboardLayout และ Kanban
-- **Sidebar & Backdrop Layering**:
+- **Sidebar & Layout Pinning (Desktop & Mobile)**:
+  - `.app-frame` ต้องกำหนด `align-items: start;`
+  - บน Desktop (`@media (min-width: 801px)`): `#app-nav` ต้องใช้ `position: sticky !important; top: 0 !important; height: 100vh !important; max-height: 100vh !important; align-self: start; overflow-y: auto !important; overscroll-behavior: contain;` ห้ามใช้ `position: relative` หรือ `height: auto` ที่ทำให้ Sidebar เลื่อนหลุดออกนอกจอเวลาหน้ายาว
   - `<ejs-sidebar>` บน Desktop ต้องใช้ `[type]="narrow() ? 'Over' : 'Push'"` และ `[showBackdrop]="false"`
-  - บน Mobile เมนู Sidebar ต้องมี `z-index: 1200 !important` อยู่เหนือ Backdrop (`z-index: 1050`) เสมอ และห้ามใช้ `backdrop-filter: blur` บน Backdrop ที่อาจทำให้ Sidebar มัว
+  - บน Mobile (`@media (max-width: 800px)`): เมนู Sidebar ต้องเป็น `position: fixed !important; height: 100vh !important; z-index: 1200 !important;` อยู่เหนือ Backdrop (`z-index: 1050`) เสมอ และห้ามใช้ `backdrop-filter: blur` บน Backdrop ที่อาจทำให้ Sidebar มัว
+- **Syncfusion Tailwind 3 Theming Standards**:
+  - `src/index.html` ต้องใส่ `<body class="e-dark-mode">` เสมอ
+  - คอมโพเนนต์กราฟฟิก/SVG ทั้งหมด (`ejs-chart`, `ejs-accumulationchart`, `ejs-gantt`, `ejs-schedule`, `ejs-progressbar`) ต้องระบุ `theme="Tailwind3Dark"` เพื่อให้เรนเดอร์สอดคล้องกับ Dark theme ของระบบ
 - **DashboardLayout Chart Timing**: กราฟที่อยู่ใน DashboardLayout ต้องสั่ง `chart.refresh()` หลังเลย์เอาต์เสร็จผ่าน `(created)="onDashboardCreated()"` และ `ngAfterViewInit` พร้อม `ResizeObserver`
 - **Date Type-Safety**: ฟิลด์วันที่ (`closedOn`, `dueDate`, `startDate`) ที่มาจากฐานข้อมูลอาจเป็นได้ทั้ง `string` หรือ `Date` object ให้ normalize ด้วย `raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '')` ก่อนใช้ string methods เสมอ  
 

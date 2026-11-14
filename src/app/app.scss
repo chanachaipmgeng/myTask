@@ -2,6 +2,7 @@
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   min-height: 100vh;
+  align-items: start;
 }
 
 #app-nav,
@@ -17,16 +18,39 @@
   #app-nav,
   #app-nav.e-sidebar,
   .e-sidebar.e-left {
-    position: relative !important;
-    height: auto !important;
-    min-height: 100vh !important;
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    align-self: start;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
     transform: none !important;
     visibility: visible !important;
-    left: auto !important;
+    left: 0 !important;
     right: auto !important;
-    top: auto !important;
     z-index: 50 !important;
     box-shadow: none !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: 999px;
+
+      &:hover {
+        background: rgba(148, 163, 184, 0.4);
+      }
+    }
   }
 
   .nav-backdrop {
@@ -42,6 +66,10 @@
     top: 0 !important;
     left: 0 !important;
     height: 100vh !important;
+    max-height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
     z-index: 1200 !important;
     box-shadow: 8px 0 28px rgba(0, 0, 0, 0.6) !important;
   }

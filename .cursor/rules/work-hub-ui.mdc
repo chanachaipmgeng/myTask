@@ -16,5 +16,7 @@ alwaysApply: false
 - การจัด Layout กราฟและแดชบอร์ด: ป้องกันปัญหา SVG Sizing โดยผูก `ResizeObserver` และเรียก `chart.refresh()` เสมอเมื่อ Layout พร้อม (`(created)` / `ngAfterViewInit`)
 - Gantt Timeline (`/work/timeline`): กำหนดตำแหน่ง `splitterSettings` เริ่มต้นให้กว้างพอ (เช่น 620px) เพื่อให้คอลัมน์รหัส, งาน, เริ่ม, และ ครบกำหนด แสดงผลครบถ้วนไม่ถูกตัด
 - Sidebar: เมนูระดับย่อยต้องกำหนดขนาดไอคอนคงที่ (18-22px) ไม่ให้โดนยืดขยาย และข้อความเมนูต้องใช้สีสว่างคมชัด (`#e2e8f0` / `#ffffff`)
+- การตรึง Sidebar (`Sidebar Sticky Pinning`): โครงสร้าง `.app-frame` ต้องใช้ `align-items: start;` และ Sidebar (`#app-nav`) บน Desktop ต้องถูกตรึงแบบ `position: sticky; top: 0; height: 100vh; overflow-y: auto; overscroll-behavior: contain;` ตลอดเวลา เพื่อให้คงที่อยู่ฝั่งซ้ายเสมอเมื่อเลื่อนดูหน้าจอที่มีความยาว
+- มาตรฐานธีม (`Tailwind 3 Dark Theme`): ทุกกราฟและ ProgressBar (`ejs-chart`, `ejs-accumulationchart`, `ejs-progressbar`, `ejs-gantt`, `ejs-schedule`) ต้องตั้งค่า `theme="Tailwind3Dark"` เสมอ
 - กรองสาย/ค้นหาใน `/work` ใช้ `WorkHubFilter` ของ shell — อย่าทำตัวกรองซ้ำในลูกโดยไม่จำเป็น
 - ข้อมูลแถว/กราฟคำนวณใน `shared/domain/work-views.ts` หรือ `people-roster` / `person-dashboard` แล้วค่อย bind UI
