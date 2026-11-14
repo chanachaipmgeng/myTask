@@ -85,7 +85,7 @@
         } @else if (snapshotTableRows().length === 0) {
           <p class="kpi-note m-0">ยังไม่มีแถวในช่วงนี้</p>
         } @else {
-          <ejs-grid [dataSource]="snapshotTableRows()" height="320">
+          <ejs-grid [dataSource]="snapshotTableRows()" [allowSorting]="true" [allowResizing]="true" height="320">
             <e-columns>
               <e-column field="nickname" headerText="คน" width="140"></e-column>
               <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
@@ -223,6 +223,8 @@
           </div>
         </div>
       </div>
+    }
+    @if (viewingLive()) {
       <div id="kpi-meaning" class="e-panel" data-row="3" data-col="2" data-sizex="2" data-sizey="2">
         <div class="e-panel-container">
           <div class="e-panel-header">ความหมายของ KPI จากใบในกระดาน</div>
@@ -241,6 +243,8 @@
           </div>
         </div>
       </div>
+    }
+    @if (viewingLive()) {
       <div id="chart-monthly" class="e-panel" data-row="5" data-col="0" data-sizex="2" data-sizey="2">
         <div class="e-panel-container">
           <div class="e-panel-header">เส้นรายเดือน</div>
@@ -267,6 +271,8 @@
           </div>
         </div>
       </div>
+    }
+    @if (viewingLive()) {
       <div id="chart-quota" class="e-panel" data-row="5" data-col="2" data-sizex="2" data-sizey="2">
         <div class="e-panel-container">
           <div class="e-panel-header">โควตาที่ใช้กับที่ว่าง</div>

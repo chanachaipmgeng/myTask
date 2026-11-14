@@ -14,7 +14,7 @@ import {
 } from '@syncfusion/ej2-angular-charts';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { GridModule, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
@@ -57,6 +57,8 @@ const LIVE_MODE = 'live';
     ColumnSeriesService,
     LegendService,
     TooltipService,
+    SortService,
+    ResizeService,
   ],
   templateUrl: './team-dashboard.html',
 })

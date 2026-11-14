@@ -28,18 +28,44 @@
 
   <ejs-message [content]="message()" severity="Info" variant="Outlined"></ejs-message>
 
-  <div class="mock-progress">
-    <div class="mock-progress-bar" [style.width.%]="progress()"></div>
+  <div class="e-card p-3 flex flex-col gap-2">
+    <div class="flex justify-between items-center text-sm">
+      <strong>ความคืบหน้าการจำลองโฟลว์</strong>
+      <span class="e-badge e-badge-info">{{ progress() }}%</span>
+    </div>
+    <ejs-progressbar
+      id="mock-progress"
+      type="Linear"
+      width="100%"
+      height="16"
+      [minimum]="0"
+      [maximum]="100"
+      [value]="progress()"
+      [trackThickness]="10"
+      [progressThickness]="10"
+      progressColor="#3ec6e0"
+      trackColor="#1e4566"
+    ></ejs-progressbar>
+    <p class="fine m-0">
+      @if (finished()) {
+        จบครบ {{ steps.length }} ขั้นแล้ว
+      } @else if (active()) {
+        ขั้นถัดไป: {{ currentStep().title }} — {{ currentStep().hint }}
+      } @else {
+        ยังไม่เปิดโหมด กดเปิดโหมดจำลองเพื่อเริ่ม
+      }
+    </p>
   </div>
-  <p class="fine">
-    @if (finished()) {
-      จบครบ {{ steps.length }} ขั้นแล้ว
-    } @else if (active()) {
-      ขั้นถัดไป: {{ currentStep().title }} — {{ currentStep().hint }}
-    } @else {
-      ยังไม่เปิดโหมด กดเปิดโหมดจำลองเพื่อเริ่ม
-    }
-  </p>
+
+  <div class="e-card p-4 overflow-x-auto">
+    <ejs-stepper
+      id="mock-stepper"
+      [steps]="stepperSteps()"
+      [activeStep]="step()"
+      [readOnly]="true"
+      labelPosition="Bottom"
+    ></ejs-stepper>
+  </div>
 
   <ol class="mock-steps">
     @for (item of steps; track item.id; let i = $index) {
@@ -90,14 +116,14 @@
       </e-columns>
     </ejs-grid>
     <div class="flex flex-wrap gap-2">
-      <a routerLink="/queue" class="mock-link">เปิดคิวงานใหม่</a>
-      <a routerLink="/schedule" class="mock-link">เปิดปฏิทินทีม</a>
+      <a ejs-button cssClass="e-outline" routerLink="/queue">เปิดคิวงานใหม่</a>
+      <a ejs-button cssClass="e-outline" routerLink="/schedule">เปิดปฏิทินทีม</a>
     </div>
   }
 
   @if (scoreSummary().length > 0 && step() >= 8) {
     <h3>สรุปคะแนนหลัง settle</h3>
-    <ejs-grid [dataSource]="scoreSummary()" height="280">
+    <ejs-grid [dataSource]="scoreSummary()" [allowSorting]="true" [allowResizing]="true" height="280">
       <e-columns>
         <e-column field="id" headerText="ใบ" width="140"></e-column>
         <e-column field="title" headerText="เรื่อง" width="180"></e-column>
@@ -112,7 +138,7 @@
     </ejs-grid>
 
     <h3>ดัชนีรายคน</h3>
-    <ejs-grid [dataSource]="personIndexes()" height="180">
+    <ejs-grid [dataSource]="personIndexes()" [allowSorting]="true" [allowResizing]="true" height="180">
       <e-columns>
         <e-column field="name" headerText="คน" width="140"></e-column>
         <e-column field="index" headerText="ดัชนี" width="100" textAlign="Right" format="N1"></e-column>
@@ -120,20 +146,21 @@
     </ejs-grid>
 
     <div class="flex flex-wrap gap-2">
-      <a routerLink="/team" class="mock-link">แดชบอร์ดทีม</a>
-      <a routerLink="/people" class="mock-link">กระดานรายคน</a>
-      <a routerLink="/pipeline" class="mock-link">สถานะงาน</a>
-      <a routerLink="/queue" class="mock-link">คิวงานใหม่</a>
-      <a routerLink="/schedule" class="mock-link">ปฏิทินทีม</a>
+      <a ejs-button cssClass="e-outline" routerLink="/team">แดชบอร์ดทีม</a>
+      <a ejs-button cssClass="e-outline" routerLink="/people">กระดานรายคน</a>
+      <a ejs-button cssClass="e-outline" routerLink="/pipeline">สถานะงาน</a>
+      <a ejs-button cssClass="e-outline" routerLink="/queue">คิวงานใหม่</a>
+      <a ejs-button cssClass="e-outline" routerLink="/schedule">ปฏิทินทีม</a>
     </div>
   }
 
   @if (log().length > 0) {
     <h3>บันทึกขั้น</h3>
-    <ul class="mock-log">
-      @for (line of log(); track $index) {
-        <li>{{ line }}</li>
-      }
-    </ul>
+    <ejs-grid [dataSource]="logRows()" [allowPaging]="true" [pageSettings]="pageSettings" height="220">
+      <e-columns>
+        <e-column field="stepNo" headerText="ลำดับ" width="90" textAlign="Right"></e-column>
+        <e-column field="entry" headerText="รายละเอียดขั้นที่จำลอง" width="520"></e-column>
+      </e-columns>
+    </ejs-grid>
   }
 </section>

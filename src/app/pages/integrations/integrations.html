@@ -61,7 +61,7 @@
                 <span class="e-badge e-badge-info flex items-center gap-1">
                   {{ item.key }} → {{ item.value }}
                   @if (canEdit()) {
-                    <button type="button" class="ml-1 font-bold" (click)="removeStatusMapping(item.key)">×</button>
+                    <button ejs-button cssClass="e-flat e-small" type="button" (click)="removeStatusMapping(item.key)">×</button>
                   }
                 </span>
               }

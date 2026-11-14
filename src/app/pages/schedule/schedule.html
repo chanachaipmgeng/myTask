@@ -20,22 +20,32 @@
     </label>
   </div>
 
-  <div id="schedule-summary" class="flex flex-wrap items-center gap-4 text-sm text-muted">
-    <span>แสดง {{ boardModel().shown }} ใบ</span>
-    <span>หลุดสัปดาห์ {{ boardModel().slipped }} ใบ</span>
-    <span>ไม่แสดง {{ boardModel().hidden }} ใบที่ไม่มีผู้รับหรือไม่มีวัน</span>
-  </div>
-
-  @if (boardModel().shown === 0) {
-    <p class="fine">ไม่มีใบงานที่แสดงในปฏิทินตามสายที่เลือก (ต้องมีผู้รับและช่วงวันที่)</p>
-  } @else {
-    <div id="schedule-legend" class="flex flex-wrap gap-4 text-sm">
-      <span>สีแถบตามคน · ตรงสัปดาห์</span>
+  <ejs-toolbar cssClass="page-toolbar" overflowMode="Scroll" width="100%">
+    <e-items>
+      <e-item [template]="summaryTemplate"></e-item>
+      <e-item type="Separator"></e-item>
+      <e-item [template]="legendTemplate"></e-item>
+    </e-items>
+  </ejs-toolbar>
+  <ng-template #summaryTemplate>
+    <div id="schedule-summary" class="flex flex-wrap items-center gap-2 text-sm">
+      <span class="e-badge e-badge-info">แสดง {{ boardModel().shown }} ใบ</span>
+      <span class="e-badge e-badge-warning">หลุดสัปดาห์ {{ boardModel().slipped }} ใบ</span>
+      <span class="e-badge e-badge-secondary">ไม่แสดง {{ boardModel().hidden }} ใบที่ไม่มีผู้รับหรือไม่มีวัน</span>
+    </div>
+  </ng-template>
+  <ng-template #legendTemplate>
+    <div id="schedule-legend" class="flex flex-wrap items-center gap-3 text-sm">
+      <span class="e-badge e-badge-primary">สีแถบตามคน · ตรงสัปดาห์</span>
       <span class="inline-flex items-center gap-2"
         ><span class="schedule-swatch is-slipped"></span>สีส้ม · หลุดจากสัปดาห์ที่ commit</span
       >
     </div>
+  </ng-template>
 
+  @if (boardModel().shown === 0) {
+    <p class="fine">ไม่มีใบงานที่แสดงในปฏิทินตามสายที่เลือก (ต้องมีผู้รับและช่วงวันที่)</p>
+  } @else {
     <ejs-schedule
       #board
       id="team-schedule"

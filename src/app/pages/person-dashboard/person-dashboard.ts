@@ -15,8 +15,9 @@ import {
   PieSeriesService,
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
-import { GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
+import { AggregateService, GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { map } from 'rxjs';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { personDashboard } from '../../core/person-dashboard';
@@ -25,7 +26,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 @Component({
   selector: 'app-person-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChartModule, AccumulationChartModule, ButtonModule, MessageModule, GridModule],
+  imports: [ChartModule, AccumulationChartModule, ButtonModule, MessageModule, GridModule, ProgressBarModule],
   providers: [
     CategoryService,
     LineSeriesService,
@@ -38,6 +39,8 @@ import { ScorecardService } from '../../core/scorecard.service';
     AccumulationDataLabelService,
     PageService,
     SortService,
+    ResizeService,
+    AggregateService,
   ],
   templateUrl: './person-dashboard.html',
 })

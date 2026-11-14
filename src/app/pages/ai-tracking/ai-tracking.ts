@@ -6,14 +6,16 @@ import {
   LegendService,
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
+import { AggregateService, GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
+import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { acceptedTrackedMd, aiTicketPoints, formatTrackedMd, researchSpikeShare } from '../../core/ai-tracking';
 import { ScorecardService } from '../../core/scorecard.service';
 
 @Component({
   selector: 'app-ai-tracking',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChartModule],
-  providers: [CategoryService, ColumnSeriesService, LegendService, TooltipService],
+  imports: [ChartModule, GridModule, ProgressBarModule],
+  providers: [CategoryService, ColumnSeriesService, LegendService, TooltipService, PageService, SortService, ResizeService, AggregateService],
   templateUrl: './ai-tracking.html',
 })
 export class AiTrackingPage {
@@ -41,6 +43,7 @@ export class AiTrackingPage {
 
   protected readonly points = computed(() => aiTicketPoints(this.scorecard.tickets()));
   protected readonly share = computed(() => researchSpikeShare(this.scorecard.people(), this.scorecard.tickets()));
+  protected readonly sharePct = computed(() => Math.min(100, Math.round(this.share().ratio * 100)));
   protected readonly acceptedMd = computed(() => formatTrackedMd(acceptedTrackedMd(this.scorecard.tickets())));
   protected readonly trackedMd = computed(() =>
     formatTrackedMd(this.points().reduce((sum, point) => sum + point.md, 0)),

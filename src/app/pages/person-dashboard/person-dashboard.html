@@ -18,9 +18,23 @@
 
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
       <div class="e-card">
-        <div class="e-card-content p-4">
+        <div class="e-card-content p-4 flex flex-col gap-2">
           <p class="kpi-note">ดัชนีพัฒนา</p>
           <p class="kpi-value">{{ view().indexLabel }}</p>
+          @if (view().index !== null) {
+            <ejs-progressbar
+              type="Linear"
+              width="100%"
+              height="14"
+              [minimum]="0"
+              [maximum]="100"
+              [value]="view().index!"
+              [trackThickness]="10"
+              [progressThickness]="10"
+              progressColor="#3ec6e0"
+              trackColor="#1e4566"
+            ></ejs-progressbar>
+          }
         </div>
       </div>
       <div class="e-card">
@@ -226,7 +240,7 @@
     @if (view().openWork.length === 0) {
       <ejs-message content="ไม่มีใบเปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
     } @else {
-      <ejs-grid [dataSource]="view().openWork" [allowPaging]="true" [allowSorting]="true" [pageSettings]="pageSettings" height="280">
+      <ejs-grid [dataSource]="view().openWork" [allowPaging]="true" [allowSorting]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="280">
         <e-columns>
           <e-column field="id" headerText="ใบ" width="120"></e-column>
           <e-column field="title" headerText="เรื่อง" width="200"></e-column>
@@ -237,6 +251,18 @@
           <e-column field="dueOnLabel" headerText="วันส่ง" width="110"></e-column>
           <e-column field="unplannedLabel" headerText="แผน" width="90"></e-column>
         </e-columns>
+        <e-aggregates>
+          <e-aggregate>
+            <e-columns>
+              <e-column type="Count" field="id">
+                <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
+              </e-column>
+              <e-column type="Sum" field="estimateMd" format="N2">
+                <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
+              </e-column>
+            </e-columns>
+          </e-aggregate>
+        </e-aggregates>
       </ejs-grid>
     }
 
@@ -244,7 +270,7 @@
     @if (view().closedWork.length === 0) {
       <ejs-message content="ยังไม่มีใบปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
     } @else {
-      <ejs-grid [dataSource]="view().closedWork" [allowPaging]="true" [allowSorting]="true" [pageSettings]="pageSettings" height="320">
+      <ejs-grid [dataSource]="view().closedWork" [allowPaging]="true" [allowSorting]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="320">
         <e-columns>
           <e-column field="id" headerText="ใบ" width="120"></e-column>
           <e-column field="title" headerText="เรื่อง" width="180"></e-column>
@@ -257,6 +283,21 @@
           <e-column field="reopenCount" headerText="Reopen" width="90" textAlign="Right"></e-column>
           <e-column field="score" headerText="คะแนน" width="90" textAlign="Right"></e-column>
         </e-columns>
+        <e-aggregates>
+          <e-aggregate>
+            <e-columns>
+              <e-column type="Count" field="id">
+                <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
+              </e-column>
+              <e-column type="Sum" field="actualMd" format="N2">
+                <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
+              </e-column>
+              <e-column type="Average" field="score" format="N1">
+                <ng-template #footerTemplate let-data>เฉลี่ย {{ data.Average }}</ng-template>
+              </e-column>
+            </e-columns>
+          </e-aggregate>
+        </e-aggregates>
       </ejs-grid>
     }
   }

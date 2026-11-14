@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { GridModule, PageService } from '@syncfusion/ej2-angular-grids';
+import { GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
+import { StepperModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { MockSession, mockPersonIndexes } from '../../core/mock-session';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
@@ -10,8 +12,8 @@ import { ShellNotice } from '../../core/shell-notice';
 @Component({
   selector: 'app-mockup',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, GridModule, MessageModule, RouterLink],
-  providers: [PageService],
+  imports: [ButtonModule, GridModule, MessageModule, ProgressBarModule, StepperModule, RouterLink],
+  providers: [PageService, SortService, ResizeService],
   templateUrl: './mockup.html',
   styleUrl: './mockup.scss',
 })
@@ -37,6 +39,19 @@ export class MockupPage {
     const done = Math.min(this.step(), total);
     return Math.round((done / total) * 100);
   });
+  protected readonly stepperSteps = computed(() => {
+    const current = this.step();
+    return this.steps.map((item, idx) => ({
+      label: `${idx + 1}. ${item.title}`,
+      status: current > idx ? 'Completed' : current === idx && this.active() ? 'InProgress' : 'NotStarted',
+    }));
+  });
+  protected readonly logRows = computed(() =>
+    this.log().map((entry, idx) => ({
+      stepNo: idx + 1,
+      entry,
+    })),
+  );
   protected readonly personIndexes = computed(() =>
     mockPersonIndexes(this.scorecard.people(), this.scorecard.tickets()),
   );

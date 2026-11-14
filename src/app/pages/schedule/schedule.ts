@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ChipListModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
+import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
 import {
   AgendaService,
   EventRenderedArgs,
@@ -61,7 +63,7 @@ const COLORS = [
 @Component({
   selector: 'app-schedule',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ScheduleModule, DropDownListModule],
+  imports: [ScheduleModule, DropDownListModule, ChipListModule, ToolbarModule],
   providers: [TimelineViewsService, TimelineMonthService, AgendaService],
   templateUrl: './schedule.html',
 })

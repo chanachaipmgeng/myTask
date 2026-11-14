@@ -7,11 +7,18 @@
     <p class="fine">ไม่มีใบใน Backlog ตามตัวกรองปัจจุบัน</p>
   } @else {
     <ejs-grid
+      #backlogGrid
+      id="work-backlog-grid"
       [dataSource]="rows()"
       [allowPaging]="true"
       [allowSorting]="true"
       [allowFiltering]="true"
+      [allowResizing]="true"
+      [showColumnChooser]="true"
+      [allowExcelExport]="true"
+      [toolbar]="gridToolbar"
       [pageSettings]="pageSettings"
+      (toolbarClick)="onToolbarClick($event)"
     >
       <e-columns>
         <e-column field="id" headerText="รหัส" width="120"></e-column>
@@ -19,10 +26,22 @@
         <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
         <e-column field="type" headerText="ประเภท" width="130"></e-column>
         <e-column field="size" headerText="ขนาด" width="80"></e-column>
-        <e-column field="estimateMd" headerText="Estimate MD" width="110"></e-column>
+        <e-column field="estimateMd" headerText="Estimate MD" width="120" textAlign="Right" format="N2"></e-column>
         <e-column field="assignee" headerText="ผู้รับ" width="140"></e-column>
         <e-column field="status" headerText="สถานะ" width="120"></e-column>
       </e-columns>
+      <e-aggregates>
+        <e-aggregate>
+          <e-columns>
+            <e-column type="Count" field="id">
+              <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
+            </e-column>
+            <e-column type="Sum" field="estimateMd" format="N2">
+              <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
+            </e-column>
+          </e-columns>
+        </e-aggregate>
+      </e-aggregates>
     </ejs-grid>
   }
 </div>
