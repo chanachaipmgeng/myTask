@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AnalyticsController } from './api/analytics.controller';
 import { BootstrapController } from './api/bootstrap.controller';
 import { IntegrationsController } from './api/integrations.controller';
 import { KpiSnapshotsController } from './api/kpi-snapshots.controller';
@@ -22,6 +23,7 @@ import { KpiSnapshotService } from './kpi/kpi-snapshot.service';
     IntegrationsController,
     OrgController,
     KpiSnapshotsController,
+    AnalyticsController,
   ],
   providers: [
     OpenProjectSyncService,

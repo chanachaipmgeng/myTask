@@ -1,23 +1,17 @@
-import { Person, Ticket } from './domain/models';
+import { AccessRole, Person, Ticket } from './domain/models';
 import { WEEKLY_QUOTA } from './domain/scoring';
 import { decorateSeed } from './domain/workflow';
 
 export const REFERENCE_BUG_ID = 'IMP-100';
 export const REFERENCE_SPIKE_ID = 'RD-SPIKE';
 
-export type AccessRole = 'lead' | 'member';
+export type { AccessRole };
 
 export interface SampleViewer {
   id: string;
   nickname: string;
   access: AccessRole;
 }
-
-/** Sample role flag. A lead can edit the admin screen. A member can only view it. */
-export const SAMPLE_VIEWERS: readonly SampleViewer[] = [
-  { id: 'paweena', nickname: 'ปวีณา', access: 'lead' },
-  { id: 'itsara', nickname: 'อิสรภาพ', access: 'member' },
-];
 
 export const SEED_PEOPLE: readonly Person[] = [
   {
@@ -28,6 +22,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Senior',
     track: 'Implement',
     plannedMd: WEEKLY_QUOTA.Senior,
+    access: 'admin',
+    gitlabUsername: 'paweena',
   },
   {
     id: 'watchara',
@@ -37,6 +33,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Mid',
     track: 'Implement',
     plannedMd: WEEKLY_QUOTA.Mid,
+    access: 'lead',
+    gitlabUsername: 'watchara',
   },
   {
     id: 'itsara',
@@ -46,6 +44,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'Implement',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'itsara',
   },
   {
     id: 'kanchawee',
@@ -55,6 +55,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'Implement',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'kanchawee',
   },
   {
     id: 'natthaphat',
@@ -64,6 +66,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'Implement',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'natthaphat',
   },
   {
     id: 'chanachai',
@@ -73,6 +77,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Senior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Senior,
+    access: 'lead',
+    gitlabUsername: 'chanachai',
   },
   {
     id: 'nakarin',
@@ -82,6 +88,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'nakarin',
   },
   {
     id: 'natthana',
@@ -91,6 +99,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'natthana',
   },
   {
     id: 'sawit',
@@ -100,6 +110,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'sawit',
   },
   {
     id: 'phanthakan',
@@ -109,6 +121,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'phanthakan',
   },
   {
     id: 'nattasit',
@@ -118,6 +132,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'nattasit',
   },
   {
     id: 'korakot',
@@ -127,6 +143,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'korakot',
   },
   {
     id: 'dirasit',
@@ -136,6 +154,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'dirasit',
   },
   {
     id: 'aphisit',
@@ -145,6 +165,8 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'aphisit',
   },
   {
     id: 'sirawich',
@@ -154,8 +176,16 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Junior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Junior,
+    access: 'member',
+    gitlabUsername: 'sirawich',
   },
 ];
+
+export const SAMPLE_VIEWERS: readonly SampleViewer[] = SEED_PEOPLE.map((person) => ({
+  id: person.id,
+  nickname: person.nickname,
+  access: person.access ?? 'member',
+}));
 
 type TicketSeed = Pick<Ticket, 'id' | 'track' | 'type' | 'assigneeId' | 'size' | 'estimateMd' | 'actualMd'> &
   Partial<Ticket>;

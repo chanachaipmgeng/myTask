@@ -1,8 +1,19 @@
 import { Injectable } from '@angular/core';
-import { AccessRole, Department, Person, Team, Ticket } from './models';
+import { AnalyticsReport } from './analytics';
+import { AccessRole, Department, Level, Person, Team, Ticket, Track } from './models';
 import { KpiPeriodType } from './kpi-snapshot';
 import { PersonScore, TrackWeights } from './scoring';
 import { AlertRules } from './admin-settings';
+
+export interface AuditLogDto {
+  id: number;
+  actorId: string | null;
+  actorName: string;
+  action: string;
+  target: string | null;
+  detail: string;
+  createdAt: string;
+}
 
 export interface KpiSnapshotPeriodDto {
   periodType: KpiPeriodType;
@@ -285,5 +296,32 @@ export class ApiClient {
 
   logout(): Promise<{ ok: boolean }> {
     return api('/api/auth/logout', { method: 'POST', body: '{}' });
+  }
+
+  updatePersonAccess(
+    personId: string,
+    body: {
+      access?: AccessRole;
+      level?: Level;
+      track?: Track;
+      gitlabUsername?: string | null;
+    },
+  ): Promise<{ ok: boolean; person?: Person; message?: string }> {
+    return api(`/api/org/people/${encodeURIComponent(personId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  }
+
+  getAuditLogs(): Promise<{ logs: AuditLogDto[] }> {
+    return api('/api/org/audit-logs');
+  }
+
+  getAnalyticsReport(): Promise<AnalyticsReport> {
+    return api('/api/analytics/report');
+  }
+
+  runAnalytics(): Promise<AnalyticsReport> {
+    return api('/api/analytics/run', { method: 'POST', body: '{}' });
   }
 }

@@ -1,0 +1,155 @@
+<section class="page flex flex-col gap-4">
+  <div class="page-head">
+    <div>
+      <h2>เข้าสู่ระบบ &amp; สลับบทบาทผู้ใช้งาน</h2>
+      <p>
+        รองรับการยืนยันตัวตนผ่าน GitLab OAuth SSO สำหรับใช้งานจริง และการสลับบัญชีตามบทบาท
+        (<strong>admin</strong> ผู้ดูแลระบบ · <strong>lead</strong> หัวหน้าสายงาน · <strong>member</strong> พนักงานทั่วไป)
+        เพื่อแยกเมนูและสิทธิ์การเข้าถึงอย่างชัดเจน
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button ejs-button cssClass="e-primary" iconCss="e-icons e-lock" type="button" (click)="startGitLabSso()">
+        เข้าสู่ระบบด้วย GitLab OAuth SSO
+      </button>
+      @if (session()) {
+        <button ejs-button cssClass="e-outline" type="button" [disabled]="busy()" (click)="logout()">
+          ออกจากระบบ Session
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (message()) {
+    <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
+  }
+  @if (error()) {
+    <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
+  }
+
+  @if (activePerson(); as active) {
+    <div class="e-card">
+      <div class="e-card-content flex flex-wrap items-center justify-between gap-4 p-4">
+        <div class="flex flex-col gap-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-lg font-bold text-cyan">บัญชีที่กำลังใช้งาน: {{ active.nickname }} ({{ active.fullName }})</span>
+            <span
+              class="e-badge e-badge-pill"
+              [class.e-badge-danger]="role() === 'admin'"
+              [class.e-badge-warning]="role() === 'lead'"
+              [class.e-badge-info]="role() === 'member'"
+            >
+              สิทธิ์: {{ role() }}
+            </span>
+            <span class="e-badge e-badge-secondary e-badge-pill">{{ active.track === 'RD' ? 'สาย R&D' : 'สาย Implement' }} · {{ active.level }}</span>
+          </div>
+          <p class="fine m-0">
+            @if (role() === 'admin') {
+              เห็นเมนูครบทุกส่วน: บริหารทีม, ศูนย์วิเคราะห์ Python (/analytics), ตั้งค่าเชื่อมต่อระบบ (/integrations) และจัดการสิทธิ์/Audit Log (/admin)
+            } @else if (role() === 'lead') {
+              เห็นเมนูบริหารทีมและแผนงาน: แดชบอร์ดทีม (/team), ฮับบริหารงาน (/work), จัดคิว (/queue) และศูนย์วิเคราะห์ Python (/analytics)
+            } @else {
+              เห็นเมนูฝั่งพนักงานทั่วไป: พื้นที่ของฉัน (/me), กระดานส่งมอบงาน (/work/board), ปฏิทินทีม (/schedule) และซิงก์ MR (/mygit)
+            }
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a ejs-button cssClass="e-primary" routerLink="/me">เปิดพื้นที่ของฉัน (/me)</a>
+          @if (role() === 'admin' || role() === 'lead') {
+            <a ejs-button cssClass="e-outline" routerLink="/analytics">ศูนย์วิเคราะห์ Python (/analytics)</a>
+          }
+          @if (role() === 'admin') {
+            <a ejs-button cssClass="e-outline" routerLink="/admin">จัดการสิทธิ์ผู้ใช้ (/admin)</a>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-wrap gap-2">
+      <button
+        ejs-button
+        type="button"
+        [cssClass]="roleFilter() === 'All' ? 'e-primary' : 'e-outline'"
+        (click)="roleFilter.set('All')"
+      >
+        ทั้งหมด ({{ roleCounts().total }})
+      </button>
+      <button
+        ejs-button
+        type="button"
+        [cssClass]="roleFilter() === 'admin' ? 'e-primary' : 'e-outline'"
+        (click)="roleFilter.set('admin')"
+      >
+        ผู้ดูแลระบบ · Admin ({{ roleCounts().admin }})
+      </button>
+      <button
+        ejs-button
+        type="button"
+        [cssClass]="roleFilter() === 'lead' ? 'e-primary' : 'e-outline'"
+        (click)="roleFilter.set('lead')"
+      >
+        หัวหน้าสายงาน · Lead ({{ roleCounts().lead }})
+      </button>
+      <button
+        ejs-button
+        type="button"
+        [cssClass]="roleFilter() === 'member' ? 'e-primary' : 'e-outline'"
+        (click)="roleFilter.set('member')"
+      >
+        พนักงานทั่วไป · Member ({{ roleCounts().member }})
+      </button>
+    </div>
+    <div style="width: 260px;">
+      <ejs-textbox
+        placeholder="ค้นหาชื่อ / รหัส / ตำแหน่ง..."
+        [value]="query()"
+        (input)="query.set($any($event).value ?? '')"
+      ></ejs-textbox>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+    @for (person of filteredPeople(); track person.id) {
+      <div class="e-card">
+        <div class="e-card-content flex flex-col justify-between gap-3 p-4">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-2">
+                <strong class="text-base">{{ person.nickname }}</strong>
+                <span class="fine m-0">({{ person.role }})</span>
+              </div>
+              <p class="fine m-0">{{ person.fullName }} · GitLab: @{{ person.gitlabUsername || person.id }}</p>
+            </div>
+            <span
+              class="e-badge e-badge-pill"
+              [class.e-badge-danger]="person.access === 'admin'"
+              [class.e-badge-warning]="person.access === 'lead'"
+              [class.e-badge-info]="(person.access ?? 'member') === 'member'"
+            >
+              {{ person.access ?? 'member' }}
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div class="flex items-center gap-1.5 text-xs">
+              <span class="e-badge e-badge-secondary">{{ person.track === 'RD' ? 'R&D' : 'Implement' }}</span>
+              <span class="e-badge e-badge-secondary">{{ person.level }}</span>
+            </div>
+            <button
+              ejs-button
+              [attr.data-login-person]="person.id"
+              [cssClass]="activePerson()?.id === person.id ? 'e-success e-small' : 'e-primary e-small'"
+              type="button"
+              [disabled]="busy()"
+              (click)="loginAs(person)"
+            >
+              {{ activePerson()?.id === person.id ? 'กำลังใช้งานอยู่' : 'เข้าใช้งานบัญชีนี้' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</section>

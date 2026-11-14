@@ -7,12 +7,26 @@ import { MessageModule, ToastComponent, ToastModule } from '@syncfusion/ej2-angu
 import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { NodeClickEventArgs, NodeSelectEventArgs } from '@syncfusion/ej2-navigations';
 import { filter, map, startWith } from 'rxjs';
-import { currentViewer, effectiveRole } from './core/admin-settings';
+import {
+  actualRole,
+  currentViewer,
+  effectiveRole,
+  toggleViewAsMember,
+  viewAsRole,
+} from './core/admin-settings';
+import { AccessRole } from './core/models';
 import { ShellNotice } from './core/shell-notice';
 import { ScorecardService } from './core/scorecard.service';
 import { currentSession } from './core/session';
 
-type NavLeaf = { id: string; text: string; iconCss: string; route: string; exact?: boolean };
+type NavLeaf = {
+  id: string;
+  text: string;
+  iconCss: string;
+  route: string;
+  exact?: boolean;
+  roles?: readonly AccessRole[];
+};
 type NavGroup = { id: string; text: string; expanded: boolean; children: NavLeaf[] };
 
 @Component({
@@ -36,27 +50,38 @@ export class App implements AfterViewInit {
   protected readonly mockMode = this.scorecard.mockMode;
   protected readonly usingApi = this.scorecard.usingApi;
   protected readonly role = effectiveRole;
+  protected readonly trueRole = actualRole;
+  protected readonly previewingMember = computed(() => viewAsRole() === 'member');
   protected readonly activeUserLabel = computed(() => {
     const sess = currentSession();
     if (sess) {
-      return `${sess.person.nickname} (${sess.access})`;
+      return `${sess.person.nickname} (${this.role()})`;
     }
     const viewer = currentViewer();
-    return `${viewer.nickname} (${viewer.access})`;
+    return `${viewer.nickname} (${this.role()})`;
   });
   protected readonly activePersonId = computed(() => {
     const sess = currentSession();
     return sess?.person.id ?? currentViewer().id;
   });
   protected readonly toastPosition = { X: 'Right', Y: 'Top' };
-  protected readonly navFields = {
-    dataSource: navGroups as object[],
+  protected readonly visibleNavGroups = computed<NavGroup[]>(() => {
+    const role = this.role();
+    return allNavGroups
+      .map((group) => ({
+        ...group,
+        children: group.children.filter((leaf) => !leaf.roles || leaf.roles.includes(role)),
+      }))
+      .filter((group) => group.children.length > 0);
+  });
+  protected readonly navFields = computed(() => ({
+    dataSource: this.visibleNavGroups() as object[],
     id: 'id',
     text: 'text',
     child: 'children',
     iconCss: 'iconCss',
-  };
-  protected readonly expandedNodes = ['overview', 'work', 'connect', 'system'];
+  }));
+  protected readonly expandedNodes = ['personal', 'overview', 'work', 'connect', 'system'];
   protected readonly selectedNodes = signal<string[]>(['team']);
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -98,14 +123,14 @@ export class App implements AfterViewInit {
 
   protected onNavSelecting(event: NodeSelectEventArgs): void {
     const id = String(event.nodeData?.['id'] ?? '');
-    if (navGroups.some((group) => group.id === id)) {
+    if (allNavGroups.some((group) => group.id === id)) {
       event.cancel = true;
     }
   }
 
   protected onNavClick(event: NodeClickEventArgs): void {
     const id = String(event.node?.getAttribute('data-uid') ?? '');
-    const leaf = navLeaves.find((item) => item.id === id);
+    const leaf = allNavLeaves.find((item) => item.id === id);
     if (!leaf) {
       return;
     }
@@ -117,7 +142,7 @@ export class App implements AfterViewInit {
       return;
     }
     const id = String(event.nodeData?.['id'] ?? '');
-    const leaf = navLeaves.find((item) => item.id === id);
+    const leaf = allNavLeaves.find((item) => item.id === id);
     if (!leaf) {
       return;
     }
@@ -142,12 +167,22 @@ export class App implements AfterViewInit {
     void this.router.navigate(['/tickets']);
   }
 
-  protected openMyProfile(): void {
-    void this.router.navigate(['/people', this.activePersonId()]);
+  protected openMyWorkspace(): void {
+    void this.router.navigate(['/me']);
   }
 
-  protected openAdmin(): void {
-    void this.router.navigate(['/admin']);
+  protected openLogin(): void {
+    void this.router.navigate(['/login']);
+  }
+
+  protected togglePersonaPreview(): void {
+    const next = toggleViewAsMember();
+    if (next === 'member') {
+      this.notice.show('สลับเป็นมุมมองพนักงานทั่วไป (Member View) — ซ่อนเมนูตั้งค่าระบบ');
+      void this.router.navigate(['/me']);
+    } else {
+      this.notice.show(`กลับสู่มุมมอง ${next} ตามสิทธิ์จริง`);
+    }
   }
 
   ngAfterViewInit(): void {
@@ -157,57 +192,104 @@ export class App implements AfterViewInit {
   }
 }
 
-const navGroups: NavGroup[] = [
+const allNavGroups: NavGroup[] = [
+  {
+    id: 'personal',
+    text: 'พื้นที่ของฉัน',
+    expanded: true,
+    children: [
+      { id: 'me', text: 'งานและพัฒนาการของฉัน', iconCss: 'e-icons e-user', route: '/me' },
+    ],
+  },
   {
     id: 'overview',
-    text: 'ภาพรวม',
+    text: 'ภาพรวมและวิเคราะห์',
     expanded: true,
     children: [
       { id: 'team', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
-      { id: 'people', text: 'รายชื่อพนักงาน', iconCss: 'e-icons e-people', route: '/people', exact: true },
+      {
+        id: 'analytics',
+        text: 'ศูนย์วิเคราะห์ Python',
+        iconCss: 'e-icons e-chart',
+        route: '/analytics',
+        roles: ['admin', 'lead'],
+      },
+      {
+        id: 'people',
+        text: 'รายชื่อพนักงาน',
+        iconCss: 'e-icons e-people',
+        route: '/people',
+        exact: true,
+        roles: ['admin', 'lead'],
+      },
+      { id: 'ai', text: 'ติดตามงาน AI', iconCss: 'e-icons e-chart', route: '/ai' },
     ],
   },
   {
     id: 'work',
-    text: 'งาน',
+    text: 'งานและการส่งมอบ',
     expanded: true,
     children: [
       { id: 'work-hub', text: 'ฮับบริหารงาน', iconCss: 'e-icons e-timeline-work-week', route: '/work' },
       { id: 'tickets', text: 'ตารางคะแนนใบงาน', iconCss: 'e-icons e-table-1', route: '/tickets' },
       { id: 'schedule', text: 'ปฏิทินทีม', iconCss: 'e-icons e-date-time', route: '/schedule' },
-      { id: 'queue', text: 'คิวงานใหม่', iconCss: 'e-icons e-list-unordered', route: '/queue' },
-      { id: 'ai', text: 'ติดตามงาน AI', iconCss: 'e-icons e-chart', route: '/ai' },
+      {
+        id: 'queue',
+        text: 'คิวงานใหม่',
+        iconCss: 'e-icons e-list-unordered',
+        route: '/queue',
+        roles: ['admin', 'lead'],
+      },
     ],
   },
   {
     id: 'connect',
-    text: 'เชื่อมต่อ',
+    text: 'ศูนย์ซิงก์ข้อมูล',
     expanded: true,
     children: [
       { id: 'mygit', text: 'ซิงก์ mygit (MR)', iconCss: 'e-icons e-refresh', route: '/mygit' },
-      { id: 'teams', text: 'แจ้งเตือน Teams', iconCss: 'e-icons e-comment-show', route: '/teams' },
-      { id: 'integrations', text: 'Integrations', iconCss: 'e-icons e-settings', route: '/integrations' },
+      {
+        id: 'teams',
+        text: 'แจ้งเตือน Teams',
+        iconCss: 'e-icons e-comment-show',
+        route: '/teams',
+        roles: ['admin', 'lead'],
+      },
+      {
+        id: 'integrations',
+        text: 'Integrations',
+        iconCss: 'e-icons e-settings',
+        route: '/integrations',
+        roles: ['admin', 'lead'],
+      },
     ],
   },
   {
     id: 'system',
-    text: 'ระบบ',
+    text: 'ระบบและสิทธิ์ผู้ใช้',
     expanded: true,
     children: [
+      { id: 'login', text: 'เข้าสู่ระบบ / สลับบัญชี', iconCss: 'e-icons e-user', route: '/login' },
       { id: 'mockup', text: 'โหมดจำลอง', iconCss: 'e-icons e-play', route: '/mockup' },
-      { id: 'admin', text: 'หลังบ้าน', iconCss: 'e-icons e-lock', route: '/admin' },
+      {
+        id: 'admin',
+        text: 'หลังบ้าน & สิทธิ์',
+        iconCss: 'e-icons e-lock',
+        route: '/admin',
+        roles: ['admin', 'lead'],
+      },
     ],
   },
 ];
 
-const navLeaves = navGroups.flatMap((group) => group.children);
+const allNavLeaves = allNavGroups.flatMap((group) => group.children);
 
 function matchNavId(url: string): string {
   const path = url.split('?')[0] || '/';
   if (path.startsWith('/people/') && path !== '/people') {
     return 'people';
   }
-  const hit = navLeaves.find((item) => {
+  const hit = allNavLeaves.find((item) => {
     if (item.exact) {
       return path === item.route;
     }
@@ -217,6 +299,15 @@ function matchNavId(url: string): string {
 }
 
 function screenTitle(url: string): string {
+  if (url.startsWith('/me')) {
+    return 'พื้นที่ของฉัน';
+  }
+  if (url.startsWith('/login')) {
+    return 'เข้าสู่ระบบ & สลับบทบาท';
+  }
+  if (url.startsWith('/analytics')) {
+    return 'ศูนย์วิเคราะห์ข้อมูล Python';
+  }
   if (url.startsWith('/people/')) {
     return 'โปรไฟล์พนักงาน';
   }
@@ -248,7 +339,7 @@ function screenTitle(url: string): string {
     return 'Integrations';
   }
   if (url.startsWith('/admin')) {
-    return 'หลังบ้าน';
+    return 'หลังบ้าน & สิทธิ์';
   }
   if (url.startsWith('/mockup')) {
     return 'โหมดจำลอง';

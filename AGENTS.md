@@ -42,6 +42,8 @@ npm --prefix server run build
 - Writeback: env `OPENPROJECT_WRITEBACK` (ค่าเริ่ม `false`) รองรับทั้ง PATCH assignee และ PATCH startDate/dueDate + Dialog ยืนยันบน `/queue` เมื่อมี `opId`  
 - KPI snapshot: จับเดือน/ไตรมาส (`canCaptureKpi`) · อ่านบน `/team` · โดเมน `kpi-snapshot.ts`  
 - GitLab MR & Teams Webhook: ตั้งค่าใน `.env` หรือ `/integrations` (`ejs-tab` 3 ระบบ) · ซิงก์ MR จริงผ่าน `POST /api/integrations/gitlab/sync` (`gitlab-mr.ts`) · ยิง Teams จริงผ่าน `POST /api/integrations/teams/send`  
+- Role-Based Sidebar & Route Guards: เมนูใน `app.ts` กรองตาม `effectiveRole()` (`admin`, `lead`, `member`) + ปุ่มสลับมุมมองพนักงานบน AppBar (`#appbar-persona-toggle`) · การ์ด `requireRoles` ป้องกันหน้าจัดการสำหรับ `member` · หน้า `/me` สำหรับพอร์ทัลพนักงาน · หน้า `/login` สำหรับสลับบัญชีทั้ง 15 คน + SSO · Role Matrix & Audit Log บน `/admin`  
+- Python Sync & Analytics Intelligence Hub (`/analytics` + `scripts/analytics_engine.py` + `shared/domain/analytics.ts`): วิเคราะห์ Sync Hygiene Readiness %, Z-Score Outliers, Delivery Risk Radar, 1-on-1 Coaching Insights และ Module/Variance Bottlenecks ผ่าน `GET /api/analytics/report` และ `POST /api/analytics/run`  
 
 ## อย่าทำ
 

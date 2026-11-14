@@ -13,16 +13,18 @@
     <div class="brand">
       <div class="brand-mark" aria-hidden="true">MD</div>
       <div>
-        <p class="eyebrow">Man-day scorecard</p>
+        <p class="eyebrow">Central Sync &amp; Scorecard</p>
         <p class="brand-title">คะแนนใบงาน</p>
-        <p class="brand-sub">1 MD = 6 ชั่วโมงโฟกัส</p>
+        <p class="brand-sub">
+          {{ role() === 'member' ? 'พอร์ทัลพนักงาน · 1 MD = 6 ชม.' : 'ฮับบริหาร & วิเคราะห์ · 1 MD = 6 ชม.' }}
+        </p>
       </div>
     </div>
 
     <ejs-treeview
       id="app-nav-tree"
       cssClass="side-nav-tree"
-      [fields]="navFields"
+      [fields]="navFields()"
       [expandedNodes]="expandedNodes"
       [selectedNodes]="selectedNodes()"
       [fullRowSelect]="true"
@@ -37,7 +39,9 @@
       <button ejs-button cssClass="nav-toggle e-flat e-inherit" iconCss="e-icons e-menu" type="button" (click)="toggleNav()" aria-label="เปิดหรือพับเมนู"></button>
       <div class="appbar-copy">
         <span class="appbar-title">{{ title() }}</span>
-        <span class="appbar-note">R&amp;D และ Implement</span>
+        <span class="appbar-note">
+          {{ role() === 'member' ? 'มุมมองพนักงานทั่วไป (My Workspace)' : 'มุมมองบริหาร ซิงก์ และวิเคราะห์ข้อมูล' }}
+        </span>
       </div>
 
       <div class="appbar-actions">
@@ -49,13 +53,27 @@
           <span class="e-badge e-badge-info e-badge-pill">ออฟไลน์ (Seed)</span>
         }
 
+        @if (trueRole() !== 'member') {
+          <button
+            ejs-button
+            id="appbar-persona-toggle"
+            [cssClass]="previewingMember() ? 'e-info e-small appbar-chip-btn' : 'e-flat e-small appbar-chip-btn'"
+            iconCss="e-icons e-eye"
+            type="button"
+            title="สลับดูหน้าจอและเมนูแบบพนักงานทั่วไป"
+            (click)="togglePersonaPreview()"
+          >
+            {{ previewingMember() ? 'กำลังดูมุมมองพนักงาน (กดเพื่อกลับ)' : 'ดูมุมมองพนักงาน' }}
+          </button>
+        }
+
         <button
           ejs-button
           cssClass="e-flat e-small appbar-chip-btn"
           iconCss="e-icons e-user"
           type="button"
-          title="ดูโปรไฟล์ของฉัน"
-          (click)="openMyProfile()"
+          title="เปิดพื้นที่ของฉัน (/me)"
+          (click)="openMyWorkspace()"
         >
           {{ activeUserLabel() }}
         </button>
@@ -65,10 +83,10 @@
           cssClass="e-flat e-small appbar-chip-btn"
           iconCss="e-icons e-lock"
           type="button"
-          title="สลับสิทธิ์ / ตั้งค่าหลังบ้าน"
-          (click)="openAdmin()"
+          title="เข้าสู่ระบบ / สลับบัญชีตามสิทธิ์ (/login)"
+          (click)="openLogin()"
         >
-          สิทธิ์: {{ role() }}
+          สลับบัญชี ({{ role() }})
         </button>
 
         <button

@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { SEED_PEOPLE, SEED_TICKETS } from '../data/seed';
 import {
+  accessOverrides,
   alertRules,
   applyRemoteSettings,
   levelOverrides,
@@ -149,6 +150,7 @@ export class ScorecardService {
     this.peopleState().map((person) => ({
       ...person,
       level: levelOverrides()[person.id] ?? person.level,
+      access: accessOverrides()[person.id] ?? person.access ?? 'member',
     })),
   );
 
@@ -447,6 +449,12 @@ export class ScorecardService {
       );
     }
     return { matched, unmatched };
+  }
+
+  updatePersonLocal(next: Person): void {
+    this.peopleState.update((current) =>
+      current.map((person) => (person.id === next.id ? { ...person, ...next } : person)),
+    );
   }
 
   private replaceLocal(next: Ticket): void {

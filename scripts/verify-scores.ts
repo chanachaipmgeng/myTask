@@ -2,11 +2,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   canEditAdmin,
+  effectiveRole,
+  setPersonAccess,
   setPersonLevel,
   setViewer,
   setWeeklyQuota,
+  toggleViewAsMember,
   weeklyQuotas,
 } from '../src/app/core/admin-settings';
+import { buildAnalyticsReport } from '../src/app/core/analytics';
 import { collectAlerts, projectedActual } from '../src/app/core/alerts';
 import { planNewWork } from '../src/app/core/capacity';
 import { monthlyTrend, quotaBars } from '../src/app/core/dashboard-charts';
@@ -674,6 +678,31 @@ assert.equal(weekOffsetFromDates('2025-11-07', '2025-11-20'), 2);
   assert.equal(unplanned.unplanned, true);
   assert.equal(scoreTicket(unplanned).total, 100);
   assert.equal(MOCK_BLUEPRINTS.length, 6);
+}
+
+{
+  setViewer('paweena');
+  assert.equal(effectiveRole(), 'admin');
+  assert.equal(toggleViewAsMember(), 'member');
+  assert.equal(effectiveRole(), 'member');
+  assert.equal(toggleViewAsMember(), 'admin');
+  assert.equal(effectiveRole(), 'admin');
+  assert.equal(setPersonAccess('itsara', 'lead'), true);
+  assert.equal(setPersonAccess('itsara', 'member'), true);
+
+  const analyticsReport = buildAnalyticsReport(SEED_PEOPLE, SEED_TICKETS, 'python');
+  assert.equal(analyticsReport.engine, 'python');
+  assert.ok(analyticsReport.syncHygiene.readinessScore >= 0 && analyticsReport.syncHygiene.readinessScore <= 100);
+  assert.equal(analyticsReport.syncHygiene.totalTickets, SEED_TICKETS.length);
+  assert.ok(analyticsReport.syncHygiene.issues.length >= 1, 'Detects sync hygiene issues in open seed tickets');
+  assert.ok(analyticsReport.deliveryRisks.length >= 1, 'Computes delivery risks for open tickets');
+  assert.ok(analyticsReport.deliveryRisks[0]!.riskScore >= analyticsReport.deliveryRisks.at(-1)!.riskScore, 'Sorted by riskScore desc');
+  assert.ok(analyticsReport.bottlenecks.modules.length >= 1);
+  assert.ok(analyticsReport.bottlenecks.varianceBreakdown.length >= 1);
+  assert.equal(analyticsReport.coachingInsights.length, SEED_PEOPLE.length);
+  assert.ok(analyticsReport.coachingInsights.every((c) => c.strengthNote.length >= 1 && c.coachingFocus.length >= 1));
+  assert.equal(scoreTicket(seeded(REFERENCE_BUG_ID)).total, 100);
+  assert.equal(scoreTicket(seeded(REFERENCE_SPIKE_ID)).spikeScore, 100);
 }
 
 assignPending

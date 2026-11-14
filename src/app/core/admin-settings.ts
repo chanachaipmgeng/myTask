@@ -45,6 +45,8 @@ const DEFAULT_CONNECTIONS: ConnectionSetting[] = [
 
 export const weeklyQuotas = signal<Record<Level, number>>({ ...WEEKLY_QUOTA });
 export const levelOverrides = signal<Record<string, Level>>({});
+export const accessOverrides = signal<Record<string, AccessRole>>({});
+export const viewAsRole = signal<AccessRole | null>(null);
 export const trackWeights = signal<TrackWeights>(cloneWeights(DEFAULT_TRACK_WEIGHTS));
 export const alertRules = signal<AlertRules>({ deadline: true, overrun: true, overrunLimit: 1.5 });
 export const connections = signal<ConnectionSetting[]>(DEFAULT_CONNECTIONS.map((item) => ({ ...item })));
@@ -54,48 +56,71 @@ export const viewerId = signal(SAMPLE_VIEWERS[0].id);
 export const currentViewer = computed(() => {
   const session = currentSession();
   if (session) {
+    const overridden = accessOverrides()[session.person.id] ?? session.access;
     return {
       id: session.person.id,
       nickname: session.person.nickname,
-      access: session.access === 'admin' ? 'lead' : session.access === 'lead' ? 'lead' : 'member',
+      access: overridden,
     } satisfies SampleViewer;
   }
-  return SAMPLE_VIEWERS.find((viewer) => viewer.id === viewerId()) ?? SAMPLE_VIEWERS[0];
+  const found = SAMPLE_VIEWERS.find((viewer) => viewer.id === viewerId()) ?? SAMPLE_VIEWERS[0];
+  const overridden = accessOverrides()[found.id] ?? found.access;
+  return {
+    ...found,
+    access: overridden,
+  };
+});
+
+export const actualRole = computed<AccessRole>(() => {
+  const access = sessionAccess();
+  if (access) {
+    return accessOverrides()[currentSession()?.person.id ?? ''] ?? access;
+  }
+  return currentViewer().access;
 });
 
 export const effectiveRole = computed<AccessRole>(() => {
-  const access = sessionAccess();
-  if (access) {
-    return access;
-  }
-  return currentViewer().access === 'lead' ? 'lead' : 'member';
+  return viewAsRole() ?? actualRole();
 });
 
 export const canEditAdmin = computed(() => {
-  const access = sessionAccess();
-  if (access) {
-    return access === 'admin';
-  }
-  return currentViewer().access === 'lead';
+  const role = effectiveRole();
+  return role === 'admin' || (!currentSession() && role === 'lead');
 });
 
 /** Assign / accept queue proposals: admin or lead (API rejects member). */
 export const canAssignWork = computed(() => {
-  const access = sessionAccess();
-  if (access) {
-    return access === 'admin' || access === 'lead';
-  }
-  return currentViewer().access === 'lead';
+  const role = effectiveRole();
+  return role === 'admin' || role === 'lead';
 });
 
 /** Capture KPI snapshots for a period: same gate as assign. */
 export const canCaptureKpi = canAssignWork;
 
+export function toggleViewAsMember(): AccessRole {
+  const current = viewAsRole();
+  if (current === 'member') {
+    viewAsRole.set(null);
+  } else {
+    viewAsRole.set('member');
+  }
+  return effectiveRole();
+}
+
 export function setViewer(id: string): SampleViewer {
   if (SAMPLE_VIEWERS.some((viewer) => viewer.id === id)) {
     viewerId.set(id);
+    viewAsRole.set(null);
   }
   return currentViewer();
+}
+
+export function setPersonAccess(personId: string, access: AccessRole): boolean {
+  if (!canEditAdmin() || !['admin', 'lead', 'member'].includes(access) || personId.trim() === '') {
+    return false;
+  }
+  accessOverrides.update((current) => ({ ...current, [personId]: access }));
+  return true;
 }
 
 export function setWeeklyQuota(level: Level, quota: number): boolean {

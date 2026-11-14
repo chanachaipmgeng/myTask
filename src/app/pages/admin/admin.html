@@ -1,11 +1,15 @@
 <section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
-      <h2>หลังบ้าน</h2>
+      <h2>หลังบ้าน &amp; จัดการสิทธิ์ผู้ใช้งาน (Admin &amp; Governance)</h2>
       <p>
-        จัดการคน ระดับ โควต้ารายสัปดาห์ น้ำหนักคะแนน กฎแจ้งเตือน และสถานะการเชื่อม.
-        ธง role ในข้อมูลตัวอย่าง: หัวหน้าแก้ได้ สมาชิกดูได้อย่างเดียว.
+        จัดการสิทธิ์การเข้าถึง (Admin / Lead / Member), ระดับพนักงาน, โควต้ารายสัปดาห์, น้ำหนักคะแนน,
+        กฎแจ้งเตือน และตรวจสอบประวัติการใช้งาน (Audit Log)
       </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a ejs-button cssClass="e-outline" routerLink="/login">หน้าเข้าสู่ระบบ / สลับบัญชี (/login)</a>
+      <a ejs-button cssClass="e-primary" routerLink="/analytics">ศูนย์วิเคราะห์ Python (/analytics)</a>
     </div>
   </div>
 
@@ -24,7 +28,8 @@
   <ejs-message id="access-flag" [content]="accessBanner()" severity="Info" variant="Outlined"></ejs-message>
   <div class="flex flex-wrap gap-2">
     <button ejs-button type="button" cssClass="e-outline" (click)="devLogin('paweena')">Dev login · ปวีณา (admin)</button>
-    <button ejs-button type="button" cssClass="e-outline" (click)="devLogin('itsara')">Dev login · อิสรภาพ</button>
+    <button ejs-button type="button" cssClass="e-outline" (click)="devLogin('watchara')">Dev login · วัชระ (lead)</button>
+    <button ejs-button type="button" cssClass="e-outline" (click)="devLogin('itsara')">Dev login · อิสรภาพ (member)</button>
     <button ejs-button type="button" cssClass="e-flat" (click)="logout()">Logout</button>
   </div>
   @if (status()) {
@@ -53,10 +58,10 @@
   </div>
 
   <div class="flex flex-wrap items-center justify-between gap-2">
-    <h3>คนและระดับ</h3>
+    <h3>คน ระดับ และสิทธิ์การใช้งาน (Role Matrix)</h3>
     <div style="width: 240px;">
       <ejs-textbox
-        placeholder="ค้นหาชื่อ / สายงาน / ระดับ..."
+        placeholder="ค้นหาชื่อ / สายงาน / สิทธิ์..."
         [value]="personQuery()"
         (input)="personQuery.set($any($event).value ?? '')"
       ></ejs-textbox>
@@ -66,17 +71,32 @@
     @for (person of filteredRoster(); track person.id) {
       <div class="e-card">
         <div class="e-card-content flex flex-wrap items-center justify-between gap-3 p-3">
-          <span>{{ person.nickname }} · {{ person.track === 'RD' ? 'R&D' : 'Implement' }}</span>
-          <ejs-dropdownlist
-            cssClass="level-list"
-            [attr.data-person]="person.id"
-            [dataSource]="levelOptions"
-            [fields]="fields"
-            [value]="person.level"
-            [enabled]="canEdit()"
-            (change)="onLevel(person.id, $event)"
-            width="160px"
-          ></ejs-dropdownlist>
+          <div class="flex flex-col gap-0.5">
+            <span class="font-bold">{{ person.nickname }} · {{ person.track === 'RD' ? 'R&D' : 'Implement' }}</span>
+            <span class="fine m-0">{{ person.role }} · @{{ person.gitlabUsername || person.id }}</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <ejs-dropdownlist
+              cssClass="access-list"
+              [attr.data-person-access]="person.id"
+              [dataSource]="accessOptions"
+              [fields]="fields"
+              [value]="person.access ?? 'member'"
+              [enabled]="canEdit()"
+              (change)="onAccess(person.id, $event)"
+              width="190px"
+            ></ejs-dropdownlist>
+            <ejs-dropdownlist
+              cssClass="level-list"
+              [attr.data-person]="person.id"
+              [dataSource]="levelOptions"
+              [fields]="fields"
+              [value]="person.level"
+              [enabled]="canEdit()"
+              (change)="onLevel(person.id, $event)"
+              width="140px"
+            ></ejs-dropdownlist>
+          </div>
         </div>
       </div>
     }
@@ -159,4 +179,24 @@
       </div>
     }
   </div>
+
+  <h3>ประวัติตรวจสอบระบบ (Audit Log)</h3>
+  <ejs-grid
+    id="admin-audit-grid"
+    [dataSource]="auditLogs()"
+    [allowPaging]="true"
+    [allowSorting]="true"
+    [allowResizing]="true"
+    [pageSettings]="{ pageSize: 8 }"
+    height="260"
+  >
+    <e-columns>
+      <e-column field="id" headerText="ID" width="80" textAlign="Right"></e-column>
+      <e-column field="actorName" headerText="ผู้ดำเนินการ" width="130"></e-column>
+      <e-column field="action" headerText="การกระทำ" width="180"></e-column>
+      <e-column field="target" headerText="เป้าหมาย" width="140"></e-column>
+      <e-column field="detail" headerText="รายละเอียด" width="280"></e-column>
+      <e-column field="createdAt" headerText="เวลา" width="190"></e-column>
+    </e-columns>
+  </ejs-grid>
 </section>
