@@ -2,17 +2,22 @@
 @tailwind utilities;
 
 :root {
-  --ink: #f5f5f5;
-  --muted: #adadad;
-  --paper: #1f1f1f;
-  --card: #292929;
-  --line: #3d3d3d;
-  --teal: #479ef5;
-  --cyan: #62bfff;
-  --good: #54b054;
-  --bad: #eeacb2;
-  --copper: #f0b429;
-  --navy: #1f1f1f;
+  --ink: #f1f5f9;
+  --muted: #94a3b8;
+  --paper: #0b1120;
+  --surface: #111827;
+  --card: rgba(30, 41, 59, 0.72);
+  --card-hover: rgba(30, 41, 59, 0.92);
+  --line: rgba(148, 163, 184, 0.16);
+  --line-bright: rgba(56, 189, 248, 0.42);
+  --teal: #0ea5e9;
+  --cyan: #38bdf8;
+  --good: #22c55e;
+  --bad: #f43f5e;
+  --copper: #f59e0b;
+  --navy: #0f172a;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   color: var(--ink);
   background: var(--paper);
   font-family: Sarabun, "Leelawadee UI", Tahoma, sans-serif;
@@ -22,23 +27,108 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(71, 158, 245, 0.14), transparent 28rem),
+    radial-gradient(circle at 12% 8%, rgba(14, 165, 233, 0.16), transparent 34rem),
+    radial-gradient(circle at 88% 14%, rgba(99, 102, 241, 0.12), transparent 32rem),
+    radial-gradient(circle at 50% 92%, rgba(20, 184, 166, 0.08), transparent 38rem),
     var(--paper);
+  background-attachment: fixed;
+  overflow-x: hidden;
 }
 
+/* ==========================================================================
+   Keyframes & Motion
+   ========================================================================== */
+@keyframes pageFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dialogPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pulseRing {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+}
+
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* ==========================================================================
+   Typography & Page Layout
+   ========================================================================== */
 h2 {
   margin: 0;
   font-size: 28px;
+  font-weight: 800;
   letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #bae6fd 65%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 h3 {
   margin: 18px 0 8px;
   font-size: 18px;
+  font-weight: 700;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+h3::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #38bdf8, #2563eb);
 }
 
 p {
@@ -46,7 +136,8 @@ p {
 }
 
 .page {
-  max-width: 1400px;
+  max-width: 1420px;
+  animation: pageFadeUp 0.42s var(--ease-out-expo) both;
 }
 
 .page-head {
@@ -54,7 +145,19 @@ p {
   justify-content: space-between;
   gap: 20px;
   align-items: flex-end;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  padding: 18px 22px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.58));
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 30px -12px rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(12px);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.page-head:hover {
+  border-color: rgba(56, 189, 248, 0.28);
+  box-shadow: 0 14px 34px -12px rgba(14, 165, 233, 0.16);
 }
 
 .page-head p,
@@ -62,11 +165,11 @@ p {
 .kpi-note {
   color: var(--muted);
   max-width: 78ch;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .fine {
-  margin: 0 0 16px;
+  margin: 0 0 12px;
   font-size: 14px;
 }
 
@@ -79,8 +182,9 @@ p {
 .filter span,
 .field > span {
   width: fit-content;
-  color: var(--muted);
+  color: #cbd5e1;
   font-size: 13px;
+  font-weight: 500;
 }
 
 .toolbar-field {
@@ -95,43 +199,128 @@ p {
   font-size: 13px;
 }
 
+/* ==========================================================================
+   Cards, Panels, Containers & Hover Motion
+   ========================================================================== */
+.e-card,
+.ticket-form,
+.chart-frame,
+.e-dashboardlayout .e-panel {
+  border: 1px solid var(--line) !important;
+  border-radius: 16px !important;
+  background: var(--card) !important;
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 8px 24px -8px rgba(2, 6, 23, 0.5),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06) !important;
+  transition:
+    transform 0.26s var(--ease-out-expo),
+    border-color 0.26s ease,
+    box-shadow 0.26s ease,
+    background-color 0.26s ease !important;
+  animation: cardReveal 0.4s var(--ease-out-expo) both;
+}
+
+.e-card:hover,
+.e-dashboardlayout .e-panel:hover,
+.chart-frame:hover {
+  transform: translateY(-3px);
+  border-color: var(--line-bright) !important;
+  background: var(--card-hover) !important;
+  box-shadow:
+    0 16px 32px -10px rgba(14, 165, 233, 0.2),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1) !important;
+}
+
 .ticket-form,
 .chart-frame {
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 16px;
+  padding: 18px;
   margin-bottom: 16px;
 }
 
 .chart-frame {
-  padding: 12px 12px 4px;
+  padding: 14px 14px 6px;
 }
 
 .form-grid {
   display: grid;
-  gap: 12px 14px;
+  gap: 14px 16px;
 }
 
 .e-input-group,
 .e-control-wrapper,
 .map-textarea {
   width: 100%;
+  border-radius: 10px !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.e-input-group.e-input-focus,
+.e-control-wrapper.e-input-focus {
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
 }
 
 .form-actions {
   display: flex;
-  gap: 16px;
+  gap: 14px;
   align-items: center;
   margin-top: 14px;
 }
 
+/* ==========================================================================
+   Buttons, Badges & Interactive Controls
+   ========================================================================== */
 button,
+.e-btn,
 .e-btn.e-primary {
   font-family: inherit;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  transition:
+    transform 0.2s var(--ease-spring),
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease !important;
 }
 
+.e-btn:not(:disabled):hover {
+  transform: translateY(-1.5px);
+}
+
+.e-btn:not(:disabled):active {
+  transform: translateY(0) scale(0.97);
+}
+
+.e-btn.e-primary:not(:disabled) {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px -4px rgba(14, 165, 233, 0.5) !important;
+}
+
+.e-btn.e-primary:not(:disabled):hover {
+  box-shadow: 0 10px 24px -4px rgba(14, 165, 233, 0.7) !important;
+}
+
+.e-btn.e-outline:not(:disabled):hover {
+  border-color: var(--cyan) !important;
+  box-shadow: 0 6px 16px -4px rgba(56, 189, 248, 0.28) !important;
+}
+
+.e-badge {
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  transition: transform 0.2s var(--ease-spring);
+}
+
+/* ==========================================================================
+   KPI Typography & Dashboard Panels
+   ========================================================================== */
 .kpi-inline {
   font-weight: 700;
+  color: var(--cyan);
 }
 
 .free-line {
@@ -144,26 +333,37 @@ button,
 
 .page-toolbar {
   margin: 0 0 12px;
+  border-radius: 14px !important;
+  border: 1px solid var(--line) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  backdrop-filter: blur(10px);
+  padding: 4px 8px !important;
 }
 
 .panel-scroll {
   overflow: auto;
 }
 
-.e-grid .alert-row .e-rowcell {
-  box-shadow: inset 4px 0 0 #f7630c;
-}
-
 .person-link {
   color: var(--cyan);
   font-weight: 700;
+  text-decoration: none;
+  transition: color 0.18s ease, text-shadow 0.18s ease;
+}
+
+.person-link:hover {
+  color: #7dd3fc;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
 }
 
 .kpi-value {
   font-size: 40px;
-  font-weight: 700;
-  line-height: 1;
+  font-weight: 800;
+  line-height: 1.05;
   margin-top: 8px;
+  background: linear-gradient(135deg, #ffffff 15%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .workspace {
@@ -174,22 +374,70 @@ button,
 .e-dashboardlayout .e-panel-header {
   font-weight: 700;
   border: 0;
-  padding: 12px 16px 0;
+  padding: 14px 18px 2px;
   height: auto;
+  color: #e2e8f0 !important;
 }
 
 .e-dashboardlayout .e-panel-content {
-  padding: 8px 16px 12px;
+  padding: 8px 18px 14px;
   overflow: auto;
 }
 
+/* ==========================================================================
+   Syncfusion Grids, Kanban, Gantt, Schedule, Accordion, Tabs & Dialogs
+   ========================================================================== */
 .e-grid {
-  border-radius: 12px;
+  border-radius: 16px !important;
+  border: 1px solid var(--line) !important;
   overflow: hidden;
+  box-shadow: 0 10px 28px -10px rgba(2, 6, 23, 0.55);
+  animation: cardReveal 0.42s var(--ease-out-expo) both;
+}
+
+.e-grid .e-gridheader {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+.e-grid .e-row {
+  transition: background-color 0.16s ease;
+}
+
+.e-grid .e-row:hover .e-rowcell {
+  background: rgba(56, 189, 248, 0.08) !important;
+}
+
+.e-grid .alert-row .e-rowcell {
+  box-shadow: inset 4px 0 0 #f97316;
 }
 
 .e-grid .reference-row .e-rowcell {
-  background: rgba(15, 108, 189, 0.18);
+  background: rgba(14, 165, 233, 0.16);
+}
+
+.e-accordion {
+  border-radius: 16px !important;
+  border: 1px solid var(--line) !important;
+  overflow: hidden;
+  background: var(--card) !important;
+  backdrop-filter: blur(12px);
+}
+
+.e-accordion .e-acrdn-item .e-acrdn-header {
+  transition: background-color 0.2s ease, padding-left 0.2s ease;
+}
+
+.e-accordion .e-acrdn-item .e-acrdn-header:hover {
+  background: rgba(56, 189, 248, 0.08) !important;
+}
+
+.e-kanban.pipeline-board {
+  border-radius: 16px;
+  padding: 6px;
+  background: rgba(15, 23, 42, 0.48);
+  border: 1px solid var(--line);
+  animation: cardReveal 0.42s var(--ease-out-expo) both;
 }
 
 .e-kanban.pipeline-board,
@@ -207,6 +455,60 @@ button,
 .e-kanban.pipeline-board .e-header-cells,
 .e-kanban.pipeline-board .e-content-cells {
   width: 220px;
+}
+
+.e-kanban.pipeline-board .e-card {
+  border-radius: 12px !important;
+  cursor: grab;
+  transition:
+    transform 0.22s var(--ease-spring),
+    box-shadow 0.22s ease,
+    border-color 0.22s ease !important;
+}
+
+.e-kanban.pipeline-board .e-card:hover {
+  transform: translateY(-3px) scale(1.01);
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  box-shadow: 0 12px 24px -8px rgba(14, 165, 233, 0.32) !important;
+}
+
+.e-kanban.pipeline-board .e-card:active {
+  cursor: grabbing;
+}
+
+.e-gantt,
+.team-schedule {
+  border-radius: 16px !important;
+  border: 1px solid var(--line) !important;
+  overflow: hidden;
+  box-shadow: 0 12px 30px -10px rgba(2, 6, 23, 0.55);
+  animation: cardReveal 0.44s var(--ease-out-expo) both;
+}
+
+.e-dlg-overlay {
+  backdrop-filter: blur(6px);
+  background: rgba(2, 6, 23, 0.62) !important;
+}
+
+.e-dialog {
+  border-radius: 18px !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 24px 48px -12px rgba(2, 6, 23, 0.78) !important;
+  overflow: hidden;
+  animation: dialogPopIn 0.26s var(--ease-out-expo) both;
+}
+
+.e-message {
+  border-radius: 12px !important;
+  animation: cardReveal 0.32s var(--ease-out-expo) both;
+}
+
+.work-hub-tabs {
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(10px);
 }
 
 .legend-chips,
@@ -248,6 +550,20 @@ button,
   margin: 0;
 }
 
+/* ==========================================================================
+   Responsive & Reduced Motion
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @media (min-width: 801px) {
   #app-nav.e-sidebar,
   #app-nav .e-sidebar {
@@ -273,6 +589,7 @@ button,
     height: 100vh !important;
     top: 0 !important;
     left: 0 !important;
+    transition: transform 0.28s var(--ease-out-expo), visibility 0.28s ease !important;
   }
 
   .app-frame:not(.nav-open) #app-nav.e-sidebar,

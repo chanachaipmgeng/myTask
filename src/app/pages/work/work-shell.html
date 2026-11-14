@@ -23,12 +23,13 @@
     </div>
   </div>
 
-  <nav class="work-hub-tabs flex flex-wrap gap-2 border-b border-slate-700 pb-2" role="tablist" aria-label="มุมมองฮับบริหารงาน">
+  <nav class="work-hub-tabs flex flex-wrap gap-2" role="tablist" aria-label="มุมมองฮับบริหารงาน">
     @for (tab of tabs; track tab.path) {
       <a
         ejs-button
         role="tab"
         [id]="'work-tab-' + tab.path"
+        [iconCss]="tab.icon"
         [routerLink]="['/work', tab.path]"
         routerLinkActive="e-primary"
         [attr.aria-selected]="activePath() === tab.path"

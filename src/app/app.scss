@@ -16,42 +16,59 @@
   left: auto;
   right: auto;
   top: auto;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(11, 17, 32, 0.98) 100%) !important;
+  border-right: 1px solid rgba(148, 163, 184, 0.14) !important;
+  backdrop-filter: blur(16px);
 }
 
 .brand {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  padding: 20px 18px 8px;
+  padding: 22px 18px 14px;
+  margin: 10px 10px 4px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.65), rgba(15, 23, 42, 0.4));
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+
+.brand:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-1px);
 }
 
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #0f6cbd, #3ec6e0);
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #0ea5e9, #38bdf8, #6366f1);
   color: #fff;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.04em;
   flex: none;
+  box-shadow: 0 8px 20px -4px rgba(14, 165, 233, 0.55);
+  animation: floatSlow 4s ease-in-out infinite;
 }
 
 .eyebrow {
   margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .brand-title {
   margin: 2px 0 0;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.25;
+  color: #f8fafc;
 }
 
 .brand-sub {
@@ -70,11 +87,31 @@
 }
 
 .side-nav-tree .e-list-item.e-level-1 > .e-text-content .e-list-text {
-  color: var(--muted);
+  color: #64748b;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.side-nav-tree .e-list-item.e-level-2 > .e-fullrow {
+  border-radius: 10px !important;
+  margin: 2px 0;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.side-nav-tree .e-list-item.e-level-2 > .e-text-content {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.side-nav-tree .e-list-item.e-level-2:hover > .e-text-content {
+  transform: translateX(4px);
+}
+
+.side-nav-tree .e-list-item.e-level-2.e-active > .e-fullrow {
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.26), rgba(37, 99, 235, 0.12)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.38) !important;
+  box-shadow: inset 3px 0 0 #38bdf8, 0 6px 16px -6px rgba(14, 165, 233, 0.35);
 }
 
 .workspace {
@@ -85,8 +122,13 @@
 }
 
 .shell-appbar {
-  padding: 0 20px;
+  padding: 0 24px;
   gap: 12px;
+  background: rgba(15, 23, 42, 0.78) !important;
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14) !important;
+  box-shadow: 0 8px 24px -12px rgba(2, 6, 23, 0.6) !important;
+  z-index: 100;
 }
 
 .appbar-copy {
@@ -97,9 +139,10 @@
 }
 
 .appbar-title {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
   line-height: 1.2;
+  color: #f8fafc;
 }
 
 .appbar-note {
@@ -123,18 +166,31 @@
 .appbar-alert-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  border-radius: 999px !important;
+  padding: 4px 12px !important;
+  background: rgba(30, 41, 59, 0.65) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+}
+
+.appbar-chip-btn:hover {
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+}
+
+.appbar-alert-btn.e-warning {
+  animation: pulseRing 2.4s infinite;
 }
 
 .shell-alerts {
   display: grid;
   gap: 8px;
-  margin: 16px 20px 0;
+  margin: 16px 24px 0;
 }
 
 .shell-main {
   flex: 1;
-  padding: 12px 20px 40px;
+  padding: 16px 24px 44px;
 }
 
 .nav-toggle {

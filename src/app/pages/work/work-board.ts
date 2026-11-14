@@ -118,7 +118,7 @@ export class WorkBoard {
     { text: 'ยังไม่เลือก', value: '' },
     ...BUG_CAUSES.map((value) => ({ text: value, value })),
   ];
-  protected readonly barAnimation = { enable: false };
+  protected readonly barAnimation = { enable: true, duration: 500 };
   protected readonly barLabel = { color: '#e8f4fb', fontFamily: 'Sarabun, sans-serif', size: '13px' };
 
   protected readonly selectedId = signal<string | null>(null);

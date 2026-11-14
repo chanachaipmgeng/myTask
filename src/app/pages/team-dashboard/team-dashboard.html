@@ -156,7 +156,7 @@
             theme="Tailwind3Dark"
             [legendSettings]="legend"
             [tooltip]="contextTooltip"
-            [enableAnimation]="false"
+            [enableAnimation]="true"
             [enableSmartLabels]="true"
           >
             <e-accumulation-series-collection>
@@ -185,7 +185,7 @@
             theme="Tailwind3Dark"
             [legendSettings]="legend"
             [tooltip]="sampleTooltip"
-            [enableAnimation]="false"
+            [enableAnimation]="true"
             [enableSmartLabels]="true"
           >
             <e-accumulation-series-collection>
@@ -259,7 +259,7 @@
               [tooltip]="chartTooltip"
               [legendSettings]="chartLegend"
               [chartArea]="chartArea"
-              [enableAnimation]="false"
+              [enableAnimation]="true"
             >
               <e-series-collection>
                 <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="plan" name="ปิดตามแผน" width="2" fill="#7eb6ff"></e-series>
@@ -287,7 +287,7 @@
               [tooltip]="chartTooltip"
               [legendSettings]="chartLegend"
               [chartArea]="chartArea"
-              [enableAnimation]="false"
+              [enableAnimation]="true"
             >
               <e-series-collection>
                 <e-series type="Column" [dataSource]="quotaPoints()" xName="nickname" yName="used" name="ใช้แล้ว" fill="#7eb6ff" columnWidth="0.5"></e-series>

@@ -8,11 +8,11 @@ import { filter, map, startWith } from 'rxjs';
 import { WorkHubFilter } from './work-hub-filter';
 
 const TABS = [
-  { text: 'Summary', path: 'summary' },
-  { text: 'Timeline', path: 'timeline' },
-  { text: 'Backlog', path: 'backlog' },
-  { text: 'Board', path: 'board' },
-  { text: 'List', path: 'list' },
+  { text: 'Summary', path: 'summary', icon: 'e-icons e-chart' },
+  { text: 'Timeline', path: 'timeline', icon: 'e-icons e-timeline-work-week' },
+  { text: 'Backlog', path: 'backlog', icon: 'e-icons e-list-unordered' },
+  { text: 'Board', path: 'board', icon: 'e-icons e-kanban' },
+  { text: 'List', path: 'list', icon: 'e-icons e-table' },
 ] as const;
 
 @Component({
