@@ -462,7 +462,18 @@ button,
 
 .e-dashboardlayout .e-panel-content {
   padding: 8px 18px 14px;
+  overflow: hidden;
+}
+
+.e-dashboardlayout .e-panel-content.panel-scroll {
   overflow: auto;
+}
+
+.e-accumulationchart,
+.e-chart {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* ==========================================================================

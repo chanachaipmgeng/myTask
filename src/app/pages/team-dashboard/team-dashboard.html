@@ -110,6 +110,7 @@
     [allowFloating]="false"
     [showGridLines]="false"
     mediaQuery="max-width: 800px"
+    (created)="onDashboardCreated()"
   >
     <div id="kpi-tasks" class="e-panel" data-row="0" data-col="0" data-sizex="1" data-sizey="1">
       <div class="e-panel-container">
@@ -152,6 +153,7 @@
         <div class="e-panel-header">สัดส่วนงานทีม {{ context.yearLabel }}</div>
         <div class="e-panel-content">
           <ejs-accumulationchart
+            id="team-workload-donut"
             style="display: block; height: 220px; width: 100%"
             theme="Tailwind3Dark"
             [legendSettings]="legend"
@@ -181,6 +183,7 @@
         <div class="e-panel-content">
           <p class="kpi-note">{{ sampleSummary() }} จากใบตัวอย่าง ไม่ใช่ 1,319 งาน</p>
           <ejs-accumulationchart
+            id="team-sample-donut"
             style="display: block; height: 220px; width: 100%"
             theme="Tailwind3Dark"
             [legendSettings]="legend"

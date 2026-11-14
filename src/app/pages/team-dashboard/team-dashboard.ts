@@ -1,10 +1,23 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  QueryList,
+  ViewChildren,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import {
+  AccumulationChartComponent,
   AccumulationChartModule,
   AccumulationDataLabelService,
   AccumulationLegendService,
   AccumulationTooltipService,
   CategoryService,
+  ChartComponent,
   ChartModule,
   ColumnSeriesService,
   LegendService,
@@ -62,10 +75,15 @@ const LIVE_MODE = 'live';
   ],
   templateUrl: './team-dashboard.html',
 })
-export class TeamDashboard {
+export class TeamDashboard implements AfterViewInit {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient, { optional: true });
   private readonly notice = inject(ShellNotice);
+  private readonly el = inject(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
+
+  @ViewChildren(AccumulationChartComponent) private readonly accCharts!: QueryList<AccumulationChartComponent>;
+  @ViewChildren(ChartComponent) private readonly charts!: QueryList<ChartComponent>;
 
   protected readonly canCapture = canCaptureKpi;
   protected readonly context = TEAM_CONTEXT_2568;
@@ -190,6 +208,43 @@ export class TeamDashboard {
 
   constructor() {
     void this.reloadPeriods();
+  }
+
+  ngAfterViewInit(): void {
+    this.scheduleChartRefresh();
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => {
+        this.scheduleChartRefresh();
+      });
+      observer.observe(this.el.nativeElement);
+      this.destroyRef.onDestroy(() => observer.disconnect());
+    }
+  }
+
+  protected onDashboardCreated(): void {
+    this.scheduleChartRefresh();
+  }
+
+  private scheduleChartRefresh(): void {
+    setTimeout(() => {
+      this.refreshCharts();
+    }, 50);
+    setTimeout(() => {
+      this.refreshCharts();
+    }, 200);
+  }
+
+  private refreshCharts(): void {
+    this.accCharts?.forEach((chart) => {
+      try {
+        chart.refresh();
+      } catch {}
+    });
+    this.charts?.forEach((chart) => {
+      try {
+        chart.refresh();
+      } catch {}
+    });
   }
 
   protected setTrack(event: { value?: string | null }): void {

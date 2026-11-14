@@ -1,10 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  QueryList,
+  ViewChildren,
+  computed,
+  inject,
+} from '@angular/core';
+import {
+  AccumulationChartComponent,
   AccumulationChartModule,
   AccumulationDataLabelService,
   AccumulationLegendService,
   AccumulationTooltipService,
   CategoryService,
+  ChartComponent,
   ChartModule,
   ColumnSeriesService,
   LegendService,
@@ -32,9 +44,14 @@ import { WorkHubFilter } from './work-hub-filter';
   ],
   templateUrl: './work-summary.html',
 })
-export class WorkSummary {
+export class WorkSummary implements AfterViewInit {
   private readonly scorecard = inject(ScorecardService);
   private readonly hub = inject(WorkHubFilter);
+  private readonly el = inject(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
+
+  @ViewChildren(AccumulationChartComponent) private readonly accCharts!: QueryList<AccumulationChartComponent>;
+  @ViewChildren(ChartComponent) private readonly charts!: QueryList<ChartComponent>;
 
   protected readonly cellSpacing = [12, 12];
   protected readonly legend = { visible: true, position: 'Bottom' as const };
@@ -56,4 +73,41 @@ export class WorkSummary {
       query: this.hub.query(),
     }),
   );
+
+  ngAfterViewInit(): void {
+    this.scheduleChartRefresh();
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => {
+        this.scheduleChartRefresh();
+      });
+      observer.observe(this.el.nativeElement);
+      this.destroyRef.onDestroy(() => observer.disconnect());
+    }
+  }
+
+  protected onDashboardCreated(): void {
+    this.scheduleChartRefresh();
+  }
+
+  private scheduleChartRefresh(): void {
+    setTimeout(() => {
+      this.refreshCharts();
+    }, 50);
+    setTimeout(() => {
+      this.refreshCharts();
+    }, 200);
+  }
+
+  private refreshCharts(): void {
+    this.accCharts?.forEach((chart) => {
+      try {
+        chart.refresh();
+      } catch {}
+    });
+    this.charts?.forEach((chart) => {
+      try {
+        chart.refresh();
+      } catch {}
+    });
+  }
 }
