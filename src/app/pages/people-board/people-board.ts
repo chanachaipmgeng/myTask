@@ -26,6 +26,7 @@ import {
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { buildPeopleRoster } from '../../core/people-roster';
 import { ScorecardService } from '../../core/scorecard.service';
+import { ThemeService } from '../../core/theme.service';
 import { Track } from '../../core/models';
 import { INDEX_TARGET } from '../../core/scoring';
 
@@ -56,6 +57,7 @@ type TrackFilter = Track | 'All';
 export class PeopleBoard {
   private readonly scorecard = inject(ScorecardService);
   private readonly router = inject(Router);
+  protected readonly theme = inject(ThemeService);
 
   @ViewChild('peopleGrid') private peopleGrid?: GridComponent;
 
@@ -81,7 +83,7 @@ export class PeopleBoard {
   });
   protected readonly track = signal<TrackFilter>('All');
   protected readonly query = signal('');
-  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px', color: '#d7e7f5' };
+  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly primaryXAxis = {
     valueType: 'Category',
     majorGridLines: { width: 0 },

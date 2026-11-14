@@ -35,6 +35,37 @@
   font-family: Sarabun, "Leelawadee UI", Tahoma, sans-serif;
 }
 
+:root.e-light-mode,
+body.e-light-mode {
+  --ink: #0f172a;
+  --muted: #64748b;
+  --paper: #f8fafc;
+  --surface: #ffffff;
+  --card: rgba(255, 255, 255, 0.92);
+  --card-hover: rgba(255, 255, 255, 1);
+  --line: rgba(203, 213, 225, 0.85);
+  --line-bright: rgba(14, 165, 233, 0.55);
+  --teal: #0284c7;
+  --cyan: #0284c7;
+  --good: #16a34a;
+  --bad: #e11d48;
+  --copper: #d97706;
+  --navy: #f8fafc;
+
+  /* Syncfusion Tailwind 3 Standard Theme Variables for Light Mode */
+  --tw-primary: #0284c7;
+  --color-sf-primary: #0284c7;
+  --color-sf-primary-hover: #0369a1;
+  --color-sf-primary-active: #075985;
+  --color-sf-surface: #ffffff;
+  --color-sf-neutral-background1: #f8fafc;
+  --color-sf-stroke-accessible: rgba(203, 213, 225, 0.85);
+  --color-sf-neutral-foreground1: #0f172a;
+
+  color: var(--ink);
+  background: var(--paper);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -53,6 +84,16 @@ body {
     var(--paper);
   background-attachment: fixed;
   overflow-x: hidden;
+}
+
+body.e-light-mode {
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(14, 165, 233, 0.08), transparent 34rem),
+    radial-gradient(circle at 88% 14%, rgba(99, 102, 241, 0.06), transparent 32rem),
+    radial-gradient(circle at 50% 92%, rgba(20, 184, 166, 0.05), transparent 38rem),
+    var(--paper);
+  background-attachment: fixed;
 }
 
 /* ==========================================================================
@@ -833,5 +874,130 @@ ejs-chart,
   .work-hub-tabs .e-btn {
     justify-content: center;
     width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Light Mode Theme Overrides
+   ========================================================================== */
+body.e-light-mode {
+  h2 {
+    background: linear-gradient(135deg, #0f172a 0%, #0369a1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  h3 {
+    color: #1e293b;
+  }
+
+  .page-head {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.9));
+    box-shadow: 0 10px 24px -10px rgba(100, 116, 139, 0.18);
+
+    &:hover {
+      border-color: rgba(14, 165, 233, 0.4);
+      box-shadow: 0 14px 30px -10px rgba(14, 165, 233, 0.18);
+    }
+  }
+
+  .kpi-value {
+    background: linear-gradient(135deg, #0f172a 15%, #0284c7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .avatar-badge {
+    color: #0369a1;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15));
+    border: 1px solid rgba(14, 165, 233, 0.35);
+  }
+
+  .filter span,
+  .field > span {
+    color: #475569;
+  }
+
+  .page-toolbar,
+  .work-hub-tabs {
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 4px 16px -4px rgba(100, 116, 139, 0.12);
+  }
+
+  .e-card,
+  .ticket-form,
+  .chart-frame,
+  .section-card,
+  .e-dashboardlayout .e-panel {
+    box-shadow:
+      0 6px 20px -6px rgba(100, 116, 139, 0.15),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .e-card:hover,
+  .e-dashboardlayout .e-panel:hover,
+  .chart-frame:hover {
+    box-shadow:
+      0 10px 24px -6px rgba(14, 165, 233, 0.2),
+      inset 0 1px 0 0 rgba(255, 255, 255, 1) !important;
+  }
+
+  .e-dashboardlayout .e-panel-header {
+    color: #1e293b !important;
+  }
+
+  .e-grid {
+    box-shadow: 0 8px 24px -8px rgba(100, 116, 139, 0.18);
+
+    .e-toolbar {
+      background: rgba(248, 250, 252, 0.95) !important;
+    }
+
+    .e-gridheader {
+      background: rgba(241, 245, 249, 0.95) !important;
+    }
+
+    /* Light Theme Frozen Columns (Opaque background so scrolled movable columns do not bleed through) */
+    .e-leftfreeze,
+    .e-rightfreeze,
+    .e-fixedfreeze,
+    .e-frozenheader,
+    .e-frozencontent,
+    .e-frozencontent .e-rowcell,
+    .e-gridheader .e-frozenheader .e-headercell {
+      background-color: #ffffff !important;
+      opacity: 1 !important;
+    }
+
+    .e-row:hover .e-leftfreeze,
+    .e-row:hover .e-rightfreeze,
+    .e-row:hover .e-fixedfreeze,
+    .e-row:hover .e-frozencontent .e-rowcell {
+      background-color: #f1f5f9 !important;
+    }
+
+    .e-summaryrow .e-summarycell.e-leftfreeze,
+    .e-summaryrow .e-summarycell.e-rightfreeze,
+    .e-summaryrow .e-summarycell.e-fixedfreeze {
+      background-color: #f8fafc !important;
+    }
+  }
+
+  .e-kanban.pipeline-board {
+    background: rgba(241, 245, 249, 0.7);
+  }
+
+  .e-dlg-overlay {
+    background: rgba(15, 23, 42, 0.35) !important;
+  }
+
+  .e-dialog {
+    border: 1px solid rgba(203, 213, 225, 0.8) !important;
+    box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.22) !important;
+    background: #ffffff !important;
+  }
+
+  .section-card-head {
+    border-bottom: 1px solid rgba(203, 213, 225, 0.6);
   }
 }

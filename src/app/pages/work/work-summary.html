@@ -28,7 +28,7 @@
         <div class="e-panel-content">
           <ejs-accumulationchart
             style="display: block; height: 240px; width: 100%"
-            theme="Tailwind3Dark"
+            [theme]="theme.sfTheme()"
             [legendSettings]="legend"
             [tooltip]="tooltip"
             [enableAnimation]="true"
@@ -55,7 +55,7 @@
         <div class="e-panel-content">
           <ejs-accumulationchart
             style="display: block; height: 240px; width: 100%"
-            theme="Tailwind3Dark"
+            [theme]="theme.sfTheme()"
             [legendSettings]="legend"
             [tooltip]="tooltip"
             [enableAnimation]="true"
@@ -82,7 +82,7 @@
         <div class="e-panel-content">
           <ejs-chart
             style="display: block; height: 260px; width: 100%"
-            theme="Tailwind3Dark"
+            [theme]="theme.sfTheme()"
             [primaryXAxis]="categoryAxis"
             [primaryYAxis]="valueAxis"
             [tooltip]="tooltip"

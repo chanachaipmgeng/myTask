@@ -10,6 +10,7 @@ import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { canAssignWork } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
+import { ThemeService } from '../../core/theme.service';
 import { workGanttTasks } from '../../core/work-views';
 import { WorkHubFilter } from './work-hub-filter';
 
@@ -24,6 +25,7 @@ export class WorkTimeline {
   private readonly scorecard = inject(ScorecardService);
   private readonly hub = inject(WorkHubFilter);
   private readonly notice = inject(ShellNotice);
+  protected readonly theme = inject(ThemeService);
 
   protected readonly canEdit = canAssignWork;
   protected readonly statusMessage = signal('');

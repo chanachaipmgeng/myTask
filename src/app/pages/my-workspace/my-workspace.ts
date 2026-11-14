@@ -16,6 +16,7 @@ import { buildAnalyticsReport } from '../../core/analytics';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
+import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-my-workspace',
@@ -42,10 +43,11 @@ import { currentSession } from '../../core/session';
 })
 export class MyWorkspacePage {
   private readonly scorecard = inject(ScorecardService);
+  protected readonly theme = inject(ThemeService);
 
   protected readonly role = effectiveRole;
   protected readonly pageSettings = { pageSize: 6 };
-  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px', color: '#d7e7f5' };
+  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
     valueType: 'Category',
     majorGridLines: { width: 0 },

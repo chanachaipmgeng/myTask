@@ -8,6 +8,7 @@ import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { MockSession, mockPersonIndexes } from '../../core/mock-session';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
+import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-mockup',
@@ -21,6 +22,7 @@ export class MockupPage {
   private readonly session = inject(MockSession);
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
+  protected readonly theme = inject(ThemeService);
 
   protected readonly pageSettings = { pageSize: 8 };
   protected readonly active = this.session.active;

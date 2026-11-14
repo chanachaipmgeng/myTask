@@ -9,6 +9,7 @@ import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { DragEventArgs } from '@syncfusion/ej2-kanban';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
+import { ThemeService } from '../../core/theme.service';
 import {
   BUG_CAUSES,
   BugCause,
@@ -54,6 +55,7 @@ type TrackFilter = Track | 'All';
 export class PipelinePage {
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
+  protected readonly theme = inject(ThemeService);
   private readonly boardRevision = signal(0);
 
   @ViewChild('blockDialog') private blockDialog?: DialogComponent;

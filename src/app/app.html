@@ -106,6 +106,18 @@
             {{ alerts().length }}
           </span>
         </button>
+
+        <button
+          ejs-button
+          id="appbar-theme-toggle"
+          cssClass="e-flat e-small appbar-chip-btn"
+          [iconCss]="theme.isDark() ? 'e-icons e-day' : 'e-icons e-contrast'"
+          type="button"
+          [title]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
+          (click)="theme.toggleTheme()"
+        >
+          {{ theme.isDark() ? 'โหมดสว่าง' : 'โหมดมืด' }}
+        </button>
       </div>
     </ejs-appbar>
 

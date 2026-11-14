@@ -22,6 +22,7 @@ import { map } from 'rxjs';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
+import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-person-dashboard',
@@ -48,12 +49,13 @@ export class PersonDashboard {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly scorecard = inject(ScorecardService);
+  protected readonly theme = inject(ThemeService);
   private readonly personId = toSignal(this.route.paramMap.pipe(map((params) => params.get('personId') ?? '')), {
     initialValue: this.route.snapshot.paramMap.get('personId') ?? '',
   });
 
   protected readonly pageSettings = { pageSize: 8 };
-  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px', color: '#d7e7f5' };
+  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
     valueType: 'Category',
     majorGridLines: { width: 0 },

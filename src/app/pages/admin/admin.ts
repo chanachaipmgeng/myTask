@@ -30,6 +30,7 @@ import { AccessRole, Level } from '../../core/models';
 import { DEFAULT_TRACK_WEIGHTS } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
+import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-admin',
@@ -51,6 +52,7 @@ import { currentSession } from '../../core/session';
 export class AdminPage {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
+  protected readonly theme = inject(ThemeService);
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly viewers = SAMPLE_VIEWERS;

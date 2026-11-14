@@ -52,6 +52,16 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "tailwind3.css",
+                "input": "node_modules/@syncfusion/ej2-tailwind3-theme/styles",
+                "output": "assets/themes"
+              },
+              {
+                "glob": "tailwind3-dark.css",
+                "input": "node_modules/@syncfusion/ej2-tailwind3-dark-theme/styles",
+                "output": "assets/themes"
               }
             ],
             "styles": [
@@ -61,7 +71,6 @@
               "node_modules/@fontsource/sarabun/thai-400.css",
               "node_modules/@fontsource/sarabun/thai-600.css",
               "node_modules/@fontsource/sarabun/thai-700.css",
-              "node_modules/@syncfusion/ej2-tailwind3-dark-theme/styles/tailwind3-dark.css",
               "src/styles.scss"
             ]
           },

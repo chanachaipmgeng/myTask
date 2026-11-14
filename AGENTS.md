@@ -33,7 +33,12 @@ npm --prefix server run build
 - Syncfusion: ใช้ `[value]="x()"` + `(change)` ไม่ใช้ `[(value)]` กับ class field  
 - AppBar (`app.html`): แสดงชิปสถานะระบบ + ชิปผู้ใช้/สิทธิ์ + ปุ่มแจ้งเตือนพร้อม `e-badge` เปิด `ejs-dialog` (`#alertDialog`)  
 - ตารางหลัก (`/tickets`, `/people`, `/work/list`): ใช้ `FreezeService` (`frozenColumns="2"` บน `/tickets`), `ColumnChooserService`, `ExcelExportService`, `ResizeService`, `AggregateService`  
-- **Syncfusion Frozen Columns (Dark Theme)**: คอลัมน์ที่ถูกตรึง (`.e-leftfreeze`, `.e-fixedfreeze`, `.e-frozenheader`) ต้องมีพื้นหลังทึบ (`#0f172a`) เสมอ ป้องกันข้อความของคอลัมน์ที่เลื่อนทะลุมาซ้อนทับ
+- **Syncfusion Frozen Columns**: คอลัมน์ที่ถูกตรึง (`.e-leftfreeze`, `.e-fixedfreeze`, `.e-frozenheader`) ต้องมีพื้นหลังทึบเสมอ (`#0f172a` ใน Dark Theme, `#ffffff` ใน Light Theme) ป้องกันข้อความของคอลัมน์ที่เลื่อนทะลุมาซ้อนทับ
+- **Light & Dark Theme Architecture**:
+  - `ThemeService` (`src/app/core/theme.service.ts`): สลับธีมแบบ zero-reload โดยสลับ `assets/themes/tailwind3.css` vs `assets/themes/tailwind3-dark.css` บน `<link id="sf-theme-link">` และสลับคลาส `e-dark-mode` vs `e-light-mode` บน `document.body`
+  - จดจำค่าธีมใน `localStorage.getItem('md-theme')` พร้อม inline script ใน `src/index.html` เพื่อป้องกัน FOUC
+  - คอมโพเนนต์กราฟฟิก (`ejs-chart`, `ejs-accumulationchart`, `ejs-progressbar`) ผูกธีมผ่าน `[theme]="theme.sfTheme()"` (`'Tailwind3Dark'` vs `'Tailwind3'`) โดยอัตโนมัติ
+  - ปุ่มสลับธีมบน AppBar (`#appbar-theme-toggle`): แสดงไอคอนและป้ายสถานะ "โหมดสว่าง" / "โหมดมืด" ชัดเจน
 - **SCSS Selector Safety**:
   - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion
   - ห้ามใช้คลาส `.e-chart` โดดๆ เพราะจะไปชนกับไอคอน `e-icons.e-chart` ในเมนู ให้ใช้ `ejs-chart, .e-control.e-chart` แทน
@@ -44,9 +49,6 @@ npm --prefix server run build
   - **Desktop Mini-Sidebar**: รองรับการพับเมนูเหลือ 68px (เฉพาะไอคอน) ผ่านปุ่ม `.nav-toggle` โดย `.app-frame.is-collapsed` ปรับเป็น `grid-template-columns: 68px minmax(0, 1fr)` เพื่อเพิ่มพื้นที่ทำงานให้กับ Gantt และตาราง Grid
   - `<ejs-sidebar>` บน Desktop ต้องใช้ `[type]="narrow() ? 'Over' : 'Push'"` และ `[showBackdrop]="false"`
   - บน Mobile (`@media (max-width: 800px)`): เมนู Sidebar ต้องเป็น `position: fixed !important; height: 100vh !important; z-index: 1200 !important;` อยู่เหนือ Backdrop (`z-index: 1050`) เสมอ และห้ามใช้ `backdrop-filter: blur` บน Backdrop ที่อาจทำให้ Sidebar มัว
-- **Syncfusion Tailwind 3 Theming Standards**:
-  - `src/index.html` ต้องใส่ `<body class="e-dark-mode">` เสมอ
-  - คอมโพเนนต์กราฟฟิก/SVG ทั้งหมด (`ejs-chart`, `ejs-accumulationchart`, `ejs-gantt`, `ejs-schedule`, `ejs-progressbar`) ต้องระบุ `theme="Tailwind3Dark"` เพื่อให้เรนเดอร์สอดคล้องกับ Dark theme ของระบบ
 - **DashboardLayout Chart Timing**: กราฟที่อยู่ใน DashboardLayout ต้องสั่ง `chart.refresh()` หลังเลย์เอาต์เสร็จผ่าน `(created)="onDashboardCreated()"` และ `ngAfterViewInit` พร้อม `ResizeObserver`
 - **Date Type-Safety**: ฟิลด์วันที่ (`closedOn`, `dueDate`, `startDate`) ที่มาจากฐานข้อมูลอาจเป็นได้ทั้ง `string` หรือ `Date` object ให้ normalize ด้วย `raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '')` ก่อนใช้ string methods เสมอ  
 

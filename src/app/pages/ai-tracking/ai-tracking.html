@@ -23,7 +23,7 @@
       <ejs-progressbar
         id="ai-spike-progress"
         type="Linear"
-        theme="Tailwind3Dark"
+        [theme]="theme.sfTheme()"
         width="100%"
         height="14"
         [minimum]="0"
@@ -50,7 +50,7 @@
         <ejs-chart
           id="ai-md-chart"
           style="display: block; height: 320px; width: 100%"
-          theme="Tailwind3Dark"
+          [theme]="theme.sfTheme()"
           [primaryXAxis]="categoryAxis"
           [primaryYAxis]="mdAxis"
           [tooltip]="tooltip"

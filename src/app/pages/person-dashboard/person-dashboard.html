@@ -59,7 +59,7 @@
             @if (view().index !== null) {
               <ejs-progressbar
                 type="Linear"
-                theme="Tailwind3Dark"
+                [theme]="theme.sfTheme()"
                 width="100%"
                 height="14"
                 [minimum]="0"
@@ -116,7 +116,7 @@
           <ejs-chart
             id="self-trend"
             style="display: block; height: 300px; width: 100%"
-            theme="Tailwind3Dark"
+            [theme]="theme.sfTheme()"
             [primaryXAxis]="categoryAxis"
             [primaryYAxis]="indexAxis"
             [tooltip]="tooltip"
@@ -164,7 +164,7 @@
             <ejs-chart
               id="effort-bars"
               style="display: block; height: 300px; width: 100%"
-              theme="Tailwind3Dark"
+              [theme]="theme.sfTheme()"
               [primaryXAxis]="categoryAxis"
               [primaryYAxis]="mdAxis"
               [tooltip]="tooltip"
@@ -212,7 +212,7 @@
             <ejs-accumulationchart
               id="slip-share"
               style="display: block; height: 280px; width: 100%"
-              theme="Tailwind3Dark"
+              [theme]="theme.sfTheme()"
               [legendSettings]="pieLegend"
               [tooltip]="pieTooltip"
               [enableAnimation]="true"
@@ -245,7 +245,7 @@
             <ejs-accumulationchart
               id="category-share"
               style="display: block; height: 280px; width: 100%"
-              theme="Tailwind3Dark"
+              [theme]="theme.sfTheme()"
               [legendSettings]="pieLegend"
               [tooltip]="pieTooltip"
               [enableAnimation]="true"
@@ -278,7 +278,7 @@
             <ejs-chart
               id="quality-bars"
               style="display: block; height: 280px; width: 100%"
-              theme="Tailwind3Dark"
+              [theme]="theme.sfTheme()"
               [primaryXAxis]="categoryAxis"
               [primaryYAxis]="countAxis"
               [tooltip]="tooltip"

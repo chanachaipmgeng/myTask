@@ -160,7 +160,7 @@
           <ejs-accumulationchart
             id="team-workload-donut"
             style="display: block; height: 220px; width: 100%"
-            theme="Tailwind3Dark"
+            [theme]="theme.sfTheme()"
             [legendSettings]="legend"
             [tooltip]="contextTooltip"
             [enableAnimation]="true"
@@ -190,7 +190,7 @@
           <ejs-accumulationchart
             id="team-sample-donut"
             style="display: block; height: 220px; width: 100%"
-            theme="Tailwind3Dark"
+            [theme]="theme.sfTheme()"
             [legendSettings]="legend"
             [tooltip]="sampleTooltip"
             [enableAnimation]="true"
@@ -261,7 +261,7 @@
             <ejs-chart
               id="monthly-line"
               style="display: block; height: 260px; width: 100%"
-              theme="Tailwind3Dark"
+              [theme]="theme.sfTheme()"
               [primaryXAxis]="categoryAxis"
               [primaryYAxis]="percentAxis"
               [tooltip]="chartTooltip"
@@ -289,7 +289,7 @@
             <ejs-chart
               id="quota-bars"
               style="display: block; height: 260px; width: 100%"
-              theme="Tailwind3Dark"
+              [theme]="theme.sfTheme()"
               [primaryXAxis]="categoryAxis"
               [primaryYAxis]="quotaAxis"
               [tooltip]="chartTooltip"

@@ -387,3 +387,90 @@
     margin-right: 12px;
   }
 }
+
+/* ==========================================================================
+   Shell Light Mode Overrides
+   ========================================================================== */
+body.e-light-mode {
+  #app-nav,
+  #app-nav.e-sidebar,
+  .e-sidebar.e-left {
+    background: #ffffff !important;
+    border-right: 1px solid rgba(203, 213, 225, 0.8) !important;
+  }
+
+  .brand {
+    background: linear-gradient(135deg, rgba(241, 245, 249, 0.95), rgba(226, 232, 240, 0.75));
+    border: 1px solid rgba(14, 165, 233, 0.25);
+
+    &:hover {
+      border-color: rgba(14, 165, 233, 0.5);
+    }
+  }
+
+  .brand-title {
+    color: #0f172a;
+  }
+
+  .eyebrow {
+    color: #0284c7;
+  }
+
+  .side-nav-tree {
+    .e-list-item.e-level-1 > .e-text-content .e-list-text {
+      color: #64748b;
+    }
+
+    .e-list-item.e-level-2 > .e-text-content .e-list-text {
+      color: #334155 !important;
+    }
+
+    .e-list-item.e-level-2:hover > .e-text-content .e-list-text {
+      color: #0284c7 !important;
+    }
+
+    .e-list-item.e-level-2.e-active > .e-fullrow {
+      background: linear-gradient(90deg, rgba(14, 165, 233, 0.16), rgba(37, 99, 235, 0.08)) !important;
+      border: 1px solid rgba(14, 165, 233, 0.35) !important;
+      box-shadow: inset 3px 0 0 #0284c7, 0 4px 12px -4px rgba(14, 165, 233, 0.2);
+    }
+
+    .e-list-item.e-level-2.e-active > .e-text-content .e-list-text {
+      color: #0284c7 !important;
+      font-weight: 700;
+    }
+
+    .e-list-item.e-level-2 .e-list-icon {
+      color: #64748b;
+    }
+
+    .e-list-item.e-level-2.e-active .e-list-icon {
+      color: #0284c7 !important;
+    }
+  }
+
+  .shell-appbar {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.8) !important;
+    box-shadow: 0 4px 16px -6px rgba(100, 116, 139, 0.15) !important;
+  }
+
+  .appbar-title {
+    color: #0f172a;
+  }
+
+  .appbar-chip-btn {
+    background: rgba(241, 245, 249, 0.9) !important;
+    border: 1px solid rgba(203, 213, 225, 0.9) !important;
+    color: #334155 !important;
+
+    &:hover {
+      border-color: rgba(14, 165, 233, 0.5) !important;
+      background: #ffffff !important;
+    }
+  }
+
+  .nav-backdrop {
+    background: rgba(15, 23, 42, 0.35);
+  }
+}

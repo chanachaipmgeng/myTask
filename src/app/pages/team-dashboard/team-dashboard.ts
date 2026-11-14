@@ -38,6 +38,7 @@ import { kpiExplanations } from '../../core/kpi-meaning';
 import { KpiPeriodType, previousMonthKey } from '../../core/kpi-snapshot';
 import { Track } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
+import { ThemeService } from '../../core/theme.service';
 import { INDEX_TARGET, formatMd, sampleWorkloadPoints } from '../../core/scoring';
 import { ShellNotice } from '../../core/shell-notice';
 import { todayInBangkok } from '../../core/workflow';
@@ -79,6 +80,7 @@ export class TeamDashboard implements AfterViewInit {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient, { optional: true });
   private readonly notice = inject(ShellNotice);
+  protected readonly theme = inject(ThemeService);
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -131,7 +133,7 @@ export class TeamDashboard implements AfterViewInit {
   protected readonly sampleTooltip = { enable: true, format: '${point.x}: ${point.y} MD' };
   protected readonly palette = ['#7eb6ff', '#3ec6e0', '#f0b429', '#8fd0c6', '#ff8b7a', '#c4b5fd'];
   protected readonly target = INDEX_TARGET;
-  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px', color: '#d7e7f5' };
+  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
     valueType: 'Category',
     majorGridLines: { width: 0 },

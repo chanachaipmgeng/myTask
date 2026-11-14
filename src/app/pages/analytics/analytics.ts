@@ -26,6 +26,7 @@ import { AnalyticsReport, buildAnalyticsReport } from '../../core/analytics';
 import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
+import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-analytics',
@@ -59,10 +60,11 @@ export class AnalyticsPage {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient, { optional: true });
   private readonly notice = inject(ShellNotice);
+  protected readonly theme = inject(ThemeService);
 
   protected readonly pageSettings = { pageSize: 10 };
   protected readonly gridToolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
-  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px', color: '#d7e7f5' };
+  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
     valueType: 'Category',
     majorGridLines: { width: 0 },

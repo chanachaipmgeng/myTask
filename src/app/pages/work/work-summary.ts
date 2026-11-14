@@ -25,6 +25,7 @@ import {
 } from '@syncfusion/ej2-angular-charts';
 import { DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
 import { ScorecardService } from '../../core/scorecard.service';
+import { ThemeService } from '../../core/theme.service';
 import { workSummaryStats } from '../../core/work-views';
 import { WorkHubFilter } from './work-hub-filter';
 
@@ -49,6 +50,7 @@ export class WorkSummary implements AfterViewInit {
   private readonly hub = inject(WorkHubFilter);
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly theme = inject(ThemeService);
 
   @ViewChildren(AccumulationChartComponent) private readonly accCharts!: QueryList<AccumulationChartComponent>;
   @ViewChildren(ChartComponent) private readonly charts!: QueryList<ChartComponent>;

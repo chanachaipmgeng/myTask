@@ -19,6 +19,7 @@ import { AccessRole } from './core/models';
 import { ShellNotice } from './core/shell-notice';
 import { ScorecardService } from './core/scorecard.service';
 import { currentSession } from './core/session';
+import { ThemeService } from './core/theme.service';
 
 type NavLeaf = {
   id: string;
@@ -41,6 +42,7 @@ export class App implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly notice = inject(ShellNotice);
   private readonly scorecard = inject(ScorecardService);
+  protected readonly theme = inject(ThemeService);
 
   @ViewChild('toast') private toast?: ToastComponent;
   @ViewChild('alertDialog') private alertDialog?: DialogComponent;

@@ -12,6 +12,7 @@ import {
   TimelineViewsService,
 } from '@syncfusion/ej2-angular-schedule';
 import { ScorecardService } from '../../core/scorecard.service';
+import { ThemeService } from '../../core/theme.service';
 import { Person, Ticket, Track } from '../../core/models';
 
 type TrackFilter = Track | 'All';
@@ -69,6 +70,7 @@ const COLORS = [
 })
 export class SchedulePage {
   private readonly scorecard = inject(ScorecardService);
+  protected readonly theme = inject(ThemeService);
   private readonly board = viewChild<ScheduleComponent>('board');
   private pinned = false;
 

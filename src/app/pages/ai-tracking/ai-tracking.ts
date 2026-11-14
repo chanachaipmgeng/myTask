@@ -10,6 +10,7 @@ import { AggregateService, GridModule, PageService, ResizeService, SortService }
 import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { acceptedTrackedMd, aiTicketPoints, formatTrackedMd, researchSpikeShare } from '../../core/ai-tracking';
 import { ScorecardService } from '../../core/scorecard.service';
+import { ThemeService } from '../../core/theme.service';
 
 @Component({
   selector: 'app-ai-tracking',
@@ -20,8 +21,9 @@ import { ScorecardService } from '../../core/scorecard.service';
 })
 export class AiTrackingPage {
   private readonly scorecard = inject(ScorecardService);
+  protected readonly theme = inject(ThemeService);
 
-  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px', color: '#d7e7f5' };
+  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
     valueType: 'Category',
     majorGridLines: { width: 0 },
