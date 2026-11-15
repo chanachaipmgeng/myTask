@@ -202,72 +202,74 @@
       </div>
     </div>
 
-    <ejs-grid
-      #handoffGrid
-      [dataSource]="filteredTickets()"
-      [allowSorting]="true"
-      [allowFiltering]="true"
-      [frozenColumns]="2"
-      height="340px"
-    >
-      <e-columns>
-        <e-column field="ticketId" headerText="รหัสใบงาน" width="120" textAlign="Left">
-          <ng-template #template let-data>
-            <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
-          </ng-template>
-        </e-column>
-        <e-column field="status" headerText="สถานะค้าง" width="140" textAlign="Left">
-          <ng-template #template let-data>
-            <span
-              class="px-2 py-0.5 rounded text-xs font-medium"
-              [class.bg-amber-100]="data.status === 'Code Review'"
-              [class.text-amber-800]="data.status === 'Code Review'"
-              [class.bg-blue-100]="data.status === 'Ready for QA' || data.status === 'In QA'"
-              [class.text-blue-800]="data.status === 'Ready for QA' || data.status === 'In QA'"
-              [class.bg-rose-100]="data.blockerFlag"
-              [class.text-rose-800]="data.blockerFlag"
-            >
-              {{ data.status }}
-              @if (data.blockerFlag) {
-                ({{ data.blockerFlag }})
-              }
-            </span>
-          </ng-template>
-        </e-column>
-        <e-column field="title" headerText="ชื่องาน / รายละเอียด" width="220" textAlign="Left"></e-column>
-        <e-column field="owner" headerText="เจ้าของงานหลัก" width="160" textAlign="Left"></e-column>
-        <e-column field="reviewerOrQa" headerText="ผู้ตรวจ/ผู้รับช่วง" width="160" textAlign="Left"></e-column>
-        <e-column field="hoursSpent" headerText="เวลาค้างสะสม" width="130" textAlign="Right">
-          <ng-template #template let-data>
-            <span [class.text-rose-600]="data.isOverSla" [class.font-bold]="data.isOverSla">
-              {{ data.hoursSpent }} ชม.
-              @if (data.isOverSla) {
-                🔥
-              }
-            </span>
-          </ng-template>
-        </e-column>
-        <e-column field="slaHours" headerText="เกณฑ์ SLA" width="110" textAlign="Right">
-          <ng-template #template let-data>
-            <span>&le; {{ data.slaHours }} ชม.</span>
-          </ng-template>
-        </e-column>
-        <e-column headerText="การจัดการ" width="130" textAlign="Center">
-          <ng-template #template let-data>
-            @if (data.canPing && (role() === 'admin' || role() === 'lead')) {
-              <button
-                ejs-button
-                cssClass="e-small e-outline e-primary"
-                (click)="pingTarget(data.ticketId, data.reviewerOrQa)"
+    <div class="overflow-x-auto w-full">
+      <ejs-grid
+        #handoffGrid
+        [dataSource]="filteredTickets()"
+        [allowSorting]="true"
+        [allowFiltering]="true"
+        [frozenColumns]="2"
+        width="100%"
+      >
+        <e-columns>
+          <e-column field="ticketId" headerText="รหัสใบงาน" width="105" textAlign="Left">
+            <ng-template #template let-data>
+              <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
+            </ng-template>
+          </e-column>
+          <e-column field="status" headerText="สถานะค้าง" width="125" textAlign="Left">
+            <ng-template #template let-data>
+              <span
+                class="px-2 py-0.5 rounded text-xs font-medium"
+                [class.bg-amber-100]="data.status === 'Code Review'"
+                [class.text-amber-800]="data.status === 'Code Review'"
+                [class.bg-blue-100]="data.status === 'Ready for QA' || data.status === 'In QA'"
+                [class.text-blue-800]="data.status === 'Ready for QA' || data.status === 'In QA'"
+                [class.bg-rose-100]="data.blockerFlag"
+                [class.text-rose-800]="data.blockerFlag"
               >
-                Ping MR
-              </button>
-            } @else {
-              <span class="text-xs text-muted">—</span>
-            }
-          </ng-template>
-        </e-column>
-      </e-columns>
-    </ejs-grid>
+                {{ data.status }}
+                @if (data.blockerFlag) {
+                  ({{ data.blockerFlag }})
+                }
+              </span>
+            </ng-template>
+          </e-column>
+          <e-column field="title" headerText="ชื่องาน / รายละเอียด" width="190" textAlign="Left"></e-column>
+          <e-column field="owner" headerText="เจ้าของงานหลัก" width="140" textAlign="Left"></e-column>
+          <e-column field="reviewerOrQa" headerText="ผู้ตรวจ/ผู้รับช่วง" width="140" textAlign="Left"></e-column>
+          <e-column field="hoursSpent" headerText="เวลาค้างสะสม" width="110" textAlign="Right">
+            <ng-template #template let-data>
+              <span [class.text-rose-600]="data.isOverSla" [class.font-bold]="data.isOverSla">
+                {{ data.hoursSpent }} ชม.
+                @if (data.isOverSla) {
+                  🔥
+                }
+              </span>
+            </ng-template>
+          </e-column>
+          <e-column field="slaHours" headerText="เกณฑ์ SLA" width="95" textAlign="Right">
+            <ng-template #template let-data>
+              <span>&le; {{ data.slaHours }} ชม.</span>
+            </ng-template>
+          </e-column>
+          <e-column headerText="การจัดการ" width="110" textAlign="Center">
+            <ng-template #template let-data>
+              @if (data.canPing && (role() === 'admin' || role() === 'lead')) {
+                <button
+                  ejs-button
+                  cssClass="e-small e-outline e-primary"
+                  (click)="pingTarget(data.ticketId, data.reviewerOrQa)"
+                >
+                  Ping MR
+                </button>
+              } @else {
+                <span class="text-xs text-muted">—</span>
+              }
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
+    </div>
   </div>
 </section>

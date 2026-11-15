@@ -97,12 +97,12 @@
         <e-column field="trackLabel" headerText="สายงาน" width="150"></e-column>
         <e-column field="previousIndex" headerText="ดัชนีงวดก่อน" width="130" textAlign="Right">
           <ng-template #template let-data>
-            <span class="font-mono text-muted">{{ data.previousIndex }}</span>
+            <span class="font-mono text-muted">{{ (+data.previousIndex).toFixed(1) }}</span>
           </ng-template>
         </e-column>
         <e-column field="currentIndex" headerText="ดัชนีงวดนี้ (สด)" width="150" textAlign="Right">
           <ng-template #template let-data>
-            <span class="font-mono font-bold text-slate-800 dark:text-slate-100">{{ data.currentIndex }}</span>
+            <span class="font-mono font-bold text-slate-800 dark:text-slate-100">{{ (+data.currentIndex).toFixed(1) }}</span>
           </ng-template>
         </e-column>
         <e-column field="diff" headerText="ส่วนต่าง (Diff)" width="130" textAlign="Right">
@@ -112,7 +112,7 @@
               [class.text-emerald-600]="data.diff >= 0"
               [class.text-rose-600]="data.diff < 0"
             >
-              {{ data.diff >= 0 ? '+' + data.diff : data.diff }}
+              {{ data.diff >= 0 ? '+' + (+data.diff).toFixed(1) : (+data.diff).toFixed(1) }}
             </span>
           </ng-template>
         </e-column>

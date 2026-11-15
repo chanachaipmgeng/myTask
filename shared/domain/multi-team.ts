@@ -508,7 +508,7 @@ export function runPreflightChecklist(
 
   const previewDiffs: SnapshotPreviewDiffRow[] = people.map((p) => {
     const liveScore = scorePerson(p, tickets);
-    const curr = liveScore.developmentIndex;
+    const curr = roundMd(liveScore.developmentIndex);
     // Synthetic previous month index for demonstration
     const prev = roundMd(Math.max(60, curr - (p.id.length % 5) + 2));
     const diff = roundMd(curr - prev);

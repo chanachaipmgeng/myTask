@@ -51,35 +51,38 @@
         <span class="text-xs text-muted">คลิกแถวเพื่อดูรายละเอียดและผลจำลองคะแนน</span>
       </div>
 
-      <ejs-grid
-        [dataSource]="filteredDisputes()"
-        [allowSorting]="true"
-        (recordClick)="onRecordClick($event)"
-      >
-        <e-columns>
-          <e-column field="disputeCode" headerText="รหัสคำขอ" width="130">
-            <ng-template #template let-data>
-              <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.disputeCode }}</span>
-            </ng-template>
-          </e-column>
-          <e-column field="ticketId" headerText="ใบงาน" width="110"></e-column>
-          <e-column field="requesterId" headerText="ผู้ยื่นคำขอ" width="120"></e-column>
-          <e-column field="requestedFlag" headerText="ประเภทคำขอ" width="120">
-            <ng-template #template let-data>
-              <span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
-                ขอป้าย {{ data.requestedFlag }}
-              </span>
-            </ng-template>
-          </e-column>
-          <e-column headerText="คะแนนเดิม &gt; ใหม่" width="140" textAlign="Right">
-            <ng-template #template let-data>
-              <span class="text-xs font-mono">
-                {{ data.scoreBefore }} &rarr; <strong class="text-emerald-600">{{ data.scoreProjected }}</strong>
-              </span>
-            </ng-template>
-          </e-column>
-        </e-columns>
-      </ejs-grid>
+      <div class="overflow-x-auto w-full">
+        <ejs-grid
+          [dataSource]="filteredDisputes()"
+          [allowSorting]="true"
+          width="100%"
+          (recordClick)="onRecordClick($event)"
+        >
+          <e-columns>
+            <e-column field="disputeCode" headerText="รหัสคำขอ" width="105">
+              <ng-template #template let-data>
+                <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.disputeCode }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="ticketId" headerText="ใบงาน" width="90"></e-column>
+            <e-column field="requesterId" headerText="ผู้ยื่น" width="95"></e-column>
+            <e-column field="requestedFlag" headerText="ประเภท" width="105">
+              <ng-template #template let-data>
+                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
+                  ขอป้าย {{ data.requestedFlag }}
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="คะแนนเดิม &gt; ใหม่" width="120" textAlign="Right">
+              <ng-template #template let-data>
+                <span class="text-xs font-mono">
+                  {{ data.scoreBefore }} &rarr; <strong class="text-emerald-600">{{ data.scoreProjected }}</strong>
+                </span>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
+      </div>
     </div>
 
     <!-- Right Panel 5 cols -->

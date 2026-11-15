@@ -129,7 +129,7 @@ export class TeamDashboard implements AfterViewInit {
     visible: true,
     name: 'text',
     position: 'Outside',
-    font: { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '11px', color: '#e8f4fb' },
+    font: { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '11px' },
   };
   protected readonly contextTooltip = { enable: true, format: '${point.x}: ${point.y}%' };
   protected readonly sampleTooltip = { enable: true, format: '${point.x}: ${point.y} MD' };

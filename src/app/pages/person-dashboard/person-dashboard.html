@@ -393,16 +393,16 @@
       @if (view().openWork.length === 0) {
         <ejs-message content="ไม่มีใบเปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
       } @else {
-        <ejs-grid [dataSource]="view().openWork" [allowPaging]="true" [allowSorting]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="260">
+        <ejs-grid [dataSource]="view().openWork" [allowPaging]="true" [allowSorting]="true" [allowResizing]="true" [pageSettings]="pageSettings">
           <e-columns>
-            <e-column field="id" headerText="ใบ" width="120"></e-column>
-            <e-column field="title" headerText="เรื่อง" width="200"></e-column>
-            <e-column field="type" headerText="ประเภท" width="110"></e-column>
-            <e-column field="size" headerText="ขนาด" width="80"></e-column>
-            <e-column field="status" headerText="สถานะ" width="120"></e-column>
-            <e-column field="estimateMd" headerText="Est" width="80" textAlign="Right" format="N2"></e-column>
-            <e-column field="dueOnLabel" headerText="วันส่ง" width="110"></e-column>
-            <e-column field="unplannedLabel" headerText="แผน" width="90"></e-column>
+            <e-column field="id" headerText="ใบ" width="110"></e-column>
+            <e-column field="title" headerText="เรื่อง" width="180"></e-column>
+            <e-column field="type" headerText="ประเภท" width="100"></e-column>
+            <e-column field="size" headerText="ขนาด" width="75"></e-column>
+            <e-column field="status" headerText="สถานะ" width="110"></e-column>
+            <e-column field="estimateMd" headerText="Est" width="75" textAlign="Right" format="N2"></e-column>
+            <e-column field="dueOnLabel" headerText="วันส่ง" width="105"></e-column>
+            <e-column field="unplannedLabel" headerText="แผน" width="85"></e-column>
           </e-columns>
           <e-aggregates>
             <e-aggregate>
@@ -430,18 +430,18 @@
       @if (view().closedWork.length === 0) {
         <ejs-message content="ยังไม่มีใบปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
       } @else {
-        <ejs-grid [dataSource]="view().closedWork" [allowPaging]="true" [allowSorting]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="320">
+        <ejs-grid [dataSource]="view().closedWork" [allowPaging]="true" [allowSorting]="true" [allowResizing]="true" [pageSettings]="pageSettings">
           <e-columns>
-            <e-column field="id" headerText="ใบ" width="120"></e-column>
-            <e-column field="title" headerText="เรื่อง" width="180"></e-column>
-            <e-column field="type" headerText="ประเภท" width="110"></e-column>
-            <e-column field="size" headerText="ขนาด" width="80"></e-column>
-            <e-column field="estimateMd" headerText="Est" width="80" textAlign="Right" format="N2"></e-column>
-            <e-column field="actualMd" headerText="Actual" width="90" textAlign="Right" format="N2"></e-column>
-            <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="110"></e-column>
-            <e-column field="reviewRounds" headerText="รีวิว" width="80" textAlign="Right"></e-column>
-            <e-column field="reopenCount" headerText="Reopen" width="90" textAlign="Right"></e-column>
-            <e-column field="score" headerText="คะแนน" width="90" textAlign="Right"></e-column>
+            <e-column field="id" headerText="ใบ" width="110"></e-column>
+            <e-column field="title" headerText="เรื่อง" width="170"></e-column>
+            <e-column field="type" headerText="ประเภท" width="100"></e-column>
+            <e-column field="size" headerText="ขนาด" width="75"></e-column>
+            <e-column field="estimateMd" headerText="Est" width="75" textAlign="Right" format="N2"></e-column>
+            <e-column field="actualMd" headerText="Actual" width="80" textAlign="Right" format="N2"></e-column>
+            <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="100"></e-column>
+            <e-column field="reviewRounds" headerText="รีวิว" width="75" textAlign="Right"></e-column>
+            <e-column field="reopenCount" headerText="Reopen" width="75" textAlign="Right"></e-column>
+            <e-column field="score" headerText="คะแนน" width="75" textAlign="Right"></e-column>
           </e-columns>
           <e-aggregates>
             <e-aggregate>
@@ -484,7 +484,8 @@
         <span class="text-xs text-slate-500 font-medium">คำถามด่วนแนะนำ:</span>
         <button
           ejs-button
-          cssClass="e-small e-outline e-round"
+          cssClass="e-small e-outline"
+          class="rounded-lg"
           type="button"
           [disabled]="aiLoading()"
           (click)="askAi('สรุปประเด็นสำคัญสำหรับคุย 1-on-1 สิ้นเดือนนี้')"
@@ -493,7 +494,8 @@
         </button>
         <button
           ejs-button
-          cssClass="e-small e-outline e-round"
+          cssClass="e-small e-outline"
+          class="rounded-lg"
           type="button"
           [disabled]="aiLoading()"
           (click)="askAi('วิเคราะห์สาเหตุที่ทำให้โดน Reopen และจุดบกพร่องที่ต้องปรับปรุง')"
@@ -502,7 +504,8 @@
         </button>
         <button
           ejs-button
-          cssClass="e-small e-outline e-round"
+          cssClass="e-small e-outline"
+          class="rounded-lg"
           type="button"
           [disabled]="aiLoading()"
           (click)="askAi('แนะนำแนวทางการพัฒนาคะแนนและการตรวจโค้ด (Peer Review)')"
@@ -511,7 +514,8 @@
         </button>
         <button
           ejs-button
-          cssClass="e-small e-outline e-round"
+          cssClass="e-small e-outline"
+          class="rounded-lg"
           type="button"
           [disabled]="aiLoading()"
           (click)="askAi('ไฮไลต์ผลงานเด่นและจุดแข็งที่ควรชื่นชม')"

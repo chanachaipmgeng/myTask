@@ -658,13 +658,14 @@ ejs-chart,
 }
 
 .e-kanban.pipeline-board .e-kanban-table {
-  width: 1540px !important;
-  min-width: 1540px !important;
+  width: 100% !important;
+  min-width: 1300px !important;
 }
 
 .e-kanban.pipeline-board .e-header-cells,
 .e-kanban.pipeline-board .e-content-cells {
-  width: 220px;
+  width: 185px;
+  min-width: 185px;
 }
 
 .e-kanban.pipeline-board .e-card {
@@ -1030,5 +1031,110 @@ body.e-light-mode {
 
   .section-card-head {
     border-bottom: 1px solid #e5ecf5;
+  }
+
+  /* Shell Light Mode Overrides (Global scope) */
+  #app-nav,
+  #app-nav.e-sidebar,
+  .e-sidebar.e-left {
+    background: linear-gradient(180deg, #2243ac 0%, #4c68e5 100%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .brand {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.5) !important;
+      background: rgba(255, 255, 255, 0.2) !important;
+    }
+  }
+
+  .brand-mark {
+    background: #ffffff !important;
+    color: #2243ac !important;
+    box-shadow: 0 8px 20px -4px rgba(11, 21, 56, 0.4) !important;
+  }
+
+  .brand-title {
+    color: #ffffff !important;
+  }
+
+  .eyebrow {
+    color: #dce4fb !important;
+  }
+
+  .brand-sub {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  .side-nav-tree {
+    .e-list-item.e-level-1 > .e-text-content .e-list-text {
+      color: rgba(255, 255, 255, 0.72) !important;
+    }
+
+    .e-list-item.e-level-2 > .e-text-content .e-list-text {
+      color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .e-list-item.e-level-2:hover > .e-fullrow {
+      background: rgba(255, 255, 255, 0.16) !important;
+    }
+
+    .e-list-item.e-level-2:hover > .e-text-content .e-list-text {
+      color: #ffffff !important;
+    }
+
+    .e-list-item.e-level-2.e-active > .e-fullrow {
+      background: rgba(255, 255, 255, 0.25) !important;
+      border: 1px solid rgba(255, 255, 255, 0.45) !important;
+      box-shadow: inset 3px 0 0 #ffffff, 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .e-list-item.e-level-2.e-active > .e-text-content .e-list-text {
+      color: #ffffff !important;
+      font-weight: 700;
+    }
+
+    .e-list-item.e-level-2 .e-list-icon {
+      color: #dce4fb !important;
+    }
+
+    .e-list-item.e-level-2.e-active .e-list-icon {
+      color: #ffffff !important;
+    }
+  }
+
+  .shell-appbar {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-bottom: 1px solid #e5ecf5 !important;
+    box-shadow: 0 2px 12px -4px rgba(46, 79, 200, 0.08) !important;
+  }
+
+  .appbar-title {
+    color: #142b50 !important;
+  }
+
+  .appbar-note {
+    color: #475569 !important;
+  }
+
+  .appbar-chip-btn {
+    background: #f0f4fd !important;
+    border: 1px solid rgba(46, 79, 200, 0.2) !important;
+    color: #1e3690 !important;
+
+    &:hover {
+      border-color: #2e4fc8 !important;
+      background: #ffffff !important;
+      color: #2e4fc8 !important;
+    }
+  }
+
+  .appbar-alert-btn:not(.e-warning) {
+    background: #f0f4fd !important;
+    border: 1px solid rgba(46, 79, 200, 0.2) !important;
+    color: #1e3690 !important;
   }
 }

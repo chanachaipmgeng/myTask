@@ -51,11 +51,11 @@ export class WorkTimeline {
     resourceInfo: 'ResourceInfo',
   };
   protected readonly columns = [
-    { field: 'TaskID', headerText: 'รหัส', width: 120, isPrimaryKey: true, allowEditing: false },
-    { field: 'TaskName', headerText: 'งาน (Epic / Story / Task)', width: 260, allowEditing: false },
-    { field: 'StartDate', headerText: 'เริ่ม', width: 115, editType: 'datepickeredit' },
-    { field: 'EndDate', headerText: 'ครบกำหนด (Due)', width: 125, editType: 'datepickeredit' },
-    { field: 'Duration', headerText: 'วัน', width: 80, allowEditing: false },
+    { field: 'TaskID', headerText: 'รหัส', width: 110, isPrimaryKey: true, allowEditing: false },
+    { field: 'TaskName', headerText: 'งาน (Epic / Story / Task)', width: 250, allowEditing: false },
+    { field: 'StartDate', headerText: 'เริ่ม', width: 110, editType: 'datepickeredit' },
+    { field: 'EndDate', headerText: 'กำหนดส่ง (Due)', width: 135, editType: 'datepickeredit' },
+    { field: 'Duration', headerText: 'วัน', width: 75, allowEditing: false },
   ];
   protected readonly labelSettings = { taskLabel: 'TaskName', rightLabel: 'ResourceInfo' };
   protected readonly timelineSettings = {
@@ -63,7 +63,7 @@ export class WorkTimeline {
     bottomTier: { unit: 'Day' as const, count: 1 },
   };
   protected readonly workWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  protected readonly splitterSettings = { position: '620px' };
+  protected readonly splitterSettings = { position: '680px' };
 
   protected readonly tasks = computed(() =>
     workGanttTasks(this.scorecard.tickets(), this.scorecard.people(), {

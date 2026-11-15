@@ -345,13 +345,16 @@ function matchNavId(url: string): string {
   if (path.startsWith('/people/') && path !== '/people') {
     return 'people';
   }
-  const hit = allNavLeaves.find((item) => {
-    if (item.exact) {
-      return path === item.route;
-    }
-    return path === item.route || path.startsWith(`${item.route}/`);
-  });
-  return hit?.id ?? 'team';
+  // Match exact route first
+  const exactHit = allNavLeaves.find((item) => path === item.route);
+  if (exactHit) {
+    return exactHit.id;
+  }
+  // Otherwise match longest route prefix first to prevent /tickets capturing /tickets/disputes
+  const prefixHits = allNavLeaves
+    .filter((item) => !item.exact && path.startsWith(`${item.route}/`))
+    .sort((a, b) => b.route.length - a.route.length);
+  return prefixHits[0]?.id ?? 'team';
 }
 
 function screenTitle(url: string): string {
