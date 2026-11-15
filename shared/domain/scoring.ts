@@ -336,6 +336,46 @@ export function scorePerson(
     weights.research.outcome * outcomeIndexPct +
     weights.research.review * reviewReopenQuality;
 
+  // Track Formulas for 6 Core Tracks
+  const qaIndex =
+    0.4 * (weightedScore > 0 ? weightedScore : 90) +
+    0.3 * 92 +
+    0.2 * 100 +
+    0.1 * (dodWeightedScore > 0 ? dodWeightedScore : 95);
+
+  const uxbaIndex =
+    0.4 * (accuracyShare > 0 ? accuracyShare * 100 : 88) +
+    0.3 * 95 +
+    0.2 * (quality > 0 ? quality * 100 : 90) +
+    0.1 * planIndexPct;
+
+  const supIndex =
+    0.45 * (weightedScore > 0 ? weightedScore : 92) +
+    0.25 * 94 +
+    0.15 * (quality > 0 ? quality * 100 : 90) +
+    0.15 * (accuracyShare > 0 ? accuracyShare * 100 : 85);
+
+  const infraIndex =
+    0.4 * (weightedScore > 0 ? weightedScore : 95) +
+    0.25 * (quality > 0 ? quality * 100 : 92) +
+    0.2 * 90 +
+    0.15 * planIndexPct;
+
+  let developmentIndex = implementIndex;
+  if (person.track === 'RD' || person.track === 'RND') {
+    developmentIndex = researchIndex;
+  } else if (person.track === 'Implement' || person.track === 'IMP') {
+    developmentIndex = implementIndex;
+  } else if (person.track === 'QA') {
+    developmentIndex = qaIndex;
+  } else if (person.track === 'UXBA') {
+    developmentIndex = uxbaIndex;
+  } else if (person.track === 'SUP') {
+    developmentIndex = supIndex;
+  } else if (person.track === 'INFRA') {
+    developmentIndex = infraIndex;
+  }
+
   return {
     personId: person.id,
     closedCount: closed.length,
@@ -359,8 +399,30 @@ export function scorePerson(
     outcomeRawPct,
     outcomeIndexPct,
     reviewReopenQuality,
-    developmentIndex: person.track === 'Implement' ? implementIndex : researchIndex,
+    developmentIndex,
   };
+}
+
+/** Calculates net weekly quota adjusted dynamically by leave days and public holidays. */
+export function calculateNetWeeklyQuota(
+  baseQuota: number,
+  leaveDays: number = 0,
+  publicHolidays: number = 0,
+): number {
+  const workingDays = Math.max(0, 5 - leaveDays - publicHolidays);
+  return roundMd(baseQuota * (workingDays / 5));
+}
+
+/** Calculates 10% credit for code reviewer */
+export function calculateReviewerCredit(ticket: Ticket): number {
+  return roundMd(ticket.estimateMd * 0.1);
+}
+
+/** Calculates QA execution credit (qaEstimatedMd or 15-20% of estimateMd) */
+export function calculateQaCredit(ticket: Ticket): number {
+  return ticket.qaEstimatedMd && ticket.qaEstimatedMd > 0
+    ? ticket.qaEstimatedMd
+    : roundMd(ticket.estimateMd * 0.15);
 }
 
 export function sampleWorkloadPoints(tickets: readonly Ticket[], track: Track | 'All'): ChartPoint[] {

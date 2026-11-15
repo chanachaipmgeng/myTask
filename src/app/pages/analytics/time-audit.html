@@ -1,0 +1,121 @@
+<section class="page flex flex-col gap-6">
+  <!-- Header Bar -->
+  <div class="page-head flex flex-wrap justify-between items-center gap-4">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+        ศูนย์วิเคราะห์ Python &gt; ตรวจสอบเวลา 3 ทาง (3-Way Time Inspector)
+      </div>
+      <h2 class="text-2xl font-bold tracking-tight">หน้าจอตรวจสอบความคลาดเคลื่อนของเวลา 3 ทาง (3-Way Time Audit)</h2>
+      <p class="text-sm text-muted">
+        เปรียบเทียบเวลาจาก 3 แหล่ง: (1) Estimate MD (2) เวลาที่กรอกใน OpenProject (3) ระยะเวลา Commit จริงบน GitLab
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <button ejs-button cssClass="e-primary" iconCss="e-icons e-play" (click)="rerunAudit()">
+        รันตรวจสอบใหม่ (Python)
+      </button>
+    </div>
+  </div>
+
+  <!-- Chip Filters -->
+  <div class="flex flex-wrap items-center gap-2">
+    <button
+      ejs-button
+      [cssClass]="filterType() === 'ALL' ? 'e-primary' : 'e-outline'"
+      (click)="setFilter('ALL')"
+    >
+      ทั้งหมด ({{ report().totalTickets }})
+    </button>
+    <button
+      ejs-button
+      [cssClass]="filterType() === 'MISSING' ? 'e-danger' : 'e-outline'"
+      (click)="setFilter('MISSING')"
+    >
+      ลืมลงเวลา Actual ({{ report().missingTimeCount }})
+    </button>
+    <button
+      ejs-button
+      [cssClass]="filterType() === 'GHOST' ? 'e-warning' : 'e-outline'"
+      (click)="setFilter('GHOST')"
+    >
+      ไม่มี Git Commit ({{ report().ghostProgressCount }})
+    </button>
+    <button
+      ejs-button
+      [cssClass]="filterType() === 'OVERRUN' ? 'e-danger' : 'e-outline'"
+      (click)="setFilter('OVERRUN')"
+    >
+      เกิน 1.5x / เวลาคลาดเคลื่อน ({{ report().overrunCount }})
+    </button>
+  </div>
+
+  <!-- ตาราง 3-Way Time Matching Grid -->
+  <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col gap-4">
+    <div class="flex justify-between items-center">
+      <div>
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">ตารางเปรียบเทียบเวลา 3 มิติ (3-Way Time Matching)</h3>
+        <p class="text-xs text-muted">ตรวจจับ Ghost In-Progress, Outlier, และการลืมบันทึกเวลาปิดงาน</p>
+      </div>
+      <button ejs-button cssClass="e-outline" iconCss="e-icons e-export-excel" (click)="exportGrid(timeGrid)">
+        ส่งออก Excel
+      </button>
+    </div>
+
+    <ejs-grid
+      #timeGrid
+      [dataSource]="filteredRows()"
+      [allowSorting]="true"
+      [allowFiltering]="true"
+      height="380px"
+    >
+      <e-columns>
+        <e-column field="ticketId" headerText="รหัสใบงาน" width="130" textAlign="Left">
+          <ng-template #template let-data>
+            <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="title" headerText="ชื่องาน" width="220" textAlign="Left"></e-column>
+        <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="150" textAlign="Left"></e-column>
+        <e-column field="estimateMd" headerText="Est (1) MD" width="120" textAlign="Right">
+          <ng-template #template let-data>
+            <span>{{ data.size }} ({{ data.estimateMd }} MD)</span>
+          </ng-template>
+        </e-column>
+        <e-column field="openProjectActualMd" headerText="OP Actual (2)" width="130" textAlign="Right">
+          <ng-template #template let-data>
+            <span [class.text-rose-600]="data.openProjectActualMd === 0" [class.font-bold]="data.openProjectActualMd === 0">
+              {{ data.openProjectActualMd }} MD
+            </span>
+          </ng-template>
+        </e-column>
+        <e-column field="gitlabSpanMd" headerText="GitLab Span (3)" width="140" textAlign="Right">
+          <ng-template #template let-data>
+            <span>{{ data.gitlabSpanMd > 0 ? data.gitlabSpanMd + ' MD' : 'ไม่มี Commit!' }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="ratio" headerText="อัตราส่วน (2)/(1)" width="140" textAlign="Right">
+          <ng-template #template let-data>
+            <span [class.text-rose-600]="data.ratio > 1.5" [class.font-bold]="data.ratio > 1.5">
+              {{ data.ratio }}x
+            </span>
+          </ng-template>
+        </e-column>
+        <e-column field="anomalyLabel" headerText="ความผิดปกติที่ตรวจพบ" width="180">
+          <ng-template #template let-data>
+            <span
+              class="px-2 py-0.5 rounded text-xs font-semibold"
+              [class.bg-slate-100]="!data.isAnomaly"
+              [class.text-slate-600]="!data.isAnomaly"
+              [class.bg-rose-100]="data.anomalyType === 'OUTLIER' || data.anomalyType === 'MISSING_TIME'"
+              [class.text-rose-800]="data.anomalyType === 'OUTLIER' || data.anomalyType === 'MISSING_TIME'"
+              [class.bg-amber-100]="data.anomalyType === 'GHOST_PROGRESS' || data.anomalyType === 'TIME_MISMATCH'"
+              [class.text-amber-800]="data.anomalyType === 'GHOST_PROGRESS' || data.anomalyType === 'TIME_MISMATCH'"
+            >
+              {{ data.anomalyLabel }}
+            </span>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  </div>
+</section>

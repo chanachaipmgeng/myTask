@@ -324,4 +324,57 @@ export class ApiClient {
   runAnalytics(): Promise<AnalyticsReport> {
     return api('/api/analytics/run', { method: 'POST', body: '{}' });
   }
+
+  getHandoffSla(): Promise<any> {
+    return api('/api/v2/work/handoff-sla');
+  }
+
+  pingHandoff(ticketId: string, target?: string, message?: string): Promise<{ ok: boolean; message: string }> {
+    return api(`/api/v2/work/handoff-ping/${encodeURIComponent(ticketId)}`, {
+      method: 'POST',
+      body: JSON.stringify({ target, message }),
+    });
+  }
+
+  getQualityAudit(): Promise<any> {
+    return api('/api/v2/quality/audit');
+  }
+
+  saveAllocations(ticketId: string, allocations: any[]): Promise<any> {
+    return api(`/api/v2/tickets/${encodeURIComponent(ticketId)}/allocations`, {
+      method: 'PATCH',
+      body: JSON.stringify({ allocations }),
+    });
+  }
+
+  getTimeAudit(): Promise<any> {
+    return api('/api/v2/analytics/time-audit');
+  }
+
+  getDisputes(): Promise<any> {
+    return api('/api/v2/disputes');
+  }
+
+  createDispute(body: {
+    ticketId: string;
+    requestedFlag: string;
+    reason: string;
+    evidenceUrl?: string;
+  }): Promise<any> {
+    return api('/api/v2/disputes', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  resolveDispute(id: string, status: 'APPROVED' | 'REJECTED', comment?: string): Promise<any> {
+    return api(`/api/v2/disputes/${encodeURIComponent(id)}/resolve`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, comment }),
+    });
+  }
+
+  getPreflightCheck(): Promise<any> {
+    return api('/api/v2/snapshots/preflight-check');
+  }
 }

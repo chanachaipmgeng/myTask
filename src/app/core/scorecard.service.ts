@@ -1,5 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { SEED_PEOPLE, SEED_TICKETS } from '../data/seed';
+import {
+  SEED_ALLOCATIONS,
+  SEED_DISPUTES,
+  SEED_LEAVES,
+  SEED_PEOPLE,
+  SEED_STAGE_LOGS,
+  SEED_TICKETS,
+} from '../data/seed';
 import {
   accessOverrides,
   alertRules,
@@ -13,7 +20,28 @@ import { ApiClient } from './api-client';
 import { planNewWork } from './capacity';
 import { MyGitCommit, MyGitMatch, MyGitSyncResult, MyGitUnmatched } from './mygit-sync';
 import { scorePartNotes } from './kpi-meaning';
-import { Level, Person, Ticket, Track } from './models';
+import {
+  EmployeeLeave,
+  Level,
+  Person,
+  Ticket,
+  TicketAllocation,
+  TicketDispute,
+  TicketStageLog,
+  Track,
+  VarianceCode,
+} from './models';
+import {
+  HandoffSlaReport,
+  PreflightReport,
+  QualityAuditReport,
+  ThreeWayTimeReport,
+  computeHandoffSlaSummary,
+  computeQualityAuditSummary,
+  computeThreeWayTimeAudit,
+  runPreflightChecklist,
+  simulateDisputeImpact,
+} from '../../../shared/domain/multi-team';
 import { applyGanttDateEdit } from './work-views';
 import {
   INDEX_TARGET,
@@ -140,11 +168,36 @@ export class ScorecardService {
   private readonly mockModeState = signal(false);
   private snapshot: LocalSnapshot | null = null;
 
+  private readonly allocationsState = signal<TicketAllocation[]>([...SEED_ALLOCATIONS]);
+  private readonly stageLogsState = signal<TicketStageLog[]>([...SEED_STAGE_LOGS]);
+  private readonly leavesState = signal<EmployeeLeave[]>([...SEED_LEAVES]);
+  private readonly disputesState = signal<TicketDispute[]>([...SEED_DISPUTES]);
+
   readonly people = computed(() => this.peopleState());
   readonly tickets = this.ticketsState.asReadonly();
+  readonly allocations = this.allocationsState.asReadonly();
+  readonly stageLogs = this.stageLogsState.asReadonly();
+  readonly leaves = this.leavesState.asReadonly();
+  readonly disputes = this.disputesState.asReadonly();
   readonly apiReady = this.readyState.asReadonly();
   readonly usingApi = this.apiOnline.asReadonly();
   readonly mockMode = this.mockModeState.asReadonly();
+
+  readonly handoffReport = computed<HandoffSlaReport>(() =>
+    computeHandoffSlaSummary(this.ticketsState(), this.stageLogsState(), this.roster()),
+  );
+
+  readonly qualityAuditReport = computed<QualityAuditReport>(() =>
+    computeQualityAuditSummary(this.ticketsState(), this.roster()),
+  );
+
+  readonly threeWayTimeReport = computed<ThreeWayTimeReport>(() =>
+    computeThreeWayTimeAudit(this.ticketsState(), this.roster()),
+  );
+
+  readonly preflightReport = computed<PreflightReport>(() =>
+    runPreflightChecklist(this.roster(), this.ticketsState(), this.disputesState(), this.leavesState()),
+  );
 
   readonly roster = computed(() =>
     this.peopleState().map((person) => ({
@@ -556,5 +609,146 @@ export class ScorecardService {
         target: INDEX_TARGET,
       };
     });
+  }
+
+  async submitDispute(
+    ticketId: string,
+    requestedFlag: VarianceCode,
+    reason: string,
+    evidenceUrl?: string,
+  ): Promise<TicketDispute> {
+    const ticket = this.ticketsState().find((t) => t.id === ticketId);
+    const person = this.roster().find((p) => p.id === ticket?.assigneeId) ?? this.roster()[0];
+
+    const sim = ticket && person
+      ? simulateDisputeImpact(ticket, person, this.ticketsState(), requestedFlag)
+      : { scoreBefore: 60, scoreProjected: 100, scoreDiff: 40, personIndexBefore: 70, personIndexProjected: 76, personIndexDiff: 6 };
+
+    const newDispute: TicketDispute = {
+      id: `dsp-${Date.now()}`,
+      disputeCode: `DSP-2026-${Math.floor(100 + Math.random() * 900)}`,
+      ticketId,
+      requesterId: person.id,
+      requestedFlag,
+      reason,
+      evidenceUrl,
+      scoreBefore: sim.scoreBefore,
+      scoreProjected: sim.scoreProjected,
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+    };
+
+    if (this.usingApi() && this.api) {
+      try {
+        const res = await this.api.createDispute({ ticketId, requestedFlag, reason, evidenceUrl });
+        if (res?.dispute) {
+          this.disputesState.update((list) => [res.dispute, ...list]);
+          return res.dispute;
+        }
+      } catch {
+        // Fallback to local
+      }
+    }
+
+    this.disputesState.update((list) => [newDispute, ...list]);
+    return newDispute;
+  }
+
+  async resolveDispute(id: string, status: 'APPROVED' | 'REJECTED', comment?: string): Promise<boolean> {
+    if (this.usingApi() && this.api) {
+      try {
+        await this.api.resolveDispute(id, status, comment);
+      } catch {
+        // Fallback
+      }
+    }
+
+    this.disputesState.update((list) =>
+      list.map((d) =>
+        d.id === id
+          ? {
+              ...d,
+              status,
+              reviewerComment: comment,
+              resolvedAt: new Date().toISOString(),
+            }
+          : d,
+      ),
+    );
+
+    // If approved, update ticket variance flag in state
+    if (status === 'APPROVED') {
+      const dispute = this.disputesState().find((d) => d.id === id);
+      if (dispute) {
+        this.ticketsState.update((tickets) =>
+          tickets.map((t) =>
+            t.id === dispute.ticketId
+              ? {
+                  ...t,
+                  varianceCode: dispute.requestedFlag,
+                  reopenCount: dispute.requestedReopenOverride ?? (dispute.requestedFlag === 'REQ' || dispute.requestedFlag === 'BLK' ? 0 : t.reopenCount),
+                  blocker: dispute.requestedFlag === 'BLK' ? false : t.blocker,
+                }
+              : t,
+          ),
+        );
+      }
+    }
+
+    return true;
+  }
+
+  addEmployeeLeave(leave: Omit<EmployeeLeave, 'id'>): void {
+    const item: EmployeeLeave = {
+      ...leave,
+      id: `leave-${Date.now()}`,
+    };
+    this.leavesState.update((list) => [...list, item]);
+  }
+
+  removeEmployeeLeave(id: string): void {
+    this.leavesState.update((list) => list.filter((item) => item.id !== id));
+  }
+
+  updateTicketAllocations(ticketId: string, allocations: TicketAllocation[]): void {
+    this.allocationsState.update((list) => [
+      ...list.filter((a) => a.ticketId !== ticketId),
+      ...allocations,
+    ]);
+    if (this.usingApi() && this.api) {
+      void this.api.saveAllocations(ticketId, allocations);
+    }
+  }
+
+  autoShiftWipDueDates(assigneeId: string, shiftDays: number): number {
+    let shiftedCount = 0;
+    this.ticketsState.update((tickets) =>
+      tickets.map((t) => {
+        if (t.assigneeId === assigneeId && t.workflowStatus === 'In Progress' && t.firstDueOn) {
+          shiftedCount++;
+          const current = new Date(t.firstDueOn);
+          current.setDate(current.getDate() + shiftDays);
+          return {
+            ...t,
+            firstDueOn: current.toISOString().slice(0, 10),
+            note: `${t.note ? t.note + ' · ' : ''}เลื่อนกำหนดส่ง ${shiftDays} วันจากงานแทรก`,
+          };
+        }
+        return t;
+      }),
+    );
+    return shiftedCount;
+  }
+
+  async pingHandoffRecipient(ticketId: string, target?: string, message?: string): Promise<boolean> {
+    if (this.usingApi() && this.api) {
+      try {
+        await this.api.pingHandoff(ticketId, target, message);
+        return true;
+      } catch {
+        // Fallback
+      }
+    }
+    return true;
   }
 }

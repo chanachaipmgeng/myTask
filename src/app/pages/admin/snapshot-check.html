@@ -1,0 +1,161 @@
+<section class="page flex flex-col gap-6">
+  <!-- Header Bar -->
+  <div class="page-head flex flex-wrap justify-between items-center gap-4">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+        แดชบอร์ดทีม &gt; ตรวจสอบความพร้อมก่อนแช่แข็งคะแนน (/admin/snapshot-check)
+      </div>
+      <h2 class="text-2xl font-bold tracking-tight">ห้องตรวจสอบความพร้อมก่อนปิดงวดคะแนน (Pre-Snapshot Freeze Gate)</h2>
+      <p class="text-sm text-muted">
+        รันเช็คลิสต์อัตโนมัติ 4 ด่านเพื่อยืนยันความถูกต้องของข้อมูลก่อนทำการบันทึกและแช่แข็งคะแนนประจำงวด
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-blue-600 dark:text-blue-400">
+        งวดที่กำลังปิด: {{ periodKey() }}
+      </span>
+    </div>
+  </div>
+
+  <!-- แถบสถานะความพร้อมรวม (Overall Readiness) -->
+  <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col gap-3">
+    <div class="flex justify-between items-center">
+      <div>
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">คะแนนความพร้อมรวม (Overall Readiness Score)</h3>
+        <p class="text-xs text-muted">ต้องผ่านเกณฑ์อย่างน้อย 75% และไม่มี Blocker ที่ร้ายแรง</p>
+      </div>
+      <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+        {{ readinessScore() }}%
+        <span class="text-xs font-normal text-slate-500">
+          ({{ readinessScore() >= 75 ? 'ผ่านเกณฑ์พร้อมแช่แข็ง' : 'ยังไม่พร้อม' }})
+        </span>
+      </span>
+    </div>
+    <ejs-progressbar
+      [value]="readinessScore()"
+      [theme]="theme.sfTheme()"
+      height="12"
+      progressColor="#10b981"
+      trackColor="#e2e8f0"
+    ></ejs-progressbar>
+  </div>
+
+  <!-- เช็คลิสต์ 4 ด่าน (2x2 Grid) -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    @for (item of checks(); track item.stage) {
+      <div
+        class="rounded-xl border p-4 shadow-sm flex flex-col justify-between"
+        [class.border-emerald-200]="item.status === 'PASS'"
+        [class.dark:border-emerald-900]="item.status === 'PASS'"
+        [class.bg-emerald-50/30]="item.status === 'PASS'"
+        [class.dark:bg-emerald-950/20]="item.status === 'PASS'"
+        [class.border-amber-200]="item.status === 'WARN'"
+        [class.dark:border-amber-900]="item.status === 'WARN'"
+        [class.bg-amber-50/30]="item.status === 'WARN'"
+        [class.dark:bg-amber-950/20]="item.status === 'WARN'"
+      >
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-sm text-slate-800 dark:text-slate-100">
+              ด่านที่ {{ item.stage }}: {{ item.name }}
+            </span>
+            <span
+              class="px-2 py-0.5 rounded text-xs font-bold"
+              [class.bg-emerald-100]="item.status === 'PASS'"
+              [class.text-emerald-800]="item.status === 'PASS'"
+              [class.bg-amber-100]="item.status === 'WARN'"
+              [class.text-amber-800]="item.status === 'WARN'"
+            >
+              [{{ item.status }}]
+            </span>
+          </div>
+          <div class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            {{ item.summary }}
+          </div>
+          <p class="text-xs text-muted">
+            {{ item.detail }}
+          </p>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ตารางเปรียบเทียบคะแนนดัชนีรายบุคคลก่อนกดบันทึก (Preview Diff Table) -->
+  <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col gap-4">
+    <div>
+      <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">ตารางเปรียบเทียบคะแนนดัชนีรายบุคคล (Snapshot Preview Diff Table)</h3>
+      <p class="text-xs text-muted">เปรียบเทียบดัชนีพัฒนาการงวดก่อนหน้าเทียบกับงวดปัจจุบันที่จะถูกแช่แข็ง</p>
+    </div>
+
+    <ejs-grid [dataSource]="previewDiffs()" [allowSorting]="true">
+      <e-columns>
+        <e-column field="nickname" headerText="พนักงาน" width="150">
+          <ng-template #template let-data>
+            <span class="font-semibold text-slate-800 dark:text-slate-200">{{ data.nickname }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="trackLabel" headerText="สายงาน" width="150"></e-column>
+        <e-column field="previousIndex" headerText="ดัชนีงวดก่อน" width="130" textAlign="Right">
+          <ng-template #template let-data>
+            <span class="font-mono text-muted">{{ data.previousIndex }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="currentIndex" headerText="ดัชนีงวดนี้ (สด)" width="150" textAlign="Right">
+          <ng-template #template let-data>
+            <span class="font-mono font-bold text-slate-800 dark:text-slate-100">{{ data.currentIndex }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="diff" headerText="ส่วนต่าง (Diff)" width="130" textAlign="Right">
+          <ng-template #template let-data>
+            <span
+              class="font-mono font-bold"
+              [class.text-emerald-600]="data.diff >= 0"
+              [class.text-rose-600]="data.diff < 0"
+            >
+              {{ data.diff >= 0 ? '+' + data.diff : data.diff }}
+            </span>
+          </ng-template>
+        </e-column>
+        <e-column field="statusLabel" headerText="สถานะเทียบเป้า" width="140" textAlign="Center">
+          <ng-template #template let-data>
+            <span
+              class="px-2 py-0.5 rounded text-xs font-semibold"
+              [class.bg-emerald-100]="data.isTargetMet"
+              [class.text-emerald-800]="data.isTargetMet"
+              [class.bg-rose-100]="!data.isTargetMet"
+              [class.text-rose-800]="!data.isTargetMet"
+            >
+              {{ data.statusLabel }}
+            </span>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+
+    <!-- Footer Controls -->
+    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center gap-2">
+        <ejs-checkbox
+          label="ยืนยันว่าได้ตรวจสอบข้อมูลและความถูกต้องครบถ้วนแล้ว"
+          [checked]="isConfirmed()"
+          (change)="onConfirmChange($event)"
+        ></ejs-checkbox>
+      </div>
+
+      <div class="flex gap-3">
+        <button ejs-button cssClass="e-flat" (click)="cancel()">
+          ยกเลิก
+        </button>
+        <button
+          ejs-button
+          cssClass="e-primary"
+          iconCss="e-icons e-lock"
+          [disabled]="!isConfirmed() || isFreezing()"
+          (click)="freezeSnapshot()"
+        >
+          {{ isFreezing() ? 'กำลังแช่แข็ง...' : 'ยืนยันการแช่แข็งคะแนน (Freeze Snapshot)' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

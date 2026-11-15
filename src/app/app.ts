@@ -247,6 +247,14 @@ const allNavGroups: NavGroup[] = [
         roles: ['admin', 'lead'],
       },
       {
+        id: 'time-audit',
+        text: 'ตรวจสอบเวลา 3 ทาง',
+        iconCss: 'e-icons e-clock',
+        route: '/analytics/time-audit',
+        roles: ['admin', 'lead'],
+      },
+      { id: 'quality-audit', text: 'ตรวจสอบคุณภาพ QA', iconCss: 'e-icons e-check-box', route: '/quality/audit' },
+      {
         id: 'people',
         text: 'รายชื่อพนักงาน',
         iconCss: 'e-icons e-people',
@@ -263,7 +271,9 @@ const allNavGroups: NavGroup[] = [
     expanded: true,
     children: [
       { id: 'work-hub', text: 'ฮับบริหารงาน', iconCss: 'e-icons e-timeline-work-week', route: '/work' },
+      { id: 'work-handoff', text: 'ส่งต่อ & SLA ข้ามทีม', iconCss: 'e-icons e-clock', route: '/work/handoff' },
       { id: 'tickets', text: 'ตารางคะแนนใบงาน', iconCss: 'e-icons e-table-1', route: '/tickets' },
+      { id: 'disputes', text: 'ศูนย์อุทธรณ์คะแนน', iconCss: 'e-icons e-edit', route: '/tickets/disputes' },
       { id: 'schedule', text: 'ปฏิทินทีม', iconCss: 'e-icons e-date-time', route: '/schedule' },
       {
         id: 'queue',
@@ -304,6 +314,13 @@ const allNavGroups: NavGroup[] = [
       { id: 'login', text: 'เข้าสู่ระบบ / สลับบัญชี', iconCss: 'e-icons e-user', route: '/login' },
       { id: 'mockup', text: 'โหมดจำลอง', iconCss: 'e-icons e-play', route: '/mockup' },
       {
+        id: 'snapshot-check',
+        text: 'ตรวจสอบก่อนแช่แข็ง',
+        iconCss: 'e-icons e-lock',
+        route: '/admin/snapshot-check',
+        roles: ['admin', 'lead'],
+      },
+      {
         id: 'admin',
         text: 'หลังบ้าน & สิทธิ์',
         iconCss: 'e-icons e-lock',
@@ -331,6 +348,21 @@ function matchNavId(url: string): string {
 }
 
 function screenTitle(url: string): string {
+  if (url.startsWith('/work/handoff')) {
+    return 'ตรวจสอบการส่งต่อ & SLA ข้ามทีม';
+  }
+  if (url.startsWith('/quality/audit')) {
+    return 'ตรวจสอบคุณภาพ QA & Defect Audit';
+  }
+  if (url.startsWith('/analytics/time-audit')) {
+    return 'ตรวจสอบเวลา 3 ทาง (3-Way Time Audit)';
+  }
+  if (url.startsWith('/tickets/disputes')) {
+    return 'ศูนย์ทบทวนและอุทธรณ์คะแนน';
+  }
+  if (url.startsWith('/admin/snapshot-check')) {
+    return 'ตรวจสอบความพร้อมก่อนแช่แข็งคะแนน';
+  }
   if (url.startsWith('/me')) {
     return 'พื้นที่ของฉัน';
   }

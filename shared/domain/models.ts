@@ -1,4 +1,35 @@
-export type Track = 'Implement' | 'RD';
+export type TrackCode = 'RND' | 'IMP' | 'QA' | 'UXBA' | 'SUP' | 'INFRA';
+
+export type Track = 'Implement' | 'RD' | TrackCode;
+
+export function normalizeTrack(track: Track | string | null | undefined): TrackCode {
+  if (!track) return 'IMP';
+  if (track === 'Implement' || track === 'IMP') return 'IMP';
+  if (track === 'RD' || track === 'RND') return 'RND';
+  if (track === 'QA') return 'QA';
+  if (track === 'UXBA') return 'UXBA';
+  if (track === 'SUP') return 'SUP';
+  if (track === 'INFRA') return 'INFRA';
+  return 'IMP';
+}
+
+export function trackDisplayLabel(track: Track | string | null | undefined): string {
+  const code = normalizeTrack(track);
+  switch (code) {
+    case 'RND':
+      return 'R&D (FE / BE / AI)';
+    case 'IMP':
+      return 'Implement';
+    case 'QA':
+      return 'QA / Tester';
+    case 'UXBA':
+      return 'Product / BA / UX';
+    case 'SUP':
+      return 'Support / Helpdesk';
+    case 'INFRA':
+      return 'Infra / DevOps / Sec';
+  }
+}
 
 export type Level = 'Senior' | 'Mid' | 'Junior' | 'FirstMonth';
 
@@ -104,6 +135,89 @@ export interface Ticket {
   opParentId?: number | null;
   title?: string;
   dueOn?: string | null;
+  /** Multi-role effort split flag */
+  isSplitEffort?: boolean;
+  allocations?: TicketAllocation[];
+  reviewerId?: string | null;
+  qaAssigneeId?: string | null;
+  qaEstimatedMd?: number;
+  /** First timestamp when moved to Ready for QA (used for fair developer on-time measurement) */
+  readyForQaAt?: string | null;
+  /** Defects that leaked to Production */
+  isBugEscape?: boolean;
+  /** Definition of Done evidence checklist */
+  dodChecklist?: DodChecklist;
+}
+
+export interface DodChecklist {
+  unitTest: boolean;
+  mrLinked: boolean;
+  stagingVerified: boolean;
+}
+
+export interface TicketAllocation {
+  id: string;
+  ticketId: string;
+  userId: string;
+  roleTrack: TrackCode;
+  subRole?: string;
+  estimatedMd: number;
+  actualMd: number;
+  allocatedDueOn?: string | null;
+  completedAt?: string | null;
+  individualScore?: number | null;
+}
+
+export interface TicketStageLog {
+  id: string;
+  ticketId: string;
+  fromStatus: WorkflowStatus | null;
+  toStatus: WorkflowStatus;
+  changedBy?: string | null;
+  blockingTeam?: TrackCode | null;
+  blockerFlag?: VarianceCode | 'NONE';
+  enteredAt: string;
+  exitedAt?: string | null;
+  durationHours?: number | null;
+}
+
+export interface EmployeeLeave {
+  id: string;
+  userId: string;
+  leaveDate: string;
+  leaveType: 'VACATION' | 'SICK' | 'PUBLIC_HOLIDAY';
+  deductMd: number;
+  reason?: string;
+}
+
+export type DisputeStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface TicketDispute {
+  id: string;
+  disputeCode: string;
+  ticketId: string;
+  requesterId: string;
+  requestedFlag: VarianceCode;
+  requestedReopenOverride?: number;
+  reason: string;
+  evidenceUrl?: string;
+  scoreBefore: number;
+  scoreProjected: number;
+  status: DisputeStatus;
+  reviewerId?: string | null;
+  reviewerComment?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+}
+
+export interface TrackConfig {
+  trackCode: TrackCode;
+  trackName: string;
+  targetIndex: number;
+  formulaWeights: Record<string, number>;
+  slaThresholds: Record<string, number>;
+  updatedBy?: string | null;
+  updatedAt: string;
 }
 
 export const WORKFLOW_STATUSES = [

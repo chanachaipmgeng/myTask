@@ -7,6 +7,7 @@ import { IntegrationsController } from './api/integrations.controller';
 import { KpiSnapshotsController } from './api/kpi-snapshots.controller';
 import { OrgController } from './api/org.controller';
 import { SettingsController } from './api/settings.controller';
+import { V2EnterpriseController } from './api/v2-enterprise.controller';
 import { WorkItemsController } from './api/work-items.controller';
 import { AuthGuard } from './auth/auth.guard';
 import { AuthModule } from './auth/auth.module';
@@ -24,6 +25,7 @@ import { KpiSnapshotService } from './kpi/kpi-snapshot.service';
     OrgController,
     KpiSnapshotsController,
     AnalyticsController,
+    V2EnterpriseController,
   ],
   providers: [
     OpenProjectSyncService,

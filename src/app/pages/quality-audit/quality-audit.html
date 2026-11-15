@@ -1,0 +1,192 @@
+<section class="page flex flex-col gap-6">
+  <!-- Header Bar -->
+  <div class="page-head flex flex-wrap justify-between items-center gap-4">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+        ภาพรวมและวิเคราะห์ &gt; ตรวจสอบคุณภาพ QA &amp; Defect Audit (/quality/audit)
+      </div>
+      <h2 class="text-2xl font-bold tracking-tight">ศูนย์ตรวจสอบคุณภาพ QA และช่องโหว่บั๊ก (QA &amp; Defect Leakage Audit)</h2>
+      <p class="text-sm text-muted">
+        ตรวจสอบ First-Time Right %, อัตราการตีกลับ (Reopen Rate), อัตราหลุดไป Production และหลักฐาน DoD ก่อนส่งทดสอบ
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <span class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300">
+        งวดปัจจุบัน: 2026-11
+      </span>
+    </div>
+  </div>
+
+  <!-- KPI Cards (4 คอลัมน์) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Card 1 -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div class="flex items-center justify-between text-muted text-xs font-semibold">
+        <span>FIRST-TIME RIGHT %</span>
+        <span class="e-icons e-check-box text-emerald-500"></span>
+      </div>
+      <div class="mt-2 flex items-baseline gap-1">
+        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().firstTimeRightPct }}%</span>
+      </div>
+      <div class="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+        เป้าหมาย &ge; 85.0% (ผ่านเกณฑ์)
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div class="flex items-center justify-between text-muted text-xs font-semibold">
+        <span>REOPEN RATE (QA ตีกลับ)</span>
+        <span class="e-icons e-repeat text-amber-500"></span>
+      </div>
+      <div class="mt-2 flex items-baseline gap-1">
+        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().reopenRatePct }}%</span>
+      </div>
+      <div class="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+        ตีกลับ {{ kpis().reopenCount }} จาก {{ kpis().totalClosed }} ใบ
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div class="flex items-center justify-between text-muted text-xs font-semibold">
+        <span>BUG ESCAPE (หลุด PROD)</span>
+        <span class="e-icons e-warning text-rose-500"></span>
+      </div>
+      <div class="mt-2 flex items-baseline gap-1">
+        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().bugEscapePct }}%</span>
+      </div>
+      <div class="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">
+        ตรวจพบ {{ kpis().bugEscapeCount }} ใบ (เกณฑ์ &le; 5.0%)
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div class="flex items-center justify-between text-muted text-xs font-semibold">
+        <span>DOD EVIDENCE ครบถ้วน</span>
+        <span class="e-icons e-file-protect text-blue-500"></span>
+      </div>
+      <div class="mt-2 flex items-baseline gap-1">
+        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().dodEvidencePct }}%</span>
+      </div>
+      <div class="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400">
+        ขาดหลักฐาน {{ kpis().dodMissingCount }} ใบ
+      </div>
+    </div>
+  </div>
+
+  <!-- แถบสลับมุมมอง (ejs-tab) -->
+  <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+    <ejs-tab id="qualityTab" animation="none">
+      <e-tabitems>
+        <!-- Tab 1: ตรวจสอบหลักฐาน DoD ก่อนเข้า QA -->
+        <e-tabitem [header]="{ text: 'ตรวจสอบหลักฐาน DoD ก่อนเข้า QA (' + dodChecklist().length + ')' }">
+          <ng-template #content>
+            <div class="pt-4 flex flex-col gap-4">
+              <div class="p-3.5 bg-amber-50 dark:bg-amber-950/40 rounded-lg text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between">
+                <span>
+                  🛡️ <strong>DoD Gate Verifier:</strong> ระบบตรวจอัตโนมัติว่ามีลิงก์ MR, Unit Test ผ่าน, และผล Staging Verified ครบหรือไม่ หากไม่ครบ QA สามารถกดตีกลับ Dev ได้ทันที
+                </span>
+              </div>
+
+              <ejs-grid [dataSource]="dodChecklist()" [allowSorting]="true">
+                <e-columns>
+                  <e-column field="ticketId" headerText="รหัสใบงาน" width="120" textAlign="Left">
+                    <ng-template #template let-data>
+                      <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="devName" headerText="ผู้พัฒนา (Dev)" width="150"></e-column>
+                  <e-column field="qaName" headerText="ผู้ตรวจ QA" width="150"></e-column>
+                  <e-column field="mrLink" headerText="ลิงก์ MR" width="130">
+                    <ng-template #template let-data>
+                      <span class="font-mono text-xs text-blue-600 dark:text-blue-400 underline">{{ data.mrLink }}</span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="unitTestLabel" headerText="Unit Test" width="130">
+                    <ng-template #template let-data>
+                      <span [class.text-emerald-600]="data.unitTestPassed" [class.text-rose-600]="!data.unitTestPassed" class="font-medium text-xs">
+                        {{ data.unitTestLabel }}
+                      </span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="stagingVerified" headerText="ผล Staging" width="130">
+                    <ng-template #template let-data>
+                      <span class="text-xs">
+                        {{ data.stagingVerified ? 'แนบรูปแล้ว ✅' : 'ยังไม่แนบ ❌' }}
+                      </span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="dodStatus" headerText="สถานะหลักฐาน DoD" width="160">
+                    <ng-template #template let-data>
+                      <span
+                        class="px-2 py-0.5 rounded text-xs font-semibold"
+                        [class.bg-emerald-100]="data.isComplete"
+                        [class.text-emerald-800]="data.isComplete"
+                        [class.bg-amber-100]="!data.isComplete"
+                        [class.text-amber-800]="!data.isComplete"
+                      >
+                        {{ data.dodStatus }}
+                      </span>
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="การจัดการ" width="140" textAlign="Center">
+                    <ng-template #template let-data>
+                      @if (!data.isComplete && (role() === 'admin' || role() === 'lead')) {
+                        <button
+                          ejs-button
+                          cssClass="e-small e-outline e-danger"
+                          (click)="rejectToDev(data.ticketId, data.devName)"
+                        >
+                          ตีกลับ Dev
+                        </button>
+                      } @else {
+                        <span class="text-xs text-muted">พร้อมตรวจ</span>
+                      }
+                    </ng-template>
+                  </e-column>
+                </e-columns>
+              </ejs-grid>
+            </div>
+          </ng-template>
+        </e-tabitem>
+
+        <!-- Tab 2: วิเคราะห์สาเหตุ Reopen & Bug Escape -->
+        <e-tabitem [header]="{ text: 'วิเคราะห์สาเหตุ Reopen & Bug Escape (' + reopenEscapes().length + ')' }">
+          <ng-template #content>
+            <div class="pt-4 flex flex-col gap-4">
+              <ejs-grid [dataSource]="reopenEscapes()" [allowSorting]="true" [allowFiltering]="true">
+                <e-columns>
+                  <e-column field="ticketId" headerText="รหัสใบงาน" width="130"></e-column>
+                  <e-column field="title" headerText="ชื่องาน" width="220"></e-column>
+                  <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="150"></e-column>
+                  <e-column field="reopenCount" headerText="จำนวน Reopen" width="130" textAlign="Right">
+                    <ng-template #template let-data>
+                      <span class="font-bold text-rose-600">{{ data.reopenCount }} ครั้ง</span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="bugCause" headerText="สาเหตุของบั๊ก" width="160">
+                    <ng-template #template let-data>
+                      <span class="px-2 py-0.5 rounded text-xs bg-slate-100 dark:bg-slate-800 font-medium">
+                        {{ data.bugCause }}
+                      </span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="isBugEscape" headerText="หลุด Prod หรือไม่" width="140" textAlign="Center">
+                    <ng-template #template let-data>
+                      <span class="text-xs font-semibold" [class.text-rose-600]="data.isBugEscape" [class.text-muted]="!data.isBugEscape">
+                        {{ data.isBugEscape ? 'หลุด Prod ⚠️' : 'ตรวจพบใน QA' }}
+                      </span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="notes" headerText="บันทึกเพิ่มเติม" width="220"></e-column>
+                </e-columns>
+              </ejs-grid>
+            </div>
+          </ng-template>
+        </e-tabitem>
+      </e-tabitems>
+    </ejs-tab>
+  </div>
+</section>

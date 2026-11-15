@@ -13,6 +13,7 @@ const TABS = [
   { text: 'Backlog', path: 'backlog', icon: 'e-icons e-list-unordered' },
   { text: 'Board', path: 'board', icon: 'e-icons e-kanban' },
   { text: 'List', path: 'list', icon: 'e-icons e-table' },
+  { text: 'Handoff & SLA', path: 'handoff', icon: 'e-icons e-clock' },
 ] as const;
 
 @Component({

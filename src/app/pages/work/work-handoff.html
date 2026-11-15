@@ -1,0 +1,273 @@
+<section class="page flex flex-col gap-6">
+  <!-- Header Bar -->
+  <div class="page-head flex flex-wrap justify-between items-center gap-4">
+    <div>
+      <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
+        ฮับบริหารงาน &gt; ตรวจสอบการส่งต่อ &amp; SLA ข้ามทีม (/work/handoff)
+      </div>
+      <h2 class="text-2xl font-bold tracking-tight">ศูนย์ตรวจสอบการส่งต่อและคอขวดข้ามทีม (Handoff &amp; SLA Inspector)</h2>
+      <p class="text-sm text-muted">
+        วิเคราะห์ระยะเวลาค้างส่งต่องานระหว่าง Dev, Reviewer, QA และ Infra เพื่อแก้ปัญหาคอขวดก่อนหลุดกำหนดส่ง
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-3 items-center">
+      <ejs-dropdownlist
+        [dataSource]="trackOptions"
+        [fields]="{ text: 'text', value: 'value' }"
+        [value]="trackFilter()"
+        (change)="setTrack($event)"
+        width="180px"
+      ></ejs-dropdownlist>
+      <button ejs-button cssClass="e-outline" iconCss="e-icons e-refresh" (click)="scorecard.reloadFromApi()">
+        ซิงก์ข้อมูล
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Cards (4 คอลัมน์) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Card 1 -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div class="flex items-center justify-between text-muted text-xs font-semibold">
+        <span>ค้างรอ CODE REVIEW</span>
+        <span class="e-icons e-clock text-amber-500"></span>
+      </div>
+      <div class="mt-2 flex items-baseline gap-2">
+        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().waitingReviewCount }}</span>
+        <span class="text-xs text-muted">ใบ</span>
+      </div>
+      <div class="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+        &gt; 24 ชม.: <strong>{{ kpis().waitingReviewOverdue }} ใบ</strong> (ต้องเร่งตรวจ)
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div class="flex items-center justify-between text-muted text-xs font-semibold">
+        <span>ค้างรอเข้า QA</span>
+        <span class="e-icons e-check text-blue-500"></span>
+      </div>
+      <div class="mt-2 flex items-baseline gap-2">
+        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().waitingQaCount }}</span>
+        <span class="text-xs text-muted">ใบ</span>
+      </div>
+      <div class="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">
+        เกิน SLA: <strong>{{ kpis().waitingQaOverdue }} ใบ</strong>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div class="flex items-center justify-between text-muted text-xs font-semibold">
+        <span>ติด BLOCKER (BLK / ENV)</span>
+        <span class="e-icons e-warning text-rose-500"></span>
+      </div>
+      <div class="mt-2 flex items-baseline gap-2">
+        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().blockedCount }}</span>
+        <span class="text-xs text-muted">ใบ</span>
+      </div>
+      <div class="mt-2 text-xs font-medium text-purple-600 dark:text-purple-400">
+        รอ Infra ปลดล็อก: <strong>{{ kpis().blockedInfraCount }} ใบ</strong>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div class="flex items-center justify-between text-muted text-xs font-semibold">
+        <span>เวลาส่งต่อเฉลี่ย</span>
+        <span class="e-icons e-timeline-work-week text-emerald-500"></span>
+      </div>
+      <div class="mt-2 flex items-baseline gap-2">
+        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().avgHandoffHours }}</span>
+        <span class="text-xs text-muted">ชม.</span>
+      </div>
+      <div class="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+        เป้าหมาย &le; 6.0 ชม. (อยู่ในเกณฑ์)
+      </div>
+    </div>
+  </div>
+
+  <!-- ครึ่งบน: กราฟแท่งแนวนอน Stage Aging & Dependency Matrix -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- กราฟ Stacking Bar 7 cols -->
+    <div class="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+          <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">Stage Aging by Track</h3>
+          <p class="text-xs text-muted">เปรียบเทียบชั่วโมงเฉลี่ยที่การ์ดค้างในแต่ละสถานะแยกตามทีม</p>
+        </div>
+      </div>
+      <ejs-chart
+        [primaryXAxis]="primaryXAxis"
+        [primaryYAxis]="primaryYAxis"
+        [tooltip]="chartTooltip"
+        [legendSettings]="chartLegend"
+        [theme]="theme.sfTheme()"
+        height="280px"
+      >
+        <e-series-collection>
+          <e-series
+            [dataSource]="stageAgingData()"
+            type="StackingBar"
+            xName="track"
+            yName="inProgressHours"
+            name="In Progress"
+            fill="#3b82f6"
+          ></e-series>
+          <e-series
+            [dataSource]="stageAgingData()"
+            type="StackingBar"
+            xName="track"
+            yName="reviewHours"
+            name="Code Review"
+            fill="#f59e0b"
+          ></e-series>
+          <e-series
+            [dataSource]="stageAgingData()"
+            type="StackingBar"
+            xName="track"
+            yName="qaHours"
+            name="In QA"
+            fill="#10b981"
+          ></e-series>
+          <e-series
+            [dataSource]="stageAgingData()"
+            type="StackingBar"
+            xName="track"
+            yName="blockedHours"
+            name="Blocked"
+            fill="#ef4444"
+          ></e-series>
+        </e-series-collection>
+      </ejs-chart>
+    </div>
+
+    <!-- Blocker Matrix 5 cols -->
+    <div class="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col justify-between">
+      <div>
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100 mb-1">Cross-Team Blocker Matrix</h3>
+        <p class="text-xs text-muted mb-4">ตารางระบุทีมที่กำลังรออีกทีมปลดล็อกงาน</p>
+
+        <div class="flex flex-col gap-3">
+          @for (item of blockerMatrix(); track item.id) {
+            <div class="p-3.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  {{ item.description }}
+                </div>
+                <div class="text-xs text-muted mt-1">
+                  กำลังรอ {{ item.ticketCount }} ใบ ({{ item.ticketIds.join(', ') }})
+                </div>
+              </div>
+              <div>
+                @if (item.canPing && (role() === 'admin' || role() === 'lead')) {
+                  <button
+                    ejs-button
+                    cssClass="e-small e-outline e-primary"
+                    iconCss="e-icons e-comment-show"
+                    (click)="pingTarget(item.ticketIds[0], item.blockingTeam)"
+                  >
+                    Ping Teams
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg text-xs text-blue-700 dark:text-blue-300">
+        💡 <strong>Fair Cutoff Rule:</strong> Dev ส่งงานตรงสัปดาห์จะวัดจากวันที่การ์ดย้ายเข้า <code>Ready for QA</code> ครั้งแรกเทียบกับ <code>first_due_on</code> เวลาที่รอคิวใน QA จะไม่นำมาหักคะแนน Dev
+      </div>
+    </div>
+  </div>
+
+  <!-- ครึ่งล่าง: ตารางตรวจสอบใบงานค้างส่งต่อเกิน SLA -->
+  <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col gap-4">
+    <div class="flex flex-wrap justify-between items-center gap-3">
+      <div>
+        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">ตารางตรวจสอบใบงานค้างส่งต่อและ SLA รายใบ</h3>
+        <p class="text-xs text-muted">ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล</p>
+      </div>
+      <div class="flex flex-wrap gap-2 items-center">
+        <button
+          ejs-button
+          [cssClass]="onlyOverSla() ? 'e-danger' : 'e-outline'"
+          (click)="toggleOverSla()"
+        >
+          {{ onlyOverSla() ? 'แสดงทั้งหมด' : 'เฉพาะที่เกิน SLA' }}
+        </button>
+        <button ejs-button cssClass="e-outline" iconCss="e-icons e-export-excel" (click)="exportGrid(handoffGrid)">
+          ส่งออก Excel
+        </button>
+      </div>
+    </div>
+
+    <ejs-grid
+      #handoffGrid
+      [dataSource]="filteredTickets()"
+      [allowSorting]="true"
+      [allowFiltering]="true"
+      [frozenColumns]="2"
+      height="340px"
+    >
+      <e-columns>
+        <e-column field="ticketId" headerText="รหัสใบงาน" width="120" textAlign="Left">
+          <ng-template #template let-data>
+            <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="status" headerText="สถานะค้าง" width="140" textAlign="Left">
+          <ng-template #template let-data>
+            <span
+              class="px-2 py-0.5 rounded text-xs font-medium"
+              [class.bg-amber-100]="data.status === 'Code Review'"
+              [class.text-amber-800]="data.status === 'Code Review'"
+              [class.bg-blue-100]="data.status === 'Ready for QA' || data.status === 'In QA'"
+              [class.text-blue-800]="data.status === 'Ready for QA' || data.status === 'In QA'"
+              [class.bg-rose-100]="data.blockerFlag"
+              [class.text-rose-800]="data.blockerFlag"
+            >
+              {{ data.status }}
+              @if (data.blockerFlag) {
+                ({{ data.blockerFlag }})
+              }
+            </span>
+          </ng-template>
+        </e-column>
+        <e-column field="title" headerText="ชื่องาน / รายละเอียด" width="220" textAlign="Left"></e-column>
+        <e-column field="owner" headerText="เจ้าของงานหลัก" width="160" textAlign="Left"></e-column>
+        <e-column field="reviewerOrQa" headerText="ผู้ตรวจ/ผู้รับช่วง" width="160" textAlign="Left"></e-column>
+        <e-column field="hoursSpent" headerText="เวลาค้างสะสม" width="130" textAlign="Right">
+          <ng-template #template let-data>
+            <span [class.text-rose-600]="data.isOverSla" [class.font-bold]="data.isOverSla">
+              {{ data.hoursSpent }} ชม.
+              @if (data.isOverSla) {
+                🔥
+              }
+            </span>
+          </ng-template>
+        </e-column>
+        <e-column field="slaHours" headerText="เกณฑ์ SLA" width="110" textAlign="Right">
+          <ng-template #template let-data>
+            <span>&le; {{ data.slaHours }} ชม.</span>
+          </ng-template>
+        </e-column>
+        <e-column headerText="การจัดการ" width="130" textAlign="Center">
+          <ng-template #template let-data>
+            @if (data.canPing && (role() === 'admin' || role() === 'lead')) {
+              <button
+                ejs-button
+                cssClass="e-small e-outline e-primary"
+                (click)="pingTarget(data.ticketId, data.reviewerOrQa)"
+              >
+                Ping MR
+              </button>
+            } @else {
+              <span class="text-xs text-muted">—</span>
+            }
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  </div>
+</section>

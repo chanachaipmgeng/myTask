@@ -7,8 +7,13 @@ alwaysApply: false
 # โดเมนคะแนนและกฎคำนวณร่วม (`shared/domain/`)
 
 - อ้างอิงต้องคง: IMP-100 `total === 100`, RD-SPIKE `spikeScore === 100` (และเคสใน `scripts/verify-scores.ts`)
-- หลังแก้ `scoring.ts` / `workflow.ts` / `work-views.ts` / `gitlab-mr.ts` / seed ที่กระทบคะแนน → รัน `npm run verify` ให้ผ่านก่อนจบงาน
-- แยกสูตร Implement กับ R&D — อย่าผสมน้ำหนักข้ามสาย
+- หลังแก้ `scoring.ts` / `workflow.ts` / `work-views.ts` / `gitlab-mr.ts` / `multi-team.ts` / seed ที่กระทบคะแนน → รัน `npm run verify` ให้ผ่านก่อนจบงาน
+- Dynamic Track Formula Engine รองรับ 6 สายงาน: `RND`, `IMP`, `QA`, `UXBA`, `SUP`, `INFRA` — โดยมี Alias `Implement` ↔ `IMP` และ `RD` ↔ `RND`
+- การเช็คสถานะการ์ดในโดเมน ให้ใช้ `workflowStatusOf(ticket)` เสมอ อย่าอ่าน `ticket.workflowStatus` โดดๆ เพราะข้อมูลดิบอาจไม่ได้เก็บค่าไว้
+- **Fair Cutoff Rule**: วัด On-Time ของ Dev อิงตาม `readyForQaAt` หรือ `devDeliveredOn` เทียบกับ `firstDueOn` ห้ามใช้เวลาปิดงาน `closedOn` ตัดคะแนน Dev
+- **Dynamic Net Quota**: ใช้ `calculateNetWeeklyQuota(baseQuota, leaveDays, holidays)` คำนวณความจุสุทธิตามสัดส่วนวันทำงานจริง
+- **Reviewer & QA Credit**: `calculateReviewerCredit` (10%) และ `calculateQaCredit` (15-20% หรือ `qaEstimatedMd`)
+- **Multi-Role Split**: เมื่อ `isSplitEffort === true` ให้คำนวณสัดส่วนคะแนนและ Effort ตาม `TicketAllocation`
 - โควตา MD/สัปดาห์ใช้จัดกำลังคน ไม่ใช่ตัวคูณดัชนีโดยตรง
 - `hoursPerMd` ค่าเริ่ม 6 (โฟกัส) — estimate/actual จากชั่วโมง ÷ ค่านี้
 - `applyGanttDateEdit` ใน `work-views.ts` แก้เฉพาะ `actualStartOn` และ `dueOn` ของใบที่ยังไม่ปิด — ห้ามทับ `firstDueOn` เด็ดขาด

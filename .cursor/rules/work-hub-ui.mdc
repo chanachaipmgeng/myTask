@@ -6,7 +6,13 @@ alwaysApply: false
 
 # มุมมองงานและพนักงาน (`/work`, `/tickets`, `/people`)
 
-- `/work` (ฮับบริหารงาน) เป็นฮับแท็บ Summary · Timeline · Backlog · Board · List — อย่าสร้างเมนูซ้ำสำหรับ Board
+- `/work` (ฮับบริหารงาน) เป็นฮับแท็บ Summary · Timeline · Backlog · Board · List · Handoff & SLA — อย่าสร้างเมนูซ้ำสำหรับ Board
+- หน้าจอตรวจสอบใหม่ 5 หน้าจอ (หน้าจอที่ 21–25):
+  - `/work/handoff`: ศูนย์ตรวจสอบการส่งต่อและคอขวดข้ามทีม (Chart StackingBar แนวนอน + Blocker Matrix + Grid ตรึง 2 คอลัมน์)
+  - `/quality/audit`: ศูนย์ตรวจสอบคุณภาพ QA & ช่องโหว่บั๊ก (DoD Gate Verifier ตรวจ MR/Unit Test/Staging Verified พร้อมปุ่ม Reject)
+  - `/analytics/time-audit`: ตรวจสอบเวลา 3 ทาง (3-Way Time Matching Grid เปรียบเทียบ Est vs OP Actual vs Git Span)
+  - `/tickets/disputes`: ศูนย์อุทธรณ์คะแนน (Split View รายการคำขอ + แผงพิจารณาพร้อมแบบจำลอง Projected Score Diff)
+  - `/admin/snapshot-check`: ห้องตรวจสอบก่อนปิดงวด (Readiness Score ProgressBar + เช็คลิสต์ 4 ด่าน + ตาราง Snapshot Preview Diff)
 - `/pipeline` ต้อง redirect ไป `/work/board`
 - `/tickets` (ตารางคะแนนใบงาน) คงเป็นตารางคะแนน+นำเข้าไฟล์ (ยุบฟอร์มนำเข้า/เพิ่มใบงาน/เกณฑ์คะแนนใน `ejs-accordion` และตรึง 2 คอลัมน์แรก `frozenColumns="2"`) — ส่วน List ใน `/work` เป็นมุมมองบริหารงาน ไม่ใช่คอลัมน์คะแนนเต็ม
 - Timeline (`/work/timeline`) ใช้ Syncfusion Gantt แสดงโครงสร้างแม่-ลูก (`parentID: 'ParentID'`), มี Toolbar (`ExpandAll`, `CollapseAll`, `ZoomIn`, `ZoomOut`, `ZoomToFit`, `Search`), และเปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin` | `lead` (`canAssignWork`) ผ่าน `applyGanttDateEdit` + `POST /api/work-items/:id/dates` (ห้ามทับ `firstDueOn`)

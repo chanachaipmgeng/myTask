@@ -54,7 +54,29 @@ export const routes: Routes = [
         path: 'list',
         loadComponent: () => import('./pages/work/work-list').then((m) => m.WorkList),
       },
+      {
+        path: 'handoff',
+        loadComponent: () => import('./pages/work/work-handoff').then((m) => m.WorkHandoffPage),
+      },
     ],
+  },
+  {
+    path: 'quality/audit',
+    loadComponent: () => import('./pages/quality-audit/quality-audit').then((m) => m.QualityAuditPage),
+  },
+  {
+    path: 'analytics/time-audit',
+    canActivate: [requireRoles('admin', 'lead')],
+    loadComponent: () => import('./pages/analytics/time-audit').then((m) => m.TimeAuditPage),
+  },
+  {
+    path: 'tickets/disputes',
+    loadComponent: () => import('./pages/tickets/disputes').then((m) => m.DisputesPage),
+  },
+  {
+    path: 'admin/snapshot-check',
+    canActivate: [requireRoles('admin', 'lead')],
+    loadComponent: () => import('./pages/admin/snapshot-check').then((m) => m.SnapshotCheckPage),
   },
   {
     path: 'tickets',

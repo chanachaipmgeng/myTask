@@ -34,7 +34,16 @@ npm --prefix server run build
 - AppBar (`app.html`): แสดงชิปสถานะระบบ + ชิปผู้ใช้/สิทธิ์ + ปุ่มแจ้งเตือนพร้อม `e-badge` เปิด `ejs-dialog` (`#alertDialog`)  
 - ตารางหลัก (`/tickets`, `/people`, `/work/list`): ใช้ `FreezeService` (`frozenColumns="2"` บน `/tickets`), `ColumnChooserService`, `ExcelExportService`, `ResizeService`, `AggregateService`  
 - **Syncfusion Frozen Columns**: คอลัมน์ที่ถูกตรึง (`.e-leftfreeze`, `.e-fixedfreeze`, `.e-frozenheader`) ต้องมีพื้นหลังทึบเสมอ (`#0f172a` ใน Dark Theme, `#ffffff` ใน Light Theme) ป้องกันข้อความของคอลัมน์ที่เลื่อนทะลุมาซ้อนทับ
-- **Light & Dark Theme Architecture**:
+- **Enterprise Multi-Team UI (หน้าจอ 21–25)**:
+  - `/work/handoff`: กราฟ `ejs-chart` แนวนอน `StackingBar` แสดง Stage Aging แยกตามทีม + Cross-Team Blocker Matrix + ตารางตรึง 2 คอลัมน์แรก + ปุ่ม Ping Teams
+  - `/quality/audit`: `ejs-tab` (DoD Gate Verifier ตรวจ MR/Unit Test/Staging Verified พร้อมปุ่ม Reject to Dev vs วิเคราะห์ Reopen Root-Causes)
+  - `/analytics/time-audit`: ตาราง 3-Way Time Matching Grid เปรียบเทียบ Estimate vs OpenProject Actual vs GitLab Commit Span
+  - `/tickets/disputes`: Split View รายการคำขอด้านซ้าย และแผงคำนวณคะแนนจำลอง (Projected Score Diff) ด้านขวา พร้อม `ejs-dialog` ยื่นอุทธรณ์
+  - `/admin/snapshot-check`: `ejs-progressbar` แสดง Readiness % + เช็คลิสต์ 4 ด่าน + ตาราง Snapshot Preview Diff เปรียบเทียบดัชนีรายบุคคลก่อน Freeze
+- **Light & Dark Theme Architecture (MyHR Plus Design Tokens)**:
+  - สีหลักระดับแบรนด์อิงตามเทมเพลต `myhrplus-backoffice-v5`: สีหลัก **MyHR Royal Blue** (`#2e4fc8` / `rgb(46, 79, 200)`), สีรอง/สว่าง (`#4c68e5`, `#5f7ce3`), และแถบเน้น AI/Spike (`#7465e8`)
+  - ฟอนต์หลักผสมผสานระหว่าง `'IBM Plex Sans Thai'`, `'Montserrat'`, และ `'Sarabun'` ตามมาตรฐาน MyHR v5
+  - แถบเมนูด้านข้าง (Sidebar): ใน Light Mode ใช้ Gradient สีน้ำเงินเอกลักษณ์ของ MyHR (`#2243ac` → `#4c68e5`) พร้อมป้ายและไอคอนสีขาวคมชัด, ใน Dark Mode ใช้ Deep Navy Gradient (`#0b1120` → `#162b70`)
   - `ThemeService` (`src/app/core/theme.service.ts`): สลับธีมแบบ zero-reload โดยสลับ `assets/themes/tailwind3.css` vs `assets/themes/tailwind3-dark.css` บน `<link id="sf-theme-link">` และสลับคลาส `e-dark-mode` vs `e-light-mode` บน `document.body`
   - จดจำค่าธีมใน `localStorage.getItem('md-theme')` พร้อม inline script ใน `src/index.html` เพื่อป้องกัน FOUC
   - คอมโพเนนต์กราฟฟิก (`ejs-chart`, `ejs-accumulationchart`, `ejs-progressbar`) ผูกธีมผ่าน `[theme]="theme.sfTheme()"` (`'Tailwind3Dark'` vs `'Tailwind3'`) โดยอัตโนมัติ
@@ -54,6 +63,12 @@ npm --prefix server run build
 
 ## สิทธิ์ / Board / Gantt / Writeback / KPI snapshot / Integrations
 
+- **Dynamic Track Formula Engine (6 สายงาน)**:
+  - รองรับ `RND`, `IMP`, `QA`, `UXBA`, `SUP`, `INFRA` โดยผูก Alias `Implement` ↔ `IMP` และ `RD` ↔ `RND`
+  - **Fair Cutoff Rule**: วัด On-time การส่งมอบของ Dev เมื่อการ์ดย้ายเข้า `Ready for QA` ครั้งแรก (`readyForQaAt` / `devDeliveredOn`) เทียบกับ `firstDueOn` (ไม่นำเวลาค้างรอคิว QA มาตัดคะแนน Dev)
+  - **Dynamic Leave Quota**: ปรับลดโควตาสุทธิอัตโนมัติ $\text{Net Quota} = \text{Base Quota} \times \frac{5 - \text{Leaves} - \text{Holidays}}{5}$
+  - **Reviewer & QA Credit**: เครดิตเวลาผู้ตรวจ MR 10% และผู้ทดสอบ QA 15–20% ของ `estimateMd`
+  - **Multi-Role Effort Split**: ตาราง `ticket_allocations` แยกคิดคะแนนและโควตารายบุคคลเมื่อ `isSplitEffort = true`
 - Assign / รับคิว & แก้วันบน Gantt Timeline (`/work/timeline`): `admin` | `lead` เท่านั้น (`canAssignWork`)  
 - Gantt Timeline: รองรับ `parentID: 'ParentID'` (`_links.parent` → `opParentId`/`parentId`) + แก้ `StartDate`/`EndDate` ผ่าน `applyGanttDateEdit` โดยห้ามทับ `firstDueOn`  
 - Kanban Board (`/work/board`): มี Swimlane switcher + `ejs-dialog` แก้ไขฟิลด์ · `admin`/`lead` ย้ายได้ทุกสถานะรวม `Done` และแก้แผนได้ (`canEditBoardPlanning`) · `member` ย้ายได้ถึง `Ready for QA` / `In QA` ห้ามปิด `Done` เอง (`canMoveWorkflowByRole`)  

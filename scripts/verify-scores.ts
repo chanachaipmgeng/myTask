@@ -49,11 +49,29 @@ import {
   INDEX_TARGET,
   SIZE_POINTS,
   WEEKLY_QUOTA,
+  calculateNetWeeklyQuota,
+  calculateQaCredit,
+  calculateReviewerCredit,
   scorePerson,
   scoreTicket,
   workloadCategory,
 } from '../src/app/core/scoring';
-import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID, SEED_PEOPLE, SEED_TICKETS } from '../src/app/data/seed';
+import {
+  computeHandoffSlaSummary,
+  computeQualityAuditSummary,
+  computeThreeWayTimeAudit,
+  runPreflightChecklist,
+  simulateDisputeImpact,
+} from '../shared/domain/multi-team';
+import {
+  REFERENCE_BUG_ID,
+  REFERENCE_SPIKE_ID,
+  SEED_DISPUTES,
+  SEED_LEAVES,
+  SEED_PEOPLE,
+  SEED_STAGE_LOGS,
+  SEED_TICKETS,
+} from '../src/app/data/seed';
 import {
   MOCK_BLUEPRINTS,
   MOCK_PERSON_IDS,
@@ -703,6 +721,50 @@ assert.equal(weekOffsetFromDates('2025-11-07', '2025-11-20'), 2);
   assert.ok(analyticsReport.coachingInsights.every((c) => c.strengthNote.length >= 1 && c.coachingFocus.length >= 1));
   assert.equal(scoreTicket(seeded(REFERENCE_BUG_ID)).total, 100);
   assert.equal(scoreTicket(seeded(REFERENCE_SPIKE_ID)).spikeScore, 100);
+
+  // Multi-Team & Enterprise v2 Verifications
+  // 1. Dynamic Net Weekly Quota adjustment (Spec 2.4: 4.0 * (5 - 1 - 1)/5 = 2.4 MD)
+  const netQuota = calculateNetWeeklyQuota(4.0, 1, 1);
+  assert.equal(netQuota, 2.4, 'Net weekly quota adjusts for leave and public holiday');
+
+  // 2. Reviewer & QA Credits (Spec 2.3)
+  const sampleTicket = seeded(REFERENCE_BUG_ID);
+  assert.equal(calculateReviewerCredit(sampleTicket), 0.05);
+  assert.equal(calculateQaCredit(sampleTicket), 0.08);
+
+  // 3. Multi-Team Handoff & SLA Report (Screen 21)
+  const handoffReport = computeHandoffSlaSummary(SEED_TICKETS, [...SEED_STAGE_LOGS], SEED_PEOPLE);
+  assert.ok(handoffReport.kpis.avgHandoffHours > 0);
+  assert.ok(handoffReport.stageAging.length >= 4);
+  assert.ok(handoffReport.blockerMatrix.length >= 2);
+  assert.ok(handoffReport.tickets.length > 0);
+
+  // 4. Quality & Defect Leakage Audit (Screen 22)
+  const qualityReport = computeQualityAuditSummary(SEED_TICKETS, SEED_PEOPLE);
+  assert.ok(qualityReport.kpis.firstTimeRightPct >= 0 && qualityReport.kpis.firstTimeRightPct <= 100);
+  assert.ok(qualityReport.dodChecklist.length > 0);
+
+  // 5. 3-Way Time Audit (Screen 23)
+  const timeReport = computeThreeWayTimeAudit(SEED_TICKETS, SEED_PEOPLE);
+  assert.equal(timeReport.totalTickets, SEED_TICKETS.length);
+  assert.ok(timeReport.rows.length === SEED_TICKETS.length);
+
+  // 6. Dispute Impact Simulation (Screen 24)
+  const testTicket = SEED_TICKETS[0];
+  const sim = simulateDisputeImpact(
+    testTicket,
+    SEED_PEOPLE.find((p) => p.id === testTicket.assigneeId) ?? SEED_PEOPLE[0],
+    SEED_TICKETS,
+    'BLK',
+  );
+  assert.ok(sim.scoreProjected >= sim.scoreBefore);
+  assert.ok(sim.personIndexProjected >= sim.personIndexBefore);
+
+  // 7. Pre-flight Readiness Check (Screen 25)
+  const preflight = runPreflightChecklist(SEED_PEOPLE, SEED_TICKETS, [...SEED_DISPUTES], [...SEED_LEAVES]);
+  assert.equal(preflight.checks.length, 4);
+  assert.equal(preflight.previewDiffs.length, SEED_PEOPLE.length);
+  assert.ok(preflight.overallReadinessScore >= 50);
 }
 
 assignPending
