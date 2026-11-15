@@ -317,3 +317,50 @@ export function workListRows(
 function formatMd(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
+
+/**
+ * Adds working days (Monday-Friday) to a YYYY-MM-DD date string.
+ * Saturdays and Sundays are skipped.
+ */
+export function addWorkingDays(startDateStr: string | null | undefined, daysToAdd: number): string {
+  if (!startDateStr) {
+    const today = todayInBangkok();
+    if (daysToAdd <= 0) return today;
+    startDateStr = today;
+  }
+  const date = new Date(startDateStr);
+  if (isNaN(date.getTime())) {
+    return startDateStr;
+  }
+  let added = 0;
+  while (added < daysToAdd) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    // 0 is Sunday, 6 is Saturday
+    if (day !== 0 && day !== 6) {
+      added++;
+    }
+  }
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Detects existing active WIP tickets for a person (In Progress or Reopened).
+ * Excludes tickets that are already paused or the current ticket itself.
+ */
+export function detectActiveWipTickets(
+  tickets: readonly Ticket[],
+  assigneeId: string,
+  excludeTicketId?: string,
+): Ticket[] {
+  if (!assigneeId) return [];
+  return tickets.filter((t) => {
+    if (t.id === excludeTicketId) return false;
+    if (t.assigneeId !== assigneeId) return false;
+    if (t.closed) return false;
+    if (t.isPaused) return false;
+    const st = workflowStatusOf(t);
+    return st === 'In Progress' || st === 'Reopened';
+  });
+}
+

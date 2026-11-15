@@ -30,6 +30,8 @@ import { personDashboard } from '../src/app/core/person-dashboard';
 import { ScorecardService } from '../src/app/core/scorecard.service';
 import {
   applyGanttDateEdit,
+  addWorkingDays,
+  detectActiveWipTickets,
   workBacklogRows,
   workGanttTasks,
   workListRows,
@@ -49,6 +51,8 @@ import {
   INDEX_TARGET,
   SIZE_POINTS,
   WEEKLY_QUOTA,
+  calculateMdMandateShare,
+  calculateNetActualMd,
   calculateNetWeeklyQuota,
   calculateQaCredit,
   calculateReviewerCredit,
@@ -765,6 +769,80 @@ assert.equal(weekOffsetFromDates('2025-11-07', '2025-11-20'), 2);
   assert.equal(preflight.checks.length, 4);
   assert.equal(preflight.previewDiffs.length, SEED_PEOPLE.length);
   assert.ok(preflight.overallReadinessScore >= 50);
+
+  // 8. MD Mandate & Auto-Shift Workflow Verifications
+  // 8.1 addWorkingDays skips weekends
+  assert.equal(addWorkingDays('2026-11-13', 1), '2026-11-16', 'Friday + 1 working day = Monday');
+  assert.equal(addWorkingDays('2026-11-13', 2), '2026-11-17', 'Friday + 2 working days = Tuesday');
+
+  // 8.2 Active WIP detection
+  const devAssignee = SEED_TICKETS[0].assigneeId;
+  const activeWips = detectActiveWipTickets(SEED_TICKETS, devAssignee);
+  assert.ok(Array.isArray(activeWips));
+
+  // 8.3 Scoring protection for paused ticket (does not penalize on-time & deducts pausedDays)
+  const pausedSample: Ticket = {
+    ...SEED_TICKETS[0],
+    closed: true,
+    weekOffset: 2, // normally would score 0 for week
+    isPaused: false,
+    pausedDays: 2.0, // compensated by MD mandate
+    actualMd: 4.0, // effective actual = 4.0 - 2.0 = 2.0 (matches estimateMd = 2.0)
+    estimateMd: 2.0,
+    reviewRounds: 1,
+    reopenCount: 0,
+    blocker: false,
+  };
+  const pausedScore = scoreTicket(pausedSample);
+  assert.equal(pausedScore.week, 40, 'Exempted/paused ticket retains 40 on-time points');
+  assert.equal(pausedScore.accuracy, 20, 'Paused days deducted from actual MD protects accuracy 20 points');
+  assert.equal(pausedScore.total, 100, 'Full 100 points granted for paused and resumed ticket');
+
+  // 8.4 calculateMdMandateShare
+  const mdShare = calculateMdMandateShare([
+    ...SEED_TICKETS,
+    { ...SEED_TICKETS[0], id: 'MD-999', isMdDirect: true, estimateMd: 3.0, actualMd: 3.0 },
+  ]);
+  assert.ok(mdShare.mdDirectCount >= 1);
+  assert.ok(mdShare.mdDirectMd >= 3.0);
+  assert.ok(mdShare.mdDirectSharePct > 0);
+
+  // 9. Tiered Tolerance & Peer Review MD Verifications
+  // 9.1 Tiered Tolerance
+  // Small ticket (S: 0.5 MD): Ratio 1.8 (within [0.5, 2.0]) gets 20 pts
+  const smallTicket: Ticket = {
+    ...SEED_TICKETS[0],
+    size: 'S',
+    estimateMd: 0.5,
+    actualMd: 0.9, // ratio = 1.8
+    closed: true,
+    weekOffset: 0,
+    reviewRounds: 1,
+    reopenCount: 0,
+    blocker: false,
+  };
+  const smallScore = scoreTicket(smallTicket);
+  assert.equal(smallScore.accuracy, 20, 'Small ticket XS/S with 1.8 ratio gets 20 pts due to broader tolerance');
+
+  // Large ticket (L: 2.0 MD): Ratio 1.4 (outside [0.85, 1.3]) gets 10 pts
+  const largeTicket: Ticket = {
+    ...SEED_TICKETS[0],
+    size: 'L',
+    estimateMd: 2.0,
+    actualMd: 2.8, // ratio = 1.4
+    closed: true,
+    weekOffset: 0,
+    reviewRounds: 1,
+    reopenCount: 0,
+    blocker: false,
+  };
+  const largeScore = scoreTicket(largeTicket);
+  assert.equal(largeScore.accuracy, 10, 'Large ticket L/XL with 1.4 ratio gets 10 pts due to tighter tolerance');
+
+  // 9.2 Peer Review MD & Net Actual MD calculation
+  assert.equal(calculateReviewerCredit(largeTicket, 0.12), 0.24, 'Peer review credit 12% on 2.0 MD is 0.24 MD');
+  const netActual = calculateNetActualMd(largeTicket, 6, 0, 6); // 2.8 - (6/6 = 1.0) = 1.8 MD
+  assert.equal(netActual, 1.8, 'Net Actual MD deducts blocked hours converted to MD');
 }
 
 assignPending

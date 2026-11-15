@@ -77,6 +77,31 @@ npm --prefix server run build
 - GitLab MR & Teams Webhook: ตั้งค่าใน `.env` หรือ `/integrations` (`ejs-tab` 3 ระบบ) · ซิงก์ MR จริงผ่าน `POST /api/integrations/gitlab/sync` (`gitlab-mr.ts`) · ยิง Teams จริงผ่าน `POST /api/integrations/teams/send`  
 - Role-Based Sidebar & Route Guards: เมนูใน `app.ts` กรองตาม `effectiveRole()` (`admin`, `lead`, `member`) + ปุ่มสลับมุมมองพนักงานบน AppBar (`#appbar-persona-toggle`) · การ์ด `requireRoles` ป้องกันหน้าจัดการสำหรับ `member` · หน้า `/me` สำหรับพอร์ทัลพนักงาน · หน้า `/login` สำหรับสลับบัญชีทั้ง 15 คน + SSO · Role Matrix & Audit Log บน `/admin`  
 - Python Sync & Analytics Intelligence Hub (`/analytics` + `scripts/analytics_engine.py` + `shared/domain/analytics.ts`): วิเคราะห์ Sync Hygiene Readiness %, Z-Score Outliers, Delivery Risk Radar, 1-on-1 Coaching Insights และ Module/Variance Bottlenecks ผ่าน `GET /api/analytics/report` และ `POST /api/analytics/run`  
+- **MD Mandate & Auto-Shift Workflow (โฟลว์งานสั่งตรงจาก MD)**:
+  - **การระบุงาน**: การ์ดแทรกที่สั่งตรงจาก MD จะมีแฟล็ก `isMdDirect: true` พร้อมระบุ `estimateMd` ชัดเจน และแสดงป้าย Tag `[MD-DIRECT]`
+  - **Active WIP Auto-Detection**: เมื่อลากเข้า `In Progress` ระบบจะตรวจจับงานค้างในมือ (`In Progress` / `Reopened`) ของ Assignee โดยอัตโนมัติ และแสดง Dialog ยืนยันพักเวลาและเลื่อนกำหนดส่ง
+  - **Working Days Calculation**: การเลื่อนกำหนดส่งแรก (`firstDueOn`) ต้องใช้ `addWorkingDays(startDate, shiftDays)` โดยคำนวณเว้นวันเสาร์-อาทิตย์เสมอ (ห้ามบวกวันปฏิทินตรงๆ)
+  - **Original Date Audit Trail**: ต้องบันทึกกำหนดส่งเดิมลงใน `originalFirstDueOn` และบันทึกประวัติการเลื่อนลง Audit Log ทุกครั้ง
+  - **Scoring Protection Rules**:
+    - งานที่ถูกพัก (`isPaused: true` หรือมี `pausedDays > 0`): ไม่ถูกตัดคะแนนส่งมอบตรงเวลา (การันตี 40 คะแนน On-time)
+    - นำจำนวนวันทำงานที่ถูกพัก (`pausedDays`) มาหักลบออกจาก `actualMd` ก่อนคำนวณอัตราส่วนความแม่นยำ เพื่อไม่ให้เสียคะแนนประเมิน (การันตี 20 คะแนน Accuracy)
+    - ใบงาน MD Mandate ให้นับเข้าโควตาผลงานเต็มจำนวน และแสดงผลวิเคราะห์ MD Share (%) บน Dashboard ภาพรวม
+- **OpenProject Sync & FirstDueOn Protection**:
+  - เมื่อดึงข้อมูลจาก OpenProject/MyProject: หาก `tickets.first_due_on` มีค่าอยู่แล้ว ห้ามเขียนทับโดยเด็ดขาด ยกเว้นกรณีที่มีคำสั่งอนุมัติจากตาราง `ticket_due_shifts` สถานะ `APPROVED` เท่านั้น
+- **GitLab Approvals & Peer Review Quota**:
+  - ซิงก์ผู้ตรวจโค้ด (`reviewers`) และผู้อนุมัติ (`approved_by`) ผ่าน GitLab API `/api/v4/projects/:id/merge_requests/:iid/approvals`
+  - คำนวณเครดิตเวลาโควตา **Peer Review MD** (10–15% ของ `estimateMd`) ให้รุ่นพี่/Senior ในทีมเพื่อความเป็นธรรม
+- **Tiered Tolerance Accuracy Engine**:
+  - กรอบความแม่นยำแบ่งตามขนาดงาน:
+    - **XS / S ($\le 0.5$ MD)**: กรอบกว้าง $[0.5, 2.0]$ ได้เต็ม 20 คะแนน (ความแปรปรวนของงานเล็กสูงกว่าปกติ)
+    - **M ($1.0$ MD)**: กรอบมาตรฐาน $[0.8, 1.5]$ ได้เต็ม 20 คะแนน
+    - **L / XL ($\ge 2.0$ MD)**: กรอบวินัยเข้ม $[0.85, 1.3]$ ได้เต็ม 20 คะแนน
+  - คำนวณ Net Actual MD โดยหักลบวันพักงาน (`pausedDays`), เวลาติดบล็อก (`blockedHours`), และเวลารอ QA
+- **Frontend MD Mandate Controls (Syncfusion Components)**:
+  - **Kanban Board (`/work/board`)**: ใน Card Edit Dialog มี `ejs-checkbox` ติ๊กงานสั่งตรงจาก MD พร้อม `ejs-multiselect` ดึงรายการงาน `In Progress` ของน้องคนนั้นเพื่อสั่ง Auto-Shift Due Date ในคลิกเดียว
+  - **New Work Queue (`/queue`)**: มีปุ่มคำสั่ง `⚡ รับงานด่วน MD & เลื่อนงานเดิม` ให้ Lead จ่ายงานแทรกและปรับตารางเวลาให้น้องทันที
+  - **Team & Person Dashboards (`/team` และ `/people/:id`)**: ใช้ `StackingColumn` บน `ejs-chart` แสดงสัดส่วน Planned MD vs Unplanned ทั่วไป vs MD Mandate
+
 
 ## อย่าทำ
 

@@ -92,6 +92,23 @@ export class OpenProjectSyncService {
           await this.rememberAssignee(client, wp, personByOp);
           const existing = await getWorkItemByOpId(this.db, wp.id);
           const activities = mapping.countReopens ? await client.getActivities(wp.id) : undefined;
+
+          // Check if there is an approved due shift for this ticket
+          let approvedDueShift: string | null = null;
+          if (existing) {
+            try {
+              const shiftRows = await this.db.query<{ new_first_due_on: string }>(
+                `SELECT new_first_due_on::text FROM ticket_due_shifts WHERE ticket_id = $1 AND status = 'APPROVED' ORDER BY approved_at DESC LIMIT 1`,
+                [existing.id],
+              );
+              if (shiftRows.length > 0 && shiftRows[0]?.new_first_due_on) {
+                approvedDueShift = shiftRows[0].new_first_due_on.slice(0, 10);
+              }
+            } catch {
+              // If table not yet queried or migrated
+            }
+          }
+
           const mapped = mapWorkPackage(wp, {
             mapping,
             hoursPerMd: settings.hoursPerMd,
@@ -100,6 +117,7 @@ export class OpenProjectSyncService {
             existing: existing ?? undefined,
             activities,
             today: todayInBangkok(),
+            approvedDueShift,
           });
           if (existing && stableTicketJson(existing) === stableTicketJson(mapped)) {
             unchanged += 1;

@@ -170,6 +170,8 @@ export interface MapContext {
   activities?: OpActivity[];
   /** yyyy-mm-dd in Asia/Bangkok. */
   today: string;
+  /** Approved shifted first due date from ticket_due_shifts, if any */
+  approvedDueShift?: string | null;
 }
 
 /** Fields owned by OpenProject. Everything else on an existing ticket is kept on resync. */
@@ -295,7 +297,12 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
 
   const dueOn = wp.dueDate ?? null;
   const firstDueOverride = dateOnly(customValue(wp, cf.firstDueOn) ?? undefined);
-  const firstDueOn = ctx.existing?.firstDueOn ?? firstDueOverride ?? dueOn;
+  // Logic: หาก tickets.first_due_on มีค่าอยู่แล้ว ห้ามเขียนทับ ยกเว้นมีคำสั่งอนุมัติจากตาราง ticket_due_shifts
+  const firstDueOn =
+    ctx.approvedDueShift ||
+    ctx.existing?.firstDueOn ||
+    firstDueOverride ||
+    dueOn;
   const closedOn = closed ? (closedOnFromActivities(ctx.activities, mapping) ?? dateOnly(wp.updatedAt)) : null;
   const reopenCount =
     ctx.activities && mapping.countReopens ? countReopens(ctx.activities, mapping) : (ctx.existing?.reopenCount ?? 0);

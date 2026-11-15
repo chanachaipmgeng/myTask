@@ -76,6 +76,8 @@ export class WorkSummary implements AfterViewInit {
     }),
   );
 
+  protected readonly mdMandate = this.scorecard.mdMandateReport;
+
   ngAfterViewInit(): void {
     this.scheduleChartRefresh();
     if (typeof ResizeObserver !== 'undefined') {

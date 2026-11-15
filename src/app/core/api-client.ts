@@ -377,4 +377,29 @@ export class ApiClient {
   getPreflightCheck(): Promise<any> {
     return api('/api/v2/snapshots/preflight-check');
   }
+
+  detectWip(assigneeId: string, excludeTicketId?: string): Promise<{ ok: boolean; activeTickets: Ticket[] }> {
+    return api('/api/work-items/md-mandate/detect-wip', {
+      method: 'POST',
+      body: JSON.stringify({ assigneeId, excludeTicketId }),
+    });
+  }
+
+  shiftForMdMandate(body: {
+    mdTicketId: string;
+    targetTicketIds: string[];
+    shiftDays: number;
+  }): Promise<{ ok: boolean; updatedTickets: Ticket[]; shiftDays: number; message?: string }> {
+    return api('/api/work-items/md-mandate/shift', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  resumeTicket(ticketId: string): Promise<{ ok: boolean; ticket: Ticket; message?: string }> {
+    return api('/api/work-items/md-mandate/resume', {
+      method: 'POST',
+      body: JSON.stringify({ ticketId }),
+    });
+  }
 }

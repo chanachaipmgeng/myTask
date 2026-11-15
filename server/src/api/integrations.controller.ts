@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Put, Post, Query, Req } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
+import { Ticket } from '../../../shared/domain/models';
 import { collectAlerts, projectedActual } from '../../../shared/domain/alerts';
 import { GitLabMergeRequestRaw, mapGitLabMergeRequests } from '../../../shared/domain/gitlab-mr';
 import { formatMd, scoreTicket } from '../../../shared/domain/scoring';
@@ -255,6 +256,31 @@ export class IntegrationsController {
         }
         const items = (await response.json()) as GitLabMergeRequestRaw[];
         if (Array.isArray(items)) {
+          // Fetch approvals for merged MRs to get reviewers & approved_by
+          for (const mr of items) {
+            if (mr.iid) {
+              try {
+                const approvalUrl = `${baseUrl}/api/v4/projects/${encoded}/merge_requests/${mr.iid}/approvals`;
+                const appRes = await fetch(approvalUrl, {
+                  headers: {
+                    Accept: 'application/json',
+                    'PRIVATE-TOKEN': token,
+                  },
+                });
+                if (appRes.ok) {
+                  const appData = (await appRes.json()) as {
+                    approved_by?: { user?: { id?: number; username?: string; name?: string } }[];
+                    approvers?: { user?: { id?: number; username?: string; name?: string } }[];
+                  };
+                  if (Array.isArray(appData.approved_by)) {
+                    mr.approved_by = appData.approved_by;
+                  }
+                }
+              } catch {
+                // Ignore approval fetch error per MR
+              }
+            }
+          }
           rawMrs.push(...items);
         }
       } catch (err) {
@@ -282,17 +308,22 @@ export class IntegrationsController {
         continue;
       }
       const reviewBefore = scoreTicket(target).review;
-      const nextTicket = {
+      const peerCredit = target.estimateMd ? Math.round(target.estimateMd * 0.1 * 100) / 100 : 0;
+      const nextTicket: Ticket = {
         ...target,
         reviewRounds: commit.reviewRounds,
         reopenCount: commit.reopenCount > 0 ? commit.reopenCount : target.reopenCount,
         mrLink: commit.mrLink || target.mrLink,
+        reviewers: commit.reviewers || target.reviewers,
+        approvedBy: commit.approvedBy || target.approvedBy,
+        peerReviewCreditMd: peerCredit,
       };
       const reviewAfter = scoreTicket(nextTicket).review;
       if (
         nextTicket.reviewRounds !== target.reviewRounds ||
         nextTicket.reopenCount !== target.reopenCount ||
-        nextTicket.mrLink !== target.mrLink
+        nextTicket.mrLink !== target.mrLink ||
+        JSON.stringify(nextTicket.approvedBy) !== JSON.stringify(target.approvedBy)
       ) {
         await upsertWorkItem(this.db, nextTicket, new Date());
         byId.set(target.id.toUpperCase(), nextTicket);

@@ -18,6 +18,14 @@ export interface QuotaBarPoint {
   free: number;
 }
 
+export interface MdCompositionPoint {
+  month: string;
+  plannedMd: number;
+  unplannedGeneralMd: number;
+  mdMandateMd: number;
+  totalMd: number;
+}
+
 const MONTH_LABELS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
 export function monthlyTrend(
@@ -74,6 +82,59 @@ export function quotaBars(
       used: row.openMd,
       free: Math.max(0, row.freeMd),
     }));
+}
+
+/**
+ * Computes monthly Man-day composition: Planned MD vs Unplanned (General) vs MD Mandate
+ */
+export function mdCompositionTrend(
+  tickets: readonly Ticket[],
+  personId?: string,
+): MdCompositionPoint[] {
+  const groups = new Map<string, Ticket[]>();
+  for (const ticket of tickets) {
+    if (!ticket.closed || !ticket.closedOn) continue;
+    if (personId && ticket.assigneeId !== personId) continue;
+
+    const key = ticket.closedOn.slice(0, 7);
+    const list = groups.get(key);
+    if (list) {
+      list.push(ticket);
+    } else {
+      groups.set(key, [ticket]);
+    }
+  }
+
+  return [...groups.keys()].sort().map((key) => {
+    const monthTickets = groups.get(key) ?? [];
+    let plannedMd = 0;
+    let unplannedGeneralMd = 0;
+    let mdMandateMd = 0;
+
+    for (const t of monthTickets) {
+      const effort = t.actualMd || t.estimateMd || 0;
+      if (t.isMdDirect) {
+        mdMandateMd += effort;
+      } else if (t.unplanned) {
+        unplannedGeneralMd += effort;
+      } else {
+        plannedMd += effort;
+      }
+    }
+
+    plannedMd = round1(plannedMd);
+    unplannedGeneralMd = round1(unplannedGeneralMd);
+    mdMandateMd = round1(mdMandateMd);
+    const totalMd = round1(plannedMd + unplannedGeneralMd + mdMandateMd);
+
+    return {
+      month: monthLabel(key),
+      plannedMd,
+      unplannedGeneralMd,
+      mdMandateMd,
+      totalMd,
+    };
+  });
 }
 
 function monthLabel(yearMonth: string): string {

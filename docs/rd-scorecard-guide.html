@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>คู่มือการจัดเก็บฟิลด์และโครงสร้างการคำนวณคะแนนทีม R&D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700;800&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4;
+      margin: 12mm 14mm 14mm 14mm;
+      @bottom-right {
+        content: counter(page);
+        font-family: 'IBM Plex Sans Thai', 'Sarabun', Tahoma, sans-serif;
+        font-size: 8.5pt;
+        color: #64748b;
+      }
+      @bottom-left {
+        content: "Man-day Scorecard — คู่มือจัดเก็บฟิลด์และการประเมินคะแนนทีม R&D (v2.0)";
+        font-family: 'IBM Plex Sans Thai', 'Sarabun', Tahoma, sans-serif;
+        font-size: 8pt;
+        color: #94a3b8;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans Thai', 'Sarabun', "Leelawadee UI", Tahoma, sans-serif;
+      font-size: 9.5pt;
+      line-height: 1.55;
+      color: #1e293b;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Cover Page */
+    .cover-page {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 44px 36px;
+      page-break-after: always;
+      background: linear-gradient(135deg, #0b1120 0%, #111f55 50%, #162b70 100%);
+      color: #ffffff;
+      border-radius: 14px;
+    }
+
+    .cover-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cover-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark-logo {
+      display: inline-grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2e4fc8, #4c68e5, #7465e8);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 13pt;
+      box-shadow: 0 4px 14px rgba(46, 79, 200, 0.45);
+    }
+
+    .brand-title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 15pt;
+      letter-spacing: 0.04em;
+      color: #ffffff;
+    }
+
+    .cover-badge {
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: #dce4fb;
+      letter-spacing: 0.05em;
+    }
+
+    .cover-center {
+      margin: 50px 0;
+    }
+
+    .cover-eyebrow {
+      color: #8fa5ee;
+      font-size: 12pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .cover-title {
+      font-size: 27pt;
+      font-weight: 800;
+      line-height: 1.25;
+      margin: 0 0 16px;
+      background: linear-gradient(135deg, #ffffff 20%, #bac8f6 70%, #5f7ce3 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cover-subtitle {
+      font-size: 13pt;
+      color: #cbd5e1;
+      max-width: 680px;
+      line-height: 1.6;
+      margin: 0 0 24px;
+    }
+
+    .cover-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .cover-tag {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 9pt;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #edf3ff;
+    }
+
+    .cover-bottom {
+      border-top: 1px solid rgba(148, 163, 184, 0.25);
+      padding-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9pt;
+      color: #94a3b8;
+    }
+
+    /* Page Breaks & Headings */
+    .page-break {
+      page-break-before: always;
+    }
+
+    .section-header {
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #2e4fc8;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-num {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      background: #2e4fc8;
+      color: #ffffff;
+      border-radius: 8px;
+      font-size: 10pt;
+      font-weight: 800;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 14pt;
+      font-weight: 700;
+      color: #142b50;
+    }
+
+    h3 {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #1e3690;
+      margin: 16px 0 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    h3::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 14px;
+      background: #2e4fc8;
+      border-radius: 2px;
+    }
+
+    p {
+      margin: 0 0 8px;
+      line-height: 1.55;
+    }
+
+    /* Cards & Containers */
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5ecf5;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px -4px rgba(46, 79, 200, 0.06);
+    }
+
+    .callout {
+      border-left: 4px solid #2e4fc8;
+      background: #eef2fd;
+      padding: 10px 14px;
+      border-radius: 0 8px 8px 0;
+      margin: 12px 0;
+      font-size: 9pt;
+      color: #162b70;
+    }
+
+    .callout.warn {
+      border-left-color: #f59e0b;
+      background: #fffbeb;
+      color: #78350f;
+    }
+
+    .callout.success {
+      border-left-color: #10b981;
+      background: #ecfdf5;
+      color: #064e3b;
+    }
+
+    /* Tables */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px;
+      font-size: 8.5pt;
+    }
+
+    table.data-table th,
+    table.data-table td {
+      border: 1px solid #e2e8f0;
+      padding: 7px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    table.data-table th {
+      background: #f0f4fd;
+      color: #142b50;
+      font-weight: 700;
+    }
+
+    table.data-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 7.5pt;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-blue { background: #eef2fd; color: #2e4fc8; border: 1px solid #bac8f6; }
+    .badge-green { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-amber { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .badge-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+
+    /* Visual Diagram Layouts */
+    .flow-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+
+    .flow-pillar {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px 10px;
+      text-align: center;
+      position: relative;
+    }
+
+    .flow-pillar-weight {
+      display: inline-block;
+      padding: 3px 10px;
+      background: #2e4fc8;
+      color: #ffffff;
+      font-size: 9pt;
+      font-weight: 800;
+      border-radius: 999px;
+      margin-bottom: 6px;
+    }
+
+    .flow-pillar-title {
+      font-weight: 700;
+      font-size: 9.5pt;
+      color: #142b50;
+      margin-bottom: 4px;
+    }
+
+    .flow-pillar-desc {
+      font-size: 8pt;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .lifecycle-steps {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 14px 0 16px;
+    }
+
+    .lifecycle-step {
+      background: #ffffff;
+      border: 1px solid #e5ecf5;
+      border-radius: 10px;
+      padding: 10px 8px;
+      font-size: 8pt;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      position: relative;
+    }
+
+    .step-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: #2e4fc8;
+      color: #fff;
+      display: inline-grid;
+      place-items: center;
+      font-size: 8pt;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .step-title {
+      font-weight: 700;
+      color: #142b50;
+      margin-bottom: 3px;
+    }
+
+    .step-desc {
+      color: #64748b;
+      line-height: 1.35;
+    }
+
+    .formula-box {
+      background: #f0f4fd;
+      border: 1px solid #bac8f6;
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin: 10px 0;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      color: #162b70;
+      font-size: 10pt;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       COVER PAGE
+       ======================================================================== -->
+  <div class="cover-page">
+    <div class="cover-top">
+      <div class="cover-brand">
+        <div class="brand-mark-logo">R</div>
+        <div class="brand-title">MAN-DAY SCORECARD</div>
+      </div>
+      <div class="cover-badge">ENTERPRISE MULTI-TEAM V2.0</div>
+    </div>
+
+    <div class="cover-center">
+      <div class="cover-eyebrow">R&amp;D Engineering Manual</div>
+      <div class="cover-title">คู่มือการจัดเก็บฟิลด์ &amp; โครงสร้างการคำนวณคะแนนทีม R&amp;D</div>
+      <div class="cover-subtitle">
+        แนวทางการเก็บข้อมูลใบงานทั้งแบบอัตโนมัติ (Auto Tracking) และแบบกรอกเพิ่มเติม (Manual Input) พร้อมสูตรคำนวณคะแนน มิติตัวชี้วัดการประเมินผล และกฎกติกาการส่งมอบงานวิจัยอย่างเป็นธรรม
+      </div>
+      <div class="cover-tags">
+        <span class="cover-tag">🔬 RND Track Formula</span>
+        <span class="cover-tag">🛡️ Definition of Done (40%)</span>
+        <span class="cover-tag">⏱️ Spike Timebox (25%)</span>
+        <span class="cover-tag">⚖️ Fair Cutoff Rule</span>
+        <span class="cover-tag">🤝 Reviewer Credit 10%</span>
+        <span class="cover-tag">📊 3-Way Time Audit</span>
+      </div>
+    </div>
+
+    <div class="cover-bottom">
+      <div>สำหรับ: ทีมวิจัยและพัฒนาซอฟต์แวร์ (R&amp;D / Architecture)</div>
+      <div>พิมพ์เมื่อ: 15 พฤศจิกายน 2026 · สถานะ: Approved</div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       SECTION 1: PHILOSOPHY & SCORING FORMULA
+       ======================================================================== -->
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <div class="section-num">1</div>
+      <h2>ปรัชญาและโครงสร้างสูตรคำนวณคะแนนทีม R&amp;D</h2>
+    </div>
+    <span class="badge badge-blue">RND Development Index</span>
+  </div>
+
+  <p>
+    ทีม <strong>Research &amp; Development (R&amp;D / RND)</strong> มีบทบาทหลักในการศึกษาเทคโนโลยีใหม่, วางมาตรฐานสถาปัตยกรรม (Architecture Baseline), สร้างงานต้นแบบ (POC / Spike), และลดความเสี่ยงทางเทคนิค (De-risking) ก่อนที่ทีม Implement จะนำไปสร้างเป็น Product จริง ดังนั้น สูตรคำนวณคะแนนของทีม R&amp;D จึงไม่วัดเพียงแค่ความเร็ว แต่เน้นที่ <strong>"วินัยในการวิจัย (Spike Discipline)"</strong> และ <strong>"เกณฑ์ความสมบูรณ์เชิงวิศวกรรม (Definition of Done)"</strong>
+  </p>
+
+  <div class="formula-box">
+    RND Index = (0.40 &times; DoD Score) + (0.25 &times; Spike Quality) + (0.20 &times; Outcome Index) + (0.15 &times; Review/Reopen Quality)
+  </div>
+
+  <div class="flow-grid-4">
+    <div class="flow-pillar" style="border-top: 3px solid #2e4fc8;">
+      <div class="flow-pillar-weight">40%</div>
+      <div class="flow-pillar-title">DoD Weighted Score</div>
+      <div class="flow-pillar-desc">
+        คะแนนใบงาน Feature/CR ที่ผ่านเกณฑ์ DoD 4 ด่าน (MR, Unit Test, Doc, Staging) และปิดสำเร็จ ถ่วงน้ำหนักตามขนาด Story Points
+      </div>
+    </div>
+
+    <div class="flow-pillar" style="border-top: 3px solid #7465e8;">
+      <div class="flow-pillar-weight" style="background: #7465e8;">25%</div>
+      <div class="flow-pillar-title">Spike Quality Score</div>
+      <div class="flow-pillar-desc">
+        วินัยการทำ POC ภายในกรอบเวลา Timebox (0.5 หรือ 1.0 MD เท่านั้น) และต้องแตกงานลูก (Child Tasks) ที่ประเมิน Size ครบ
+      </div>
+    </div>
+
+    <div class="flow-pillar" style="border-top: 3px solid #0ea5e9;">
+      <div class="flow-pillar-weight" style="background: #0ea5e9;">20%</div>
+      <div class="flow-pillar-title">Outcome Delivery</div>
+      <div class="flow-pillar-desc">
+        ร้อยละของ Actual MD ที่ส่งมอบคุณค่าจริงสำเร็จเทียบกับ Estimate MD ที่วางแผนไว้ในสปรินต์ (Capped สูงสุดที่ 100%)
+      </div>
+    </div>
+
+    <div class="flow-pillar" style="border-top: 3px solid #10b981;">
+      <div class="flow-pillar-weight" style="background: #10b981;">15%</div>
+      <div class="flow-pillar-title">Review &amp; Reopen</div>
+      <div class="flow-pillar-desc">
+        ความสะอาดของโค้ดและการทดสอบ วัดจากรอบตรวจ MR ไม่เกิน 2 รอบ และไม่มีประวัติการโดนตีกลับ (Zero Reopen)
+      </div>
+    </div>
+  </div>
+
+  <h3>เป้าหมายมาตรฐานและดัชนีสนับสนุน (Supporting Targets)</h3>
+  <ul>
+    <li><strong>RND Index เป้าหมาย:</strong> &ge; 75 คะแนน (เกณฑ์มาตรฐาน), &ge; 85 คะแนน (เกณฑ์ดีเยี่ยม)</li>
+    <li><strong>Spike Ratio ในกรอบมาตรฐาน:</strong> 15% &le; Spike MD / Planned MD &le; 40% (ต้องไม่ต่ำกว่า 15% เพื่อไม่ให้ขาดนวัตกรรม และไม่เกิน 40% เพื่อให้ยังมีเวลาส่งมอบคุณค่าหลัก)</li>
+    <li><strong>Unplanned Ticket Ratio:</strong> &le; 25% (สัดส่วนงานด่วน/งานแทรกนอกแผนไม่ควรเกิน 1.25 MD ต่อสัปดาห์)</li>
+    <li><strong>Focus Time ต่อวัน:</strong> 1 Man-day (MD) = 6 ชั่วโมงทำงานมาตรฐาน</li>
+  </ul>
+
+  <!-- ========================================================================
+       SECTION 2: END-TO-END DATA FLOW & LIFECYCLE
+       ======================================================================== -->
+  <div class="page-break"></div>
+
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <div class="section-num">2</div>
+      <h2>วงจรชีวิตใบงานและกลไกการตัดรอบส่งมอบที่เป็นธรรม (Fair Cutoff)</h2>
+    </div>
+    <span class="badge badge-green">Lifecycle &amp; SLA Mechanism</span>
+  </div>
+
+  <p>
+    เพื่อป้องกันปัญหาคลาสสิกที่ <em>"Dev ทำงานวิจัยเสร็จทันเวลา แต่ติดคิวรอ QA ทดสอบหรือรอฝั่ง Deploy จนวันปิดการ์ดเลย Due Date ทำให้ Dev โดนตัดคะแนน On-time"</em> ระบบจึงนำ <strong>Fair Cutoff Rule</strong> มาบังคับใช้อย่างเป็นทางการ
+  </p>
+
+  <div class="lifecycle-steps">
+    <div class="lifecycle-step">
+      <div class="step-num">1</div>
+      <div class="step-title">Planning</div>
+      <div class="step-desc">
+        สร้างการ์ดใน OpenProject ระบุ Track = <code>RND</code>, Estimate Time, ระบบล็อค <code>firstDueOn</code> อัตโนมัติ
+      </div>
+    </div>
+
+    <div class="lifecycle-step">
+      <div class="step-num">2</div>
+      <div class="step-title">Research &amp; Dev</div>
+      <div class="step-desc">
+        ลงมือวิจัย/เขียนโค้ด บันทึกเวลา actualHours, GitLab ซิงก์ commits และวัด <code>commitSpanHours</code>
+      </div>
+    </div>
+
+    <div class="lifecycle-step" style="border: 1.5px solid #2e4fc8; background: #eef2fd;">
+      <div class="step-num" style="background: #2e4fc8;">3</div>
+      <div class="step-title" style="color: #162b70;">Fair Cutoff ⭐</div>
+      <div class="step-desc" style="color: #1e3690;">
+        ย้ายเข้า <strong>Ready for QA</strong> ครั้งแรก ระบบสแตมป์ <code>readyForQaAt</code> และ <strong>ล็อคคะแนน On-time ของ Dev ทันที!</strong>
+      </div>
+    </div>
+
+    <div class="lifecycle-step">
+      <div class="step-num">4</div>
+      <div class="step-title">DoD Gate</div>
+      <div class="step-desc">
+        ตรวจเช็คลิสต์ DoD 4 ข้อ (MR Review, Unit Test &ge; 80%, เอกสาร ADR, Staging Test)
+      </div>
+    </div>
+
+    <div class="lifecycle-step">
+      <div class="step-num">5</div>
+      <div class="step-title">Done &amp; Score</div>
+      <div class="step-desc">
+        การ์ดเข้า Done คำนวณ RND Index, คืนเครดิตรีวิว 10% ให้ผู้ตรวจ MR, บันทึก KPI Snapshot
+      </div>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>ข้อตกลง Fair Cutoff:</strong> วันส่งมอบ (Dev Delivered On) จะถูกตัดทันทีที่ย้ายเข้า <code>Ready for QA</code> ครั้งแรก หากส่งมอบทันสัปดาห์ที่กำหนดใน <code>firstDueOn</code> วิศวกร R&amp;D จะได้คะแนน On-time เต็ม 40 คะแนนทันที แม้ว่า QA จะใช้เวลาทดสอบอีกหลายวันหลังจากนั้นก็ตาม
+  </div>
+
+  <h3>กติกาเฉพาะสำหรับงานวิจัยแบบ Spike (Timebox Discipline)</h3>
+  <p>งาน Spike แต่ละใบมีระบบคะแนนแบบ <strong>All-or-Nothing (100 คะแนน หรือ 0 คะแนน)</strong> โดยต้องผ่านเกณฑ์ทั้ง 4 ข้อ:</p>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 28%;">ด่านตรวจสอบ (Gate)</th>
+        <th style="width: 32%;">เกณฑ์ที่ระบบบังคับ</th>
+        <th style="width: 40%;">ผลหากไม่ผ่านเกณฑ์</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Timebox Legal Limit</strong></td>
+        <td>Estimate MD ต้องเป็น <strong>0.5 MD (3 ชม.) หรือ 1.0 MD (6 ชม.)</strong> เท่านั้น</td>
+        <td>หากตั้งเป็น 2 MD หรือ 3 MD คะแนน Spike Quality จะเป็น <strong>0 คะแนน</strong> ทันที</td>
+      </tr>
+      <tr>
+        <td><strong>2. Execution within Timebox</strong></td>
+        <td>งานวิจัยต้องสรุปผลเสร็จสิ้นภายในกรอบเวลาที่ตั้งไว้ (<code>inTimeBox = true</code>)</td>
+        <td>หากการทดลองบานปลายเกินกรอบเวลา คะแนนจะตกเป็น 0</td>
+      </tr>
+      <tr>
+        <td><strong>3. Child Tickets Sizing</strong></td>
+        <td>เมื่อ Spike จบ ต้องแตกงานเป็น Story/Task ย่อยที่ประเมินขนาด Size (XS–XL) พร้อมทำต่อ</td>
+        <td>Spike ที่ทำเสร็จแต่ไม่แตก Actionable Tickets ให้ทีมทำต่อ จะได้ 0 คะแนน</td>
+      </tr>
+      <tr>
+        <td><strong>4. Closure Status</strong></td>
+        <td>ต้องปิดสถานะเป็น <code>Done</code> ในระบบ</td>
+        <td>Spike ที่ค้างข้ามสปรินต์จะไม่ถูกนำมาคิดคะแนนคุณภาพ</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ========================================================================
+       SECTION 3: FIELDS BREAKDOWN (AUTO VS MANUAL)
+       ======================================================================== -->
+  <div class="page-break"></div>
+
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <div class="section-num">3</div>
+      <h2>ตารางแจกแจงฟิลด์ข้อมูลที่ต้องจัดเก็บ (Fields Breakdown)</h2>
+    </div>
+    <span class="badge badge-purple">Data Dictionary</span>
+  </div>
+
+  <h3>3.1 กลุ่มฟิลด์ที่ระบบเก็บและคำนวณอัตโนมัติ (Automated Tracking)</h3>
+  <p style="font-size: 8.5pt; color: #64748b;">
+    ฟิลด์ในกลุ่มนี้วิศวกร R&amp;D ไม่ต้องกรอกซ้ำซ้อน ระบบจะดึงและประมวลผลจาก OpenProject, GitLab API, และ Commit Webhooks โดยตรง:
+  </p>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 22%;">ชื่อฟิลด์ในระบบ</th>
+        <th style="width: 20%;">แหล่งข้อมูล</th>
+        <th style="width: 28%;">คำอธิบายการทำงาน</th>
+        <th style="width: 30%;">ผลกระทบต่อคะแนน R&amp;D</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>opId</code></td>
+        <td>OpenProject ID</td>
+        <td>รหัส Work Package ในระบบจัดการงาน</td>
+        <td>ใช้จับคู่ความถูกต้องของข้อมูลข้ามระบบ</td>
+      </tr>
+      <tr>
+        <td><code>type</code></td>
+        <td>Type Field</td>
+        <td>จำแนกประเภทงาน เช่น <code>Spike</code>, <code>Feature</code>, <code>TechDebt</code></td>
+        <td>แยกคิดสูตร Spike Quality vs DoD Weighted Score</td>
+      </tr>
+      <tr>
+        <td><code>track</code></td>
+        <td>Custom Field</td>
+        <td>ระบุสังกัดสายงาน เช่น <code>RND</code> หรือ <code>RD</code></td>
+        <td>สวิตช์เข้าสูตรคำนวณของ R&amp;D Engine (40/25/20/15)</td>
+      </tr>
+      <tr>
+        <td><code>estimateMd</code></td>
+        <td>Estimated Hours</td>
+        <td>แปลงจากชม. เป็น Man-day โดยหารด้วย 6</td>
+        <td>ใช้ตรวจสอบ Timebox ของ Spike และคิด Accuracy</td>
+      </tr>
+      <tr>
+        <td><code>actualMd</code></td>
+        <td>Spent Time Logged</td>
+        <td>แปลงจากชั่วโมงที่ Log ในระบบ หารด้วย 6</td>
+        <td>คำนวณสัดส่วนความแม่นยำ (Actual / Estimate)</td>
+      </tr>
+      <tr>
+        <td><code>firstDueOn</code></td>
+        <td>Due Date (Created)</td>
+        <td>ระบบจับค่าวัน Due Date ครั้งแรกสุดแล้วล็อคทันที</td>
+        <td>ใช้เป็นเส้นตายอ้างอิง On-time (ห้ามเลื่อนหนีคะแนน)</td>
+      </tr>
+      <tr>
+        <td><code>readyForQaAt</code></td>
+        <td>Stage Logs</td>
+        <td>เวลาประทับเมื่อการ์ดย้ายเข้า Ready for QA ครั้งแรก</td>
+        <td><strong>Fair Cutoff:</strong> ใช้คำนวณ Week Offset ส่งมอบของ Dev</td>
+      </tr>
+      <tr>
+        <td><code>reopenCount</code></td>
+        <td>Status History</td>
+        <td>นับจำนวนครั้งที่การ์ดถูกตีกลับจาก QA หรือ Review</td>
+        <td>คิดคะแนน Reopen (20, 10, 0) และ Rework Rate</td>
+      </tr>
+      <tr>
+        <td><code>commitSpanHours</code></td>
+        <td>GitLab Commits</td>
+        <td>ระยะเวลาห่างจาก First Commit ถึง Last Commit</td>
+        <td>ใช้ทำ 3-Way Time Audit ตรวจจับ Ghost-logging</td>
+      </tr>
+      <tr>
+        <td><code>reviewerCreditMd</code></td>
+        <td>GitLab MR API</td>
+        <td>ตรวจจับเมื่อวิศวกร R&amp;D ไปกด Approve MR ให้เพื่อน</td>
+        <td><strong>คืนเครดิตเวลา 10%</strong> ของขนาด Estimate ของงานนั้น</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 กลุ่มฟิลด์ที่ทีม R&amp;D หรือ Lead ต้องระบุหรือตรวจสอบ (Manual Input)</h3>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 20%;">ชื่อฟิลด์</th>
+        <th style="width: 18%;">ใครเป็นผู้บันทึก</th>
+        <th style="width: 32%;">เกณฑ์และแนวทางการระบุข้อมูล</th>
+        <th style="width: 30%;">ผลกระทบต่อคะแนน R&amp;D</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>isSpike</code></td>
+        <td>Dev / Lead</td>
+        <td>เลือก Type = <code>Spike</code> เมื่องานนั้นเป็นการศึกษาหรือ POC</td>
+        <td>เปิดโหมดคำนวณ Spike Quality และ Spike Ratio</td>
+      </tr>
+      <tr>
+        <td><code>inTimeBox</code></td>
+        <td>Dev / Lead</td>
+        <td>ติ๊กยืนยันเมื่อสรุปผลการวิจัยได้ภายในกรอบเวลาที่ตกลงไว้</td>
+        <td>จำเป็นต่อการได้ 100 คะแนนเต็มของ Spike ใบนั้น</td>
+      </tr>
+      <tr>
+        <td><code>childTicketsSized</code></td>
+        <td>Dev / Lead</td>
+        <td>ติ๊กยืนยันเมื่อแตก Actionable Tasks พร้อมระบุ Size (XS–XL)</td>
+        <td>จำเป็นต่อการได้ 100 คะแนนเต็มของ Spike ใบนั้น</td>
+      </tr>
+      <tr>
+        <td><code>dodPassed</code></td>
+        <td>Lead / QA</td>
+        <td>ผ่านเกณฑ์ 4 ด่าน (MR Review, Test &ge; 80%, Doc, Staging)</td>
+        <td>หากไม่ผ่าน งาน Feature/CR ใบนั้นจะไม่ถูกคิดคะแนน DoD</td>
+      </tr>
+      <tr>
+        <td><code>varianceCode</code></td>
+        <td>Dev / Lead</td>
+        <td>ระบุสาเหตุเมื่อส่งช้า: <code>REQ</code> (สเปกเปลี่ยน), <code>BLK</code> (ติดบล็อค), <code>ENV</code> (แล็บล่ม)</td>
+        <td>หากตรงกับ 3 รหัสดังกล่าว จะได้รับสิทธิ์ <strong>Exempt (คะแนนเต็ม)</strong></td>
+      </tr>
+      <tr>
+        <td><code>isSplitEffort</code></td>
+        <td>Lead / Dev</td>
+        <td>ระบุสัดส่วนเมื่อทำงานวิจัยร่วมกัน เช่น นาย A 60%, นาย B 40%</td>
+        <td>เฉลี่ยทั้งตัวหารโควตาและคะแนนส่งมอบตามสัดส่วนจริง</td>
+      </tr>
+      <tr>
+        <td><code>leaveDays</code></td>
+        <td>Lead / HR</td>
+        <td>ระบุวันลาพักร้อน/ลากิจของวิศวกรในรอบสัปดาห์</td>
+        <td>คำนวณ <strong>Dynamic Quota</strong> ปรับลดเป้าส่งมอบสุทธิลง</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ========================================================================
+       SECTION 4: KPI DIMENSIONS & EVALUATION
+       ======================================================================== -->
+  <div class="page-break"></div>
+
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <div class="section-num">4</div>
+      <h2>มิติตัวชี้วัดการประเมินผลและการแปลความหมาย (5 KPI Dimensions)</h2>
+    </div>
+    <span class="badge badge-amber">Evaluation &amp; Insights</span>
+  </div>
+
+  <p>
+    ข้อมูลและคะแนนที่บันทึกสามารถนำไปใช้ประเมินและสะท้อนทักษะของวิศวกรวิจัยและพัฒนาใน 5 มิติสำคัญ:
+  </p>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 22%;">มิติการประเมิน</th>
+        <th style="width: 20%;">ตัวชี้วัดที่ใช้</th>
+        <th style="width: 28%;">สัญญาณเตือนที่ต้องระวัง</th>
+        <th style="width: 30%;">แนวทางการปรับปรุงและ Coaching</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. ความแม่นยำในการส่งมอบ (Delivery Predictability)</strong></td>
+        <td>
+          - <code>outcomeIndexPct</code> (&ge; 80%)<br/>
+          - <code>weekOffset</code> (&le; 0 wk)
+        </td>
+        <td>Outcome ต่ำกว่า 60% ต่อเนื่องหลายเดือน แสดงว่างานวิจัยขึ้นหิ้ง ไม่สามารถต่อยอดสู่ Production ได้จริง</td>
+        <td>ปรับขอบเขตของ POC ให้กระชับขึ้น มุ่งเน้นแก้ Pain Point ของระบบ มากกว่าทำวิจัยเชิงทฤษฎี</td>
+      </tr>
+      <tr>
+        <td><strong>2. วินัยการวิจัยนวัตกรรม (Research Agility)</strong></td>
+        <td>
+          - <code>spikeRatio</code> (15%–40%)<br/>
+          - <code>spikeQuality</code> (&ge; 85%)
+        </td>
+        <td>
+          - <em>Spike &lt; 15%:</em> ทีมหมดไฟ นวัตกรรมหยุดนิ่ง<br/>
+          - <em>Spike &gt; 40%:</em> วิจัยฟุ้งซ่าน ไม่ส่งมอบคุณค่าหลัก
+        </td>
+        <td>จัดสรร Backlog ให้มีงาน Spike ประมาณ 1 ใน 4 ของเวลาทั้งหมด และคุม Timebox 3 ชม. หรือ 6 ชม. เคร่งครัด</td>
+      </tr>
+      <tr>
+        <td><strong>3. คุณภาพเชิงวิศวกรรม (Engineering Rigor)</strong></td>
+        <td>
+          - <code>dodWeightedScore</code><br/>
+          - <code>reworkRate</code> (&le; 10%)<br/>
+          - Review Rounds (&le; 2.0)
+        </td>
+        <td>อัตรา Reopen สูงกว่า 20% หรือโดน Reject DoD บ่อย แสดงว่าโค้ดต้นแบบเปราะบาง ขาด Unit Test</td>
+        <td>กำหนดให้ทำ Automated Test ในขั้น POC และจัดทำคู่มือสถาปัตยกรรม (ADR) ให้ครบถ้วนก่อนส่งมอบ</td>
+      </tr>
+      <tr>
+        <td><strong>4. การทำงานร่วมกัน (Peer Collaboration)</strong></td>
+        <td>
+          - <code>reviewerCreditMd</code><br/>
+          - สถิติ Review ใน Time Audit
+        </td>
+        <td>วิศวกร Senior มีผลงานเขียนโค้ดเดี่ยวน้อยลงเพราะต้องสละเวลารีวิวสถาปัตยกรรมให้น้องในทีม</td>
+        <td>ระบบบวกเครดิตเวลา 10% ให้ผู้รีวิวอัตโนมัติ ทำให้ Senior มีเวลาโควตารวมเพิ่มขึ้นอย่างเป็นธรรม</td>
+      </tr>
+      <tr>
+        <td><strong>5. ความซื่อตรงของเวลา (3-Way Time Integrity)</strong></td>
+        <td>
+          - Estimate vs Actual vs Commit Span
+        </td>
+        <td>Log เวลา 12 ชม. แต่วัด Commit Span จาก Git ได้เพียง 20 นาที (สัญญาณ Ghost-logging หรือ Over-commitment)</td>
+        <td>ใช้ข้อมูลในหน้า <code>/analytics/time-audit</code> พูดคุยแบบ 1-on-1 เพื่อปรับ Work-Life Balance และแก้คอขวด</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="card" style="margin-top: 14px; background: #f0f4fd; border-color: #bac8f6;">
+    <h3 style="margin-top: 0; color: #162b70;">ภาพรวมการตรวจสอบเวลา 3 มิติ (3-Way Time Audit Concept)</h3>
+    <p style="font-size: 8.5pt; color: #334155;">
+      ระบบ <strong>Time Audit</strong> ในหน้าจอที่ 23 (<code>/analytics/time-audit</code>) ช่วยให้หัวหน้าทีมและวิศวกรตรวจสอบความสมดุลของเวลา 3 แหล่งข้อมูล:
+    </p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 8px; text-align: center;">
+      <div style="background: #ffffff; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
+        <div style="font-weight: 700; color: #2e4fc8;">1. Estimate MD</div>
+        <div style="font-size: 7.5pt; color: #64748b;">เวลาที่วางแผนไว้ในสปรินต์</div>
+      </div>
+      <div style="background: #ffffff; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
+        <div style="font-weight: 700; color: #10b981;">2. OpenProject Actual</div>
+        <div style="font-size: 7.5pt; color: #64748b;">เวลา Focus ที่วิศวกร Log จริง</div>
+      </div>
+      <div style="background: #ffffff; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
+        <div style="font-weight: 700; color: #7465e8;">3. GitLab Commit Span</div>
+        <div style="font-size: 7.5pt; color: #64748b;">ระยะเวลาที่โค้ดจริงบน Repository</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top: 16px;">
+    <strong>สรุปคำแนะนำสำหรับวิศวกร R&amp;D:</strong> ยึดมั่นในวินัย 5 ข้อ &mdash; (1) คุม Timebox ของ Spike ไม่เกิน 1 MD, (2) รักษาสัดส่วนงานวิจัย 20%–35%, (3) ย้ายเข้า Ready for QA ทันทีที่พร้อมตรวจเพื่อรับสิทธิ์ Fair Cutoff, (4) เช็คลิสต์ DoD ให้ผ่านรอบเดียว, และ (5) ระบุ Variance Code เสมอหากติดปัญหาภายนอก
+  </div>
+
+</body>
+</html>

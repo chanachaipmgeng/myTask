@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import { Ticket } from '../../../shared/domain/models';
-import { applyGanttDateEdit } from '../../../shared/domain/work-views';
+import { addWorkingDays, applyGanttDateEdit, detectActiveWipTickets } from '../../../shared/domain/work-views';
+import { todayInBangkok } from '../../../shared/domain/workflow';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { APP_CONFIG, AppConfig } from '../config';
 import { getPerson } from '../data/people.repo';
@@ -170,5 +171,95 @@ export class WorkItemsController {
     }
 
     return writebackError ? { ok: true, ticket: saved, writebackError } : { ok: true, ticket: saved };
+  }
+
+  @Post('md-mandate/detect-wip')
+  @Roles('admin', 'lead', 'member')
+  async detectWip(
+    @Body() body: { assigneeId: string; excludeTicketId?: string },
+  ) {
+    const tickets = await listWorkItems(this.db);
+    const active = detectActiveWipTickets(tickets, body.assigneeId, body.excludeTicketId);
+    return { ok: true, activeTickets: active };
+  }
+
+  @Post('md-mandate/shift')
+  @Roles('admin', 'lead', 'member')
+  async shiftForMdMandate(
+    @Body()
+    body: {
+      mdTicketId: string;
+      targetTicketIds: string[];
+      shiftDays: number;
+    },
+    @Req() req: AuthedRequest,
+  ) {
+    const mdTicket = await getWorkItem(this.db, body.mdTicketId);
+    if (!mdTicket) {
+      return { ok: false, message: 'ไม่พบใบงาน MD Mandate' };
+    }
+
+    const shiftDays = body.shiftDays > 0 ? body.shiftDays : Math.max(1, Math.ceil(mdTicket.estimateMd || 1));
+    const nowIso = new Date().toISOString();
+    const updatedTickets: Ticket[] = [];
+
+    for (const targetId of body.targetTicketIds) {
+      const ticket = await getWorkItem(this.db, targetId);
+      if (!ticket) continue;
+
+      const originalFirstDueOn = ticket.originalFirstDueOn || ticket.firstDueOn || null;
+      const newFirstDueOn = addWorkingDays(ticket.firstDueOn || originalFirstDueOn, shiftDays);
+      const newDueOn = addWorkingDays(ticket.dueOn || ticket.firstDueOn, shiftDays);
+
+      const pausedTicket: Ticket = {
+        ...ticket,
+        isPaused: true,
+        pausedReason: 'Paused (By MD Mandate)',
+        originalFirstDueOn,
+        firstDueOn: newFirstDueOn,
+        dueOn: newDueOn,
+        pausedAt: nowIso,
+        pausedDays: (ticket.pausedDays || 0) + shiftDays,
+        pausedByTicketId: mdTicket.id,
+      };
+
+      const saved = await upsertWorkItem(this.db, pausedTicket);
+      updatedTickets.push(saved);
+
+      await this.db.audit(req.authUser?.person.id ?? null, 'work_item.md_mandate_shift', targetId, {
+        mdTicketId: mdTicket.id,
+        shiftDays,
+        originalFirstDueOn,
+        newFirstDueOn,
+      });
+    }
+
+    return { ok: true, updatedTickets, shiftDays };
+  }
+
+  @Post('md-mandate/resume')
+  @Roles('admin', 'lead', 'member')
+  async resumeTicket(
+    @Body() body: { ticketId: string },
+    @Req() req: AuthedRequest,
+  ) {
+    const ticket = await getWorkItem(this.db, body.ticketId);
+    if (!ticket) {
+      return { ok: false, message: 'ไม่พบใบงาน' };
+    }
+
+    const resumedTicket: Ticket = {
+      ...ticket,
+      isPaused: false,
+      pausedReason: null,
+      pausedAt: null,
+    };
+
+    const saved = await upsertWorkItem(this.db, resumedTicket);
+    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.md_mandate_resume', body.ticketId, {
+      pausedDays: saved.pausedDays,
+    });
+
+    return { ok: true, ticket: saved };
   }
 }

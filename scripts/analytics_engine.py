@@ -43,23 +43,48 @@ def ols_slope(values: List[float]) -> float:
     return 0.0 if den == 0 else num / den
 
 
+def accuracy_band_points(ratio: float, size: str) -> int:
+    """Tiered Tolerance Accuracy Band by Size."""
+    s = (size or "M").upper()
+    if s in ("XS", "S"):
+        if 0.5 <= ratio <= 2.0:
+            return 20
+        elif (0.3 <= ratio < 0.5) or (2.0 < ratio <= 2.5):
+            return 10
+        return 0
+    elif s in ("L", "XL"):
+        if 0.85 <= ratio <= 1.3:
+            return 20
+        elif (0.7 <= ratio < 0.85) or (1.3 < ratio <= 1.6):
+            return 10
+        return 0
+    else:  # M / default
+        if 0.8 <= ratio <= 1.5:
+            return 20
+        elif (0.5 <= ratio < 0.8) or (1.5 < ratio <= 2.0):
+            return 10
+        return 0
+
+
 def score_ticket_total(ticket: Dict[str, Any]) -> float:
     if not ticket.get("closed"):
         return 0.0
     variance = ticket.get("varianceCode", "NONE")
-    waived = variance in ("REQ", "BLK", "ENV")
+    paused_days = float(ticket.get("pausedDays", 0) or 0)
+    waived = variance in ("REQ", "BLK", "ENV") or (paused_days > 0 and not ticket.get("isPaused"))
     offset = int(ticket.get("weekOffset", 0) or 0)
     week_pts = 40 if (waived or offset <= 0) else (20 if offset == 1 else 0)
 
     est = float(ticket.get("estimateMd", 0) or 0)
     act = float(ticket.get("actualMd", 0) or 0)
-    ratio = act / est if est > 0 else 0.0
-    if waived or (0.8 <= ratio <= 1.5):
+    net_act = max(0.0, act - paused_days)
+    ratio = net_act / est if est > 0 else 0.0
+    size = str(ticket.get("size", "M"))
+
+    if waived:
         acc_pts = 20
-    elif 0.5 <= ratio <= 2.0:
-        acc_pts = 10
     else:
-        acc_pts = 0
+        acc_pts = accuracy_band_points(ratio, size)
 
     rounds = int(ticket.get("reviewRounds", 0) or 0)
     blocker = bool(ticket.get("blocker", False))

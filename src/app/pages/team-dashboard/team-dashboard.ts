@@ -20,6 +20,7 @@ import {
   ChartComponent,
   ChartModule,
   ColumnSeriesService,
+  StackingColumnSeriesService,
   LegendService,
   LineSeriesService,
   PieSeriesService,
@@ -33,7 +34,7 @@ import { DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { canCaptureKpi } from '../../core/admin-settings';
 import { ApiClient, KpiSnapshotPeriodDto, KpiSnapshotRowDto } from '../../core/api-client';
-import { monthlyTrend, quotaBars } from '../../core/dashboard-charts';
+import { mdCompositionTrend, monthlyTrend, quotaBars } from '../../core/dashboard-charts';
 import { kpiExplanations } from '../../core/kpi-meaning';
 import { KpiPeriodType, previousMonthKey } from '../../core/kpi-snapshot';
 import { Track } from '../../core/models';
@@ -69,6 +70,7 @@ const LIVE_MODE = 'live';
     CategoryService,
     LineSeriesService,
     ColumnSeriesService,
+    StackingColumnSeriesService,
     LegendService,
     TooltipService,
     SortService,
@@ -178,6 +180,9 @@ export class TeamDashboard implements AfterViewInit {
   );
   protected readonly quotaPoints = computed(() =>
     quotaBars(this.scorecard.people(), this.scorecard.tickets(), this.track()),
+  );
+  protected readonly mdCompositionPoints = computed(() =>
+    mdCompositionTrend(this.scorecard.tickets()),
   );
 
   protected readonly samplePoints = computed(() =>

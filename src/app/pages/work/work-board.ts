@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
-import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
 import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
+import { DropDownListModule, MultiSelectModule } from '@syncfusion/ej2-angular-dropdowns';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { KanbanModule } from '@syncfusion/ej2-angular-kanban';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
@@ -21,6 +21,7 @@ import {
   PocResult,
   STORY_POINTS,
   StoryPoint,
+  Ticket,
   WORK_CATEGORIES,
   WORKFLOW_STATUSES,
   WorkCategory,
@@ -50,14 +51,17 @@ type SwimlaneMode = 'none' | 'assignee' | 'track';
     ProgressBarModule,
     DialogModule,
     DropDownListModule,
+    MultiSelectModule,
     DatePickerModule,
     TextBoxModule,
     ButtonModule,
+    CheckBoxModule,
     MessageModule,
   ],
   templateUrl: './work-board.html',
 })
 export class WorkBoard {
+  protected readonly Math = Math;
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
   private readonly hub = inject(WorkHubFilter);
@@ -66,6 +70,12 @@ export class WorkBoard {
 
   @ViewChild('blockDialog') private blockDialog?: DialogComponent;
   @ViewChild('editDialog') private editDialog?: DialogComponent;
+  @ViewChild('mdShiftDialog') private mdShiftDialog?: DialogComponent;
+
+  // MD-DIRECT Auto-Shift Dialog State
+  protected readonly pendingMdTicket = signal<Ticket | null>(null);
+  protected readonly conflictingWipTickets = signal<Ticket[]>([]);
+  protected readonly mdShiftDays = signal<number>(1);
 
   protected readonly role = effectiveRole;
   protected readonly canEditPlanning = computed(() => canEditBoardPlanning(this.role()));
@@ -169,6 +179,9 @@ export class WorkBoard {
         dueLabel: ticket.dueOn ?? ticket.firstDueOn ?? '—',
         hasMr: Boolean(ticket.mrLink?.trim()),
         reopenCount: ticket.reopenCount,
+        isMdDirect: Boolean(ticket.isMdDirect),
+        isPaused: Boolean(ticket.isPaused),
+        pausedReason: ticket.pausedReason,
         summary: `${ticket.module} · ${assigneeLabel} · ${ticket.storyPoints ?? '—'} pts`,
       };
     });
@@ -247,6 +260,61 @@ export class WorkBoard {
         ? `ตีกลับ ${result.ticket.id} แล้ว Reopen Count เป็น ${result.ticket.reopenCount}`
         : `ย้าย ${result.ticket.id} ไป ${target}`,
     );
+
+    // Active WIP Detection for MD-DIRECT ticket entering In Progress
+    if (result.ticket.isMdDirect && target === 'In Progress' && result.ticket.assigneeId) {
+      const activeWips = this.scorecard
+        .tickets()
+        .filter(
+          (t) =>
+            t.id !== result.ticket.id &&
+            t.assigneeId === result.ticket.assigneeId &&
+            !t.closed &&
+            !t.isPaused &&
+            (workflowStatusOf(t) === 'In Progress' || workflowStatusOf(t) === 'Reopened'),
+        );
+
+      if (activeWips.length > 0) {
+        this.pendingMdTicket.set(result.ticket);
+        this.conflictingWipTickets.set(activeWips);
+        const shiftDays = Math.max(1, Math.ceil(result.ticket.estimateMd || 1));
+        this.mdShiftDays.set(shiftDays);
+        this.mdShiftDialog?.show();
+      }
+    }
+  }
+
+  protected confirmMdShift(): void {
+    const mdTicket = this.pendingMdTicket();
+    const wips = this.conflictingWipTickets();
+    const days = this.mdShiftDays();
+
+    if (mdTicket && wips.length > 0) {
+      const targetIds = wips.map((t) => t.id);
+      void this.scorecard.applyMdMandateShift(mdTicket.id, targetIds, days).then((ok) => {
+        if (ok) {
+          this.notice.show(`พักงานเดิม ${wips.length} ใบ และเลื่อนวันส่งออกไป +${days} วันทำงานเรียบร้อยแล้ว`);
+        }
+      });
+    }
+    this.mdShiftDialog?.hide();
+    this.pendingMdTicket.set(null);
+    this.conflictingWipTickets.set([]);
+  }
+
+  protected skipMdShift(): void {
+    this.mdShiftDialog?.hide();
+    this.pendingMdTicket.set(null);
+    this.conflictingWipTickets.set([]);
+    this.notice.show('ดำเนินการต่อแบบทำคู่ขนาน (ไม่พักงานเดิม)');
+  }
+
+  protected resumePaused(ticketId: string): void {
+    void this.scorecard.resumePausedTicket(ticketId).then((ok) => {
+      if (ok) {
+        this.notice.show(`ปลดพักงาน ${ticketId} และนำกลับเข้าสู่สถานะดำเนินงานเรียบร้อย`);
+      }
+    });
   }
 
   protected setDiscipline(event: { value?: string | null }): void {
@@ -316,13 +384,61 @@ export class WorkBoard {
       this.blockDialog?.show();
       return;
     }
-    this.scorecard.replaceTicket(result.ticket);
+    const finalTicket: Ticket = {
+      ...result.ticket,
+      isMdDirect: this.canEditPlanning() ? this.isMdDirect() : result.ticket.isMdDirect,
+    };
+    this.scorecard.replaceTicket(finalTicket);
+
+    // If MD-DIRECT is checked and targets selected, execute auto-shift
+    const shiftTargets = this.selectedShiftTargetIds();
+    if (finalTicket.isMdDirect && shiftTargets.length > 0) {
+      const shiftDays = Math.max(1, Math.ceil(finalTicket.estimateMd || 1));
+      void this.scorecard.applyMdMandateShift(finalTicket.id, shiftTargets, shiftDays).then((ok) => {
+        if (ok) {
+          this.notice.show(`สั่ง Auto-Shift และพักงานเดิม ${shiftTargets.length} ใบ (+${shiftDays} วัน) เรียบร้อย`);
+        }
+      });
+    }
+
     this.editDialog?.hide();
     this.notice.show(`บันทึกฟิลด์ ${ticket.id} แล้ว`);
   }
 
   protected bugCategory(): boolean {
     return isBugCategory(this.workCategory());
+  }
+
+  protected readonly isMdDirect = signal<boolean>(false);
+  protected readonly selectedShiftTargetIds = signal<string[]>([]);
+  protected readonly assigneeWipOptions = computed(() => {
+    const ticket = this.selected();
+    if (!ticket || !ticket.assigneeId) return [];
+    return this.scorecard
+      .tickets()
+      .filter(
+        (t) =>
+          t.id !== ticket.id &&
+          t.assigneeId === ticket.assigneeId &&
+          !t.closed &&
+          !t.isPaused &&
+          (workflowStatusOf(t) === 'In Progress' || workflowStatusOf(t) === 'Reopened'),
+      )
+      .map((t) => ({
+        id: t.id,
+        text: `${t.id} · ${t.title || t.module} (ส่งเดิม: ${t.firstDueOn || '—'})`,
+      }));
+  });
+
+  protected onMdDirectToggle(checked: boolean): void {
+    this.isMdDirect.set(checked);
+    if (checked) {
+      // Pre-select all WIPs for auto-shift convenience
+      const allIds = this.assigneeWipOptions().map((o) => o.id);
+      this.selectedShiftTargetIds.set(allIds);
+    } else {
+      this.selectedShiftTargetIds.set([]);
+    }
   }
 
   private fillForm(ticket: ReturnType<WorkBoard['selected']>): void {
@@ -334,6 +450,8 @@ export class WorkBoard {
     this.mrLink.set(ticket?.mrLink ?? '');
     this.pocResult.set(ticket?.pocResult ?? '');
     this.bugCause.set(ticket?.bugCause ?? '');
+    this.isMdDirect.set(Boolean(ticket?.isMdDirect));
+    this.selectedShiftTargetIds.set([]);
   }
 }
 

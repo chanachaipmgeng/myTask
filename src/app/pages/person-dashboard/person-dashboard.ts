@@ -10,6 +10,7 @@ import {
   CategoryService,
   ChartModule,
   ColumnSeriesService,
+  StackingColumnSeriesService,
   LegendService,
   LineSeriesService,
   PieSeriesService,
@@ -20,6 +21,7 @@ import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { map } from 'rxjs';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
+import { mdCompositionTrend } from '../../core/dashboard-charts';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
@@ -32,6 +34,7 @@ import { ThemeService } from '../../core/theme.service';
     CategoryService,
     LineSeriesService,
     ColumnSeriesService,
+    StackingColumnSeriesService,
     LegendService,
     TooltipService,
     PieSeriesService,
@@ -105,6 +108,10 @@ export class PersonDashboard {
       quota: person ? weeklyQuotas()[person.level] : undefined,
     });
   });
+
+  protected readonly mdComposition = computed(() =>
+    mdCompositionTrend(this.scorecard.tickets(), this.personId()),
+  );
 
   protected readonly prevPerson = computed(() => {
     const list = this.scorecard.people();

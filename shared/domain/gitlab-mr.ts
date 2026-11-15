@@ -12,6 +12,9 @@ export interface GitLabMergeRequestRaw {
   /** Optional explicit override when provided by custom labels or notes. */
   reviewRounds?: number | null;
   reopenCount?: number | null;
+  reviewers?: { id?: number; username?: string; name?: string }[];
+  approved_by?: { user?: { id?: number; username?: string; name?: string } }[];
+  approvals_left?: number;
 }
 
 export interface MappedGitLabCommit {
@@ -22,6 +25,10 @@ export interface MappedGitLabCommit {
   reviewRounds: number;
   reopenCount: number;
   mrLink?: string;
+  reviewers?: string[];
+  approvedBy?: string[];
+  iid?: number;
+  projectId?: number | string;
 }
 
 const TICKET_ID_PATTERN = /\b((?:OP|IMP|RD|FILE|ALERT|MOCK|Q|T)-[A-Z0-9-]+)\b/i;
@@ -64,6 +71,13 @@ export function mapGitLabMergeRequests(items: readonly GitLabMergeRequestRaw[]):
           : Math.min(6, Math.max(1, Math.ceil(notes / 2)));
     const reopenCount =
       typeof mr.reopenCount === 'number' && mr.reopenCount >= 0 ? Math.round(mr.reopenCount) : 0;
+    const reviewers = (mr.reviewers ?? [])
+      .map((r) => r.username?.trim().toLowerCase())
+      .filter((u): u is string => Boolean(u));
+    const approvedBy = (mr.approved_by ?? [])
+      .map((a) => a.user?.username?.trim().toLowerCase())
+      .filter((u): u is string => Boolean(u));
+
     result.push({
       sha,
       message: title || branch || sha,
@@ -72,6 +86,9 @@ export function mapGitLabMergeRequests(items: readonly GitLabMergeRequestRaw[]):
       reviewRounds,
       reopenCount,
       mrLink: mr.web_url?.trim() || undefined,
+      reviewers: reviewers.length > 0 ? reviewers : undefined,
+      approvedBy: approvedBy.length > 0 ? approvedBy : undefined,
+      iid: mr.iid,
     });
   }
   return result;

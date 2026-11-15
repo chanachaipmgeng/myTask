@@ -130,11 +130,40 @@ function roundRatio(actualMd: number, estimateMd: number): number {
   return Math.round((actualMd / estimateMd) * 10000) / 10000;
 }
 
-function accuracyBand(ratio: number): { points: number; inBand: boolean } {
+/**
+ * Tiered Tolerance Accuracy Band based on Ticket Size:
+ * - XS (<= 0.25 MD) & S (<= 0.5 MD): Broader tolerance [0.5, 2.0] full points, [0.3, 2.5] partial points
+ *   (small tasks have higher natural variance in time tracking).
+ * - M (1.0 MD): Standard tolerance [0.8, 1.5] full points, [0.5, 2.0] partial points.
+ * - L (2.0 MD) & XL (3.0+ MD): Tighter tolerance [0.85, 1.3] full points, [0.7, 1.6] partial points
+ *   (larger tasks require stricter delivery discipline).
+ */
+export function accuracyBand(ratio: number, size?: Size): { points: number; inBand: boolean } {
+  if (size === 'XS' || size === 'S') {
+    if (ratio >= 0.5 && ratio <= 2.0) {
+      return { points: 20, inBand: true };
+    }
+    if ((ratio >= 0.3 && ratio < 0.5) || (ratio > 2.0 && ratio <= 2.5)) {
+      return { points: 10, inBand: false };
+    }
+    return { points: 0, inBand: false };
+  }
+
+  if (size === 'L' || size === 'XL') {
+    if (ratio >= 0.85 && ratio <= 1.3) {
+      return { points: 20, inBand: true };
+    }
+    if ((ratio >= 0.7 && ratio < 0.85) || (ratio > 1.3 && ratio <= 1.6)) {
+      return { points: 10, inBand: false };
+    }
+    return { points: 0, inBand: false };
+  }
+
+  // Default / M size
   if (ratio >= 0.8 && ratio <= 1.5) {
     return { points: 20, inBand: true };
   }
-  if ((ratio >= 0.5 && ratio < 0.8) || (ratio > 1.5 && ratio <= 2)) {
+  if ((ratio >= 0.5 && ratio < 0.8) || (ratio > 1.5 && ratio <= 2.0)) {
     return { points: 10, inBand: false };
   }
   return { points: 0, inBand: false };
@@ -173,7 +202,7 @@ function reopenPoints(reopenCount: number): number {
 export function scoreTicket(ticket: Ticket): TicketScore {
   const points = SIZE_POINTS[ticket.size];
   const category = workloadCategory(ticket.type);
-  const exempt = isExemptVariance(ticket.varianceCode);
+  const exempt = isExemptVariance(ticket.varianceCode) || (ticket.pausedDays != null && ticket.pausedDays > 0 && ticket.isPaused === false);
   const spikeScore = spikeQualityScore(ticket);
 
   if (!ticket.closed) {
@@ -197,12 +226,15 @@ export function scoreTicket(ticket: Ticket): TicketScore {
   let accuracy = 0;
   let accuracyInBand = false;
 
+  // If paused previously by MD Mandate, deduct compensated paused days from actual MD for fair accuracy
+  const effectiveActualMd = Math.max(0, ticket.actualMd - (ticket.pausedDays ?? 0));
+
   if (ticket.estimateMd <= 0) {
     accuracy = 0;
     ratio = null;
   } else {
-    ratio = roundRatio(ticket.actualMd, ticket.estimateMd);
-    const band = accuracyBand(ratio);
+    ratio = roundRatio(effectiveActualMd, ticket.estimateMd);
+    const band = accuracyBand(ratio, ticket.size);
     accuracy = band.points;
     accuracyInBand = band.inBand;
   }
@@ -413,9 +445,21 @@ export function calculateNetWeeklyQuota(
   return roundMd(baseQuota * (workingDays / 5));
 }
 
-/** Calculates 10% credit for code reviewer */
-export function calculateReviewerCredit(ticket: Ticket): number {
-  return roundMd(ticket.estimateMd * 0.1);
+/** Calculates 10-15% credit for code reviewer (Peer Review MD) awarded to seniors */
+export function calculateReviewerCredit(ticket: Ticket, pct = 0.1): number {
+  const effectivePct = Math.min(0.15, Math.max(0.1, pct));
+  return roundMd(ticket.estimateMd * effectivePct);
+}
+
+/**
+ * Calculates net Actual MD after deducting paused days, blocked delays, and QA waiting time.
+ */
+export function calculateNetActualMd(ticket: Ticket, blockedHours = 0, qaWaitHours = 0, hoursPerMd = 6): number {
+  const pausedMd = ticket.pausedDays || 0;
+  const blockedMd = blockedHours > 0 ? blockedHours / hoursPerMd : 0;
+  const qaWaitMd = qaWaitHours > 0 ? qaWaitHours / hoursPerMd : 0;
+  const net = Math.max(0, ticket.actualMd - pausedMd - blockedMd - qaWaitMd);
+  return roundMd(net);
 }
 
 /** Calculates QA execution credit (qaEstimatedMd or 15-20% of estimateMd) */
@@ -473,4 +517,28 @@ export function formatPercent(value: number, digits = 1): string {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
+}
+
+/**
+ * Calculates total and percentage share of MD-DIRECT tickets in given ticket list.
+ */
+export function calculateMdMandateShare(tickets: readonly Ticket[]): {
+  totalTickets: number;
+  mdDirectCount: number;
+  totalMd: number;
+  mdDirectMd: number;
+  mdDirectSharePct: number;
+} {
+  const mdTickets = tickets.filter((t) => t.isMdDirect);
+  const totalMd = roundMd(tickets.reduce((sum, t) => sum + effortMd(t), 0));
+  const mdDirectMd = roundMd(mdTickets.reduce((sum, t) => sum + effortMd(t), 0));
+  const mdDirectSharePct = totalMd > 0 ? roundMd((mdDirectMd / totalMd) * 100) : 0;
+
+  return {
+    totalTickets: tickets.length,
+    mdDirectCount: mdTickets.length,
+    totalMd,
+    mdDirectMd,
+    mdDirectSharePct,
+  };
 }

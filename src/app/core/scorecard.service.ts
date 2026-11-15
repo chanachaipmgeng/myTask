@@ -46,6 +46,7 @@ import { applyGanttDateEdit } from './work-views';
 import {
   INDEX_TARGET,
   UNPLANNED_TARGET,
+  calculateMdMandateShare,
   formatMd,
   formatPercent,
   scorePerson,
@@ -197,6 +198,10 @@ export class ScorecardService {
 
   readonly preflightReport = computed<PreflightReport>(() =>
     runPreflightChecklist(this.roster(), this.ticketsState(), this.disputesState(), this.leavesState()),
+  );
+
+  readonly mdMandateReport = computed(() =>
+    calculateMdMandateShare(this.ticketsState()),
   );
 
   readonly roster = computed(() =>
@@ -738,6 +743,85 @@ export class ScorecardService {
       }),
     );
     return shiftedCount;
+  }
+
+  async applyMdMandateShift(mdTicketId: string, targetTicketIds: string[], shiftDays: number): Promise<boolean> {
+    const mdTicket = this.ticketsState().find((t) => t.id === mdTicketId);
+    if (!mdTicket) return false;
+
+    if (this.usingApi() && this.api) {
+      try {
+        const res = await this.api.shiftForMdMandate({ mdTicketId, targetTicketIds, shiftDays });
+        if (res.ok && res.updatedTickets) {
+          for (const ut of res.updatedTickets) {
+            this.replaceTicket(ut);
+          }
+          return true;
+        }
+      } catch (err) {
+        console.warn('API shift failed, falling back to local state:', err);
+      }
+    }
+
+    // Local fallback
+    const nowIso = new Date().toISOString();
+    this.ticketsState.update((tickets) =>
+      tickets.map((t) => {
+        if (targetTicketIds.includes(t.id)) {
+          const orig = t.originalFirstDueOn || t.firstDueOn || null;
+          const currentDue = new Date(t.firstDueOn || new Date());
+          let added = 0;
+          while (added < shiftDays) {
+            currentDue.setDate(currentDue.getDate() + 1);
+            if (currentDue.getDay() !== 0 && currentDue.getDay() !== 6) added++;
+          }
+          const newDueStr = currentDue.toISOString().slice(0, 10);
+
+          return {
+            ...t,
+            isPaused: true,
+            pausedReason: 'Paused (By MD Mandate)',
+            originalFirstDueOn: orig,
+            firstDueOn: newDueStr,
+            dueOn: newDueStr,
+            pausedAt: nowIso,
+            pausedDays: (t.pausedDays || 0) + shiftDays,
+            pausedByTicketId: mdTicket.id,
+          };
+        }
+        return t;
+      }),
+    );
+    return true;
+  }
+
+  async resumePausedTicket(ticketId: string): Promise<boolean> {
+    if (this.usingApi() && this.api) {
+      try {
+        const res = await this.api.resumeTicket(ticketId);
+        if (res.ok && res.ticket) {
+          this.replaceTicket(res.ticket);
+          return true;
+        }
+      } catch (err) {
+        console.warn('API resume failed, falling back to local state:', err);
+      }
+    }
+
+    this.ticketsState.update((tickets) =>
+      tickets.map((t) => {
+        if (t.id === ticketId) {
+          return {
+            ...t,
+            isPaused: false,
+            pausedReason: null,
+            pausedAt: null,
+          };
+        }
+        return t;
+      }),
+    );
+    return true;
   }
 
   async pingHandoffRecipient(ticketId: string, target?: string, message?: string): Promise<boolean> {

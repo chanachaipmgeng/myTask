@@ -115,16 +115,28 @@
           <div class="e-card-content flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
             <p class="m-0">{{ item.text }}</p>
             @if (item.personId) {
-              <button
-                ejs-button
-                [isPrimary]="true"
-                type="button"
-                [attr.data-ticket]="item.ticket.id"
-                [disabled]="!canAssign() || accepting()"
-                (click)="accept(item)"
-              >
-                รับข้อเสนอ
-              </button>
+              <div class="flex items-center gap-2">
+                <button
+                  ejs-button
+                  [isPrimary]="true"
+                  type="button"
+                  [attr.data-ticket]="item.ticket.id"
+                  [disabled]="!canAssign() || accepting()"
+                  (click)="accept(item)"
+                >
+                  รับข้อเสนอ
+                </button>
+                <button
+                  ejs-button
+                  cssClass="e-outline e-warning"
+                  type="button"
+                  title="จ่ายงานแทรกพร้อมสั่ง Auto-Shift เลื่อนวันส่งงานเดิมของน้องทันที"
+                  [disabled]="!canAssign() || accepting()"
+                  (click)="acceptAsMdDirect(item)"
+                >
+                  ⚡ รับงานด่วน MD &amp; เลื่อนงานเดิม
+                </button>
+              </div>
             }
           </div>
         </div>

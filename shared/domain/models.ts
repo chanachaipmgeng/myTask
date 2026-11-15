@@ -147,6 +147,25 @@ export interface Ticket {
   isBugEscape?: boolean;
   /** Definition of Done evidence checklist */
   dodChecklist?: DodChecklist;
+  /** Direct urgent mandate from the Managing Director */
+  isMdDirect?: boolean;
+  /** Whether this ticket is currently paused */
+  isPaused?: boolean;
+  /** Reason why the ticket was paused (e.g. 'Paused (By MD Mandate)') */
+  pausedReason?: string | null;
+  /** Original promised delivery date before auto-shift */
+  originalFirstDueOn?: string | null;
+  /** Timestamp when the ticket was paused */
+  pausedAt?: string | null;
+  /** Number of working days paused/compensated */
+  pausedDays?: number;
+  /** ID of the MD Mandate ticket that triggered this pause */
+  pausedByTicketId?: string | null;
+  /** Reviewer IDs and Approved-by IDs from GitLab MR approvals */
+  reviewers?: string[];
+  approvedBy?: string[];
+  /** Total calculated Peer Review MD credit awarded to reviewers (10-15%) */
+  peerReviewCreditMd?: number;
 }
 
 export interface DodChecklist {
@@ -179,6 +198,19 @@ export interface TicketStageLog {
   enteredAt: string;
   exitedAt?: string | null;
   durationHours?: number | null;
+}
+
+export interface TicketDueShift {
+  id: string;
+  ticketId: string;
+  previousFirstDueOn: string;
+  newFirstDueOn: string;
+  shiftDays: number;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approvedBy?: string | null;
+  approvedAt: string;
+  createdAt: string;
 }
 
 export interface EmployeeLeave {

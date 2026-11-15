@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>คู่มือการใช้งานระบบ Man-day Scorecard</title>
+  <title>คู่มือการใช้งานระบบ Man-day Scorecard ฉบับสมบูรณ์ (25 หน้าจอ)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
         color: #64748b;
       }
       @bottom-left {
-        content: "Man-day Scorecard — คู่มือการใช้งานระบบฉบับสมบูรณ์";
+        content: "Man-day Scorecard — คู่มือการใช้งานระบบฉบับสมบูรณ์ (v2.0)";
         font-family: 'Sarabun', Tahoma, sans-serif;
         font-size: 8pt;
         color: #94a3b8;
@@ -84,7 +84,7 @@
     }
 
     .cover-center {
-      margin: 60px 0;
+      margin: 40px 0;
     }
 
     .cover-eyebrow {
@@ -97,21 +97,21 @@
     }
 
     .cover-title {
-      font-size: 32pt;
+      font-size: 27pt;
       font-weight: 800;
-      line-height: 1.2;
+      line-height: 1.25;
       margin: 0 0 16px;
-      background: linear-gradient(135deg, #ffffff 20%, #bac8f6 70%, #5f7ce3 100%);
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     .cover-subtitle {
-      font-size: 14pt;
-      color: #94a3b8;
-      max-width: 650px;
+      font-size: 11pt;
       line-height: 1.6;
-      margin: 0 0 24px;
+      color: #94a3b8;
+      max-width: 680px;
+      margin-bottom: 24px;
     }
 
     .cover-tags {
@@ -121,33 +121,33 @@
     }
 
     .cover-tag {
-      padding: 4px 12px;
-      border-radius: 6px;
-      font-size: 9pt;
-      font-weight: 600;
+      padding: 5px 12px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      font-size: 8.5pt;
       color: #e2e8f0;
+      font-weight: 500;
     }
 
     .cover-bottom {
-      border-top: 1px solid rgba(148, 163, 184, 0.2);
-      padding-top: 20px;
       display: flex;
       justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding-top: 16px;
       font-size: 9pt;
-      color: #94a3b8;
+      color: #64748b;
     }
 
-    /* Page Breaks & Headings */
+    /* Common Typography & Breaks */
     .page-break {
       page-break-before: always;
     }
 
     .section-header {
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       padding-bottom: 8px;
-      border-bottom: 2px solid #2e4fc8;
+      border-bottom: 2px solid #e2e8f0;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
@@ -166,14 +166,14 @@
       height: 28px;
       background: #2e4fc8;
       color: #ffffff;
+      font-weight: 700;
+      font-size: 11pt;
       border-radius: 6px;
-      font-size: 10pt;
-      font-weight: 800;
     }
 
     h2 {
       margin: 0;
-      font-size: 15pt;
+      font-size: 13pt;
       font-weight: 700;
       color: #0f172a;
     }
@@ -181,7 +181,6 @@
     .section-meta {
       font-size: 8.5pt;
       color: #64748b;
-      font-weight: 500;
     }
 
     .role-badge {
@@ -209,7 +208,7 @@
 
     /* Screenshot Display */
     .img-container {
-      margin: 12px 0 16px;
+      margin: 10px 0 14px;
       border-radius: 8px;
       border: 1px solid #cbd5e1;
       overflow: hidden;
@@ -225,7 +224,7 @@
     }
 
     .img-caption {
-      padding: 6px 12px;
+      padding: 5px 12px;
       background: #f8fafc;
       border-top: 1px solid #e2e8f0;
       font-size: 8pt;
@@ -237,8 +236,8 @@
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 14px;
+      gap: 10px;
+      margin-bottom: 12px;
       page-break-inside: avoid;
     }
 
@@ -246,7 +245,7 @@
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 6px;
-      padding: 10px 12px;
+      padding: 9px 12px;
     }
 
     .info-card h4 {
@@ -266,14 +265,14 @@
 
     li {
       margin-bottom: 4px;
-      font-size: 9pt;
+      font-size: 8.5pt;
       line-height: 1.45;
     }
 
     .callout {
-      padding: 8px 12px;
+      padding: 7px 12px;
       border-radius: 6px;
-      margin: 10px 0;
+      margin: 8px 0;
       font-size: 8.5pt;
       page-break-inside: avoid;
     }
@@ -296,20 +295,21 @@
       color: #162b70;
     }
 
-    /* Table of Contents */
+    /* Table of contents */
     .toc-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px 24px;
-      margin-top: 16px;
+      gap: 16px;
+      margin-top: 12px;
     }
 
     .toc-item {
       display: flex;
       justify-content: space-between;
-      padding: 6px 0;
-      border-bottom: 1px dashed #cbd5e1;
-      font-size: 9pt;
+      align-items: baseline;
+      padding: 3px 0;
+      border-bottom: 1px dotted #cbd5e1;
+      font-size: 8.5pt;
     }
 
     .toc-title {
@@ -318,30 +318,28 @@
     }
 
     .toc-url {
-      color: #2e4fc8;
+      color: #64748b;
+      font-family: monospace;
       font-size: 8pt;
-      font-family: Consolas, monospace;
     }
 
-    /* Role Matrix Table */
     table.data-table {
       width: 100%;
       border-collapse: collapse;
-      margin: 12px 0;
-      font-size: 8.5pt;
-      page-break-inside: avoid;
+      font-size: 8pt;
+      margin: 8px 0;
     }
 
     table.data-table th, table.data-table td {
       border: 1px solid #cbd5e1;
-      padding: 6px 10px;
+      padding: 4px 8px;
       text-align: left;
     }
 
     table.data-table th {
       background: #f1f5f9;
       font-weight: 700;
-      color: #0f172a;
+      color: #334155;
     }
 
     table.data-table tr:nth-child(even) {
@@ -356,10 +354,10 @@
     <div class="cover-top">
       <div class="brand-badge">
         <span class="brand-mark-logo">MD</span>
-        <span>CENTRAL SYNC &amp; SCORECARD</span>
+        <span>CENTRAL SYNC &amp; SCORECARD v2.0</span>
       </div>
       <div style="font-size: 10pt; color: #94a3b8; font-weight: 600;">
-        ฉบับสมบูรณ์ · Syncfusion Tailwind 3 Dual Theme
+        ฉบับสมบูรณ์ · 25 หน้าจอครอบคลุม Enterprise
       </div>
     </div>
 
@@ -367,22 +365,26 @@
       <div class="cover-eyebrow">Enterprise Operational Manual</div>
       <h1 class="cover-title">คู่มือการใช้งานระบบ<br>Man-day Scorecard</h1>
       <p class="cover-subtitle">
-        คู่มือภาพประกอบทุกหน้าจอฉบับสมบูรณ์ ครอบคลุมการคำนวณคะแนนและดัชนีชี้วัด Man-day,
-        ฮับบริหารงานกลาง (Work Hub), กระดานคัมบัง, ไทม์ไลน์ Gantt, การซิงก์ OpenProject &amp; GitLab,
-        และศูนย์วิเคราะห์อัจฉริยะ Python Analytics Intelligence Hub
+        คู่มือภาพประกอบทุกหน้าจอฉบับสมบูรณ์ (25 หน้าจอ) ครอบคลุมการคำนวณคะแนน Man-day,
+        โฟลว์รับมืองานสั่งตรงจาก MD (MD Mandate &amp; Auto-Shift), กรอบความแม่นยำตามขนาดงาน (Tiered Tolerance),
+        ฮับบริหารงานกลาง, กระดานคัมบัง, ไทม์ไลน์ Gantt, ตรวจสอบการส่งต่อข้ามทีม (SLA Handoff),
+        ตรวจสอบคุณภาพ QA (DoD Gates), ตรวจสอบเวลา 3 ทาง (3-Way Time Audit), ศูนย์ยื่นอุทธรณ์คะแนน,
+        และการแช่แข็งคะแนน Snapshot ก่อนปิดงวด
       </p>
       <div class="cover-tags">
-        <span class="cover-tag">20 หน้าจอครบถ้วน</span>
+        <span class="cover-tag">25 หน้าจอครบวงจร (v2.0)</span>
+        <span class="cover-tag">โฟลว์งานสั่งตรงจาก MD (MD-DIRECT)</span>
+        <span class="cover-tag">Tiered Tolerance (XS/S/M/L/XL)</span>
+        <span class="cover-tag">GitLab Approvals &amp; Peer Review Quota</span>
         <span class="cover-tag">โหมดสว่าง &amp; โหมดมืด (Zero-Reload)</span>
         <span class="cover-tag">ระบบสิทธิ์ 3 ระดับ (Admin / Lead / Member)</span>
-        <span class="cover-tag">OpenProject &amp; GitLab Real-time Sync</span>
-        <span class="cover-tag">Python Analytics Anomaly Detection</span>
+        <span class="cover-tag">Python Analytics Hub &amp; Anomaly Radar</span>
       </div>
     </div>
 
     <div class="cover-bottom">
       <div><strong>ทีมพัฒนาระบบ:</strong> Man-day Scorecard Core Team</div>
-      <div><strong>แพลตฟอร์ม:</strong> Angular 22.2.6 · NestJS · PostgreSQL · Docker</div>
+      <div><strong>แพลตฟอร์ม:</strong> Angular 22.2.6 · NestJS · PostgreSQL · Syncfusion</div>
       <div><strong>วันที่ปรับปรุง:</strong> พฤศจิกายน 2568</div>
     </div>
   </div>
@@ -390,53 +392,58 @@
   <!-- ==================== TABLE OF CONTENTS ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
-    <h2>สารบัญคู่มือการใช้งาน (Table of Contents)</h2>
-    <span class="section-meta">Man-day Scorecard Architecture</span>
+    <h2>สารบัญคู่มือการใช้งาน (Table of Contents — 25 หน้าจอ)</h2>
+    <span class="section-meta">Man-day Scorecard v2.0 Architecture</span>
   </div>
 
-  <p style="font-size: 9pt; color: #64748b; margin-bottom: 12px;">
-    ระบบแบ่งออกเป็น 4 หมวดหมู่หลัก ครอบคลุมมุมมองบริหารงาน, มุมมองพนักงาน, การวิเคราะห์ขั้นสูง, และการตั้งค่าระบบ:
+  <p style="font-size: 8.5pt; color: #64748b; margin-bottom: 10px;">
+    ระบบแบ่งออกเป็น 4 หมวดหมู่หลัก ครอบคลุมมุมมองผู้บริหาร, การบริหารงานและคิวงานด่วน MD, การวิเคราะห์คะแนนและความคลาดเคลื่อน, และการกำกับดูแลคุณภาพระดับองค์กร:
   </p>
 
   <div class="toc-grid">
     <div>
-      <h3 style="font-size: 10pt; color: #2e4fc8; margin: 8px 0 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 1: การเข้าใช้งานและแดชบอร์ด</h3>
+      <h3 style="font-size: 9.5pt; color: #2e4fc8; margin: 6px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 1: การเข้าใช้งานและแดชบอร์ดหลัก</h3>
       <div class="toc-item"><span class="toc-title">1. เข้าสู่ระบบ &amp; สลับสิทธิ์พนักงาน</span><span class="toc-url">/login</span></div>
-      <div class="toc-item"><span class="toc-title">2. แดชบอร์ดทีม (Team Dashboard)</span><span class="toc-url">/team</span></div>
-      <div class="toc-item"><span class="toc-title">3. สถิติย้อนหลัง (KPI Snapshots)</span><span class="toc-url">/team (Snapshots)</span></div>
-      <div class="toc-item"><span class="toc-title">4. พื้นที่ส่วนตัวของฉัน (My Workspace)</span><span class="toc-url">/me</span></div>
-      <div class="toc-item"><span class="toc-title">5. กระดานคะแนนพนักงานทั้งทีม</span><span class="toc-url">/people</span></div>
-      <div class="toc-item"><span class="toc-title">6. แดชบอร์ดพนักงานรายคนแบบต่อเนื่อง</span><span class="toc-url">/people/:id</span></div>
+      <div class="toc-item"><span class="toc-title">2. แดชบอร์ดทีม &amp; กราฟ MD Mandate</span><span class="toc-url">/team</span></div>
+      <div class="toc-item"><span class="toc-title">3. พอร์ทัลพื้นที่ส่วนตัวของพนักงาน</span><span class="toc-url">/me</span></div>
+      <div class="toc-item"><span class="toc-title">4. สรุปสถานะงาน &amp; สัดส่วน MD Share</span><span class="toc-url">/work/summary</span></div>
+      <div class="toc-item"><span class="toc-title">5. ไทม์ไลน์งาน &amp; โครงสร้างแม่ลูก (Gantt)</span><span class="toc-url">/work/timeline</span></div>
+      <div class="toc-item"><span class="toc-title">6. คลังงานรอวางแผน (Backlog)</span><span class="toc-url">/work/backlog</span></div>
 
-      <h3 style="font-size: 10pt; color: #2e4fc8; margin: 16px 0 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 2: ฮับบริหารงาน (Work Hub)</h3>
-      <div class="toc-item"><span class="toc-title">7. สรุปสถานะงาน (Work Summary)</span><span class="toc-url">/work/summary</span></div>
-      <div class="toc-item"><span class="toc-title">8. ไทม์ไลน์งาน &amp; แม่ลูก (Gantt)</span><span class="toc-url">/work/timeline</span></div>
-      <div class="toc-item"><span class="toc-title">9. คลังงานรอวางแผน (Backlog)</span><span class="toc-url">/work/backlog</span></div>
-      <div class="toc-item"><span class="toc-title">10. กระดานคัมบัง (Kanban Board)</span><span class="toc-url">/work/board</span></div>
-      <div class="toc-item"><span class="toc-title">11. หน้าต่างแก้งาน &amp; ประวัติ (Card Dialog)</span><span class="toc-url">/work/board (Edit)</span></div>
-      <div class="toc-item"><span class="toc-title">12. รายการงานทั้งหมด (Work List)</span><span class="toc-url">/work/list</span></div>
+      <h3 style="font-size: 9.5pt; color: #2e4fc8; margin: 12px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 2: ฮับบริหารงานและคิวงานด่วน MD</h3>
+      <div class="toc-item"><span class="toc-title">7. กระดานคัมบัง &amp; Auto-Shift WIP</span><span class="toc-url">/work/board</span></div>
+      <div class="toc-item"><span class="toc-title">8. รายการงานทั้งหมดแบบตารางตรึง</span><span class="toc-url">/work/list</span></div>
+      <div class="toc-item"><span class="toc-title">9. ตารางคะแนนใบงาน &amp; Tiered Tolerance</span><span class="toc-url">/tickets</span></div>
+      <div class="toc-item"><span class="toc-title">10. กระดานคะแนนพนักงานทั้งทีม</span><span class="toc-url">/people</span></div>
+      <div class="toc-item"><span class="toc-title">11. แดชบอร์ดรายคน &amp; กราฟ MD Workload</span><span class="toc-url">/people/:id</span></div>
+      <div class="toc-item"><span class="toc-title">12. ปฏิทินและไทม์ไลน์งานทีม (Schedule)</span><span class="toc-url">/schedule</span></div>
     </div>
 
     <div>
-      <h3 style="font-size: 10pt; color: #2e4fc8; margin: 8px 0 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 3: คะแนน กาลเวลา และการวิเคราะห์</h3>
-      <div class="toc-item"><span class="toc-title">13. ตารางคะแนนใบงานฉบับเต็ม</span><span class="toc-url">/tickets</span></div>
-      <div class="toc-item"><span class="toc-title">14. ปฏิทินและไทม์ไลน์ทีม (Schedule)</span><span class="toc-url">/schedule</span></div>
-      <div class="toc-item"><span class="toc-title">15. ติดตามงานวิจัย AI &amp; Spike</span><span class="toc-url">/ai</span></div>
-      <div class="toc-item"><span class="toc-title">16. ศูนย์วิเคราะห์อัจฉริยะ (Analytics)</span><span class="toc-url">/analytics</span></div>
+      <h3 style="font-size: 9.5pt; color: #2e4fc8; margin: 6px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 3: ระบบวิจัย AI และการวิเคราะห์อัจฉริยะ</h3>
+      <div class="toc-item"><span class="toc-title">13. ติดตามงานวิจัย AI &amp; Spike</span><span class="toc-url">/ai</span></div>
+      <div class="toc-item"><span class="toc-title">14. ศูนย์วิเคราะห์อัจฉริยะ (Analytics Hub)</span><span class="toc-url">/analytics</span></div>
+      <div class="toc-item"><span class="toc-title">15. การเชื่อมต่อ OpenProject, GitLab, Teams</span><span class="toc-url">/integrations</span></div>
+      <div class="toc-item"><span class="toc-title">16. จัดการสิทธิ์ เกณฑ์คะแนน &amp; Audit Log</span><span class="toc-url">/admin</span></div>
+      <div class="toc-item"><span class="toc-title">17. ดีไซน์ซิสเต็มและโทเคนสี MyHR Plus</span><span class="toc-url">/mockup</span></div>
+      <div class="toc-item"><span class="toc-title">18. แถบเครื่องมือ หน้าต่างแจ้งเตือน &amp; Mini-Sidebar</span><span class="toc-url">Shell Controls</span></div>
+      <div class="toc-item"><span class="toc-title">19. การสลับโหมดสว่างและโหมดมืด</span><span class="toc-url">Theme Toggle</span></div>
 
-      <h3 style="font-size: 10pt; color: #2e4fc8; margin: 16px 0 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 4: การเชื่อมต่อ การตั้งค่า และ UI</h3>
-      <div class="toc-item"><span class="toc-title">17. เชื่อมต่อ OpenProject, GitLab, Teams</span><span class="toc-url">/integrations</span></div>
-      <div class="toc-item"><span class="toc-title">18. จัดการสิทธิ์ เกณฑ์คะแนน &amp; Audit Log</span><span class="toc-url">/admin</span></div>
-      <div class="toc-item"><span class="toc-title">19. การสลับโหมดสว่างและโหมดมืด</span><span class="toc-url">AppBar Toggle</span></div>
-      <div class="toc-item"><span class="toc-title">20. ค้นหาแจ้งเตือน &amp; Desktop Mini-Sidebar</span><span class="toc-url">Shell Controls</span></div>
+      <h3 style="font-size: 9.5pt; color: #2e4fc8; margin: 12px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 4: การกำกับดูแลคุณภาพระดับองค์กร (v2.0)</h3>
+      <div class="toc-item"><span class="toc-title">20. คิวงานใหม่ &amp; จ่ายงานด่วน MD</span><span class="toc-url">/queue</span></div>
+      <div class="toc-item"><span class="toc-title">21. ศูนย์ตรวจสอบการส่งต่อข้ามทีม &amp; SLA</span><span class="toc-url">/work/handoff</span></div>
+      <div class="toc-item"><span class="toc-title">22. ศูนย์ตรวจสอบคุณภาพ QA &amp; หลุด Prod</span><span class="toc-url">/quality/audit</span></div>
+      <div class="toc-item"><span class="toc-title">23. ตรวจสอบความคลาดเคลื่อนเวลา 3 ทาง</span><span class="toc-url">/analytics/time-audit</span></div>
+      <div class="toc-item"><span class="toc-title">24. ระบบยื่นอุทธรณ์ &amp; ปรับปรุงคะแนน</span><span class="toc-url">/tickets/disputes</span></div>
+      <div class="toc-item"><span class="toc-title">25. ห้องตรวจสอบความพร้อมก่อนปิดงวด</span><span class="toc-url">/admin/snapshot-check</span></div>
     </div>
   </div>
 
-  <div class="callout info" style="margin-top: 24px;">
-    <strong>กติกาหลักของระบบ:</strong> 1 Man-day (MD) = 6 ชั่วโมงทำงานมาตรฐาน · แยกสายคะแนนระหว่าง <strong>Implement</strong> (เน้นส่งมอบตรงเวลาและ DoD) กับ <strong>R&D</strong> (เน้นงานวิจัย นวัตกรรม และ Spike) · สิทธิ์ของระบบแยกชัดเจนระหว่างผู้บริหาร (Admin), หัวหน้างาน (Lead), และผู้ปฏิบัติงาน (Member)
+  <div class="callout info" style="margin-top: 14px;">
+    <strong>กติกาหลักของระบบ:</strong> 1 Man-day (MD) = 6 ชั่วโมงทำงานมาตรฐาน · วัดผล 6 สายงาน (RND, IMP, QA, UXBA, SUP, INFRA) · <strong>Fair Cutoff Rule:</strong> วัดเวลา On-Time ของ Dev เมื่อเข้า Ready for QA โดยไม่คิดเวลาค้างรอคิว QA · <strong>Tiered Tolerance:</strong> กรอบความแม่นยำยืดหยุ่นตามขนาดงาน XS/S, M, L/XL · <strong>MD Mandate Protection:</strong> งานสั่งตรงจาก MD ช่วยพักงานเดิม เลื่อนวันส่งเว้นวันหยุด และการันตีคะแนนไม่ให้เสียเปรียบ
   </div>
 
-  <!-- ==================== 1. LOGIN & PERSONA SWITCHER ==================== -->
+  <!-- ==================== 1. LOGIN ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
@@ -449,25 +456,25 @@
   </div>
 
   <div class="img-container">
-    <img src="manual_assets/01_login.png" alt="Login and Persona Switcher Screen">
-    <div class="img-caption">ภาพที่ 1: หน้าจอเข้าสู่ระบบผ่าน GitLab SSO และปุ่มสลับบัญชีด่วนทั้ง 15 คนพร้อมระบุสิทธิ์ชัดเจน</div>
+    <img src="manual_assets/01_login.png" alt="Login & Role Switcher Screen">
+    <div class="img-caption">ภาพที่ 1: หน้าจอ Login พร้อมปุ่ม Single Sign-On (GitLab OAuth) และแผงสลับบัญชีผู้ใช้งานทั้ง 15 คน แยกตามบทบาท</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 วัตถุประสงค์และการใช้งาน</h4>
+      <h4>🎯 ฟังก์ชันการเข้าสู่ระบบ</h4>
       <ul>
-        <li>ใช้สำหรับยืนยันตัวตนเข้าสู่ระบบผ่าน <strong>GitLab OAuth SSO</strong> ในสภาพแวดล้อมใช้งานจริง</li>
-        <li>มี <strong>Quick Persona Switcher</strong> สำหรับทดสอบสิทธิ์ของทั้ง 15 คนในระบบ (Admin, Lead, Member) ได้ในคลิกเดียวโดยไม่ต้องพิมพ์รหัสผ่าน</li>
-        <li>แสดงระดับตำแหน่ง (Senior, Mid, Junior, FirstMonth) และสายงาน (Implement / R&D) ของทุกคนอย่างชัดเจน</li>
+        <li><strong>GitLab OAuth SSO:</strong> เข้าสู่ระบบด้วยบัญชี GitLab องค์กร ปลอดภัยและตรงตามมาตรฐาน Identity Provider</li>
+        <li><strong>Persona Switcher:</strong> เครื่องมือจำลองบัญชีพนักงานทั้ง 15 คน สำหรับการทดสอบและบริหารงานจริง</li>
+        <li><strong>สิทธิ์ 3 ระดับ:</strong> แยกสีชัดเจนระหว่าง <code>admin</code> (สีแดง), <code>lead</code> (สีน้ำเงิน), และ <code>member</code> (สีเขียว)</li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 สิทธิ์ที่ได้รับตามบทบาท</h4>
+      <h4>💡 ผลกระทบต่อระบบเมื่อสลับบัญชี</h4>
       <ul>
-        <li><strong>Admin (ผู้จัดการ):</strong> จัดการระบบได้ทุกเมนู, ปรับเกณฑ์คะแนน, จับ Snapshot, และ Writeback ข้อมูล</li>
-        <li><strong>Lead (หัวหน้างาน):</strong> อนุมัติงาน, ย้ายการ์ดเข้า Done, แก้วันบน Gantt, และประเมิน 1-on-1</li>
-        <li><strong>Member (พนักงานทั่วไป):</strong> เข้าถึง <code>/me</code>, ย้ายงานได้ถึง Ready for QA, บันทึกผลงานและลิงก์ MR</li>
+        <li>เมนูในแถบด้านข้าง (Sidebar) จะถูกกรองตามสิทธิ์ของผู้ใช้งานคนนั้นโดยอัตโนมัติ</li>
+        <li>ระบบจะโหลดข้อมูลโปรไฟล์ คะแนนโควตาส่วนบุคคล และงานที่ได้รับมอบหมายขึ้นมาทันที</li>
+        <li>หน้าจอที่ต้องการสิทธิ์ระดับสูง เช่น <code>/admin</code> หรือ <code>/integrations</code> จะถูกซ่อนและป้องกัน</li>
       </ul>
     </div>
   </div>
@@ -477,25 +484,25 @@
   <div class="section-header">
     <div class="section-title-wrap">
       <span class="section-num">2</span>
-      <h2>แดชบอร์ดทีมและดัชนีชี้วัดภาพรวม (Team Dashboard)</h2>
+      <h2>แดชบอร์ดทีมและดัชนีชี้วัดภาพรวม (Team Dashboard &amp; MD Mandate Share)</h2>
     </div>
     <div class="section-meta">
-      <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>/team</code>
+      <span class="role-badge">ทุกคนอ่านได้ / จับภาพ: Lead &amp; Admin</span> · <code>/team</code>
     </div>
   </div>
 
   <div class="img-container">
     <img src="manual_assets/02_team_dashboard.png" alt="Team Dashboard Screen">
-    <div class="img-caption">ภาพที่ 2: แดชบอร์ดภาพรวมทีม แสดงการ์ด KPI สรุปผล, กราฟโดนัทสัดส่วนภาระงาน, เส้นแนวโน้ม และโควตาคงเหลือ</div>
+    <div class="img-caption">ภาพที่ 2: แดชบอร์ดทีม แสดงดัชนีชี้วัดภาพรวม สัดส่วนงานรายประเภท และกราฟแท่งซ้อน Planned vs Unplanned vs MD Mandate</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 องค์ประกอบสำคัญบนแดชบอร์ด</h4>
+      <h4>🎯 ตัวชี้วัดหลักและกราฟภาพรวม</h4>
       <ul>
-        <li><strong>KPI Summary Cards:</strong> แสดงดัชนีรวมของทีม, ความแม่นยำในการส่งมอบ (On-time Delivery %), คะแนนตามเกณฑ์ DoD, และสัดส่วนงานแทรก (Unplanned %)</li>
+        <li><strong>KPI Summary Cards:</strong> แสดงดัชนีรวมของทีม, ความแม่นยำในการส่งมอบ (On-time Delivery %), คะแนนตามเกณฑ์ DoD, และสัดส่วนงานแทรก</li>
         <li><strong>สัดส่วนภาระงาน 2568:</strong> กราฟโดนัทจำแนกประเภทงานจริงเปรียบเทียบระหว่าง Feature, Customization, และ Maintenance</li>
-        <li><strong>Bug / Custom / Enhancement แยกสาย:</strong> กราฟเปรียบเทียบภาระงานระหว่างสาย Implement และสาย R&D</li>
+        <li><strong>⚡ สัดส่วนงานสั่งตรงจาก MD (StackingColumn):</strong> แสดงเปรียบเทียบ Planned MD vs Unplanned ทั่วไป vs งานสั่งตรงจาก MD (MD Mandate) แยกรายเดือน เพื่อให้ผู้บริหารเห็นผลกระทบของงานแทรกชัดเจน</li>
       </ul>
     </div>
     <div class="info-card">
@@ -503,53 +510,16 @@
       <ul>
         <li><strong>เส้นรายเดือน (Monthly Trends):</strong> แสดงความแม่นยำ, การส่งตามแผน, และอัตรา Rework ย้อนหลัง เทียบกับเส้นเป้าหมาย 75%</li>
         <li><strong>โควตาที่ใช้กับที่ว่าง:</strong> กราฟแท่งแสดงภาระงานปัจจุบัน (Used MD) เทียบกับโควตาว่าง (Free MD) ของพนักงานแต่ละคน</li>
-        <li>ช่วยให้ Lead และ Admin สามารถเกลี่ยงาน (Workload Balancing) ได้อย่างเป็นธรรม</li>
+        <li><strong>ตัวเลือก Snapshot ย้อนหลัง:</strong> เลือกดูสถิติรายเดือนหรือรายไตรมาสที่ถูกแช่แข็งไว้ได้โดยข้อมูลไม่เปลี่ยนตามการซิงก์ใหม่</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 3. HISTORICAL KPI SNAPSHOTS ==================== -->
+  <!-- ==================== 3. MY WORKSPACE ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
       <span class="section-num">3</span>
-      <h2>การดูสถิติย้อนหลังและการสลับ KPI Snapshot (Team Snapshots)</h2>
-    </div>
-    <div class="section-meta">
-      <span class="role-badge">Admin / Lead (จับภาพ) · ทุกคน (อ่าน)</span> · <code>/team (Snapshots)</code>
-    </div>
-  </div>
-
-  <div class="img-container">
-    <img src="manual_assets/19_light_mode_team.png" alt="Team Snapshots & Light Mode">
-    <div class="img-caption">ภาพที่ 3: แดชบอร์ดทีมในโหมดสว่าง พร้อมตัวเลือก Snapshot ย้อนหลังรายเดือน (2025-08 ถึง 2025-11) และรายไตรมาส</div>
-  </div>
-
-  <div class="info-grid">
-    <div class="info-card">
-      <h4>🎯 ระบบบันทึกประวัติ (Frozen Snapshot)</h4>
-      <ul>
-        <li>ระบบสามารถจับประวัติคะแนนจริงประจำเดือน (เช่น สิ้นเดือนวันที่ 1 เวลา 02:00 น. ผ่าน Cron Job อัตโนมัติ) หรือกดจับประวัติด้วยมือ</li>
-        <li>เมื่อเลือกช่วงเวลา เช่น <code>เดือน 2025-10 · 15 คน</code> ตัวเลขคะแนน ดัชนี และอันดับจะถูกตรึงไว้ตามสภาพจริงของเดือนนั้นอย่างแม่นยำ ไม่ได้รับผลกระทบจากการซิงก์งานใหม่</li>
-        <li><strong>Deduplication Warning:</strong> หากเลือกช่วงเวลาที่เคยบันทึกไว้แล้ว ระบบจะแสดงป้ายเตือนสีส้มเพื่อป้องกันการกดบันทึกทับโดยไม่ตั้งใจ</li>
-      </ul>
-    </div>
-    <div class="info-card">
-      <h4>💡 ขั้นตอนการจับ Snapshot ด้วยตนเอง</h4>
-      <ol>
-        <li>เลือกประเภทช่วงเวลา (เดือน หรือ ไตรมาส)</li>
-        <li>ระบุรหัสรอบเวลา เช่น <code>2025-11</code> หรือ <code>2025-Q3</code></li>
-        <li>กดปุ่ม <strong>"บันทึกประวัติ Snapshot"</strong> ระบบจะประมวลผลคะแนนของทุกคนทั้ง 15 คนและเก็บลงฐานข้อมูล</li>
-        <li>ระบบจะบันทึก Audit Log ระบุว่าใครเป็นผู้จับภาพไว้เป็นหลักฐาน</li>
-      </ol>
-    </div>
-  </div>
-
-  <!-- ==================== 4. MY WORKSPACE ==================== -->
-  <div class="page-break"></div>
-  <div class="section-header">
-    <div class="section-title-wrap">
-      <span class="section-num">4</span>
       <h2>พอร์ทัลพื้นที่ส่วนตัวของพนักงาน (My Workspace &amp; Self-Coaching)</h2>
     </div>
     <div class="section-meta">
@@ -559,7 +529,7 @@
 
   <div class="img-container">
     <img src="manual_assets/03_my_workspace.png" alt="My Workspace Screen">
-    <div class="img-caption">ภาพที่ 4: หน้าจอ My Workspace พอร์ทัลส่วนตัวสำหรับพนักงานติดตามงานตนเอง ดัชนีพัฒนาการ และเช็คลิสต์ก่อนส่งมอบ</div>
+    <div class="img-caption">ภาพที่ 3: หน้าจอ My Workspace พอร์ทัลส่วนตัวสำหรับพนักงานติดตามงานตนเอง ดัชนีพัฒนาการ และเช็คลิสต์ก่อนส่งมอบ</div>
   </div>
 
   <div class="info-grid">
@@ -568,7 +538,7 @@
       <ul>
         <li><strong>ดัชนีพัฒนาการส่วนบุคคล (Self Index):</strong> แถบความคืบหน้าแสดงคะแนนดัชนีของตนเองเทียบกับเป้าหมาย 75%</li>
         <li><strong>เส้นพัฒนาการย้อนหลัง:</strong> กราฟเส้นแสดงผลงานรายเดือนของตนเอง เพื่อให้เห็นทิศทางการเติบโต</li>
-        <li><strong>รายการงานที่กำลังทำ (Active Tasks):</strong> ตารางแสดงงานที่ตนเองกำลังรับผิดชอบ วันกำหนดส่ง และสถานะคัมบัง</li>
+        <li><strong>รายการงานที่กำลังทำ (Active Tasks):</strong> ตารางแสดงงานที่ตนเองกำลังรับผิดชอบ วันกำหนดส่ง และสถานะคัมบัง พร้อมป้ายเตือนงานที่ถูกพัก [PAUSED]</li>
       </ul>
     </div>
     <div class="info-card">
@@ -581,12 +551,12 @@
     </div>
   </div>
 
-  <!-- ==================== 5. WORK SUMMARY ==================== -->
+  <!-- ==================== 4. WORK SUMMARY ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">5</span>
-      <h2>ฮับบริหารงาน - สรุปสถานะและสัดส่วนงาน (Work Summary)</h2>
+      <span class="section-num">4</span>
+      <h2>ฮับบริหารงาน - สรุปสถานะและสัดส่วนงาน (Work Summary &amp; MD Share)</h2>
     </div>
     <div class="section-meta">
       <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>/work/summary</code>
@@ -595,111 +565,107 @@
 
   <div class="img-container">
     <img src="manual_assets/04_work_summary.png" alt="Work Summary Screen">
-    <div class="img-caption">ภาพที่ 5: สรุปภาพรวมสถานะงานในฮับบริหารงาน แสดงสัดส่วนสถานะงาน สัดส่วนสาย และภาระงาน WIP ต่อคน</div>
+    <div class="img-caption">ภาพที่ 4: หน้าสรุปสถานะงานในมือ การกระจายตัวตามประเภทงาน และแถบสรุปงานสั่งตรงจาก MD (MD Mandate Share %)</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 รายละเอียดกราฟสถิติงาน</h4>
+      <h4>🎯 การจำแนกสถานะและภาระงาน</h4>
       <ul>
-        <li><strong>สัดส่วนสถานะงาน (Status Distribution):</strong> กราฟโดนัทแสดงปริมาณงานใน Backlog, In Progress, Code Review, In QA, และ Done</li>
-        <li><strong>สัดส่วนสายงาน (Track Distribution):</strong> แสดงสัดส่วนปริมาณงานที่กำลังดำเนินอยู่ระหว่างทีม Implement และ R&D</li>
-        <li><strong>WIP ต่อคน (Work In Progress per Person):</strong> กราฟแท่งจำแนกชั่วโมง Man-day ที่กำลังทำอยู่ของแต่ละคน ป้องกันการเกิดคอขวด</li>
+        <li><strong>สถานะงานในมือ (Active Work Breakdown):</strong> กราฟโดนัทแสดงสัดส่วนงานในแต่ละสถานะ (Backlog, In Progress, Code Review, In QA, Done)</li>
+        <li><strong>การกระจายตัวตามประเภท:</strong> จำแนกระหว่างงาน Feature ใหม่, การแก้ไข Bug, งาน Refactor, และงานวิจัย R&D</li>
+        <li><strong>⚡ แถบสรุปงานสั่งตรงจาก MD:</strong> แสดงจำนวนใบงาน, ผลรวมชั่วโมง MD ทั้งหมด, และคิดเป็นสัดส่วนกี่เปอร์เซ็นต์ของงานทั้งระบบ</li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 ประโยชน์ในการบริหารโครงการ</h4>
+      <h4>💡 การวิเคราะห์ประสิทธิภาพทีม</h4>
       <ul>
-        <li>ช่วยให้ผู้จัดการมองเห็นภาพรวมของโครงการในหน้าเดียว (Single Pane of Glass)</li>
-        <li>ตรวจพบความผิดปกติ เช่น งานคั่งค้างในขั้นตอน Code Review หรือ In QA เกินเกณฑ์มาตรฐาน</li>
-        <li>สามารถนำข้อมูลไปใช้ประกอบการประชุม Daily Standup หรือ Sprint Retrospective ได้ทันที</li>
+        <li>ให้ภาพรวมอย่างรวดเร็วว่างานส่วนใหญ่กำลังค้างอยู่ที่ขั้นตอนใด</li>
+        <li>ตรวจจับคอขวด เช่น หากมีงานค้างในช่อง Code Review หรือ In QA ปริมาณมาก แสดงว่าต้องการคนช่วยตรวจรีวิวหรือทดสอบเพิ่ม</li>
+        <li>ช่วยให้หัวหน้าทีมสื่อสารกับผู้บริหารได้ด้วยข้อมูลเชิงประจักษ์ว่าทีมมี Capacity เหลือสำหรับรับงานใหม่หรือไม่</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 6. WORK TIMELINE (GANTT) ==================== -->
+  <!-- ==================== 5. WORK TIMELINE ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">6</span>
+      <span class="section-num">5</span>
       <h2>ฮับบริหารงาน - ไทม์ไลน์และโครงสร้างงานแม่ลูก (Work Timeline &amp; Gantt)</h2>
     </div>
     <div class="section-meta">
-      <span class="role-badge admin">Admin / Lead (แก้ไขวัน)</span> · <code>/work/timeline</code>
+      <span class="role-badge">ทุกคนอ่านได้ / ปรับแผน: Lead &amp; Admin</span> · <code>/work/timeline</code>
     </div>
   </div>
 
   <div class="img-container">
     <img src="manual_assets/05_work_timeline.png" alt="Work Timeline Gantt Screen">
-    <div class="img-caption">ภาพที่ 6: Gantt Chart แสดงโครงสร้างงานแบบลำดับชั้น (Epic &gt; Task), วันเริ่ม-สิ้นสุด, แถบความคืบหน้า และแถบเครื่องมือซูม</div>
+    <div class="img-caption">ภาพที่ 5: แผนภูมิแกนต์ (Gantt Chart) แสดงโครงสร้างงานแบบลำดับชั้นแม่ลูก พร้อมแถบควบคุมการย่อขยายและการค้นหา</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 โครงสร้างงานลำดับชั้น (Gantt Tree Hierarchy)</h4>
+      <h4>🎯 โครงสร้างงานแบบลำดับชั้น (Parent/Child Hierarchy)</h4>
       <ul>
-        <li><strong>Parent-Child Structure:</strong> รองรับการจัดกลุ่มงานระดับ Epic/Feature แม่ลูก เช่น <code>IMP-EPIC-PAY</code> แตกแขนงออกเป็น 4 งานย่อย</li>
-        <li><strong>Gantt Toolbar:</strong> มีปุ่ม ExpandAll, CollapseAll, ZoomIn, ZoomOut, ZoomToFit, และช่องค้นหาชื่องาน</li>
-        <li>แสดงชื่อผู้รับผิดชอบ, วันที่เริ่มงานจริง, วันส่งมอบ, และเปอร์เซ็นต์ความคืบหน้าบนแท่งกราฟ</li>
+        <li><strong>การจัดกลุ่มแบบต้นไม้:</strong> รองรับการแสดงผล Epic &rarr; Feature &rarr; Task ตามความสัมพันธ์จริงจาก OpenProject</li>
+        <li><strong>เครื่องมือบน Toolbar:</strong> ปุ่มกางออกทั้งหมด (Expand All), ยุบทั้งหมด (Collapse All), ซูมเข้าออก (Zoom In/Out) เพื่อดูระดับวัน สัปดาห์ หรือเดือน</li>
+        <li><strong>ช่องค้นหาแบบ Real-time:</strong> พิมพ์ค้นหาตามรหัสใบงานหรือชื่อชิ้นงานเพื่อกระโดดไปยังแถบแกนต์ทันที</li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 กฎการปรับเปลี่ยนวันที่ (Date Safety Rules)</h4>
+      <h4>💡 การแก้ไขกำหนดการและการป้องกัน FirstDueOn</h4>
       <ul>
-        <li>เฉพาะผู้ใช้ระดับ <strong>Admin และ Lead</strong> เท่านั้นที่มีสิทธิ์ลากขยายหรือแก้วันที่บน Gantt Timeline</li>
-        <li><strong>Lock First Due:</strong> การแก้วันส่งมอบ (DueDate) จะไม่ไปทับวันส่งมอบครั้งแรก (FirstDueOn) ทำให้สูตรวัด On-time ยังคงเที่ยงตรง</li>
-        <li>รองรับการส่งคำขอ Sync กลับไปยัง OpenProject (Writeback) เมื่อเปิดใช้งาน</li>
+        <li><strong>การลากปรับวันที่ (Drag-and-Drop):</strong> ผู้ใช้ระดับ Admin และ Lead สามารถลากปรับวันเริ่มงานและวันส่งมอบบนเส้นแกนต์ได้</li>
+        <li><strong>FirstDueOn Protection:</strong> การแก้วันส่งมอบบน Timeline จะบันทึกเป็น <code>dueDate</code> แต่จะไม่เขียนทับ <code>firstDueOn</code> (เว้นแต่เป็นคำสั่ง Auto-Shift จาก MD) เพื่อคงความเที่ยงตรงในการวัดคะแนน On-time</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 7. WORK BACKLOG ==================== -->
+  <!-- ==================== 6. WORK BACKLOG ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">7</span>
-      <h2>ฮับบริหารงาน - คลังงานและประเมินขนาด (Work Backlog)</h2>
+      <span class="section-num">6</span>
+      <h2>ฮับบริหารงาน - คลังงานและประเมินขนาด (Work Backlog &amp; Sizing)</h2>
     </div>
     <div class="section-meta">
-      <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>/work/backlog</code>
+      <span class="role-badge">ทุกคนอ่านได้ / วางแผน: Lead &amp; Admin</span> · <code>/work/backlog</code>
     </div>
   </div>
 
   <div class="img-container">
     <img src="manual_assets/06_work_backlog.png" alt="Work Backlog Screen">
-    <div class="img-caption">ภาพที่ 7: หน้ารายการงานในคลัง Backlog พร้อมการจำแนกขนาดไซส์ (XS, S, M, L, XL), Story Points และปุ่มรับงาน</div>
+    <div class="img-caption">ภาพที่ 6: คลังงานที่รอวางแผน (Backlog) แสดงรายการงานใหม่ที่ยังไม่ได้เริ่ม พร้อมขนาดประมาณการ (T-Shirt Size)</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 การบริหารคลังงาน (Backlog Refinement)</h4>
+      <h4>🎯 การประเมินขนาดงาน (T-Shirt Size to MD)</h4>
       <ul>
-        <li>รวบรวมงานทั้งหมดที่ยังไม่ได้เริ่มทำ หรืออยู่ระหว่างรอประเมินขนาดและมอบหมายผู้รับผิดชอบ</li>
-        <li><strong>ตารางเทียบขนาดมาตรฐาน:</strong><br>
-          • <strong>XS:</strong> 0.5 - 1.0 MD (งานแก้จุดเล็ก / Hotfix)<br>
-          • <strong>S:</strong> 1.5 - 2.5 MD (งานย่อย / Bug ทั่วไป)<br>
-          • <strong>M:</strong> 3.0 - 5.0 MD (ฟังก์ชันระดับกลาง)<br>
-          • <strong>L:</strong> 6.0 - 9.0 MD (ฟีเจอร์ใหญ่)<br>
-          • <strong>XL:</strong> 10+ MD (Epic ต้องแตกงานย่อย)
-        </li>
+        <li><strong>XS (0.25 MD / 1.5 ชม.):</strong> งานแก้ไขข้อความ ปรับสี หรือแก้บั๊กเล็กน้อย</li>
+        <li><strong>S (0.5 MD / 3.0 ชม.):</strong> งานปรับปรุง UI เล็กน้อย หรือเขียนสคริปต์สั้นๆ</li>
+        <li><strong>M (1.0 MD / 6.0 ชม.):</strong> พัฒนาฟังก์ชันขนาดมาตรฐาน 1 วันทำงาน</li>
+        <li><strong>L (2.0 MD / 12.0 ชม.):</strong> ฟังก์ชันที่มีความซับซ้อนปานกลาง มีการต่อ API</li>
+        <li><strong>XL (3.0+ MD / 18+ ชม.):</strong> ฟังก์ชันใหญ่ที่ควรพิจารณาแตกเป็นข้อย่อย</li>
       </ul>
     </div>
     <div class="info-card">
       <h4>💡 การดึงงานเข้าแผน (Sprint Planning)</h4>
       <ul>
-        <li>สามารถกรองดูตามสายงาน Implement หรือ R&D</li>
+        <li>สามารถกรองดูตามสายงาน Implement, R&D, QA, UXBA, หรือ Infra</li>
         <li>ตรวจสอบว่าใบงานมีเกณฑ์การรับมอบ (Acceptance Criteria) และกำหนดคะแนน Story Points เรียบร้อยหรือไม่</li>
         <li>เมื่อมอบหมายคนรับผิดชอบและระบุวันเริ่มงาน การ์ดจะย้ายเข้าสู่กระดานคัมบังโดยอัตโนมัติ</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 8. WORK KANBAN BOARD ==================== -->
+  <!-- ==================== 7. WORK KANBAN BOARD ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">8</span>
-      <h2>ฮับบริหารงาน - กระดานคัมบังและการจัดการสถานะ (Kanban Board)</h2>
+      <span class="section-num">7</span>
+      <h2>ฮับบริหารงาน - กระดานคัมบังและการจัดการสถานะ (Kanban Board &amp; MD Auto-Shift)</h2>
     </div>
     <div class="section-meta">
       <span class="role-badge">ทุกคน (ย้ายตามสิทธิ์)</span> · <code>/work/board</code>
@@ -708,68 +674,35 @@
 
   <div class="img-container">
     <img src="manual_assets/07_work_board.png" alt="Kanban Board Screen">
-    <div class="img-caption">ภาพที่ 8: กระดานคัมบัง 7 คอลัมน์สถานะ รองรับ Drag-and-Drop, แสดงการ์ดแยกตาม Swimlane และระบุ Story Points ชัดเจน</div>
+    <div class="img-caption">ภาพที่ 7: กระดานคัมบัง 7 คอลัมน์สถานะ รองรับ Drag-and-Drop, ตัวสลับ Swimlane, ป้ายเตือน [MD-DIRECT], และการ์ด [PAUSED]</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
       <h4>🎯 วงจรสถานะงาน 7 ขั้นตอน (Workflow Columns)</h4>
       <ul>
-        <li><strong>1. Backlog:</strong> งานในคิวที่รอวางแผน</li>
-        <li><strong>2. In Progress:</strong> กำลังพัฒนาโค้ด (บันทึกวันเริ่มอัตโนมัติ)</li>
-        <li><strong>3. Code Review:</strong> พัฒนาเสร็จ รอรีวิวโค้ด (ต้องมีลิงก์ MR)</li>
-        <li><strong>4. Ready for QA:</strong> ผ่านการรีวิว พร้อมนำขึ้นระบบทดสอบ</li>
-        <li><strong>5. In QA:</strong> อยู่ระหว่างทดสอบระบบโดยทีม QA</li>
-        <li><strong>6. Reopened:</strong> พบปัญหา ต้องแก้ไขซ้ำ (นับคะแนน Reopen)</li>
-        <li><strong>7. Done:</strong> ตรวจรับเรียบร้อย ปิดงานสมบูรณ์</li>
+        <li><strong>1. Backlog &rarr; 2. In Progress:</strong> กำลังพัฒนาโค้ด (บันทึกวันเริ่มอัตโนมัติ)</li>
+        <li><strong>3. Code Review &rarr; 4. Ready for QA:</strong> ผ่านรีวิว (จุด Fair Cutoff)</li>
+        <li><strong>5. In QA &rarr; 6. Reopened:</strong> ตีกลับแก้ไข &rarr; <strong>7. Done:</strong> ตรวจรับปิดงาน</li>
+        <li><strong>Swimlane Switcher:</strong> สลับการจัดกลุ่มตามผู้รับผิดชอบ (Assignee) หรือสายงาน (Track)</li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 การสลับ Swimlane และสิทธิ์การย้ายการ์ด</h4>
+      <h4>⚡ โฟลว์รับมืองานสั่งตรงจาก MD (MD-DIRECT &amp; Auto-Shift)</h4>
       <ul>
-        <li><strong>Swimlane Switcher:</strong> สามารถสลับการจัดกลุ่มตามผู้รับผิดชอบ (Assignee) หรือแยกตามสายงาน (Track) ได้ตามต้องการ</li>
-        <li><strong>กฎความปลอดภัยของสิทธิ์:</strong><br>
-          • <strong>Member:</strong> ลากการ์ดได้ถึงสถานะ <em>Ready for QA / In QA</em> (ห้ามปิดงานเข้า Done เอง)<br>
-          • <strong>Lead / Admin:</strong> ลากการ์ดได้ทุกสถานะ รวมถึงการตรวจรับและปิดงานเข้า <em>Done</em>
-        </li>
+        <li><strong>Active WIP Auto-Detection:</strong> เมื่อลากการ์ด MD เข้า In Progress ระบบจะเช็กอัตโนมัติว่าน้องคนนั้นมีงานอื่นค้างในมือหรือไม่</li>
+        <li><strong>Auto-Shift Dialog:</strong> มี Checkbox ติ๊ก "งานสั่งตรงจาก MD" พร้อม <code>ejs-multiselect</code> เลือกงานค้างในมือเพื่อเลื่อนวันส่งแรก (firstDueOn) เว้นวันเสาร์-อาทิตย์ในคลิกเดียว</li>
+        <li><strong>[PAUSED] State:</strong> การ์ดเดิมจะแสดงป้าย [PAUSED] พร้อมปรับความโปร่งแสง และการันตีคะแนนไม่ให้เสียเปรียบ</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 9. KANBAN CARD EDIT DIALOG ==================== -->
+  <!-- ==================== 8. WORK LIST ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">9</span>
-      <h2>หน้าต่างแก้ไขรายละเอียดงานและประวัติส่งมอบ (Card Edit &amp; Activity Log)</h2>
-    </div>
-    <div class="section-meta">
-      <span class="role-badge">ทุกคน (แก้ไขตามสิทธิ์)</span> · <code>/work/board (Card Dialog)</code>
-    </div>
-  </div>
-
-  <div class="info-grid" style="grid-template-columns: 1fr; margin-top: 14px;">
-    <div class="info-card">
-      <h4>🎯 ฟังก์ชันในหน้าต่างแก้ไขการ์ด (Dialog Fields)</h4>
-      <p style="font-size: 9pt; margin-bottom: 8px;">เมื่อคลิกที่การ์ดใดๆ บนกระดานคัมบัง หน้าต่าง Syncfusion Dialog จะเปิดขึ้นมาพร้อมข้อมูลครบวงจร:</p>
-      <ul>
-        <li><strong>ฟิลด์ทางเทคนิค:</strong> ระบุหมวดหมู่ความเชี่ยวชาญ (FE, BE, Full-Stack, AI-Data, Infra) และประเภทงาน (Feature, R&D-PoC, Refactor, Bug)</li>
-        <li><strong>ฟิลด์ส่งมอบ:</strong> ใส่ลิงก์ GitLab Merge Request (MR Link), ผลการทดสอบ PoC (Adopted, Alternative Chosen, Dropped), และสาเหตุข้อผิดพลาดของ Bug (Logic, UI, API, Requirement, Environment)</li>
-        <li><strong>ประวัติและการส่งมอบ (Delivery &amp; Activity Log):</strong> กล่องสรุปประวัติแสดงวันเริ่มงานจริง, วันกำหนดส่งครั้งแรก, จำนวนรอบรีวิว, และประวัติการ Reopen ในอดีต</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="callout tip">
-    <strong>คำแนะนำ:</strong> การบันทึกสาเหตุข้อผิดพลาด (Bug Cause) และผลการวิจัย (PoC Result) อย่างสม่ำเสมอ จะช่วยให้ระบบ <strong>Python Analytics Intelligence Hub</strong> สามารถตรวจจับความเสี่ยงและออกรายงานวิเคราะห์สาเหตุเชิงลึก (Root Cause Analysis) ให้กับทีมได้อย่างถูกต้องแม่นยำ
-  </div>
-
-  <!-- ==================== 10. WORK LIST ==================== -->
-  <div class="page-break"></div>
-  <div class="section-header">
-    <div class="section-title-wrap">
-      <span class="section-num">10</span>
-      <h2>ฮับบริหารงาน - รายการงานทั้งหมด (Work List Table)</h2>
+      <span class="section-num">8</span>
+      <h2>ฮับบริหารงาน - รายการงานทั้งหมด (Work List Table &amp; Freeze Columns)</h2>
     </div>
     <div class="section-meta">
       <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>/work/list</code>
@@ -778,35 +711,34 @@
 
   <div class="img-container">
     <img src="manual_assets/08_work_list.png" alt="Work List Screen">
-    <div class="img-caption">ภาพที่ 9: ตารางรายการงานทั้งหมด รองรับการจัดเรียง, กรองข้อมูลแบบหลายมิติ, เลือกคอลัมน์ และส่งออกไฟล์</div>
+    <div class="img-caption">ภาพที่ 8: ตารางรวมรายการงานทั้งหมด พร้อมคอลัมน์ตรึง ค้นหาแบบหลายเงื่อนไข และส่งออกข้อมูลเป็น Excel</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 คุณสมบัติเด่นของตาราง Syncfusion Grid</h4>
+      <h4>🎯 คุณสมบัติตารางประสิทธิภาพสูง (Syncfusion Grid)</h4>
       <ul>
-        <li><strong>Filtering &amp; Searching:</strong> ค้นหาข้อความด่วน หรือเปิดใช้งานตัวกรองแบบ Excel Filter ในแต่ละคอลัมน์</li>
-        <li><strong>Column Chooser:</strong> เลือกซ่อนหรือแสดงคอลัมน์ที่ต้องการดูได้ตามความต้องการส่วนบุคคล</li>
-        <li><strong>Excel &amp; CSV Export:</strong> ส่งออกข้อมูลงานทั้งหมดออกเป็นไฟล์ Excel หรือ CSV ได้ในคลิกเดียว</li>
-        <li><strong>Grid State Persistence:</strong> จดจำการเรียงลำดับและการตั้งค่าคอลัมน์ไว้ในเบราว์เซอร์</li>
+        <li><strong>คอลัมน์ตรึง (Frozen Columns):</strong> ตรึงรหัสใบงานและชื่องานไว้ด้านซ้ายเสมอ ทำให้เลื่อนดูข้อมูลทางขวาได้สะดวกโดยไม่หลุดบริบท</li>
+        <li><strong>เครื่องมือเลือกแสดงคอลัมน์ (Column Chooser):</strong> สามารถเปิด/ปิดคอลัมน์ที่ต้องการดูได้ตามความต้องการส่วนบุคคล</li>
+        <li><strong>ระบบจัดกลุ่มและกรอง (Grouping &amp; Filtering):</strong> ลากหัวคอลัมน์เพื่อจัดกลุ่มตามสถานะ หรือกรองตามช่วงวันที่ได้อย่างรวดเร็ว</li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 ประโยชน์สำหรับผู้จัดการโครงการ</h4>
+      <h4>💡 การส่งออกข้อมูลและการรวมผล</h4>
       <ul>
-        <li>เป็นมุมมองตารางที่แสดงรายละเอียดเชิงลึกของใบงานทั้งหมด ไม่จำกัดเพียงแค่งานที่กำลังทำ</li>
-        <li>มีแถวสรุปผลรวม (Aggregates) ที่ด้านล่างของตาราง แสดงผลรวม Man-day, จำนวนใบงาน, และค่าเฉลี่ย</li>
-        <li>เหมาะสำหรับการจัดทำรายงานประจำสัปดาห์ส่งฝ่ายบริหาร</li>
+        <li><strong>ส่งออกเป็น Excel / CSV:</strong> กดปุ่ม Export บนแถบเครื่องมือเพื่อนำข้อมูลไปทำรายงานเพิ่มเติมได้ทันที</li>
+        <li><strong>แถวสรุปผลรวม (Aggregates Footer):</strong> แสดงผลรวมของประมาณการ Man-day (Sum Estimate MD) และชั่วโมงที่ใช้จริง (Sum Actual MD) ที่ด้านล่างของตาราง</li>
+        <li>จดจำการตั้งค่าตาราง (Grid Persistence) แม้จะเปลี่ยนหน้าหรือรีเฟรชเบราว์เซอร์</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 11. TICKETS SCORECARD ==================== -->
+  <!-- ==================== 9. TICKETS SCORECARD ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">11</span>
-      <h2>ตารางคะแนนใบงานฉบับเต็มและคอลัมน์ตรึง (Tickets Scorecard Grid)</h2>
+      <span class="section-num">9</span>
+      <h2>ตารางคะแนนใบงานฉบับเต็มและ Tiered Tolerance (Tickets Scorecard Grid)</h2>
     </div>
     <div class="section-meta">
       <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>/tickets</code>
@@ -815,33 +747,34 @@
 
   <div class="img-container">
     <img src="manual_assets/09_tickets_scorecard.png" alt="Tickets Scorecard Grid Screen">
-    <div class="img-caption">ภาพที่ 10: ตารางคำนวณคะแนนใบงาน 29 คอลัมน์ ตรึง 2 คอลัมน์แรก (Frozen Columns) พร้อม Accordion ฟอร์มนำเข้าไฟล์</div>
+    <div class="img-caption">ภาพที่ 9: ตารางคะแนนใบงานฉบับเต็ม แสดงการคำนวณคะแนน On-Time, ความแม่นยำ (Tiered Tolerance), และเครดิต Peer Review</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 คอลัมน์ตรึงและระบบคะแนนใบงาน</h4>
+      <h4>🎯 เกณฑ์ความแม่นยำตามขนาดงาน (Tiered Tolerance)</h4>
       <ul>
-        <li><strong>Frozen Columns (2 คอลัมน์แรก):</strong> ตรึงรหัสใบงานและสายงานไว้ทางซ้ายตลอดเวลา เลื่อนตารางแนวนอนได้อย่างราบรื่นโดยไม่หลุดตำแหน่ง</li>
-        <li><strong>สูตรคะแนนใบงาน (100 คะแนนเต็ม):</strong> คำนวณจากความตรงเวลา (On-time 30%), ความแม่นยำ MD (Accuracy 30%), คุณภาพการรีวิว (Review 20%), และอัตรา Reopen (20%)</li>
-        <li>แสดงสถานะงานแทรก (Unplanned) และงานวิจัย (Spike) อย่างชัดเจน</li>
+        <li><strong>XS / S (&le; 0.5 MD):</strong> กรอบกว้าง [0.5, 2.0] ได้เต็ม 20 คะแนน (ยอมรับความแปรปรวนของงานเล็ก)</li>
+        <li><strong>M (1.0 MD):</strong> กรอบมาตรฐาน [0.8, 1.5] ได้เต็ม 20 คะแนน</li>
+        <li><strong>L / XL (&ge; 2.0 MD):</strong> กรอบวินัยเข้ม [0.85, 1.3] ได้เต็ม 20 คะแนน</li>
+        <li><strong>Net Actual MD:</strong> หักลบวันพักงาน (<code>pausedDays</code>), เวลาติดบล็อก, และเวลารอคิว QA ก่อนคำนวณอัตราส่วน</li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 Accordion ฟอร์มจัดการใบงาน</h4>
+      <h4>🛡️ คะแนนส่งมอบและโควตาตรวจโค้ด (Peer Review MD)</h4>
       <ul>
-        <li><strong>ส่วนที่ 1: นำเข้าไฟล์:</strong> รองรับการอัปโหลดไฟล์คะแนนแบบ CSV หรือ JSON เข้าระบบ</li>
-        <li><strong>ส่วนที่ 2: เพิ่มใบงานด้วยตนเอง:</strong> ฟอร์มสร้างใบงานใหม่สำหรับงานที่ไม่ได้ผ่าน OpenProject</li>
-        <li><strong>ส่วนที่ 3: เกณฑ์การให้คะแนน:</strong> สรุปสูตรและกติกาการคำนวณคะแนนเพื่อความโปร่งใส</li>
+        <li><strong>On-Time Delivery (40 คะแนน):</strong> ส่งก่อน/ตรงกำหนดได้เต็ม 40 (งานที่ถูกพักโดย MD Mandate การันตี 40 คะแนนเต็ม)</li>
+        <li><strong>DoD Evidence (20 คะแนน):</strong> ตรวจสอบ Unit Test ผ่าน และมีลิงก์ GitLab Merge Request</li>
+        <li><strong>Peer Review Credit (10-15%):</strong> เครดิตเวลาโควตาพิเศษให้กับผู้ตรวจโค้ด (Reviewer/Approver) ที่ดึงจาก GitLab API</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 12. PEOPLE BOARD ==================== -->
+  <!-- ==================== 10. PEOPLE BOARD ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">12</span>
+      <span class="section-num">10</span>
       <h2>กระดานคะแนนพนักงานทั้งทีม (People Board &amp; Rankings)</h2>
     </div>
     <div class="section-meta">
@@ -851,70 +784,69 @@
 
   <div class="img-container">
     <img src="manual_assets/10_people_board.png" alt="People Board Screen">
-    <div class="img-caption">ภาพที่ 11: กระดานคะแนนพนักงานทั้ง 15 คน แสดงดัชนีพัฒนาการ คะแนน DoD แถบแนวโน้ม และกราฟแท่งเปรียบเทียบ</div>
+    <div class="img-caption">ภาพที่ 10: กระดานจัดอันดับคะแนนพนักงานทั้งทีม แสดงดัชนีคะแนนรวม อัตราโควตา และสถานะผ่านเกณฑ์ประเมิน</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 ดัชนีพัฒนาการรายบุคคล (Person Index)</h4>
+      <h4>🎯 ดัชนีชี้วัดรายบุคคล (Individual Index)</h4>
       <ul>
-        <li>รวบรวมรายชื่อพนักงานทั้ง 15 คน พร้อมจัดอันดับผลงานเปรียบเทียบกับเส้นเป้าหมาย 75%</li>
-        <li><strong>คอลัมน์สำคัญ:</strong> แผนงาน (Plan %), สัดส่วนงานปิดตามแผน (Weighted Score), การผ่านเกณฑ์เสร็จสมบูรณ์ (DoD Passed %), อัตรา Rework, และดัชนีคะแนนรวม (Index)</li>
-        <li>มีปุ่มกดที่ชื่อพนักงานเพื่อเปิดเข้าสู่แดชบอร์ดรายคนเชิงลึกได้ทันที</li>
+        <li><strong>สูตรคะแนนสาย Implement:</strong> On-time 40% + Accuracy 20% + DoD 20% + Reopen (หักลบ) + Workload Quota</li>
+        <li><strong>สูตรคะแนนสาย R&D:</strong> ความสำเร็จของ Spike/PoC 40% + Accuracy 20% + DoD 20% + นวัตกรรมและการแบ่งปันความรู้</li>
+        <li><strong>เกณฑ์มาตรฐาน (Baseline 75%):</strong> แถบสีเขียวแสดงผู้ที่ผ่านเกณฑ์ประเมินมาตรฐานขององค์กร</li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 กราฟเปรียบเทียบภาพรวมท้ายหน้า</h4>
+      <h4>💡 Dynamic Leave Quota &amp; Workload Balancing</h4>
       <ul>
-        <li>มี Syncfusion Chart ด้านล่างตาราง แสดงคะแนนดัชนีของพนักงานทุกคนเรียงตามลำดับ</li>
-        <li>ช่วยให้มองเห็นการกระจายตัวของผลงานในทีม (Performance Distribution) ได้อย่างชัดเจน</li>
-        <li>สามารถส่งออกข้อมูลตารางพนักงานเป็น Excel เพื่อนำไปคำนวณโบนัสหรือผลตอบแทนได้</li>
+        <li><strong>ปรับลดโควตาตามวันลา:</strong> Net Quota ปรับลดลงอัตโนมัติตามสัดส่วนวันลาและวันหยุดนักขัตฤกษ์ โดยไม่เสียเปรียบ</li>
+        <li>ช่วยให้หัวหน้างานมองเห็นว่าใครกำลังมีภาระงานล้นมือ (Overload) หรือใครยังมีพื้นที่ว่าง (Underload) สำหรับกระจายงาน</li>
+        <li>สามารถคลิกที่ชื่อพนักงานเพื่อเข้าสู่หน้าเจาะลึกรายคน (Person Dashboard) ได้ทันที</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 13. PERSON DETAIL ==================== -->
+  <!-- ==================== 11. PERSON DASHBOARD ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">13</span>
-      <h2>แดชบอร์ดรายคนและการประเมินแบบ 1-on-1 (Person Dashboard)</h2>
+      <span class="section-num">11</span>
+      <h2>แดชบอร์ดรายคนและการประเมินแบบ 1-on-1 (Person Dashboard &amp; MD Workload)</h2>
     </div>
     <div class="section-meta">
-      <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>/people/:id</code>
+      <span class="role-badge">ทุกคนอ่านได้ / พนักงานดูของตนเอง</span> · <code>/people/:id</code>
     </div>
   </div>
 
   <div class="img-container">
     <img src="manual_assets/11_person_detail.png" alt="Person Detail Screen">
-    <div class="img-caption">ภาพที่ 12: แดชบอร์ดรายบุคคลพร้อมปุ่มนำทางก่อนหน้า/ถัดไป แสดงกราฟแนวโน้มส่วนตัว สัดส่วนงาน และคุณภาพส่งมอบ</div>
+    <div class="img-caption">ภาพที่ 11: หน้าจอเจาะลึกข้อมูลรายบุคคล กราฟสัดส่วนงานสั่งตรงจาก MD กราฟประวัติคะแนนย้อนหลัง และปุ่มเลื่อน 1-on-1 ต่อเนื่อง</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 ปุ่มนำทางต่อเนื่อง (1-on-1 Continuous Nav)</h4>
+      <h4>🎯 การวิเคราะห์เชิงลึกรายบุคคล</h4>
       <ul>
-        <li><strong>ปุ่ม &lt; คนก่อนหน้า และ คนถัดไป &gt;:</strong> ช่วยให้ผู้จัดการหรือ Lead สามารถตรวจผลงานพนักงานทีละคนได้อย่างต่อเนื่องครบทั้ง 15 คนในคลิกเดียว</li>
-        <li>แสดงการ์ดสรุป KPI ส่วนตัว: ดัชนีพัฒนาการ, คะแนนแผน, สัดส่วนงานปิด, คะแนน DoD, และโควตารายสัปดาห์</li>
-        <li>แสดงกราฟ <strong>Self-Trend</strong> ติดตามผลงานรายเดือนของตนเอง</li>
+        <li><strong>1-on-1 Continuous Navigation:</strong> ปุ่ม Previous / Next เลื่อนดูข้อมูลลูกทีมทีละคนอย่างราบรื่นระหว่างการพูดคุยประเมินงาน</li>
+        <li><strong>⚡ ผลกระทบของงานสั่งตรงจาก MD:</strong> กราฟแท่งซ้อน (StackedColumn) แสดงสัดส่วนชั่วโมงงาน Planned vs Unplanned vs MD Mandate ของพนักงานคนนั้น</li>
+        <li><strong>Peer Review Hours:</strong> แสดงชั่วโมงและโควตาเครดิตที่ได้จากการตรวจโค้ดให้เพื่อนในทีม</li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 กราฟจำแนกมิติคุณภาพงาน</h4>
+      <h4>💡 ประวัติงานและข้อเสนอแนะเพื่อการพัฒนา</h4>
       <ul>
-        <li><strong>กราฟสัดส่วนงานเลื่อน (Slip Share):</strong> แสดงเปอร์เซ็นต์งานที่ส่งตรงเวลาเทียบกับงานที่หลุดสัปดาห์</li>
-        <li><strong>กราฟสัดส่วนประเภทงาน:</strong> วิเคราะห์ว่าทำงาน Feature, Bug, หรือ Spike เป็นสัดส่วนเท่าใด</li>
-        <li><strong>คุณภาพส่งมอบ:</strong> วิเคราะห์จำนวนรอบ Code Review และอัตราการเกิด Reopen</li>
-        <li>มีตารางประวัติใบงานทั้งหมดของพนักงานคนนี้ที่ด้านล่าง</li>
+        <li><strong>ประวัติคะแนนย้อนหลัง:</strong> กราฟเส้นแสดงแนวโน้มคะแนนรายเดือน ช่วยชี้เป้าว่ามีพัฒนาการอย่างไร</li>
+        <li><strong>สถิติการถูกตีกลับ (Reopen Analysis):</strong> จำแนกสาเหตุข้อผิดพลาด ช่วยให้หัวหน้าโค้ชชิ่งได้ตรงจุด</li>
+        <li><strong>ตารางงานทั้งหมดของบุคคล:</strong> ดูรายการงานที่ปิดแล้วและงานที่กำลังทำอยู่ พร้อมคะแนนของแต่ละใบงาน</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 14. TEAM SCHEDULE ==================== -->
+  <!-- ==================== 12. TEAM SCHEDULE ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">14</span>
+      <span class="section-num">12</span>
       <h2>ปฏิทินและไทม์ไลน์งานทีม (Team Schedule Calendar)</h2>
     </div>
     <div class="section-meta">
@@ -923,35 +855,34 @@
   </div>
 
   <div class="img-container">
-    <img src="manual_assets/12_schedule.png" alt="Team Schedule Calendar Screen">
-    <div class="img-caption">ภาพที่ 13: ปฏิทินไทม์ไลน์รายเดือน จัดกลุ่มแถวตามรายชื่อพนักงาน พร้อมไฮไลต์แถบสีส้มสำหรับงานที่เลื่อนหลุดกำหนด</div>
+    <img src="manual_assets/12_schedule.png" alt="Team Schedule Screen">
+    <div class="img-caption">ภาพที่ 12: ปฏิทินกำหนดการทำงานของทีม แสดงช่วงเวลาเริ่ม-สิ้นสุดของแต่ละใบงาน และมุมมองการจัดสรรทรัพยากร</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 มุมมองไทม์ไลน์ทรัพยากร (Resource TimelineMonth)</h4>
+      <h4>🎯 มุมมองปฏิทินอัจฉริยะ (Syncfusion Schedule)</h4>
       <ul>
-        <li>แสดงพนักงานทั้ง 15 คนในแถวแนวตั้ง และแกนวันที่ตามปฏิทินในแนวนอน</li>
-        <li>แถบสีน้ำเงินแสดงงานที่กำลังดำเนินการตามแผนปกติ</li>
-        <li><strong>แถบสีส้ม/แดง (Slipped Ticket):</strong> แสดงงานที่หลุดกำหนดส่งครั้งแรก (Week Offset &gt; 0) เพื่อให้ทีมเห็นจุดวิกฤติตั้งแต่เนิ่นๆ</li>
-        <li>เอาเมาส์ชี้เพื่อดู Tooltip สรุปรายละเอียด: ชื่องาน, ไซส์ MD, สถานะ และระยะเวลาที่เลื่อน</li>
+        <li><strong>มุมมองหลากหลาย:</strong> สลับดูได้ทั้งแบบรายวัน (Day), รายสัปดาห์ (Week), รายเดือน (Month), และไทม์ไลน์ตามสายงาน (Timeline Month)</li>
+        <li><strong>รหัสสีตามสถานะงาน:</strong> สีเขียวสำหรับงานที่เสร็จสมบูรณ์แล้ว, สีน้ำเงินสำหรับงานที่กำลังทำ, และสีเหลืองสำหรับงานในคิว</li>
+        <li><strong>ตรวจจับกำหนดส่งชนกัน:</strong> ชี้ให้เห็นวันที่ทีมมีกำหนดส่งมอบงานหลายใบพร้อมกัน เพื่อเตรียมความพร้อมของทีม QA</li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 การประยุกต์ใช้งานในการวางแผน</h4>
+      <h4>💡 การประสานงานและการส่งมอบ</h4>
       <ul>
-        <li>ใช้ในการประชุม Sprint Review และ Release Planning เพื่อดูความพร้อมในการส่งมอบซอฟต์แวร์</li>
-        <li>ตรวจดูว่ามีพนักงานคนใดว่างในสัปดาห์หน้า เพื่อจ่ายงานใหม่จาก Backlog ได้อย่างมีประสิทธิภาพ</li>
-        <li>สามารถกรองดูเฉพาะสาย Implement หรือเฉพาะสาย R&D ได้ที่ตัวกรองมุมบนขวา</li>
+        <li>ช่วยให้ทีมมองเห็นภาพรวมของรอบ Sprint ได้อย่างชัดเจน</li>
+        <li>เห็นช่วงวันลาและวันหยุดนักขัตฤกษ์เพื่อการวางแผนงานที่ไม่สะดุด</li>
+        <li>สามารถคลิกที่กล่องกิจกรรมเพื่อเปิดดูรายละเอียดของใบงานนั้นๆ ได้ทันที</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 15. AI & SPIKE TRACKING ==================== -->
+  <!-- ==================== 13. AI & RESEARCH TRACKING ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">15</span>
+      <span class="section-num">13</span>
       <h2>ระบบติดตามงานวิจัย AI และ Spike (AI &amp; Research Tracking)</h2>
     </div>
     <div class="section-meta">
@@ -960,44 +891,47 @@
   </div>
 
   <div class="img-container">
-    <img src="manual_assets/13_ai_tracking.png" alt="AI Tracking Screen">
-    <div class="img-caption">ภาพที่ 14: หน้าจอติดตามสัดส่วนงานวิจัย AI, Spike Ratio Progress Bar และกราฟเปรียบเทียบภาระงานรายใบ</div>
+    <img src="manual_assets/13_ai_tracking.png" alt="AI & Research Tracking Screen">
+    <div class="img-caption">ภาพที่ 13: หน้าจอติดตามงานวิจัย AI และ Spike บันทึกผลลัพธ์ PoC นวัตกรรม และการให้คะแนนสาย R&D</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 การควบคุมสัดส่วนงานวิจัย (Spike Band Governance)</h4>
+      <h4>🎯 การจัดการงานวิจัยและทดลอง (Spike / PoC)</h4>
       <ul>
-        <li>ในสายงาน R&D กำหนดให้มีงานประเภท Spike เพื่อศึกษาเทคโนโลยีใหม่ได้ แต่ต้องไม่เกินเพดานที่กำหนด (เช่น ไม่เกิน 30-40% ของ Man-day ทั้งหมด)</li>
-        <li>แถบความคืบหน้า <strong>Research Spike Share</strong> แสดงเปอร์เซ็นต์งาน Spike เทียบกับงานพัฒนา Feature ปกติ</li>
-        <li>แสดงป้ายสถานะกำกับ เช่น <code>สัดส่วนงานวิจัยปกติ</code> หรือ <code>เกินเกณฑ์</code> เพื่อรักษาสมดุลผลผลิต</li>
+        <li><strong>Spike Ticket Tracking:</strong> ติดตามใบงานที่ตั้งขึ้นเพื่อการสำรวจเทคโนโลยีใหม่ หรือการพิสูจน์ความเป็นไปได้ (Proof of Concept)</li>
+        <li><strong>บันทึกผลการทดลอง 3 สถานะ:</strong><br>
+          • <strong>Adopted:</strong> สำเร็จ นำเทคโนโลยีมาใช้งานจริงในระบบ<br>
+          • <strong>Alternative Chosen:</strong> ได้ข้อสรุป แต่เลือกแนวทางอื่นที่คุ้มค่ากว่า<br>
+          • <strong>Dropped:</strong> ไม่นำมาใช้ เนื่องจากข้อจำกัดทางเทคนิค (ยังได้คะแนนการวิจัย)
+        </li>
       </ul>
     </div>
     <div class="info-card">
-      <h4>💡 กราฟเปรียบเทียบ Man-day รายงาน AI</h4>
+      <h4>💡 การให้คะแนนแบบส่งเสริมการเรียนรู้</h4>
       <ul>
-        <li>กราฟแท่ง Syncfusion Chart แสดงการใช้เวลา Man-day จริงในแต่ละใบงาน AI</li>
-        <li>มีตารางสรุปรายการงาน AI ทั้งหมด พร้อมผลลัพธ์การทดลอง (PoC Adopted / Dropped)</li>
-        <li>ช่วยให้องค์กรประเมินความคุ้มค่า (ROI) ของการลงทุนวิจัยด้าน Generative AI และ Machine Learning</li>
+        <li>สายงานวิจัยไม่ถูกหักคะแนนหากผลการทดลองออกมาเป็น Dropped หากมีเอกสารสรุปความรู้อย่างครบถ้วน</li>
+        <li>ระบบเน้นการส่งเสริมนวัตกรรมและความคุ้มค่าของการทดลองก่อนเริ่มงาน Feature ใหญ่</li>
+        <li>มีตารางสรุปผลงาน AI ประจำไตรมาสเพื่อนำเสนอต่อผู้บริหาร</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 16. ANALYTICS INTELLIGENCE HUB ==================== -->
+  <!-- ==================== 14. PYTHON ANALYTICS HUB ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">16</span>
+      <span class="section-num">14</span>
       <h2>ศูนย์วิเคราะห์อัจฉริยะ (Python Analytics Intelligence Hub)</h2>
     </div>
     <div class="section-meta">
-      <span class="role-badge admin">Admin / Lead (สั่งรัน) · ทุกคน (อ่าน)</span> · <code>/analytics</code>
+      <span class="role-badge">Lead &amp; Admin (รันวิเคราะห์) / ทุกคนอ่าน</span> · <code>/analytics</code>
     </div>
   </div>
 
   <div class="img-container">
     <img src="manual_assets/14_analytics.png" alt="Python Analytics Hub Screen">
-    <div class="img-caption">ภาพที่ 15: ศูนย์วิเคราะห์อัจฉริยะ ขับเคลื่อนด้วย Python Analytics Engine แสดงความสมบูรณ์การซิงก์ และคำแนะนำโค้ชชิ่ง</div>
+    <div class="img-caption">ภาพที่ 14: ศูนย์วิเคราะห์อัจฉริยะ ขับเคลื่อนด้วย Python Analytics Engine แสดงความสมบูรณ์การซิงก์ และคำแนะนำโค้ชชิ่ง</div>
   </div>
 
   <div class="info-grid">
@@ -1005,7 +939,7 @@
       <h4>🎯 เครื่องมือวิเคราะห์ 5 เสาหลัก (5 Intelligence Pillars)</h4>
       <ul>
         <li><strong>1. Sync Hygiene Readiness (%):</strong> ตรวจสอบความถูกต้องของข้อมูลใบงาน วันที่ครบกำหนด และการลงบันทึกเวลา</li>
-        <li><strong>2. Z-Score Outlier Radar:</strong> ตรวจหาพนักงานหรือใบงานที่มีค่าผิดปกติเชิงสถิติ (งานกินเวลาเกิน 2 SD)</li>
+        <li><strong>2. Z-Score Outlier Radar:</strong> ตรวจหาใบงานที่มีค่าผิดปกติเชิงสถิติ (งานกินเวลาเกิน 2 SD)</li>
         <li><strong>3. Delivery Risk Radar:</strong> แจ้งเตือนใบงานที่มีความเสี่ยงสูงว่าจะส่งมอบไม่ทัน</li>
         <li><strong>4. 1-on-1 Coaching Insights:</strong> สรุปประเด็นคำแนะนำสำหรับหัวหน้างานใช้พูดคุยพัฒนารายคน</li>
         <li><strong>5. Module &amp; Variance Bottlenecks:</strong> วิเคราะห์โมดูลที่มีปัญหาเกิด Bug ซ้ำซาก</li>
@@ -1015,18 +949,18 @@
       <h4>💡 ขับเคลื่อนด้วย Python 3 Data Engine</h4>
       <ul>
         <li>ประมวลผลผ่านสคริปต์ <code>scripts/analytics_engine.py</code> ฝั่งเซิร์ฟเวอร์ ให้ผลลัพธ์ทางสถิติที่แม่นยำ</li>
-        <li>มีปุ่ม <strong>"รันวิเคราะห์ AI ทันที"</strong> สำหรับผู้ใช้ระดับ Admin และ Lead เพื่อคำนวณข้อมูลใหม่สดตามสถานการณ์ล่าสุด</li>
-        <li>สามารถส่งออกรายงานผลการวิเคราะห์ออกเป็นไฟล์เพื่อใช้ในที่ประชุมผู้บริหาร</li>
+        <li>ปุ่ม <strong>"รันวิเคราะห์ AI ทันที"</strong> ช่วยคำนวณข้อมูลใหม่สดตามสถานการณ์ล่าสุด</li>
+        <li>รองรับการชดเชยเวลาของงานที่ถูกพักโดย MD Mandate ไม่ให้กลายเป็น False Alarm Outlier</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 17. INTEGRATIONS ==================== -->
+  <!-- ==================== 15. INTEGRATIONS ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">17</span>
-      <h2>การเชื่อมต่อระบบภายนอก OpenProject, GitLab, Teams (Integrations)</h2>
+      <span class="section-num">15</span>
+      <h2>การเชื่อมต่อระบบภายนอก OpenProject, GitLab, Teams (Integrations Hub)</h2>
     </div>
     <div class="section-meta">
       <span class="role-badge admin">Admin เท่านั้น (ตั้งค่า)</span> · <code>/integrations</code>
@@ -1035,33 +969,33 @@
 
   <div class="img-container">
     <img src="manual_assets/15_integrations.png" alt="Integrations Screen">
-    <div class="img-caption">ภาพที่ 16: หน้าจอตั้งค่าการเชื่อมต่อ 3 ระบบหลัก (OpenProject, GitLab, Microsoft Teams) พร้อมประวัติการซิงก์ข้อมูล</div>
+    <div class="img-caption">ภาพที่ 15: หน้าจอตั้งค่าการเชื่อมต่อ 3 ระบบหลัก (OpenProject, GitLab, Microsoft Teams) พร้อมประวัติการซิงก์ข้อมูล</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
       <h4>🎯 การเชื่อมต่อทั้ง 3 ระบบ</h4>
       <ul>
-        <li><strong>1. OpenProject:</strong> ซิงก์ Work Packages, ชั่วโมงทำงาน (Time Entries), วันครบกำหนด, และเขียนสถานะ/ผู้รับผิดชอบกลับ (Writeback)</li>
-        <li><strong>2. GitLab API v4:</strong> ดึงข้อมูล Merge Requests อัตโนมัติ, จับคู่รหัสใบงานจากชื่อ Branch และ Commit, ตรวจสอบสถานะการอนุมัติ</li>
-        <li><strong>3. Microsoft Teams Webhook:</strong> ยิงการแจ้งเตือนใบงานที่หลุดกำหนดหรือเสี่ยงวิกฤติเข้าช่องสนทนาของทีมโดยตรง</li>
+        <li><strong>1. OpenProject:</strong> ซิงก์ Work Packages, ชั่วโมงทำงาน (Time Entries) พร้อมกติกา FirstDueOn Lock ป้องกันการเขียนทับวันส่งแรก</li>
+        <li><strong>2. GitLab API v4:</strong> ดึง Merge Requests พร้อมดึงรายชื่อ Reviewers &amp; Approvals จาก <code>/merge_requests/:iid/approvals</code> เพื่อคำนวณ Peer Review Quota</li>
+        <li><strong>3. Microsoft Teams Webhook:</strong> ยิงแจ้งเตือนใบงานที่หลุดกำหนดส่ง หรืองานค้าง SLA ข้ามทีมเข้าแชลแนลทีมโดยตรง</li>
       </ul>
     </div>
     <div class="info-card">
       <h4>💡 ตารางประวัติการซิงก์ (Sync Runs History)</h4>
       <ul>
-        <li>แสดงรอบการซิงก์ย้อนหลัง พร้อมสถานะ (Success / Failed), จำนวนใบงานที่เพิ่มใหม่, จำนวนใบงานที่อัปเดต, และระยะเวลาที่ใช้</li>
-        <li>มีปุ่ม <strong>"ซิงก์เดี๋ยวนี้ (Sync Now)"</strong> สำหรับสั่งดึงข้อมูลล่าสุดจาก OpenProject ทันทีโดยไม่ต้องรอรอบ Cron</li>
-        <li>มีระบบจับคู่ผู้ใช้ OpenProject กับพนักงานใน Scorecard (User Mapping)</li>
+        <li>แสดงรอบการซิงก์ย้อนหลัง พร้อมสถานะ (Success / Failed), จำนวนใบงานที่เพิ่มใหม่, และระยะเวลาที่ใช้</li>
+        <li>ปุ่ม <strong>"ซิงก์เดี๋ยวนี้ (Sync Now)"</strong> สั่งดึงข้อมูลล่าสุดจาก OpenProject ทันทีโดยไม่ต้องรอรอบ Cron</li>
+        <li>ระบบจับคู่ผู้ใช้ OpenProject กับพนักงานใน Scorecard (User Mapping)</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 18. ADMIN HUB ==================== -->
+  <!-- ==================== 16. ADMIN HUB ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">18</span>
+      <span class="section-num">16</span>
       <h2>การจัดการสิทธิ์ เกณฑ์คะแนน และประวัติระบบ (Admin Hub &amp; Audit Log)</h2>
     </div>
     <div class="section-meta">
@@ -1071,7 +1005,7 @@
 
   <div class="img-container">
     <img src="manual_assets/16_admin.png" alt="Admin Hub Screen">
-    <div class="img-caption">ภาพที่ 17: หน้าจอศูนย์กลางผู้ดูแลระบบ ปรับสิทธิ์พนักงาน โควตารายสัปดาห์ น้ำหนักคะแนน และตารางประวัติ Audit Log</div>
+    <div class="img-caption">ภาพที่ 16: หน้าจอศูนย์กลางผู้ดูแลระบบ ปรับสิทธิ์พนักงาน โควตารายสัปดาห์ น้ำหนักคะแนน และตารางประวัติ Audit Log</div>
   </div>
 
   <div class="info-grid">
@@ -1088,21 +1022,57 @@
       <h4>💡 บันทึกประวัติการเปลี่ยนแปลง (Audit Log)</h4>
       <ul>
         <li>บันทึกทุกการกระทำสำคัญในระบบ: ใครเป็นคนแก้, แก้ไขเรื่องอะไร, ค่าเดิมคืออะไร, และค่าใหม่คืออะไร</li>
-        <li>บันทึกการปรับสิทธิ์, การจับ Snapshot, การรัน Analytics, และการซิงก์ข้อมูล</li>
+        <li>บันทึกการอนุมัติเลื่อนกำหนดส่งงานด่วน MD, การปรับสิทธิ์, การจับ Snapshot, และการรัน Analytics</li>
         <li>เป็นไปตามมาตรฐานความปลอดภัยและการตรวจสอบย้อนกลับ (Traceability &amp; Compliance)</li>
       </ul>
     </div>
   </div>
 
-  <!-- ==================== 19. APPBAR CONTROLS & ALERTS ==================== -->
+  <!-- ==================== 17. DESIGN SYSTEM MOCKUP ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">19</span>
+      <span class="section-num">17</span>
+      <h2>ดีไซน์ซิสเต็มและคู่มือสไตล์ MyHR Plus (Design System &amp; Color Tokens)</h2>
+    </div>
+    <div class="section-meta">
+      <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>/mockup</code>
+    </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/17_mockup.png" alt="Design System Mockup Screen">
+    <div class="img-caption">ภาพที่ 17: หน้าจอสาธิตส่วนประกอบ UI (Design Tokens) สีหลัก MyHR Royal Blue, ฟอนต์ Sarabun/IBM Plex, และชุดการ์ด</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h4>🎯 โทเคนสีและรูปแบบตามมาตรฐาน MyHR Plus</h4>
+      <ul>
+        <li><strong>สีหลัก (Brand Colors):</strong> MyHR Royal Blue (<code>#2e4fc8</code>), สีรอง (<code>#4c68e5</code>), และสีเน้น AI Spike (<code>#7465e8</code>)</li>
+        <li><strong>แบบอักษรผสมผสาน:</strong> 'IBM Plex Sans Thai' สำหรับส่วนหัว, 'Montserrat' สำหรับตัวเลข/รหัส, และ 'Sarabun' สำหรับเนื้อหาภาษาไทย</li>
+        <li><strong>การ์ดและคอนเทนเนอร์:</strong> ออกแบบให้มีความโค้งมน นุ่มนวล และมีเงาบางเบาตามมาตรฐานองค์กร</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>💡 ประโยชน์ของหน้านี้</h4>
+      <ul>
+        <li>ใช้เป็น Single Source of Truth สำหรับนักพัฒนาในการอ้างอิง CSS Classes, ปุ่ม, ชิป, และสไตล์กราฟ</li>
+        <li>ทดสอบความเข้ากันได้ของคอมโพเนนต์ Syncfusion กับชุดสไตล์หลักของระบบ</li>
+        <li>จำลองโฟลว์การทำงานตั้งแต่การสร้างใบงานไปจนถึงการคำนวณคะแนน</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 18. APPBAR CONTROLS & ALERTS ==================== -->
+  <div class="page-break"></div>
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <span class="section-num">18</span>
       <h2>แถบเครื่องมือหลัก หน้าต่างแจ้งเตือน และ Mini-Sidebar (AppBar &amp; Alerts)</h2>
     </div>
     <div class="section-meta">
-      <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>Shell Components</code>
+      <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>Shell Controls</code>
     </div>
   </div>
 
@@ -1130,11 +1100,11 @@
     </div>
   </div>
 
-  <!-- ==================== 20. LIGHT & DARK MODE ==================== -->
+  <!-- ==================== 19. LIGHT & DARK MODE ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
     <div class="section-title-wrap">
-      <span class="section-num">20</span>
+      <span class="section-num">19</span>
       <h2>ระบบโหมดสว่างและโหมดมืด (Syncfusion Tailwind 3 Dual Theming)</h2>
     </div>
     <div class="section-meta">
@@ -1165,6 +1135,42 @@
     </div>
   </div>
 
+  <!-- ==================== 20. NEW WORK QUEUE ==================== -->
+  <div class="page-break"></div>
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <span class="section-num">20</span>
+      <h2>คิวงานใหม่และการจ่ายงานด่วน MD (New Work &amp; MD Mandate Queue)</h2>
+    </div>
+    <div class="section-meta">
+      <span class="role-badge">Lead &amp; Admin (จ่ายงาน) / สมาชิกอ่าน</span> · <code>/queue</code>
+    </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/20_queue.png" alt="New Work Queue Screen">
+    <div class="img-caption">ภาพที่ 20: หน้าจอคิวงานใหม่ พร้อมคำสั่งจ่ายงานด่วน MD ทันที และระบบเขียนสถานะกลับ OpenProject (Writeback)</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h4>🎯 การรับงานและกระจายงานอย่างเป็นธรรม</h4>
+      <ul>
+        <li><strong>Capacity Balancing:</strong> แสดงโควตาชั่วโมงทำงานที่ว่างของพนักงานแต่ละคน ช่วยให้ Lead เลือกคนรับงานได้อย่างเหมาะสม</li>
+        <li><strong>⚡ คำสั่ง "รับงานด่วน MD &amp; เลื่อนงานเดิม":</strong> กดจ่ายงานแทรกตรงจาก MD พร้อมเปิดหน้าต่างยืนยันพักงานเดิมและเลื่อนวันส่งของน้องทันที</li>
+        <li><strong>Writeback Confirmation:</strong> เมื่อเปิดใช้ <code>OPENPROJECT_WRITEBACK=true</code> จะมี Dialog สรุปการเปลี่ยน Assignee และวันส่งมอบกลับไปยัง OpenProject</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>💡 การปกป้องดัชนีชี้วัดของผู้ปฏิบัติงาน</h4>
+      <ul>
+        <li>งานที่จ่ายผ่านปุ่มนี้จะได้รับการตั้งค่าสถานะ <code>is_md_direct: true</code> โดยอัตโนมัติ</li>
+        <li>ตรวจจับงานเดิมที่ค้างอยู่ในมือของพนักงานคนนั้น และบันทึกประวัติการเลื่อนกำหนดส่งลงในตาราง <code>ticket_due_shifts</code></li>
+        <li>ลดขั้นตอนความยุ่งยากของหัวหน้างานในการคำนวณวันส่งใหม่ด้วยตนเอง</li>
+      </ul>
+    </div>
+  </div>
+
   <!-- ==================== 21. HANDOFF & SLA ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
@@ -1175,6 +1181,11 @@
     <div class="section-meta">
       <span class="role-badge">ทุกคนอ่านได้ / Ping: Lead &amp; Admin</span> · <code>/work/handoff</code>
     </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/21_work_handoff.png" alt="Cross-Team Handoff Screen">
+    <div class="img-caption">ภาพที่ 21: หน้าจอตรวจสอบการส่งต่อข้ามทีม กราฟ Stage Aging แนวนอน ตาราง Blocker Matrix และปุ่ม Ping แจ้งเตือนผ่าน Teams</div>
   </div>
 
   <div class="info-grid">
@@ -1206,6 +1217,11 @@
     <div class="section-meta">
       <span class="role-badge">ทุกคนอ่านได้ / บันทึกผล: QA, Lead, Admin</span> · <code>/quality/audit</code>
     </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/22_quality_audit.png" alt="QA Defect Audit Screen">
+    <div class="img-caption">ภาพที่ 22: ศูนย์ตรวจสอบคุณภาพ QA ตัวชี้วัด 4 มิติ ตารางตรวจสอบ Definition of Done (DoD) และปุ่ม Reject to Dev</div>
   </div>
 
   <div class="info-grid">
@@ -1240,6 +1256,11 @@
     </div>
   </div>
 
+  <div class="img-container">
+    <img src="manual_assets/23_time_audit.png" alt="3-Way Time Audit Screen">
+    <div class="img-caption">ภาพที่ 23: หน้าจอตรวจสอบความคลาดเคลื่อนของเวลา 3 ทาง เปรียบเทียบ Estimate MD vs OpenProject Actual vs GitLab Commit Span</div>
+  </div>
+
   <div class="info-grid">
     <div class="info-card">
       <h4>🎯 การเปรียบเทียบเวลา 3 มิติ</h4>
@@ -1270,6 +1291,11 @@
     <div class="section-meta">
       <span class="role-badge">Member ยื่นขอ / Lead &amp; Admin อนุมัติ</span> · <code>/tickets/disputes</code>
     </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/24_tickets_disputes.png" alt="Score Disputes Screen">
+    <div class="img-caption">ภาพที่ 24: ระบบยื่นอุทธรณ์คะแนนแบบ Split View พร้อมการจำลองผลคะแนนล่วงหน้า (Projected Score Diff) และประวัติ Audit Log</div>
   </div>
 
   <div class="info-grid">
@@ -1303,6 +1329,11 @@
     </div>
   </div>
 
+  <div class="img-container">
+    <img src="manual_assets/25_snapshot_check.png" alt="Pre-Snapshot Freeze Gate Screen">
+    <div class="img-caption">ภาพที่ 25: ห้องตรวจสอบความพร้อมก่อนปิดงวดคะแนน เช็คลิสต์ 4 ด่าน แถบ Readiness % และตาราง Snapshot Preview Diff</div>
+  </div>
+
   <div class="info-grid">
     <div class="info-card">
       <h4>🎯 Automated Pre-Flight Checks (เช็คลิสต์ 4 ด่าน)</h4>
@@ -1323,8 +1354,8 @@
     </div>
   </div>
 
-  <div class="callout tip" style="margin-top: 16px;">
-    <strong>สรุปภาพรวมระบบ Enterprise (v2.0):</strong> ระบบ Man-day Scorecard เวอร์ชัน 2.0 รองรับการทำงานแบบครบวงจร 25 หน้าจอ ครอบคลุม 6 สายงานหลัก พร้อมการตรวจวัด SLA การอุทธรณ์คะแนนที่โปร่งใส และการแช่แข็งคะแนนที่เชื่อถือได้ตามมาตรฐานวิศวกรรมซอฟต์แวร์ระดับองค์กร
+  <div class="callout tip" style="margin-top: 14px;">
+    <strong>สรุปภาพรวมระบบ Enterprise (v2.0):</strong> ระบบ Man-day Scorecard เวอร์ชัน 2.0 รองรับการทำงานแบบครบวงจร 25 หน้าจอ ครอบคลุม 6 สายงานหลัก พร้อมการตรวจวัด SLA การอุทธรณ์คะแนนที่โปร่งใส การชดเชยคะแนนงานสั่งตรงจาก MD (MD Mandate) และการแช่แข็งคะแนนที่เชื่อถือได้ตามมาตรฐานวิศวกรรมซอฟต์แวร์ระดับองค์กร
   </div>
 
 </body>

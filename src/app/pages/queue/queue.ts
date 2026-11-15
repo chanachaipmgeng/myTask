@@ -70,6 +70,69 @@ export class QueuePage {
     void this.runAssign(item);
   }
 
+  protected acceptAsMdDirect(item: QueuePlan): void {
+    if (!this.canAssign()) {
+      this.error.set('เฉพาะ admin หรือ lead เท่านั้นที่สั่งจ่ายงานด่วน MD ได้');
+      this.message.set('');
+      return;
+    }
+    if (!item.personId) return;
+
+    this.accepting.set(true);
+    this.error.set('');
+
+    void (async () => {
+      try {
+        // 1. Assign ticket
+        const assignRes = await this.scorecard.assignTicket(item.ticket.id, item.personId!);
+        if (!assignRes.ok) {
+          const text = assignRes.message ?? 'ยังไม่ย้ายใบ';
+          this.error.set(text);
+          this.notice.show(text);
+          return;
+        }
+
+        // 2. Mark ticket as isMdDirect
+        const currentTicket = this.scorecard.tickets().find((t) => t.id === item.ticket.id);
+        if (currentTicket) {
+          const mdTicket = { ...currentTicket, isMdDirect: true };
+          this.scorecard.replaceTicket(mdTicket);
+
+          // 3. Detect and Auto-Shift WIP tickets of assignee
+          const shiftDays = Math.max(1, Math.ceil(mdTicket.estimateMd || 1));
+          const wips = this.scorecard
+            .tickets()
+            .filter(
+              (t) =>
+                t.id !== mdTicket.id &&
+                t.assigneeId === item.personId &&
+                !t.closed &&
+                !t.isPaused &&
+                (t.workflowStatus === 'In Progress' || t.workflowStatus === 'Reopened'),
+            );
+
+          if (wips.length > 0) {
+            const targetIds = wips.map((w) => w.id);
+            await this.scorecard.applyMdMandateShift(mdTicket.id, targetIds, shiftDays);
+            this.notice.show(
+              `รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} และเลื่อนงานเดิม ${wips.length} ใบ (+${shiftDays} วัน) แล้ว`,
+            );
+            this.message.set(
+              `รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} สำเร็จ พร้อมสั่งพักและเลื่อนวันส่งงานเดิม ${wips.length} ใบ (+${shiftDays} วัน)`,
+            );
+          } else {
+            this.notice.show(`รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} เรียบร้อย (ไม่มีงานค้างต้องเลื่อน)`);
+            this.message.set(`รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} เรียบร้อย`);
+          }
+        }
+      } catch (err) {
+        this.error.set(err instanceof Error ? err.message : String(err));
+      } finally {
+        this.accepting.set(false);
+      }
+    })();
+  }
+
   protected confirmWriteback(): void {
     const item = this.pendingAccept();
     this.writebackDialog?.hide();
