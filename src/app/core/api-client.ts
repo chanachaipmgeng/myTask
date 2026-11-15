@@ -396,6 +396,24 @@ export class ApiClient {
     });
   }
 
+  getRubrics(): Promise<{ rubrics: any[] }> {
+    return api('/api/rubrics');
+  }
+
+  updateRubric(rubricId: string, patch: any): Promise<{ ok: boolean; rubric: any }> {
+    return api(`/api/rubrics/${encodeURIComponent(rubricId)}`, {
+      method: 'PUT',
+      body: JSON.stringify(patch),
+    });
+  }
+
+  getAiCoachSummary(personId: string, prompt?: string): Promise<{ ok: boolean; summary: string; provider: string }> {
+    return api('/api/ai/coach-summary', {
+      method: 'POST',
+      body: JSON.stringify({ personId, prompt }),
+    });
+  }
+
   resumeTicket(ticketId: string): Promise<{ ok: boolean; ticket: Ticket; message?: string }> {
     return api('/api/work-items/md-mandate/resume', {
       method: 'POST',

@@ -52,6 +52,10 @@ export interface OpenProjectMapping {
     /** Optional override when dueDate is not the first promised date. */
     firstDueOn: string;
     weekOffset: string;
+    baselineDue: string;
+    exceptionTag: string;
+    rdWorkTrack: string;
+    spikeOutcome: string;
   };
   /** Count Done -> not-Done transitions from activities. One request per changed work package. */
   countReopens: boolean;
@@ -127,6 +131,10 @@ export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
     pocResult: '',
     firstDueOn: '',
     weekOffset: '',
+    baselineDue: '',
+    exceptionTag: '',
+    rdWorkTrack: '',
+    spikeOutcome: '',
   },
   countReopens: true,
 };

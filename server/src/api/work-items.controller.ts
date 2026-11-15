@@ -226,6 +226,18 @@ export class WorkItemsController {
       const saved = await upsertWorkItem(this.db, pausedTicket);
       updatedTickets.push(saved);
 
+      if (ticket.opId && this.config.openproject.writeback) {
+        await this.openProject.writebackDates(ticket.opId, { dueDate: newDueOn });
+        const approverName = req.authUser?.person.nickname || 'Admin/Lead';
+        const commentMarkdown = [
+          `⚡ **[MD Central Sync — Auto-Shift Notification]**`,
+          `- **การดำเนินการ:** ขยายกำหนดส่งออกไป **+${shiftDays} วันทำงาน** (กำหนดส่งเดิม: \`${ticket.dueOn || ticket.firstDueOn || '-'}\` → กำหนดส่งใหม่: \`${newDueOn}\`)`,
+          `- **สาเหตุอ้างอิง:** ผู้รับผิดชอบได้รับมอบหมายงานด่วนสั่งตรงจาก MD ใบงานเลขที่ **#${mdTicket.opId ?? mdTicket.id}** (*${mdTicket.title}*)`,
+          `- **สถานะ KPI ภายในทีม R&D:** หยุดเวลาใบงานนี้ชั่วคราว (Paused) และยกเว้นการหักคะแนนความตรงต่อเวลา (อนุมัติโดย: ${approverName})`,
+        ].join('\n');
+        await this.openProject.postActivity(ticket.opId, commentMarkdown);
+      }
+
       await this.db.audit(req.authUser?.person.id ?? null, 'work_item.md_mandate_shift', targetId, {
         mdTicketId: mdTicket.id,
         shiftDays,

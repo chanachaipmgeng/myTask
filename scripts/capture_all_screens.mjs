@@ -20,7 +20,7 @@ const screens = [
   { name: '08_work_list.png', url: 'http://127.0.0.1:4200/work/list', wait: 5000 },
   { name: '09_tickets_scorecard.png', url: 'http://127.0.0.1:4200/tickets', wait: 6000 },
   { name: '10_people_board.png', url: 'http://127.0.0.1:4200/people', wait: 5000 },
-  { name: '11_person_detail.png', url: 'http://127.0.0.1:4200/people/p-01', wait: 6000 },
+  { name: '11_person_detail.png', url: 'http://127.0.0.1:4200/people/paweena', wait: 6000 },
   { name: '12_schedule.png', url: 'http://127.0.0.1:4200/schedule', wait: 6000 },
   { name: '13_ai_tracking.png', url: 'http://127.0.0.1:4200/ai', wait: 5000 },
   { name: '14_analytics.png', url: 'http://127.0.0.1:4200/analytics', wait: 6000 },
@@ -33,6 +33,7 @@ const screens = [
   { name: '23_time_audit.png', url: 'http://127.0.0.1:4200/analytics/time-audit', wait: 5000 },
   { name: '24_tickets_disputes.png', url: 'http://127.0.0.1:4200/tickets/disputes', wait: 5000 },
   { name: '25_snapshot_check.png', url: 'http://127.0.0.1:4200/admin/snapshot-check', wait: 5000 },
+  { name: '26_admin_rubrics.png', url: 'http://127.0.0.1:4200/admin/rubrics', wait: 5000 },
 ];
 
 function capture(screen) {

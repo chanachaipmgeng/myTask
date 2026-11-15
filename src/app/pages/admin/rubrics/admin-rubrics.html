@@ -1,0 +1,135 @@
+<div class="page-container p-4 max-w-7xl mx-auto flex flex-col gap-5">
+  <!-- Page Header -->
+  <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <a routerLink="/admin" class="text-xs text-sky-400 hover:underline flex items-center gap-1">
+          <span class="e-icons e-arrow-left text-[10px]"></span> ย้อนกลับหน้า Admin Hub
+        </a>
+        <span class="text-xs text-slate-500">/</span>
+        <span class="text-xs text-slate-400 font-mono">v2026.4</span>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-2 mt-1">
+        <span class="e-icons e-settings text-sky-400"></span>
+        ทะเบียนเกณฑ์มาตรฐาน (Rubric Registry)
+      </h1>
+      <p class="text-xs text-slate-400 mt-0.5">
+        ปรับแต่งเกณฑ์ประเมินขนาดงาน (Sizing), น้ำหนักคะแนนใบงาน (Ticket Score), และสูตรดัชนีชี้วัด (Person Index) แบบไดนามิกโดยไม่ต้องแก้ไขโค้ด
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <a routerLink="/admin" ejs-button cssClass="e-outline e-small">
+        <span class="e-icons e-home mr-1"></span> สิทธิ์ &amp; โควตา
+      </a>
+      <a routerLink="/integrations" ejs-button cssClass="e-outline e-small">
+        <span class="e-icons e-link mr-1"></span> Integrations
+      </a>
+      <button ejs-button cssClass="e-primary e-small" (click)="loadRubrics()">
+        <span class="e-icons e-refresh mr-1"></span> รีเฟรชข้อมูล
+      </button>
+    </div>
+  </div>
+
+  @if (saveNotice()) {
+    <ejs-message severity="Success" [content]="saveNotice()!"></ejs-message>
+  }
+
+  <!-- Summary Metric Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="bg-slate-800/80 border border-slate-700/70 rounded-lg p-3">
+      <div class="text-xs text-slate-400">เกณฑ์ทั้งหมดในระบบ</div>
+      <div class="text-xl font-bold text-sky-400 mt-1">7 เกณฑ์</div>
+      <div class="text-[11px] text-slate-500">Active ทั้งหมด</div>
+    </div>
+    <div class="bg-slate-800/80 border border-slate-700/70 rounded-lg p-3">
+      <div class="text-xs text-slate-400">กรอบขนาดงาน (Sizing)</div>
+      <div class="text-xl font-bold text-emerald-400 mt-1">5 ระดับ</div>
+      <div class="text-[11px] text-slate-500">XS, S, M, L, XL (Tiered)</div>
+    </div>
+    <div class="bg-slate-800/80 border border-slate-700/70 rounded-lg p-3">
+      <div class="text-xs text-slate-400">คะแนนใบงานเต็ม</div>
+      <div class="text-xl font-bold text-amber-400 mt-1">100 คะแนน</div>
+      <div class="text-[11px] text-slate-500">4 แกน: OnTime, Acc, Rev, Reopen</div>
+    </div>
+    <div class="bg-slate-800/80 border border-slate-700/70 rounded-lg p-3">
+      <div class="text-xs text-slate-400">เป้าหมายดัชนี R&amp;D</div>
+      <div class="text-xl font-bold text-indigo-400 mt-1">&ge; 75.0</div>
+      <div class="text-[11px] text-slate-500">DoD 40%, Spike 25%, Quota 20%</div>
+    </div>
+  </div>
+
+  <!-- Syncfusion Grid for Rubric Registry -->
+  <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4 shadow-sm">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+        ตารางพารามิเตอร์เกณฑ์มาตรฐาน (ดับเบิลคลิกที่แถวเพื่อแก้ไขแบบ Inline)
+      </h3>
+      <span class="text-xs text-slate-400 italic">รองรับปุ่ม Edit, Update, Cancel บน Toolbar</span>
+    </div>
+
+    <ejs-grid
+      #rubricGrid
+      [dataSource]="rubrics()"
+      [editSettings]="editSettings"
+      [toolbar]="toolbar"
+      [allowSorting]="true"
+      [allowResizing]="true"
+      (actionComplete)="onActionComplete($event)"
+      gridLines="Both"
+      class="border border-slate-700 rounded-lg overflow-hidden text-xs"
+    >
+      <e-columns>
+        <e-column
+          field="rubric_id"
+          headerText="รหัส Rubric"
+          width="130"
+          [isPrimaryKey]="true"
+          textAlign="Left"
+        ></e-column>
+        <e-column
+          field="category"
+          headerText="หมวดหมู่"
+          width="120"
+          [allowEditing]="false"
+          textAlign="Center"
+        ></e-column>
+        <e-column
+          field="title"
+          headerText="ชื่อเกณฑ์"
+          width="200"
+          textAlign="Left"
+        ></e-column>
+        <e-column
+          field="paramsSummary"
+          headerText="สรุปพารามิเตอร์คำนวณ"
+          width="240"
+          [allowEditing]="false"
+          textAlign="Left"
+        ></e-column>
+        <e-column
+          field="paramsJson"
+          headerText="พารามิเตอร์ JSON (แก้ไขได้)"
+          width="240"
+          textAlign="Left"
+        ></e-column>
+        <e-column
+          field="is_active"
+          headerText="เปิดใช้งาน"
+          width="100"
+          displayAsCheckBox="true"
+          type="boolean"
+          textAlign="Center"
+        ></e-column>
+        <e-column
+          field="version"
+          headerText="เวอร์ชัน"
+          width="90"
+          [allowEditing]="false"
+          textAlign="Center"
+        ></e-column>
+      </e-columns>
+    </ejs-grid>
+  </div>
+</div>

@@ -29,6 +29,7 @@
     "@syncfusion/ej2-angular-gantt": "32.2.3",
     "@syncfusion/ej2-angular-grids": "32.2.3",
     "@syncfusion/ej2-angular-inputs": "32.2.3",
+    "@syncfusion/ej2-angular-interactive-chat": "^32.2.3",
     "@syncfusion/ej2-angular-kanban": "32.2.3",
     "@syncfusion/ej2-angular-layouts": "32.2.3",
     "@syncfusion/ej2-angular-navigations": "32.2.3",

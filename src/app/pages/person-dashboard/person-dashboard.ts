@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
@@ -20,11 +20,23 @@ import { AggregateService, GridModule, PageService, ResizeService, SortService }
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { map } from 'rxjs';
+import { ApiClient } from '../../core/api-client';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { mdCompositionTrend } from '../../core/dashboard-charts';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
+
+interface OlsDataPoint {
+  month: string;
+  ols: number;
+}
+
+interface OlsSummaryInfo {
+  slope: number;
+  text: string;
+  badgeClass: string;
+}
 
 @Component({
   selector: 'app-person-dashboard',
@@ -52,6 +64,7 @@ export class PersonDashboard {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly scorecard = inject(ScorecardService);
+  private readonly api = inject(ApiClient);
   protected readonly theme = inject(ThemeService);
   private readonly personId = toSignal(this.route.paramMap.pipe(map((params) => params.get('personId') ?? '')), {
     initialValue: this.route.snapshot.paramMap.get('personId') ?? '',
@@ -132,6 +145,101 @@ export class PersonDashboard {
     }
     return null;
   });
+
+  protected readonly olsTrendData = computed<OlsDataPoint[]>(() => {
+    const trend = this.view().trend;
+    const n = trend.length;
+    if (n < 2) {
+      return trend.map((p) => ({ month: p.month, ols: p.index }));
+    }
+    const values = trend.map((p) => p.index);
+    const meanX = (n - 1) / 2;
+    const meanY = values.reduce((sum, v) => sum + v, 0) / n;
+    let num = 0;
+    let den = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = i - meanX;
+      num += dx * (values[i] - meanY);
+      den += dx * dx;
+    }
+    const slope = den === 0 ? 0 : num / den;
+    const intercept = meanY - slope * meanX;
+    return trend.map((p, i) => ({
+      month: p.month,
+      ols: Math.round((intercept + slope * i) * 10) / 10,
+    }));
+  });
+
+  protected readonly olsSummary = computed<OlsSummaryInfo | null>(() => {
+    const trend = this.view().trend;
+    const n = trend.length;
+    if (n < 2) {
+      return null;
+    }
+    const values = trend.map((p) => p.index);
+    const meanX = (n - 1) / 2;
+    const meanY = values.reduce((sum, v) => sum + v, 0) / n;
+    let num = 0;
+    let den = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = i - meanX;
+      num += dx * (values[i] - meanY);
+      den += dx * dx;
+    }
+    const rawSlope = den === 0 ? 0 : num / den;
+    const slope = Math.round(rawSlope * 10) / 10;
+    const sign = slope > 0 ? '+' : '';
+    let badgeClass = 'e-badge-info';
+    let note = 'เสถียร';
+    if (slope >= 1.0) {
+      badgeClass = 'e-badge-success';
+      note = 'พัฒนาขึ้นต่อเนื่อง';
+    } else if (slope <= -1.0) {
+      badgeClass = 'e-badge-danger';
+      note = 'แนวโน้มลดลง เฝ้าระวัง';
+    }
+    return {
+      slope,
+      text: `${sign}${slope}/เดือน (${note})`,
+      badgeClass,
+    };
+  });
+
+  // AI Coach 1-on-1 Dialogue state
+  protected readonly aiPrompt = signal('');
+  protected readonly aiInputText = signal('');
+  protected readonly aiResponse = signal<string | null>(null);
+  protected readonly aiLoading = signal(false);
+  protected readonly aiProvider = signal<string | null>(null);
+  protected readonly aiError = signal<string | null>(null);
+
+  protected async askAi(promptText?: string): Promise<void> {
+    const p = (promptText ?? this.aiInputText()).trim();
+    if (!p || this.aiLoading()) return;
+    this.aiPrompt.set(p);
+    this.aiLoading.set(true);
+    this.aiError.set(null);
+    try {
+      const res = await this.api.getAiCoachSummary(this.personId(), p);
+      if (res.ok) {
+        this.aiResponse.set(res.summary);
+        this.aiProvider.set(res.provider);
+      } else {
+        this.aiError.set('ไม่สามารถสร้างบทวิเคราะห์ได้');
+      }
+    } catch (err: any) {
+      this.aiError.set(err?.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อระบบ AI Coach');
+    } finally {
+      this.aiLoading.set(false);
+    }
+  }
+
+  protected clearAi(): void {
+    this.aiResponse.set(null);
+    this.aiPrompt.set('');
+    this.aiInputText.set('');
+    this.aiError.set(null);
+  }
 
   protected goToPerson(id: string): void {
     void this.router.navigate(['/people', id]);

@@ -108,9 +108,14 @@
       <div class="section-card">
         <div class="section-card-head">
           <div class="section-card-copy">
-            <h3>แนวโน้มดัชนีรายเดือน</h3>
-            <p class="fine">เปรียบเทียบดัชนีรายเดือนของตัวเองกับเป้ามาตรฐาน 75</p>
+            <h3>แนวโน้มดัชนีรายเดือน (OLS Trendline)</h3>
+            <p class="fine">เปรียบเทียบดัชนีรายเดือนของตัวเองกับเป้ามาตรฐาน 75 พร้อมเส้นแนวโน้มทางสถิติ OLS Regression</p>
           </div>
+          @if (olsSummary(); as ols) {
+            <span class="e-badge {{ ols.badgeClass }} e-badge-pill" title="ความชัน OLS Regression (Least-Squares Slope)">
+              Slope: {{ ols.text }}
+            </span>
+          }
         </div>
         <div class="chart-frame m-0">
           <ejs-chart
@@ -144,6 +149,16 @@
                 width="2"
                 fill="#f0b429"
                 [marker]="marker"
+              ></e-series>
+              <e-series
+                type="Line"
+                [dataSource]="olsTrendData()"
+                xName="month"
+                yName="ols"
+                name="แนวโน้ม OLS (Slope)"
+                width="2"
+                dashArray="5,5"
+                fill="#a855f7"
               ></e-series>
             </e-series-collection>
           </ejs-chart>
@@ -444,6 +459,123 @@
             </e-aggregate>
           </e-aggregates>
         </ejs-grid>
+      }
+    </div>
+
+    <!-- AI Coach 1-on-1 Dialogue Panel -->
+    <div class="section-card border-t-2 border-indigo-500/30">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🤖</span>
+            <h3 class="text-base font-semibold">AI Coach 1-on-1 Assistant · ที่ปรึกษาการโค้ชรายบุคคล</h3>
+            @if (aiProvider(); as provider) {
+              <span class="e-badge e-badge-info e-badge-pill text-xs">
+                {{ provider === 'gemini-2.5-flash' ? '✨ Gemini 2.5 Flash' : '⚡ Local Rule Engine' }}
+              </span>
+            }
+          </div>
+          <p class="fine">วิเคราะห์เจาะลึกผลงาน จุดแข็ง ข้อควรระวัง และแนวทางคำถามสำหรับพูดคุย 1-on-1 สิ้นเดือน</p>
+        </div>
+      </div>
+
+      <!-- Quick Prompt Suggestion Chips -->
+      <div class="flex flex-wrap items-center gap-2 my-2">
+        <span class="text-xs text-slate-500 font-medium">คำถามด่วนแนะนำ:</span>
+        <button
+          ejs-button
+          cssClass="e-small e-outline e-round"
+          type="button"
+          [disabled]="aiLoading()"
+          (click)="askAi('สรุปประเด็นสำคัญสำหรับคุย 1-on-1 สิ้นเดือนนี้')"
+        >
+          💬 สรุปประเด็น 1-on-1 สิ้นเดือน
+        </button>
+        <button
+          ejs-button
+          cssClass="e-small e-outline e-round"
+          type="button"
+          [disabled]="aiLoading()"
+          (click)="askAi('วิเคราะห์สาเหตุที่ทำให้โดน Reopen และจุดบกพร่องที่ต้องปรับปรุง')"
+        >
+          ⚠️ วิเคราะห์สาเหตุ Reopen
+        </button>
+        <button
+          ejs-button
+          cssClass="e-small e-outline e-round"
+          type="button"
+          [disabled]="aiLoading()"
+          (click)="askAi('แนะนำแนวทางการพัฒนาคะแนนและการตรวจโค้ด (Peer Review)')"
+        >
+          🎯 แนะนำแนวทางพัฒนาคะแนน & Review
+        </button>
+        <button
+          ejs-button
+          cssClass="e-small e-outline e-round"
+          type="button"
+          [disabled]="aiLoading()"
+          (click)="askAi('ไฮไลต์ผลงานเด่นและจุดแข็งที่ควรชื่นชม')"
+        >
+          🌟 ไฮไลต์จุดแข็ง & ผลงานเด่น
+        </button>
+      </div>
+
+      <!-- Custom Prompt Input -->
+      <div class="flex gap-2 items-center my-3">
+        <input
+          type="text"
+          class="flex-1 px-3 py-2 border rounded text-sm bg-slate-900/10 dark:bg-slate-800/50 border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="พิมพ์คำถามหรือหัวข้อที่ต้องการปรึกษา AI Coach (เช่น 'แนะนำหัวข้อ 1-on-1 ด้าน Work-Life Balance')..."
+          [value]="aiInputText()"
+          (input)="aiInputText.set($any($event.target).value)"
+          (keyup.enter)="askAi()"
+          [disabled]="aiLoading()"
+        />
+        <button
+          ejs-button
+          cssClass="e-primary"
+          type="button"
+          [disabled]="aiLoading() || !aiInputText().trim()"
+          (click)="askAi()"
+        >
+          @if (aiLoading()) {
+            <span class="e-icons e-spinner e-spin mr-1"></span> กำลังวิเคราะห์...
+          } @else {
+            <span class="e-icons e-comment-show mr-1"></span> ถาม AI
+          }
+        </button>
+        @if (aiResponse()) {
+          <button
+            ejs-button
+            cssClass="e-outline"
+            type="button"
+            (click)="clearAi()"
+          >
+            ล้างผลลัพธ์
+          </button>
+        }
+      </div>
+
+      <!-- AI Error Message -->
+      @if (aiError(); as err) {
+        <ejs-message [content]="err" severity="Error" variant="Outlined"></ejs-message>
+      }
+
+      <!-- AI Response Output -->
+      @if (aiResponse(); as resp) {
+        <div class="mt-3 p-4 rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800/40">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-indigo-700 dark:text-indigo-300">
+                📋 บทวิเคราะห์จาก AI Coach: "{{ aiPrompt() }}"
+              </span>
+            </div>
+            <span class="text-xs text-slate-500">{{ aiProvider() }}</span>
+          </div>
+          <div class="text-sm whitespace-pre-wrap leading-relaxed text-slate-800 dark:text-slate-200 font-sans">
+            {{ resp }}
+          </div>
+        </div>
       }
     </div>
   }

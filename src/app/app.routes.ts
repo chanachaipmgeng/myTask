@@ -116,6 +116,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/admin').then((m) => m.AdminPage),
   },
   {
+    path: 'admin/rubrics',
+    canActivate: [requireRoles('admin', 'lead')],
+    loadComponent: () => import('./pages/admin/rubrics/admin-rubrics').then((m) => m.AdminRubricsPage),
+  },
+  {
     path: 'mockup',
     loadComponent: () => import('./pages/mockup/mockup').then((m) => m.MockupPage),
   },

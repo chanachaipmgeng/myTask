@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>คู่มือการใช้งานระบบ Man-day Scorecard ฉบับสมบูรณ์ (25 หน้าจอ)</title>
+  <title>คู่มือการใช้งานระบบ Man-day Scorecard ฉบับสมบูรณ์ (26 หน้าจอ)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
         color: #64748b;
       }
       @bottom-left {
-        content: "Man-day Scorecard — คู่มือการใช้งานระบบฉบับสมบูรณ์ (v2.0)";
+        content: "Man-day Scorecard — คู่มือการใช้งานระบบฉบับสมบูรณ์ (v2026.4)";
         font-family: 'Sarabun', Tahoma, sans-serif;
         font-size: 8pt;
         color: #94a3b8;
@@ -354,10 +354,10 @@
     <div class="cover-top">
       <div class="brand-badge">
         <span class="brand-mark-logo">MD</span>
-        <span>CENTRAL SYNC &amp; SCORECARD v2.0</span>
+        <span>CENTRAL SYNC &amp; SCORECARD v2026.4</span>
       </div>
       <div style="font-size: 10pt; color: #94a3b8; font-weight: 600;">
-        ฉบับสมบูรณ์ · 25 หน้าจอครอบคลุม Enterprise
+        ฉบับสมบูรณ์ · 26 หน้าจอครอบคลุม Enterprise
       </div>
     </div>
 
@@ -365,16 +365,20 @@
       <div class="cover-eyebrow">Enterprise Operational Manual</div>
       <h1 class="cover-title">คู่มือการใช้งานระบบ<br>Man-day Scorecard</h1>
       <p class="cover-subtitle">
-        คู่มือภาพประกอบทุกหน้าจอฉบับสมบูรณ์ (25 หน้าจอ) ครอบคลุมการคำนวณคะแนน Man-day,
+        คู่มือภาพประกอบทุกหน้าจอฉบับสมบูรณ์ (26 หน้าจอ) ครอบคลุมการคำนวณคะแนน Man-day,
         โฟลว์รับมืองานสั่งตรงจาก MD (MD Mandate &amp; Auto-Shift), กรอบความแม่นยำตามขนาดงาน (Tiered Tolerance),
         ฮับบริหารงานกลาง, กระดานคัมบัง, ไทม์ไลน์ Gantt, ตรวจสอบการส่งต่อข้ามทีม (SLA Handoff),
         ตรวจสอบคุณภาพ QA (DoD Gates), ตรวจสอบเวลา 3 ทาง (3-Way Time Audit), ศูนย์ยื่นอุทธรณ์คะแนน,
-        และการแช่แข็งคะแนน Snapshot ก่อนปิดงวด
+        การแช่แข็งคะแนน Snapshot ก่อนปิดงวด, ระบบเกณฑ์ประเมินไดนามิก (Rubric Registry),
+        เส้นแนวโน้มสถิติ OLS Regression, และที่ปรึกษาการโค้ชรายบุคคล (AI Coach 1-on-1 Dialogue)
       </p>
       <div class="cover-tags">
-        <span class="cover-tag">25 หน้าจอครบวงจร (v2.0)</span>
+        <span class="cover-tag">26 หน้าจอครบวงจร (v2026.4)</span>
         <span class="cover-tag">โฟลว์งานสั่งตรงจาก MD (MD-DIRECT)</span>
         <span class="cover-tag">Tiered Tolerance (XS/S/M/L/XL)</span>
+        <span class="cover-tag">Dynamic Rubric Registry</span>
+        <span class="cover-tag">AI Coach 1-on-1 Dialogue</span>
+        <span class="cover-tag">OLS Regression Trendline</span>
         <span class="cover-tag">GitLab Approvals &amp; Peer Review Quota</span>
         <span class="cover-tag">โหมดสว่าง &amp; โหมดมืด (Zero-Reload)</span>
         <span class="cover-tag">ระบบสิทธิ์ 3 ระดับ (Admin / Lead / Member)</span>
@@ -384,7 +388,7 @@
 
     <div class="cover-bottom">
       <div><strong>ทีมพัฒนาระบบ:</strong> Man-day Scorecard Core Team</div>
-      <div><strong>แพลตฟอร์ม:</strong> Angular 22.2.6 · NestJS · PostgreSQL · Syncfusion</div>
+      <div><strong>แพลตฟอร์ม:</strong> Angular 22.2.6 · NestJS · PostgreSQL · Syncfusion · Gemini 2.5</div>
       <div><strong>วันที่ปรับปรุง:</strong> พฤศจิกายน 2568</div>
     </div>
   </div>
@@ -392,8 +396,8 @@
   <!-- ==================== TABLE OF CONTENTS ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
-    <h2>สารบัญคู่มือการใช้งาน (Table of Contents — 25 หน้าจอ)</h2>
-    <span class="section-meta">Man-day Scorecard v2.0 Architecture</span>
+    <h2>สารบัญคู่มือการใช้งาน (Table of Contents — 26 หน้าจอ)</h2>
+    <span class="section-meta">Man-day Scorecard v2026.4 Architecture</span>
   </div>
 
   <p style="font-size: 8.5pt; color: #64748b; margin-bottom: 10px;">
@@ -415,7 +419,7 @@
       <div class="toc-item"><span class="toc-title">8. รายการงานทั้งหมดแบบตารางตรึง</span><span class="toc-url">/work/list</span></div>
       <div class="toc-item"><span class="toc-title">9. ตารางคะแนนใบงาน &amp; Tiered Tolerance</span><span class="toc-url">/tickets</span></div>
       <div class="toc-item"><span class="toc-title">10. กระดานคะแนนพนักงานทั้งทีม</span><span class="toc-url">/people</span></div>
-      <div class="toc-item"><span class="toc-title">11. แดชบอร์ดรายคน &amp; กราฟ MD Workload</span><span class="toc-url">/people/:id</span></div>
+      <div class="toc-item"><span class="toc-title">11. แดชบอร์ดรายคน OLS &amp; AI Coach</span><span class="toc-url">/people/:id</span></div>
       <div class="toc-item"><span class="toc-title">12. ปฏิทินและไทม์ไลน์งานทีม (Schedule)</span><span class="toc-url">/schedule</span></div>
     </div>
 
@@ -429,13 +433,14 @@
       <div class="toc-item"><span class="toc-title">18. แถบเครื่องมือ หน้าต่างแจ้งเตือน &amp; Mini-Sidebar</span><span class="toc-url">Shell Controls</span></div>
       <div class="toc-item"><span class="toc-title">19. การสลับโหมดสว่างและโหมดมืด</span><span class="toc-url">Theme Toggle</span></div>
 
-      <h3 style="font-size: 9.5pt; color: #2e4fc8; margin: 12px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 4: การกำกับดูแลคุณภาพระดับองค์กร (v2.0)</h3>
+      <h3 style="font-size: 9.5pt; color: #2e4fc8; margin: 12px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 4: การกำกับดูแลคุณภาพระดับองค์กร (v2026.4)</h3>
       <div class="toc-item"><span class="toc-title">20. คิวงานใหม่ &amp; จ่ายงานด่วน MD</span><span class="toc-url">/queue</span></div>
       <div class="toc-item"><span class="toc-title">21. ศูนย์ตรวจสอบการส่งต่อข้ามทีม &amp; SLA</span><span class="toc-url">/work/handoff</span></div>
       <div class="toc-item"><span class="toc-title">22. ศูนย์ตรวจสอบคุณภาพ QA &amp; หลุด Prod</span><span class="toc-url">/quality/audit</span></div>
       <div class="toc-item"><span class="toc-title">23. ตรวจสอบความคลาดเคลื่อนเวลา 3 ทาง</span><span class="toc-url">/analytics/time-audit</span></div>
       <div class="toc-item"><span class="toc-title">24. ระบบยื่นอุทธรณ์ &amp; ปรับปรุงคะแนน</span><span class="toc-url">/tickets/disputes</span></div>
       <div class="toc-item"><span class="toc-title">25. ห้องตรวจสอบความพร้อมก่อนปิดงวด</span><span class="toc-url">/admin/snapshot-check</span></div>
+      <div class="toc-item"><span class="toc-title">26. ระบบเกณฑ์ประเมินไดนามิก (Rubric Registry)</span><span class="toc-url">/admin/rubrics</span></div>
     </div>
   </div>
 
@@ -835,7 +840,8 @@
     <div class="info-card">
       <h4>💡 ประวัติงานและข้อเสนอแนะเพื่อการพัฒนา</h4>
       <ul>
-        <li><strong>ประวัติคะแนนย้อนหลัง:</strong> กราฟเส้นแสดงแนวโน้มคะแนนรายเดือน ช่วยชี้เป้าว่ามีพัฒนาการอย่างไร</li>
+        <li><strong>เส้นแนวโน้มสถิติ OLS Regression Trendline:</strong> กราฟเส้นประสีม่วง (#a855f7) คำนวณ Least-Squares Slope ชี้ทิศทางพัฒนาการย้อนหลัง 6 เดือน พร้อมป้าย Slope</li>
+        <li><strong>AI Coach 1-on-1 Dialogue Panel:</strong> ที่ปรึกษาการโค้ชด้วย AI (Gemini 2.5 Flash / Thai Rule Engine) พร้อมชิปคำถามด่วนแนะนำ 4 มิติ</li>
         <li><strong>สถิติการถูกตีกลับ (Reopen Analysis):</strong> จำแนกสาเหตุข้อผิดพลาด ช่วยให้หัวหน้าโค้ชชิ่งได้ตรงจุด</li>
         <li><strong>ตารางงานทั้งหมดของบุคคล:</strong> ดูรายการงานที่ปิดแล้วและงานที่กำลังทำอยู่ พร้อมคะแนนของแต่ละใบงาน</li>
       </ul>
@@ -1354,8 +1360,44 @@
     </div>
   </div>
 
+  <!-- ==================== 26. RUBRIC REGISTRY & DYNAMIC SCORING ==================== -->
+  <div class="page-break"></div>
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <span class="section-num">26</span>
+      <h2>ระบบจัดการเกณฑ์ประเมินไดนามิก (Rubric Registry &amp; Dynamic Scoring)</h2>
+    </div>
+    <div class="section-meta">
+      <span class="role-badge">Admin</span> · <code>/admin/rubrics</code>
+    </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/26_admin_rubrics.png" alt="Rubric Registry Screen">
+    <div class="img-caption">ภาพที่ 26: หน้าจอจัดการเกณฑ์ประเมินคะแนนไดนามิก ปรับแต่งพารามิเตอร์ขนาดงาน (XS–XL) และเกณฑ์ชี้วัดแบบเรียลไทม์ผ่าน Syncfusion Inline Edit Grid</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h4>⚙️ Dynamic Rubric Grid (Syncfusion Inline Edit)</h4>
+      <ul>
+        <li><strong>Inline Editing:</strong> ดับเบิลคลิกแถวในตารางเพื่อแก้ไขพารามิเตอร์เกณฑ์ประเมินได้โดยตรง (Normal Mode) เช่น min_ratio, max_ratio, และ points</li>
+        <li><strong>เกณฑ์ขนาดงานแบบลดหลั่น (Tiered Tolerance):</strong> รองรับการปรับกรอบความแม่นยำตามขนาดงานจริง (XS, S, M, L, XL) เพื่อความเป็นธรรม</li>
+        <li><strong>เกณฑ์ส่งตรง &amp; เกณฑ์คุณภาพ:</strong> ควบคุมเกณฑ์ On-time 40 คะแนน, เกณฑ์ DoD 40 คะแนน, และสูตรวิจัย R&amp;D</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>🤖 AI Coach 1-on-1 Assistant &amp; OLS Trendline</h4>
+      <ul>
+        <li><strong>เส้นแนวโน้มสถิติ OLS Regression:</strong> แสดงเส้นประสีม่วง (#a855f7) คำนวณ Least-Squares Slope บนหน้าโปรไฟล์พนักงาน (/people/:id) ตรวจวัดแนวโน้มพัฒนาการ</li>
+        <li><strong>AI Coach 1-on-1 Dialogue:</strong> เชื่อมต่อ Gemini 2.5 Flash พร้อม Thai Rule Engine Fallback สรุปบทวิเคราะห์ 4 มิติสำหรับลีดใช้พูดคุย 1-on-1</li>
+        <li><strong>OpenProject Activity Comments:</strong> บันทึกข้อความ Markdown ลง /activities อัตโนมัติเมื่อสั่งพักงานหรือเลื่อนวันจาก MD Mandate</li>
+      </ul>
+    </div>
+  </div>
+
   <div class="callout tip" style="margin-top: 14px;">
-    <strong>สรุปภาพรวมระบบ Enterprise (v2.0):</strong> ระบบ Man-day Scorecard เวอร์ชัน 2.0 รองรับการทำงานแบบครบวงจร 25 หน้าจอ ครอบคลุม 6 สายงานหลัก พร้อมการตรวจวัด SLA การอุทธรณ์คะแนนที่โปร่งใส การชดเชยคะแนนงานสั่งตรงจาก MD (MD Mandate) และการแช่แข็งคะแนนที่เชื่อถือได้ตามมาตรฐานวิศวกรรมซอฟต์แวร์ระดับองค์กร
+    <strong>สรุปภาพรวมระบบ Enterprise (v2026.4):</strong> ระบบ Man-day Scorecard เวอร์ชัน v2026.4 รองรับการทำงานแบบครบวงจร 26 หน้าจอ ครอบคลุม 6 สายงานหลัก พร้อมเกณฑ์ประเมินไดนามิก (Rubric Registry), การวิเคราะห์เชิงสถิติ OLS Regression, ที่ปรึกษาการโค้ชด้วย AI (Gemini 2.5 Flash), การตรวจวัด SLA ข้ามทีม, การอุทธรณ์คะแนนที่โปร่งใส, การชดเชยคะแนนงานสั่งตรงจาก MD (MD Mandate), และการแช่แข็งคะแนนที่เชื่อถือได้ตามมาตรฐานวิศวกรรมซอฟต์แวร์ระดับองค์กร
   </div>
 
 </body>

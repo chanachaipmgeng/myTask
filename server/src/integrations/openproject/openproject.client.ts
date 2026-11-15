@@ -171,6 +171,14 @@ export class OpenProjectClient {
     });
   }
 
+  async postActivityComment(wpId: number, commentMarkdown: string): Promise<void> {
+    await this.request<unknown>(`/api/v3/work_packages/${wpId}/activities`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment: { raw: commentMarkdown } }),
+    });
+  }
+
   workPackageIdFromTimeEntry(entry: OpTimeEntry): number | null {
     return idFromHref(entry._links?.workPackage?.href);
   }

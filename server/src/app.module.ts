@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AiController } from './api/ai.controller';
 import { AnalyticsController } from './api/analytics.controller';
 import { BootstrapController } from './api/bootstrap.controller';
 import { IntegrationsController } from './api/integrations.controller';
 import { KpiSnapshotsController } from './api/kpi-snapshots.controller';
 import { OrgController } from './api/org.controller';
+import { RubricsController } from './api/rubrics.controller';
 import { SettingsController } from './api/settings.controller';
 import { V2EnterpriseController } from './api/v2-enterprise.controller';
 import { WorkItemsController } from './api/work-items.controller';
@@ -21,10 +23,12 @@ import { KpiSnapshotService } from './kpi/kpi-snapshot.service';
     BootstrapController,
     WorkItemsController,
     SettingsController,
+    RubricsController,
     IntegrationsController,
     OrgController,
     KpiSnapshotsController,
     AnalyticsController,
+    AiController,
     V2EnterpriseController,
   ],
   providers: [

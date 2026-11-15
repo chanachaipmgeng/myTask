@@ -321,6 +321,13 @@ const allNavGroups: NavGroup[] = [
         roles: ['admin', 'lead'],
       },
       {
+        id: 'rubrics',
+        text: 'ทะเบียนเกณฑ์ (Rubrics)',
+        iconCss: 'e-icons e-settings',
+        route: '/admin/rubrics',
+        roles: ['admin', 'lead'],
+      },
+      {
         id: 'admin',
         text: 'หลังบ้าน & สิทธิ์',
         iconCss: 'e-icons e-lock',
@@ -348,6 +355,9 @@ function matchNavId(url: string): string {
 }
 
 function screenTitle(url: string): string {
+  if (url.startsWith('/admin/rubrics')) {
+    return 'ทะเบียนเกณฑ์มาตรฐาน (Rubric Registry)';
+  }
   if (url.startsWith('/work/handoff')) {
     return 'ตรวจสอบการส่งต่อ & SLA ข้ามทีม';
   }

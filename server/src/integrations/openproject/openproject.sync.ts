@@ -259,6 +259,22 @@ export class OpenProjectSyncService {
     }
   }
 
+  async postActivity(opId: number, commentMarkdown: string): Promise<string | null> {
+    const creds = await this.resolveCredentials();
+    if (!creds) {
+      return 'OpenProject URL/token is not configured';
+    }
+    try {
+      const client = new OpenProjectClient(creds.url, creds.token);
+      await client.postActivityComment(opId, commentMarkdown);
+      return null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.log.warn(`postActivity OP-${opId} failed: ${message}`);
+      return message;
+    }
+  }
+
   private async resolveCredentials(): Promise<{ url: string; token: string } | null> {
     const envUrl = this.config.openproject.url;
     const envToken = this.config.openproject.token;
