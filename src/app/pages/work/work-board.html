@@ -134,25 +134,16 @@
             สถานะ: {{ ticket.workflowStatus }} · เริ่ม: {{ ticket.actualStartOn || '—' }} · Reopen: {{ ticket.reopenCount }}
           </p>
         </div>
-        <app-section-card variant="nested" [showHead]="false" class="md:col-span-2">
-          <div class="flex flex-col gap-2">
-          <span class="text-xs font-semibold">ประวัติและการส่งมอบ (Delivery &amp; Activity Log)</span>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-            <div class="flex flex-col gap-0.5">
-              <span class="text-muted">วันเริ่มงานจริง</span>
-              <span class="font-medium">{{ ticket.actualStartOn || 'ยังไม่ระบุ' }}</span>
-            </div>
-            <div class="flex flex-col gap-0.5">
-              <span class="text-muted">วันครบกำหนดส่ง (First Due)</span>
-              <span class="font-medium">{{ ticket.firstDueOn || ticket.dueOn || '—' }}</span>
-            </div>
-            <div class="flex flex-col gap-0.5">
-              <span class="text-muted">รอบรีวิว / Reopen</span>
-              <span class="font-medium">รีวิว {{ ticket.reviewRounds || 0 }} รอบ · Reopen {{ ticket.reopenCount || 0 }} ครั้ง</span>
-            </div>
-          </div>
+        <app-section-card
+          variant="nested"
+          class="md:col-span-2"
+          title="เส้นเหตุการณ์ส่งมอบ"
+          subtitle="ลำดับ milestone จากฟิลด์ใบงาน + stage log · จุด Ready for QA คือ Fair Cutoff ของ Dev"
+          [badge]="'Reopen ' + (ticket.reopenCount || 0)"
+          [badgeTone]="ticket.reopenCount > 0 ? 'warning' : 'info'"
+        >
           @if (ticket.isPaused) {
-            <div class="flex items-center justify-between gap-2">
+            <div class="mb-3 flex items-center justify-between gap-2">
               <ejs-message
                 severity="Error"
                 variant="Outlined"
@@ -164,13 +155,38 @@
               </button>
             </div>
           }
-          @if (ticket.mrLink) {
-            <div class="text-xs flex items-center gap-1.5 text-cyan">
-              <span class="e-icons e-link"></span>
-              <a [href]="ticket.mrLink" target="_blank" rel="noopener" class="underline truncate">{{ ticket.mrLink }}</a>
-            </div>
-          }
-          </div>
+
+          <ejs-timeline
+            cssClass="delivery-timeline"
+            orientation="Vertical"
+            align="Before"
+          >
+            <e-items>
+              @for (step of deliveryTimeline(); track step.id) {
+                <e-item
+                  [content]="step.title"
+                  [oppositeContent]="step.atLabel"
+                  [dotCss]="'e-icons ' + step.dotCss"
+                  [cssClass]="'delivery-timeline__item is-' + step.tone"
+                  [disabled]="step.tone === 'pending'"
+                ></e-item>
+              }
+            </e-items>
+            <ng-template #template let-data>
+              @if (deliveryTimeline()[data.itemIndex]; as step) {
+                <div class="delivery-timeline__card" [attr.data-tone]="step.tone">
+                  <div class="delivery-timeline__dot" aria-hidden="true">
+                    <span class="e-icons" [class]="step.dotCss"></span>
+                  </div>
+                  <div class="delivery-timeline__body">
+                    <p class="delivery-timeline__title m-0">{{ step.title }}</p>
+                    <p class="delivery-timeline__detail fine m-0">{{ step.detail }}</p>
+                  </div>
+                  <div class="delivery-timeline__when">{{ step.atLabel }}</div>
+                </div>
+              }
+            </ng-template>
+          </ejs-timeline>
         </app-section-card>
         <app-form-field label="สายงาน (Discipline)">
           <ejs-dropdownlist

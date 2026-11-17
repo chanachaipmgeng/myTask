@@ -5,9 +5,11 @@ import { DropDownListModule, MultiSelectModule } from '@syncfusion/ej2-angular-d
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { KanbanModule } from '@syncfusion/ej2-angular-kanban';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { TimelineAllModule, TimelineModule } from '@syncfusion/ej2-angular-layouts';
 import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { DragEventArgs, SwimlaneSettingsModel } from '@syncfusion/ej2-kanban';
 import { effectiveRole } from '../../core/admin-settings';
+import { buildDeliveryTimeline } from '../../core/delivery-timeline';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
@@ -59,6 +61,8 @@ type SwimlaneMode = 'none' | 'assignee' | 'track';
     ButtonModule,
     CheckBoxModule,
     MessageModule,
+    TimelineModule,
+    TimelineAllModule,
     KpiStatCardComponent,
     ConfirmDialogComponent,
     FormFieldComponent,
@@ -218,6 +222,15 @@ export class WorkBoard {
   protected readonly selected = computed(
     () => this.scorecard.tickets().find((ticket) => ticket.id === this.selectedId()) ?? null,
   );
+
+  /** เส้นเหตุการณ์ส่งมอบใน Dialog แก้การ์ด */
+  protected readonly deliveryTimeline = computed(() => {
+    const ticket = this.selected();
+    if (!ticket) {
+      return [];
+    }
+    return buildDeliveryTimeline(ticket, this.scorecard.stageLogs());
+  });
 
   constructor() {
     effect(() => {
