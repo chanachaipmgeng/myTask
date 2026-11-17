@@ -31,14 +31,15 @@ npm --prefix server run build
 - Angular **22.2.6** (pin ใน package.json) · **signals / computed / `@if` `@for`** · **OnPush** ทุก component  
 - คง **Zone** (`provideZoneChangeDetection`) — ยังไม่ทำ zoneless เพราะ Syncfusion  
 - Syncfusion: ใช้ `[value]="x()"` + `(change)` ไม่ใช้ `[(value)]` กับ class field  
-- AppBar (`app.html`): แสดงชิปสถานะระบบ + ชิปผู้ใช้/สิทธิ์ + ปุ่มแจ้งเตือนพร้อม `e-badge` เปิด `ejs-dialog` (`#alertDialog`)  
+- AppBar (`app.html`): แสดงชิปสถานะระบบ + ชิปผู้ใช้/สิทธิ์ + ปุ่มแจ้งเตือนแบบไอคอน (`e-warning`) พร้อม `e-badge-notification e-badge-overlap` เปิด `ejs-dialog` (`#alertDialog`) · Toast ผ่าน `ShellNotice` (typed)  
+
 - ตารางหลัก (`/tickets`, `/people`, `/work/list`): ใช้ `FreezeService` (`frozenColumns="2"` บน `/tickets`), `ColumnChooserService`, `ExcelExportService`, `ResizeService`, `AggregateService`  
 - **Syncfusion Frozen Columns**: คอลัมน์ที่ถูกตรึง (`.e-leftfreeze`, `.e-fixedfreeze`, `.e-frozenheader`) ต้องมีพื้นหลังทึบเสมอ (`#0f172a` ใน Dark Theme, `#ffffff` ใน Light Theme) ป้องกันข้อความของคอลัมน์ที่เลื่อนทะลุมาซ้อนทับ
 - **Enterprise Multi-Team UI (หน้าจอ 21–25)**:
   - `/work/handoff`: กราฟ `ejs-chart` แนวนอน `StackingBar` แสดง Stage Aging แยกตามทีม + Cross-Team Blocker Matrix + ตารางตรึง 2 คอลัมน์แรก + ปุ่ม Ping Teams
   - `/quality/audit`: `ejs-tab` (DoD Gate Verifier ตรวจ MR/Unit Test/Staging Verified พร้อมปุ่ม Reject to Dev vs วิเคราะห์ Reopen Root-Causes)
   - `/analytics/time-audit`: ตาราง 3-Way Time Matching Grid เปรียบเทียบ Estimate vs OpenProject Actual vs GitLab Commit Span
-  - `/tickets/disputes`: Split View รายการคำขอด้านซ้าย และแผงคำนวณคะแนนจำลอง (Projected Score Diff) ด้านขวา พร้อม `ejs-dialog` ยื่นอุทธรณ์
+  - `/tickets/disputes`: `ejs-splitter` รายการคำขอด้านซ้าย และแผงคำนวณคะแนนจำลอง (Projected Score Diff) ด้านขวา พร้อม `ejs-dialog` ยื่นอุทธรณ์
   - `/admin/snapshot-check`: `ejs-progressbar` แสดง Readiness % + เช็คลิสต์ 4 ด่าน + ตาราง Snapshot Preview Diff เปรียบเทียบดัชนีรายบุคคลก่อน Freeze
 - **Light & Dark Theme Architecture (MyHR Plus Design Tokens)**:
   - สีหลักระดับแบรนด์อิงตามเทมเพลต `myhrplus-backoffice-v5`: สีหลัก **MyHR Royal Blue** (`#2e4fc8` / `rgb(46, 79, 200)`), สีรอง/สว่าง (`#4c68e5`, `#5f7ce3`), และแถบเน้น AI/Spike (`#7465e8`)
@@ -55,13 +56,14 @@ npm --prefix server run build
     - `app-page-head` — หัวหน้า (title / description / breadcrumb / periodBadge + slot `[actions]`)
     - `app-section-card` — แผงเนื้อหา Syncfusion e-card (title / subtitle / badge + slots body / `[actions]` · variant panel/nested)
     - `app-status-badge` — ป้าย Syncfusion (`tone` หรือ `value` + `toneMap`) · tone map ร่วมใน `badge.ts` (`workflowStatusToneMap`, `planToneMap`, `weekToneMap`, `trackToneMap`, ฯลฯ)
-    - `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — KPI ตัวกลางทุกหน้า (`e-card` + badge/trend + `ejs-progressbar` + `ejs-sparkline` ออปชัน) · layout `stack`/`icon-start`/`icon-end` · export จาก `shared/ui`
+    - `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — KPI ตัวกลางทุกหน้า (`e-card` + badge/trend + `ejs-progressbar` + `ejs-sparkline` / skeleton ออปชัน) · layout `stack`/`icon-start`/`icon-end` · export จาก `shared/ui`
     - `app-form-field` — ห่อ label + control (variant `field` | `filter`)
     - `app-flash-messages` — รวม success / error / info / warning เป็น `ejs-message`
     - `app-filter-chips` — ชิปกรองสถานะ/บทบาท
-    - `app-confirm-dialog` — ยืนยันสั้นๆ (queue writeback, board block)
+    - `app-confirm-dialog` — ยืนยันสั้นๆ (queue writeback, board block) · animation Fade
   - **DataGrid cell polish** (`/work/list`, `/people`, `/tickets`): badge ในเซลล์ · progress ดัชนีคน · Search ใน toolbar (เมื่อไม่มีช่องค้นหาภายนอก) · Action `ดูสรุป` บน List — แนว Essential UI Kit แบบจุดๆ ไม่ยกบล็อกทั้งชุด · เพิ่มคอลัมน์บน grid ที่ `enablePersistence` ต้องเปลี่ยน `id` (เช่น `work-operational-list-grid-v2`)
-  - **แผงรายละเอียดในหน้า**: `/schedule` ใช้คอลัมน์ขวา (ปฏิทินย่อย + รายวัน) · `/tickets/disputes` ใช้ Split View ซ้ายตารางขวารายละเอียด — อย่าใช้ `ejs-sidebar` Over drawer ทับ Timeline/ตาราง
+  - **แผงรายละเอียดในหน้า**: `/schedule` ใช้คอลัมน์ขวา (ปฏิทินย่อย + รายวัน) · `/tickets/disputes` ใช้ `ejs-splitter` ซ้ายตารางขวารายละเอียด — อย่าใช้ `ejs-sidebar` Over drawer ทับ Timeline/ตาราง
+  - **P13 UX polish**: Gantt สลับ ProjectView/ResourceView · Board Dialog มี Delivery Timeline · Toast typed · AppBar แจ้งเตือนไอคอน
   - **Syncfusion style layers** (ธีมมาตรฐานก่อน แล้วค่อยแต่งจุดกลาง):
     1. Theme CSS — `assets/themes/tailwind3(.css|-dark.css)` ผ่าน `#sf-theme-link` (`ThemeService`)
     2. App tokens / layout — `src/styles.scss` (page, section-card, shell)
@@ -90,8 +92,8 @@ npm --prefix server run build
   - **Reviewer & QA Credit**: เครดิตเวลาผู้ตรวจ MR 10% และผู้ทดสอบ QA 15–20% ของ `estimateMd`
   - **Multi-Role Effort Split**: ตาราง `ticket_allocations` แยกคิดคะแนนและโควตารายบุคคลเมื่อ `isSplitEffort = true`
 - Assign / รับคิว & แก้วันบน Gantt Timeline (`/work/timeline`): `admin` | `lead` เท่านั้น (`canAssignWork`)  
-- Gantt Timeline: รองรับ `parentID: 'ParentID'` (`_links.parent` → `opParentId`/`parentId`) + แก้ `StartDate`/`EndDate` ผ่าน `applyGanttDateEdit` โดยห้ามทับ `firstDueOn`  
-- Kanban Board (`/work/board`): มี Swimlane switcher + `ejs-dialog` แก้ไขฟิลด์ · `admin`/`lead` ย้ายได้ทุกสถานะรวม `Done` และแก้แผนได้ (`canEditBoardPlanning`) · `member` ย้ายได้ถึง `Ready for QA` / `In QA` ห้ามปิด `Done` เอง (`canMoveWorkflowByRole`)  
+- Gantt Timeline: รองรับ `parentID: 'ParentID'` (`_links.parent` → `opParentId`/`parentId`) + แก้ `StartDate`/`EndDate` ผ่าน `applyGanttDateEdit` โดยห้ามทับ `firstDueOn` · สวิตช์ «มุมมองโครงงาน / มุมมองตามคน» (`ProjectView`|`ResourceView`) โดย sanitize `ResourceInfo` และไม่เปิด work-unit recalc  
+- Kanban Board (`/work/board`): มี Swimlane switcher + `ejs-dialog` แก้ไขฟิลด์ + Delivery Timeline · `admin`/`lead` ย้ายได้ทุกสถานะรวม `Done` และแก้แผนได้ (`canEditBoardPlanning`) · `member` ย้ายได้ถึง `Ready for QA` / `In QA` ห้ามปิด `Done` เอง (`canMoveWorkflowByRole`)  
 - Writeback: env `OPENPROJECT_WRITEBACK` (ค่าเริ่ม `false`) รองรับทั้ง PATCH assignee และ PATCH startDate/dueDate + Dialog ยืนยันบน `/queue` เมื่อมี `opId`  
 - KPI snapshot: จับเดือน/ไตรมาส (`canCaptureKpi`) · อ่านบน `/team` · โดเมน `kpi-snapshot.ts`  
 - GitLab MR & Teams Webhook: ตั้งค่าใน `.env` หรือ `/integrations` (`ejs-tab` 3 ระบบ) · ซิงก์ MR จริงผ่าน `POST /api/integrations/gitlab/sync` (`gitlab-mr.ts`) · ยิง Teams จริงผ่าน `POST /api/integrations/teams/send`  

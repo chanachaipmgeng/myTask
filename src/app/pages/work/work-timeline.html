@@ -3,15 +3,29 @@
   [badge]="tasks().length + ' รายการ'"
   badgeTone="info"
 >
-  <p class="fine m-0">
-    แสดงโครงสร้างแม่-ลูก (Hierarchy {{ hierarchyCount() }} ใบลูก) · แท่งจริงจาก start/due/closed · baseline จาก
-    <strong>firstDueOn</strong> + estimate ·
-    @if (canEdit()) {
-      <span>สิทธิ์ admin/lead แก้ไขวันเริ่ม/วันครบกำหนดของใบที่ยังไม่ปิดได้ (ไม่ทับ firstDueOn)</span>
-    } @else {
-      <span>สิทธิ์ member ดูได้อย่างเดียว (แก้ไขวันได้เฉพาะ admin/lead)</span>
-    }
-  </p>
+  <div class="flex flex-col gap-3 mb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+    <p class="fine m-0 max-w-3xl">
+      @if (viewMode() === 'resource') {
+        จัดกลุ่มตามผู้รับผิดชอบ · งานที่ยังไม่มีผู้รับอยู่กลุ่ม Unassigned ·
+        {{ assignedCount() }} / {{ tasks().length }} ใบมีผู้รับ ·
+        ไม่คำนวณ work unit ของ Syncfusion (โควตา/คะแนนยังอยู่ในโดเมน)
+      } @else {
+        แสดงโครงสร้างแม่-ลูก (Hierarchy {{ hierarchyCount() }} ใบลูก) · แท่งจริงจาก start/due/closed · baseline จาก
+        <strong>firstDueOn</strong> + estimate
+      }
+      ·
+      @if (canEdit()) {
+        <span>สิทธิ์ admin/lead แก้ไขวันเริ่ม/วันครบกำหนดของใบที่ยังไม่ปิดได้ (ไม่ทับ firstDueOn)</span>
+      } @else {
+        <span>สิทธิ์ member ดูได้อย่างเดียว (แก้ไขวันได้เฉพาะ admin/lead)</span>
+      }
+    </p>
+    <app-filter-chips
+      [options]="viewModeOptions"
+      [value]="viewMode()"
+      (valueChange)="setViewMode($event)"
+    ></app-filter-chips>
+  </div>
 
   @if (statusMessage()) {
     <ejs-message [content]="statusMessage()" severity="Success" variant="Outlined"></ejs-message>
@@ -23,27 +37,32 @@
   @if (tasks().length === 0) {
     <p class="fine">ไม่พบใบงานที่มีช่วงวันที่ตามตัวกรองปัจจุบัน</p>
   } @else {
-    <ejs-gantt
-      id="work-gantt"
-      height="580px"
-      [dataSource]="tasks()"
-      [taskFields]="taskFields"
-      [columns]="columns"
-      [toolbar]="toolbar"
-      [editSettings]="editSettings()"
-      [labelSettings]="labelSettings"
-      [timelineSettings]="timelineSettings"
-      [projectStartDate]="projectStartDate()"
-      [workWeek]="workWeek"
-      [splitterSettings]="splitterSettings"
-      [resources]="resources()"
-      [resourceFields]="resourceFields"
-      [renderBaseline]="true"
-      [allowSelection]="true"
-      [enableVirtualization]="false"
-      [treeColumnIndex]="1"
-      gridLines="Horizontal"
-      (actionComplete)="onActionComplete($event)"
-    ></ejs-gantt>
+    @for (mode of [viewMode()]; track mode) {
+      <ejs-gantt
+        #workGantt
+        id="work-gantt"
+        height="580px"
+        [dataSource]="ganttTasks()"
+        [taskFields]="taskFields"
+        [columns]="columns()"
+        [toolbar]="toolbar"
+        [editSettings]="editSettings()"
+        [labelSettings]="labelSettings"
+        [timelineSettings]="timelineSettings"
+        [projectStartDate]="projectStartDate()"
+        [workWeek]="workWeek"
+        [splitterSettings]="splitterSettings"
+        [resources]="resources()"
+        [resourceFields]="resourceFields"
+        [viewType]="ganttViewType()"
+        [renderBaseline]="viewMode() === 'project'"
+        [allowSelection]="true"
+        [enableVirtualization]="false"
+        [treeColumnIndex]="1"
+        gridLines="Horizontal"
+        (created)="onGanttCreated()"
+        (actionComplete)="onActionComplete($event)"
+      ></ejs-gantt>
+    }
   }
 </app-section-card>

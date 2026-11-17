@@ -1,8 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import {
   DayMarkersService,
   EditService,
   GanttAllModule,
+  GanttComponent,
   SelectionService,
   ToolbarService,
 } from '@syncfusion/ej2-angular-gantt';
@@ -12,13 +20,15 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { workGanttTasks } from '../../core/work-views';
-import { SectionCardComponent } from '../../shared/ui';
+import { FilterChipOption, FilterChipsComponent, SectionCardComponent } from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
+
+type GanttViewMode = 'project' | 'resource';
 
 @Component({
   selector: 'app-work-timeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GanttAllModule, MessageModule, SectionCardComponent],
+  imports: [GanttAllModule, MessageModule, SectionCardComponent, FilterChipsComponent],
   providers: [SelectionService, DayMarkersService, EditService, ToolbarService],
   templateUrl: './work-timeline.html',
 })
@@ -28,9 +38,18 @@ export class WorkTimeline {
   private readonly notice = inject(ShellNotice);
   protected readonly theme = inject(ThemeService);
 
+  @ViewChild('workGantt') private workGantt?: GanttComponent;
+
   protected readonly canEdit = canAssignWork;
   protected readonly statusMessage = signal('');
   protected readonly errorMessage = signal('');
+  /** project = โครงสร้างแม่-ลูก · resource = จัดกลุ่มตามผู้รับผิดชอบ (ไม่คำนวณ work unit) */
+  protected readonly viewMode = signal<GanttViewMode>('project');
+
+  protected readonly viewModeOptions: FilterChipOption[] = [
+    { id: 'project', label: 'มุมมองโครงงาน' },
+    { id: 'resource', label: 'มุมมองตามคน' },
+  ];
 
   protected readonly toolbar = ['ExpandAll', 'CollapseAll', 'ZoomIn', 'ZoomOut', 'ZoomToFit', 'Search'];
   protected readonly editSettings = computed(() => ({
@@ -38,6 +57,10 @@ export class WorkTimeline {
     allowTaskbarEditing: this.canEdit(),
     mode: 'Auto' as const,
   }));
+
+  protected readonly ganttViewType = computed(() =>
+    this.viewMode() === 'resource' ? 'ResourceView' : 'ProjectView',
+  );
 
   protected readonly taskFields = {
     id: 'TaskID',
@@ -51,13 +74,29 @@ export class WorkTimeline {
     baselineEndDate: 'BaselineEndDate',
     resourceInfo: 'ResourceInfo',
   };
-  protected readonly columns = [
-    { field: 'TaskID', headerText: 'รหัส', width: 110, isPrimaryKey: true, allowEditing: false },
-    { field: 'TaskName', headerText: 'งาน (Epic / Story / Task)', width: 250, allowEditing: false },
-    { field: 'StartDate', headerText: 'เริ่ม', width: 110, editType: 'datepickeredit' },
-    { field: 'EndDate', headerText: 'กำหนดส่ง (Due)', width: 135, editType: 'datepickeredit' },
-    { field: 'Duration', headerText: 'วัน', width: 75, allowEditing: false },
-  ];
+  protected readonly columns = computed(() => {
+    const resourceMode = this.viewMode() === 'resource';
+    return [
+      {
+        field: 'TaskID',
+        headerText: 'รหัส',
+        width: 110,
+        isPrimaryKey: !resourceMode,
+        allowEditing: false,
+        visible: !resourceMode,
+      },
+      {
+        field: 'TaskName',
+        headerText: resourceMode ? 'ผู้รับ / งาน' : 'งาน (Epic / Story / Task)',
+        width: resourceMode ? 280 : 250,
+        allowEditing: false,
+      },
+      { field: 'StartDate', headerText: 'เริ่ม', width: 110, editType: 'datepickeredit' },
+      { field: 'EndDate', headerText: 'กำหนดส่ง (Due)', width: 135, editType: 'datepickeredit' },
+      { field: 'Duration', headerText: 'วัน', width: 75, allowEditing: false },
+    ];
+  });
+
   protected readonly labelSettings = { taskLabel: 'TaskName', rightLabel: 'ResourceInfo' };
   protected readonly timelineSettings = {
     topTier: { unit: 'Week' as const, format: 'MMM dd' },
@@ -73,8 +112,32 @@ export class WorkTimeline {
     }),
   );
 
-  protected readonly projectStartDate = computed(() => {
+  /**
+   * Resource View: แบน ParentID · clone ResourceInfo เฉพาะ id ที่อยู่ใน resources
+   * (กัน constructResourceViewDataSource พังเมื่อ object ไม่มี resourceId)
+   */
+  protected readonly ganttTasks = computed(() => {
     const list = this.tasks();
+    const known = new Map(this.resources().map((r) => [r.resourceId, r.resourceName]));
+    const resourceMode = this.viewMode() === 'resource';
+    return list.map((task) => {
+      const resourceInfo = (task.ResourceInfo ?? [])
+        .map((item) => item.resourceId)
+        .filter((id): id is string => !!id && known.has(id))
+        .map((resourceId) => ({
+          resourceId,
+          resourceName: known.get(resourceId) ?? resourceId,
+        }));
+      return {
+        ...task,
+        ParentID: resourceMode ? null : task.ParentID,
+        ResourceInfo: resourceInfo,
+      };
+    });
+  });
+
+  protected readonly projectStartDate = computed(() => {
+    const list = this.ganttTasks();
     const timestamps = list
       .map((t) => (t.StartDate ? new Date(t.StartDate).getTime() : NaN))
       .filter((n) => !isNaN(n));
@@ -88,6 +151,10 @@ export class WorkTimeline {
     () => this.tasks().filter((task) => task.ParentID !== null).length,
   );
 
+  protected readonly assignedCount = computed(
+    () => this.ganttTasks().filter((task) => task.ResourceInfo.length > 0).length,
+  );
+
   protected readonly resources = computed(() =>
     this.scorecard.people().map((person) => ({
       resourceId: person.id,
@@ -96,6 +163,23 @@ export class WorkTimeline {
   );
 
   protected readonly resourceFields = { id: 'resourceId', name: 'resourceName' };
+
+  protected setViewMode(mode: string): void {
+    if (mode === 'resource' || mode === 'project') {
+      this.viewMode.set(mode);
+    }
+  }
+
+  protected onGanttCreated(): void {
+    // Resource View สร้าง flatData แล้ว แต่ TreeGrid บางครั้งยังไม่ paint — บังคับ refresh ครั้งเดียว
+    if (this.viewMode() !== 'resource') {
+      return;
+    }
+    queueMicrotask(() => {
+      this.workGantt?.treeGrid?.refresh();
+      this.workGantt?.expandAll();
+    });
+  }
 
   protected async onActionComplete(args: { requestType?: string; data?: unknown }): Promise<void> {
     if (args.requestType !== 'save' || !this.canEdit()) {

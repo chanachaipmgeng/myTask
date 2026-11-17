@@ -614,6 +614,7 @@
       <h4>🎯 โครงสร้างงานแบบลำดับชั้น (Parent/Child Hierarchy)</h4>
       <ul>
         <li><strong>การจัดกลุ่มแบบต้นไม้:</strong> รองรับการแสดงผล Epic &rarr; Feature &rarr; Task ตามความสัมพันธ์จริงจาก OpenProject</li>
+        <li><strong>สลับมุมมอง:</strong> ชิป «มุมมองโครงงาน» (ProjectView) หรือ «มุมมองตามคน» (ResourceView) — จัดกลุ่มตามผู้รับผิดชอบโดยไม่เปลี่ยนสูตรคะแนนหรือคำนวณ work unit ของ Syncfusion</li>
         <li><strong>เครื่องมือบน Toolbar:</strong> ปุ่มกางออกทั้งหมด (Expand All), ยุบทั้งหมด (Collapse All), ซูมเข้าออก (Zoom In/Out) เพื่อดูระดับวัน สัปดาห์ หรือเดือน</li>
         <li><strong>ช่องค้นหาแบบ Real-time:</strong> พิมพ์ค้นหาตามรหัสใบงานหรือชื่อชิ้นงานเพื่อกระโดดไปยังแถบแกนต์ทันที</li>
       </ul>
@@ -690,6 +691,7 @@
         <li><strong>3. Code Review &rarr; 4. Ready for QA:</strong> ผ่านรีวิว (จุด Fair Cutoff)</li>
         <li><strong>5. In QA &rarr; 6. Reopened:</strong> ตีกลับแก้ไข &rarr; <strong>7. Done:</strong> ตรวจรับปิดงาน</li>
         <li><strong>Swimlane Switcher:</strong> สลับการจัดกลุ่มตามผู้รับผิดชอบ (Assignee) หรือสายงาน (Track)</li>
+        <li><strong>Delivery Timeline:</strong> ใน Dialog แก้ไขการ์ดมี <code>ejs-timeline</code> แสดงเหตุการณ์ส่งมอบ (เริ่ม / Ready for QA / MR / Done ฯลฯ) จากฟิลด์ใบงาน</li>
       </ul>
     </div>
     <div class="info-card">
@@ -1099,7 +1101,7 @@
     <div class="info-card">
       <h4>💡 หน้าต่างแจ้งเตือนค้นหาได้ (#alertDialog)</h4>
       <ul>
-        <li>ปุ่มแจ้งเตือนพร้อม Badge สีแดงกะพริบระบุจำนวนใบงานที่มีความเสี่ยง</li>
+        <li>ปุ่มแจ้งเตือนแบบไอคอน (<code>e-warning</code>) พร้อม Badge ทับมุม (<code>e-badge-notification e-badge-overlap</code>) ระบุจำนวนใบงานที่มีความเสี่ยง</li>
         <li>เมื่อคลิกจะเปิด Syncfusion Dialog แสดงรายการงานที่หลุดกำหนดส่ง หรือทำงานเกินเวลาที่ประมาณการไว้</li>
         <li><strong>ช่องค้นหา Real-time:</strong> มีช่อง <code>ejs-textbox</code> พิมพ์รหัสใบงานหรือชื่อโมดูลเพื่อกรองรายการแจ้งเตือนได้ทันทีโดยไม่ต้องเลื่อนหา</li>
       </ul>
@@ -1306,7 +1308,7 @@
 
   <div class="info-grid">
     <div class="info-card">
-      <h4>🎯 Split View พิจารณาคำขอ</h4>
+      <h4>🎯 Splitter พิจารณาคำขอ (<code>ejs-splitter</code>)</h4>
       <ul>
         <li><strong>ฝั่งซ้าย: ตารางรายการคำขอ (Grid):</strong> แสดงสถานะคำขอ (รออนุมัติ, อนุมัติแล้ว, ปฏิเสธ) พร้อมรหัสใบงานและประเภทการขอยกเว้น</li>
         <li><strong>ฝั่งขวา: แผงพิจารณาและแบบจำลอง (Simulation Panel):</strong> แสดงรายละเอียดเหตุผล พร้อมลิงก์หลักฐานแนบ (เช่น แชท Teams หรือบันทึก Incident)</li>

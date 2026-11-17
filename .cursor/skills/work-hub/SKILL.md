@@ -19,16 +19,16 @@ description: >-
 | แท็บ | UI | โดเมน / บริการ |
 |---|---|---|
 | Summary | `app-kpi-stat` + Chart / DashboardLayout + `ejs-message` (MD Mandate) | `workSummaryStats` |
-| Timeline | `ejs-gantt` (`parentID: 'ParentID'`, Toolbar, `EditService` เฉพาะ `admin`/`lead`) | `workGanttTasks`, `applyGanttDateEdit`, `updateTicketDates` |
+| Timeline | `ejs-gantt` (`parentID: 'ParentID'`, Toolbar, `EditService` เฉพาะ `admin`/`lead`) · สวิตช์ `viewMode` project\|resource → `viewType` ProjectView\|ResourceView · remount `#workGantt` เมื่อสลับ · sanitize `ResourceInfo` ให้มี `resourceId` · **ไม่**เปิด FixedWork / work-unit recalc | `workGanttTasks`, `applyGanttDateEdit`, `updateTicketDates` |
 | Backlog | Grid ใน `section-card` | `workBacklogRows` |
-| Board | `app-kpi-stat` + Kanban + Swimlane + Rich Card (`e-badge` MD-DIRECT/PAUSED) + `#editDialog` | `workflow` + `ScorecardService` |
+| Board | `app-kpi-stat` + Kanban + Swimlane + Rich Card (`e-badge` MD-DIRECT/PAUSED) + `#editDialog` + `ejs-timeline` Delivery events | `workflow` + `ScorecardService` + `delivery-timeline` |
 | List | Grid งาน (`ColumnChooser`, `ExcelExport`, `CsvExport`, `ResizeService`, ปุ่มไป Board) | `workListRows` |
 | Handoff | `app-page-head` + `app-section-card` + `app-kpi-stat` + `app-status-badge` (chart / blocker / SLA grid) | `multi-team` / Scorecard handoff report |
 | Board block | `app-confirm-dialog` (รับทราบ) · edit dialog ยังเป็น `#editDialog` เต็ม | workflow guards |
 
 ## Shared UI (`src/app/shared/ui/`)
 
-ใช้ซ้ำข้ามหน้า: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips`, `app-confirm-dialog` · KPI: `app-kpi-stat` (layout/trend/progress/sparkline) · tone: `badge.ts` · แถวสถิติทุกหน้าต้องเรียก `app-kpi-stat` ห้ามห่อ `kpi-value` ดิบ
+ใช้ซ้ำข้ามหน้า: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips`, `app-confirm-dialog` (Fade) · KPI: `app-kpi-stat` (layout/trend/progress/sparkline/skeleton) · tone: `badge.ts` · แถวสถิติทุกหน้าต้องเรียก `app-kpi-stat` ห้ามห่อ `kpi-value` ดิบ · Toast ผ่าน `ShellNotice` (typed) · AppBar แจ้งเตือน = ปุ่มไอคอน `e-warning` + `e-badge-notification e-badge-overlap`
 
 ## Syncfusion style layers
 
@@ -54,7 +54,9 @@ description: >-
 - มีปุ่มสลับหน้าระหว่าง `/work` กับ `/tickets`
 - `/pipeline` → `/work/board`
 - Gantt เปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin`/`lead` (`canAssignWork`) โดยใช้ `applyGanttDateEdit` ที่ห้ามทับ `firstDueOn` เด็ดขาด
-- บน Board: `member` ย้ายการ์ดได้ถึง `Ready for QA` / `In QA` ห้ามปิดเข้า `Done` เอง และแก้ได้เฉพาะฟิลด์ส่งมอบ (`mrLink`, `pocResult`, `bugCause`) พร้อมแสดง Delivery & Activity Log ใน Dialog
+- Resource View: กรอง/clone `ResourceInfo` ให้เหลือเฉพาะคนที่รู้จักและมี `resourceId` · ในโหมด resource ซ่อนคอลัมน์ `TaskID` (ไม่ตั้งเป็น primary) · หลัง `created` เรียก `treeGrid.refresh()` / `expandAll` · baseline แสดงเฉพาะ ProjectView
+- บน Board: `member` ย้ายการ์ดได้ถึง `Ready for QA` / `In QA` ห้ามปิดเข้า `Done` เอง และแก้ได้เฉพาะฟิลด์ส่งมอบ (`mrLink`, `pocResult`, `bugCause`) พร้อมแสดง Delivery Timeline + Activity Log ใน Dialog
+- `/tickets/disputes`: ใช้ `ejs-splitter` 2 บานในหน้า — ห้าม Over drawer ทับตาราง
 - ตารางหลัก (`/tickets`, `/work/list`): เปิด `[enablePersistence]="true"` เพื่อจดจำการตั้งค่าคอลัมน์ของผู้ใช้
 - โครงสร้าง Sidebar: รองรับ Sticky Pinning (100vh) และสลับ Mini-Sidebar 68px/260px ผ่าน `.nav-toggle` เพื่อเพิ่มพื้นที่ทำงาน
 - การตรวจผลงาน 1-on-1 (`/people/:id`): มีปุ่ม `prevPerson` / `nextPerson` ให้ตรวจประเมินต่อเนื่องได้ครบทั้ง 15 คน · AI Coach ใช้ `ejs-textbox` + ผลลัพธ์ใน `e-card`

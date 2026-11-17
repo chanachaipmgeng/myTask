@@ -11,13 +11,13 @@ alwaysApply: false
   - `/work/handoff`: Stage Aging `StackingBar` + Blocker Matrix (`app-section-card` nested) + Grid ตรึง 2 คอลัมน์ + `ejs-message` Fair Cutoff
   - `/quality/audit`: `ejs-tab` ใน `app-section-card` (DoD Gate + Reopen) · ป้ายสถานะเป็น `e-badge` · แบนเนอร์ DoD เป็น `ejs-message`
   - `/analytics/time-audit`: ตาราง 3-Way ใน `app-section-card` · anomaly เป็น `e-badge`
-  - `/tickets/disputes`: Split View `app-section-card` · จำลองคะแนนเป็น `app-kpi-stat` · เหตุผลยื่นเป็น `ejs-textbox` multiline
+  - `/tickets/disputes`: `ejs-splitter` 2 บาน + `app-section-card` · จำลองคะแนนเป็น `app-kpi-stat` · เหตุผลยื่นเป็น `ejs-textbox` multiline
   - `/admin/snapshot-check`: Readiness ใน `app-section-card` · เช็คลิสต์ 4 ด่านเป็น `app-kpi-stat` + `e-badge`
 - KPI แถวบนทุกหน้าใช้ `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — รองรับ layout/trend/progress/`ejs-sparkline` · Progress track สีจาก `ThemeService.progressTrack()` · ห้ามห่อ KPI ด้วย `kpi-value` ดิบ
 - `/pipeline` ต้อง redirect ไป `/work/board`
 - `/tickets` (ตารางคะแนนใบงาน) คงเป็นตารางคะแนน+นำเข้าไฟล์ (ยุบฟอร์มนำเข้า/เพิ่มใบงาน/เกณฑ์คะแนนใน `ejs-accordion` และตรึง 2 คอลัมน์แรก `frozenColumns="2"`) — ส่วน List ใน `/work` เป็นมุมมองบริหารงาน ไม่ใช่คอลัมน์คะแนนเต็ม
-- Timeline (`/work/timeline`) ใช้ Syncfusion Gantt แสดงโครงสร้างแม่-ลูก (`parentID: 'ParentID'`), มี Toolbar (`ExpandAll`, `CollapseAll`, `ZoomIn`, `ZoomOut`, `ZoomToFit`, `Search`), และเปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin` | `lead` (`canAssignWork`) ผ่าน `applyGanttDateEdit` + `POST /api/work-items/:id/dates` (ห้ามทับ `firstDueOn`)
-- Board (`/work/board`) รองรับตัวสลับ Swimlane (`none`/`assignee`/`track`), Rich Card Template, คลิกการ์ดเปิด `ejs-dialog` แก้ไขฟิลด์, และแยกสิทธิ์ `canMoveWorkflowByRole` / `canEditBoardPlanning`
+- Timeline (`/work/timeline`) ใช้ Syncfusion Gantt แสดงโครงสร้างแม่-ลูก (`parentID: 'ParentID'`), มี Toolbar (`ExpandAll`, `CollapseAll`, `ZoomIn`, `ZoomOut`, `ZoomToFit`, `Search`), สวิตช์ `viewMode` project|resource → `viewType` ProjectView|ResourceView (sanitize `ResourceInfo` + remount; **ไม่**เปิด work-unit recalc), และเปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin` | `lead` (`canAssignWork`) ผ่าน `applyGanttDateEdit` + `POST /api/work-items/:id/dates` (ห้ามทับ `firstDueOn`)
+- Board (`/work/board`) รองรับตัวสลับ Swimlane (`none`/`assignee`/`track`), Rich Card Template, คลิกการ์ดเปิด `ejs-dialog` แก้ไขฟิลด์ + `ejs-timeline` Delivery events, และแยกสิทธิ์ `canMoveWorkflowByRole` / `canEditBoardPlanning`
 - ตารางหลัก (`/tickets`, `/people`, `/work/list`) รองรับ `ColumnChooser`, `ExcelExport`, `CsvExport`, `ResizeService` และแถวสรุป `AggregateService`
 - **Grid cell templates (UI Kit จุดๆ)**:
   - `/work/list`: badge สถานะ/แผน/สัปดาห์ (`workflowStatusToneMap` / `planToneMap` / `toneForWeekLabel`) + toolbar `Search` + คอลัมน์ Action ปุ่ม `ดูสรุป` · grid id `work-operational-list-grid-v2`
@@ -27,9 +27,9 @@ alwaysApply: false
   - ถ้าเพิ่มคอลัมน์บน grid ที่มี `[enablePersistence]="true"` ให้เปลี่ยน `id` ของ grid หรือล้าง key `grid…` ใน localStorage
 - การตรึงคอลัมน์ (`Frozen Columns`): พื้นหลังทึบ (`#0f172a` Dark / `#ffffff` Light) อยู่ใน `src/styles/sf/_components.scss` — อย่าคัดลอก override กลับไปกระจายใน `styles.scss` หรือ component SCSS
 - การจัด Layout กราฟและแดชบอร์ด: ป้องกันปัญหา SVG Sizing โดยผูก `ResizeObserver` และเรียก `chart.refresh()` เสมอเมื่อ Layout พร้อม (`(created)` / `ngAfterViewInit`)
-- Gantt Timeline (`/work/timeline`): กำหนดตำแหน่ง `splitterSettings` เริ่มต้นให้กว้างพอ (เช่น 620px) เพื่อให้คอลัมน์รหัส, งาน, เริ่ม, และ ครบกำหนด แสดงผลครบถ้วนไม่ถูกตัด · อย่าใส่ `overflow:hidden` บน `.e-gantt` โดยไม่จำเป็น (override ขอบเบาอยู่ที่ `src/styles/sf/`)
+- Gantt Timeline (`/work/timeline`): กำหนดตำแหน่ง `splitterSettings` เริ่มต้นให้กว้างพอ (เช่น 620px) เพื่อให้คอลัมน์รหัส, งาน, เริ่ม, และ ครบกำหนด แสดงผลครบถ้วนไม่ถูกตัด · อย่าใส่ `overflow:hidden` บน `.e-gantt` โดยไม่จำเป็น (override ขอบเบาอยู่ที่ `src/styles/sf/`) · Resource View ต้อง clone/กรอง `ResourceInfo` ให้มี `resourceId` และซ่อน `TaskID` primary ในโหมดนั้น
 - `/schedule`: Timeline เต็มความสูงหน้าจอ (flex + `ResizeObserver`) · แผงรายวันเป็นคอลัมน์ขวาในหน้า — ห้ามใช้ `ejs-sidebar` Over drawer ทับ Schedule
-- `/tickets/disputes`: Split View ในหน้า — ห้ามใช้ drawer ทับตาราง
+- `/tickets/disputes`: `ejs-splitter` ในหน้า — ห้ามใช้ drawer ทับตาราง
 - Sidebar: เมนูระดับย่อยต้องกำหนดขนาดไอคอนคงที่ (18-22px) ไม่ให้โดนยืดขยาย และข้อความเมนูต้องใช้สีสว่างคมชัด (`#e2e8f0` / `#ffffff`)
 - การตรึง Sidebar (`Sidebar Sticky Pinning`): โครงสร้าง `.app-frame` ต้องใช้ `align-items: start;` และ Sidebar (`#app-nav`) บน Desktop ต้องถูกตรึงแบบ `position: sticky; top: 0; height: 100vh; overflow-y: auto; overscroll-behavior: contain;` ตลอดเวลา เพื่อให้คงที่อยู่ฝั่งซ้ายเสมอเมื่อเลื่อนดูหน้าจอที่มีความยาว
 - มาตรฐานธีม (`Tailwind 3 Dynamic Theming`): ทุกกราฟและ ProgressBar (`ejs-chart`, `ejs-accumulationchart`, `ejs-progressbar`) ต้องผูก `[theme]="theme.sfTheme()"` เพื่อรองรับการสลับระหว่าง `'Tailwind3Dark'` และ `'Tailwind3'` ผ่าน `ThemeService` และจดจำสถานะใน `localStorage` โดยไม่มี FOUC
