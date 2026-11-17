@@ -1,8 +1,8 @@
-<section class="page">
+<section class="page disputes-page">
   <app-page-head
     breadcrumb="ตารางคะแนนใบงาน > ศูนย์ทบทวนและอุทธรณ์คะแนน (/tickets/disputes)"
     title="ระบบยื่นอุทธรณ์และขอปรับปรุงคะแนนใบงาน (Score Dispute Center)"
-    description="พนักงานสามารถยื่นขอติดป้ายยกเว้น (BLK, ENV, REQ) และหัวหน้างานสามารถจำลองผลคะแนนก่อนกดอนุมัติ"
+    description="พนักงานสามารถยื่นขอติดป้ายยกเว้น (BLK, ENV, REQ) และหัวหน้างานสามารถจำลองผลคะแนนก่อนกดอนุมัติ · คลิกแถวเพื่อดูรายละเอียดทางขวา"
   >
     <div actions>
       <button ejs-button cssClass="e-primary" iconCss="e-icons e-plus" (click)="openCreateDialog()">
@@ -22,6 +22,8 @@
       class="lg:col-span-7"
       title="รายการคำขอทบทวนคะแนน"
       subtitle="คลิกแถวเพื่อดูรายละเอียดและผลจำลองคะแนน"
+      [badge]="filteredDisputes().length + ' รายการ'"
+      badgeTone="info"
     >
       <div class="overflow-x-auto w-full">
         <ejs-grid
@@ -50,6 +52,15 @@
                 </span>
               </ng-template>
             </e-column>
+            <e-column field="status" headerText="สถานะ" width="110">
+              <ng-template #template let-data>
+                <app-status-badge
+                  [label]="data.status === 'PENDING' ? 'รอพิจารณา' : data.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธ'"
+                  [value]="data.status"
+                  [toneMap]="statusToneMap"
+                ></app-status-badge>
+              </ng-template>
+            </e-column>
           </e-columns>
         </ejs-grid>
       </div>
@@ -57,8 +68,8 @@
 
     <app-section-card
       class="lg:col-span-5"
-      [title]="selectedDispute() ? 'ใบงาน: ' + selectedDispute()!.ticketId : ''"
-      [subtitle]="selectedDispute()?.disputeCode ?? ''"
+      [title]="selectedDispute() ? 'ใบงาน: ' + selectedDispute()!.ticketId : 'รายละเอียดคำขอ'"
+      [subtitle]="selectedDispute()?.disputeCode ?? 'เลือกแถวจากตารางทางซ้าย'"
       [badge]="
         selectedDispute()?.status === 'PENDING'
           ? 'รอพิจารณา'
@@ -75,7 +86,7 @@
             ? 'danger'
             : 'warning'
       "
-      [showHead]="!!selectedDispute()"
+      [showHead]="true"
     >
       @if (selectedDispute(); as sel) {
         <div class="flex flex-col gap-3 text-sm">

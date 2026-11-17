@@ -60,6 +60,7 @@ npm --prefix server run build
     - `app-flash-messages` — รวม success / error / info / warning เป็น `ejs-message`
     - `app-filter-chips` — ชิปกรองสถานะ/บทบาท
     - `app-confirm-dialog` — ยืนยันสั้นๆ (queue writeback, board block)
+  - **แผงรายละเอียดในหน้า**: `/schedule` ใช้คอลัมน์ขวา (ปฏิทินย่อย + รายวัน) · `/tickets/disputes` ใช้ Split View ซ้ายตารางขวารายละเอียด — อย่าใช้ `ejs-sidebar` Over drawer ทับ Timeline/ตาราง
   - ห้ามห่อแผงใหม่ด้วย `rounded-xl border … bg-white dark:bg-slate-900 … shadow-sm` — ใช้ `app-section-card` / คลาส `.section-card`
 - **SCSS Selector Safety**:
   - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion

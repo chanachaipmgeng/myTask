@@ -4,7 +4,6 @@ import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import {
   FilterService,
-  GridComponent,
   GridModule,
   PageService,
   RecordClickEventArgs,
@@ -49,6 +48,7 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
     FilterService,
   ],
   templateUrl: './disputes.html',
+  styleUrl: './disputes.scss',
 })
 export class DisputesPage {
   protected readonly scorecard = inject(ScorecardService);
@@ -102,22 +102,13 @@ export class DisputesPage {
     ];
   });
 
-  constructor() {
-    // Select first dispute by default if available
-    const pending = this.disputes().find((d) => d.status === 'PENDING');
-    if (pending) {
-      this.selectedDispute.set(pending);
-    }
-  }
-
   protected setStatus(status: string): void {
     const next = (status === 'APPROVED' || status === 'REJECTED' ? status : 'PENDING') as
       | 'PENDING'
       | 'APPROVED'
       | 'REJECTED';
     this.statusFilter.set(next);
-    const first = this.disputes().find((d) => d.status === next);
-    this.selectedDispute.set(first ?? null);
+    this.selectedDispute.set(null);
   }
 
   protected onRecordClick(args: RecordClickEventArgs): void {
@@ -166,7 +157,6 @@ export class DisputesPage {
         : `ปฏิเสธคำขอ ${sel.disputeCode}`,
     );
 
-    // Refresh selected
     const updated = this.scorecard.disputes().find((d) => d.id === sel.id);
     this.selectedDispute.set(updated ?? null);
   }

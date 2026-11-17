@@ -85,6 +85,66 @@
     </app-section-card>
   }
 
+  <app-section-card
+    title="Agenda งานเปิดของฉัน (เรียงตามกำหนดส่ง)"
+    subtitle="รายการส่งมอบถัดไปแบบปฏิทินส่วนตัว พร้อม checklist ส่งมอบและลิงก์ไปบอร์ด"
+    [badge]="dueAgenda().length + ' ใบ'"
+    badgeTone="info"
+  >
+    <a actions ejs-button cssClass="e-outline e-small" routerLink="/schedule">เปิดปฏิทินทีม</a>
+
+    @if (dueAgenda().length === 0) {
+      <ejs-message content="ตอนนี้ไม่มีใบงานเปิด — สบายใจได้ชั่วคราว" severity="Success" variant="Outlined"></ejs-message>
+    } @else {
+      <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        @for (item of dueAgenda(); track item.id) {
+          <div class="e-card">
+            <div class="e-card-content flex flex-col gap-3 p-4">
+              <div class="flex flex-wrap items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="m-0 font-bold text-cyan">{{ item.id }} · {{ item.title }}</p>
+                  <p class="fine m-0 mt-1">
+                    กำหนดส่ง {{ item.dueLabel }} · Est {{ item.estimateMd }} MD · {{ item.status }}
+                  </p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  @if (item.slipped) {
+                    <app-status-badge [label]="'หลุด ' + item.weekOffset + ' สัปดาห์'" tone="warning"></app-status-badge>
+                  }
+                  <app-status-badge [label]="item.status" tone="info"></app-status-badge>
+                </div>
+              </div>
+
+              <p class="m-0 text-sm">ถัดไป: {{ item.nextAction }}</p>
+
+              <ul class="m-0 pl-0 list-none flex flex-col gap-1.5">
+                @for (check of item.checklist; track check.id) {
+                  <li class="flex items-center gap-2 text-xs">
+                    <span
+                      class="e-icons"
+                      [class.e-check]="check.done"
+                      [class.e-circle-info]="!check.done"
+                      [class.text-emerald-600]="check.done"
+                      [class.text-muted]="!check.done"
+                    ></span>
+                    <span [class.line-through]="check.done" [class.text-muted]="check.done">{{ check.label }}</span>
+                  </li>
+                }
+              </ul>
+
+              <div class="flex flex-wrap gap-2">
+                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-kanban" routerLink="/work/board">
+                  เปิดบนบอร์ด
+                </a>
+                <a ejs-button cssClass="e-outline e-small" routerLink="/mygit">ซิงก์ MR</a>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </app-section-card>
+
   @if (myRisks().length > 0) {
     <app-section-card
       [title]="'ใบงานที่กำลังทำและสถานะความเสี่ยง (' + myRisks().length + ')'"

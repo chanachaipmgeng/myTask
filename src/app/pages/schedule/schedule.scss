@@ -1,0 +1,49 @@
+:host {
+  display: block;
+}
+
+.schedule-layout {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1100px) {
+  .schedule-layout {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}
+
+.schedule-layout__day {
+  position: sticky;
+  top: 0.75rem;
+}
+
+.schedule-day-calendar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.schedule-day-calendar ::ng-deep .e-calendar {
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.schedule-day-agenda {
+  display: grid;
+  gap: 0.75rem;
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.schedule-day-agenda__slipped {
+  border-inline-start: 3px solid #f59e0b;
+}

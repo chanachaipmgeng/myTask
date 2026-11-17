@@ -1,11 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
-import { ChipListModule } from '@syncfusion/ej2-angular-buttons';
+import { RouterLink } from '@angular/router';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { CalendarModule } from '@syncfusion/ej2-angular-calendars';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
+import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import {
   AgendaService,
+  EventClickArgs,
   EventRenderedArgs,
   NavigatingEventArgs,
+  PopupOpenEventArgs,
   ScheduleComponent,
   ScheduleModule,
   TimelineMonthService,
@@ -14,8 +18,14 @@ import {
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { Person, Ticket, Track } from '../../core/models';
+import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
 
 type TrackFilter = Track | 'All';
+type DayFilter = 'ALL' | 'SLIPPED';
 
 interface SchedulePerson {
   Id: string;
@@ -64,9 +74,22 @@ const COLORS = [
 @Component({
   selector: 'app-schedule',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ScheduleModule, DropDownListModule, ChipListModule, ToolbarModule],
+  imports: [
+    ScheduleModule,
+    CalendarModule,
+    DropDownListModule,
+    ButtonModule,
+    MessageModule,
+    RouterLink,
+    PageHeadComponent,
+    SectionCardComponent,
+    FormFieldComponent,
+    FilterChipsComponent,
+    StatusBadgeComponent,
+  ],
   providers: [TimelineViewsService, TimelineMonthService, AgendaService],
   templateUrl: './schedule.html',
+  styleUrl: './schedule.scss',
 })
 export class SchedulePage {
   private readonly scorecard = inject(ScorecardService);
@@ -82,9 +105,11 @@ export class SchedulePage {
     { text: 'R&D', value: 'RD' },
   ];
   protected readonly track = signal<TrackFilter>('All');
-  protected readonly initialDate = focusDate(
-    buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), 'All').events,
+  protected readonly dayFilter = signal<DayFilter>('ALL');
+  protected readonly selectedDay = signal<Date>(
+    focusDate(buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), 'All').events),
   );
+
   protected readonly boardModel = computed(() =>
     buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), this.track()),
   );
@@ -96,6 +121,34 @@ export class SchedulePage {
     allowDeleting: false,
   }));
 
+  protected readonly selectedDayLabel = computed(() => formatThaiDay(this.selectedDay()));
+
+  protected readonly dayAgendaAll = computed(() => {
+    const day = startOfDay(this.selectedDay());
+    return this.boardModel().events.filter((event) => coversDay(event, day));
+  });
+
+  protected readonly dayAgenda = computed(() => {
+    const list = this.dayAgendaAll();
+    return this.dayFilter() === 'SLIPPED' ? list.filter((item) => item.Slipped) : list;
+  });
+
+  protected readonly dayFilterOptions = computed<FilterChipOption[]>(() => {
+    const all = this.dayAgendaAll();
+    return [
+      { id: 'ALL', label: 'ทั้งหมด', count: all.length },
+      { id: 'SLIPPED', label: 'หลุดสัปดาห์', count: all.filter((item) => item.Slipped).length },
+    ];
+  });
+
+  private readonly peopleById = computed(() => {
+    const map = new Map<string, string>();
+    for (const person of this.boardModel().people) {
+      map.set(person.Id, person.Text);
+    }
+    return map;
+  });
+
   constructor() {
     effect(() => {
       const ready = this.scorecard.apiReady();
@@ -105,7 +158,9 @@ export class SchedulePage {
         return;
       }
       this.pinned = true;
-      board.selectedDate = focusDate(events);
+      const focused = focusDate(events);
+      this.selectedDay.set(focused);
+      board.selectedDate = focused;
     });
   }
 
@@ -116,9 +171,61 @@ export class SchedulePage {
     }
   }
 
+  protected setDayFilter(value: string): void {
+    this.dayFilter.set(value === 'SLIPPED' ? 'SLIPPED' : 'ALL');
+  }
+
+  protected onCalendarChange(event: { value?: Date | null }): void {
+    if (!event.value) {
+      return;
+    }
+    this.goToDay(startOfDay(event.value));
+  }
+
   protected onNavigating(args: NavigatingEventArgs): void {
-    if (args.action === 'date') {
+    if (args.action === 'date' && args.currentDate) {
       this.pinned = true;
+      // Schedule นำทางเองแล้ว — อัปเดตเฉพาะแผงวัน อย่าเซ็ต selectedDate ซ้ำ
+      this.selectedDay.set(startOfDay(args.currentDate));
+    }
+  }
+
+  protected onEventClick(args: EventClickArgs): void {
+    const data = args.event as ScheduleEvent | undefined;
+    const start = data?.StartTime instanceof Date ? data.StartTime : null;
+    if (start) {
+      this.goToDay(startOfDay(start));
+    }
+  }
+
+  private goToDay(day: Date): void {
+    this.pinned = true;
+    if (isSameDay(day, this.selectedDay())) {
+      return;
+    }
+    this.selectedDay.set(day);
+    const board = this.board();
+    if (!board) {
+      return;
+    }
+    board.selectedDate = day;
+    // Timeline Week + resources: หลังเปลี่ยนวันที่ ต้อง refreshEvents ไม่งั้นแถบงานว่าง
+    setTimeout(() => {
+      const live = this.board();
+      if (!live) {
+        return;
+      }
+      live.refreshEvents();
+      if (live.element.querySelectorAll('.e-appointment').length === 0) {
+        live.refresh();
+      }
+    }, 80);
+  }
+
+  protected onPopupOpen(args: PopupOpenEventArgs): void {
+    // อ่านอย่างเดียว — ปิด editor/QuickInfo ของ Schedule ใช้แผงรายวันแทน
+    if (args.type === 'Editor' || args.type === 'QuickInfo') {
+      args.cancel = true;
     }
   }
 
@@ -127,6 +234,10 @@ export class SchedulePage {
       return;
     }
     args.element.classList.add('ticket-slipped');
+  }
+
+  protected ownerLabel(ownerId: string): string {
+    return this.peopleById().get(ownerId) ?? ownerId;
   }
 }
 
@@ -208,12 +319,32 @@ function addDays(date: Date, days: number): Date {
   return next;
 }
 
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function coversDay(event: ScheduleEvent, day: Date): boolean {
+  return event.StartTime <= day && day < event.EndTime;
+}
+
+function formatThaiDay(date: Date): string {
+  return date.toLocaleDateString('th-TH', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 function focusDate(events: readonly { StartTime: Date; EndTime: Date }[]): Date {
   if (events.length === 0) {
-    return new Date();
+    return startOfDay(new Date());
   }
-  const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const todayStart = startOfDay(new Date());
   const coversToday = events.some((event) => event.StartTime <= todayStart && todayStart < event.EndTime);
   if (coversToday) {
     return todayStart;
@@ -237,7 +368,7 @@ function focusDate(events: readonly { StartTime: Date; EndTime: Date }[]): Date 
       best = item;
     }
   }
-  return best.date;
+  return startOfDay(best.date);
 }
 
 function colorFor(id: string): string {

@@ -1,91 +1,145 @@
-<section id="schedule-page" class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>ปฏิทินทีม</h2>
-      <p>
-        แต่ละคนเป็นแถว ใบงานเป็นช่วงจากวันเริ่มจริงถึงวันครบกำหนด ถ้าไม่มีวันครบกำหนดใช้วันส่งครั้งแรก
-        แถบสีส้มคือใบที่หลุดจากสัปดาห์ที่ commit ปฏิทินนี้อ่านอย่างเดียว ไม่เขียนวันกลับไปที่ใบงาน
-      </p>
+<section id="schedule-page" class="page schedule-page">
+  <app-page-head
+    title="ปฏิทินทีม"
+    description="แต่ละคนเป็นแถว ใบงานเป็นช่วงจากวันเริ่มจริงถึงวันครบกำหนด ถ้าไม่มีวันครบกำหนดใช้วันส่งครั้งแรก แถบสีส้มคือใบที่หลุดจากสัปดาห์ที่ commit ปฏิทินนี้อ่านอย่างเดียว ไม่เขียนวันกลับไปที่ใบงาน"
+  >
+    <div actions class="flex flex-wrap items-center gap-2">
+      <app-form-field label="สายคะแนน" variant="filter">
+        <ejs-dropdownlist
+          id="schedule-track"
+          [dataSource]="trackOptions"
+          [fields]="fields"
+          [value]="track()"
+          (change)="setTrack($event)"
+          width="180px"
+        ></ejs-dropdownlist>
+      </app-form-field>
     </div>
-    <label class="filter">
-      <span>สายคะแนน</span>
-      <ejs-dropdownlist
-        id="schedule-track"
-        [dataSource]="trackOptions"
-        [fields]="fields"
-        [value]="track()"
-        (change)="setTrack($event)"
-        width="180px"
-      ></ejs-dropdownlist>
-    </label>
-  </div>
+  </app-page-head>
 
-  <div class="section-card">
-    <ejs-toolbar cssClass="page-toolbar m-0" overflowMode="Scroll" width="100%">
-      <e-items>
-        <e-item [template]="summaryTemplate"></e-item>
-        <e-item type="Separator"></e-item>
-        <e-item [template]="legendTemplate"></e-item>
-      </e-items>
-    </ejs-toolbar>
-    <ng-template #summaryTemplate>
-      <div id="schedule-summary" class="flex flex-wrap items-center gap-2 text-sm">
-        <span class="e-badge e-badge-info">แสดง {{ boardModel().shown }} ใบ</span>
-        <span class="e-badge e-badge-warning">หลุดสัปดาห์ {{ boardModel().slipped }} ใบ</span>
-        <span class="e-badge e-badge-secondary">ไม่แสดง {{ boardModel().hidden }} ใบที่ไม่มีผู้รับหรือไม่มีวัน</span>
+  <div class="schedule-layout">
+    <app-section-card
+      class="schedule-layout__timeline"
+      title="ไทม์ไลน์ทีม"
+      subtitle="คลิกแถบงานเพื่อโฟกัสวันทางขวา · อ่านอย่างเดียว"
+    >
+      <div actions class="flex flex-wrap items-center gap-2">
+        <app-status-badge [label]="'แสดง ' + boardModel().shown + ' ใบ'" tone="info"></app-status-badge>
+        <app-status-badge [label]="'หลุดสัปดาห์ ' + boardModel().slipped + ' ใบ'" tone="warning"></app-status-badge>
+        <app-status-badge [label]="'ซ่อน ' + boardModel().hidden + ' ใบ'" tone="secondary"></app-status-badge>
+        <app-status-badge [label]="'โฟกัส ' + selectedDayLabel()" tone="primary"></app-status-badge>
       </div>
-    </ng-template>
-    <ng-template #legendTemplate>
-      <div id="schedule-legend" class="flex flex-wrap items-center gap-3 text-sm">
-        <span class="e-badge e-badge-primary">สีแถบตามคน · ตรงสัปดาห์</span>
-        <span class="inline-flex items-center gap-2"
-          ><span class="schedule-swatch is-slipped"></span>สีส้ม · หลุดจากสัปดาห์ที่ commit</span
+
+      <div class="flex flex-wrap items-center gap-3 text-sm mb-1">
+        <span class="e-badge e-badge-primary e-badge-pill">สีแถบตามคน · ตรงสัปดาห์</span>
+        <span class="inline-flex items-center gap-2">
+          <span class="schedule-swatch is-slipped"></span>
+          สีส้ม · หลุดจากสัปดาห์ที่ commit
+        </span>
+      </div>
+
+      @if (boardModel().shown === 0) {
+        <ejs-message
+          content="ไม่มีใบงานที่แสดงในปฏิทินตามสายที่เลือก (ต้องมีผู้รับและช่วงวันที่)"
+          severity="Info"
+          variant="Outlined"
+        ></ejs-message>
+      } @else {
+        <ejs-schedule
+          #board
+          id="team-schedule"
+          cssClass="team-schedule"
+          width="100%"
+          height="700px"
+          [readonly]="true"
+          currentView="TimelineMonth"
+          [firstDayOfWeek]="1"
+          [group]="group"
+          [eventSettings]="eventSettings()"
+          [rowAutoHeight]="true"
+          (navigating)="onNavigating($event)"
+          (eventClick)="onEventClick($event)"
+          (popupOpen)="onPopupOpen($event)"
+          (eventRendered)="onEventRendered($event)"
         >
-      </div>
-    </ng-template>
+          <e-views>
+            <e-view option="TimelineMonth"></e-view>
+            <e-view option="TimelineWeek"></e-view>
+            <e-view option="Agenda"></e-view>
+          </e-views>
+          <e-resources>
+            <e-resource
+              field="OwnerId"
+              title="คน"
+              name="People"
+              [dataSource]="boardModel().people"
+              textField="Text"
+              idField="Id"
+              colorField="Color"
+            ></e-resource>
+          </e-resources>
+          <ng-template #eventSettingsTooltipTemplate let-data>
+            <div class="schedule-tip">
+              <p class="schedule-tip-title">{{ data.Subject }}</p>
+              <p>{{ data.Description }}</p>
+            </div>
+          </ng-template>
+        </ejs-schedule>
+      }
+    </app-section-card>
 
-    @if (boardModel().shown === 0) {
-      <p class="fine">ไม่มีใบงานที่แสดงในปฏิทินตามสายที่เลือก (ต้องมีผู้รับและช่วงวันที่)</p>
-    } @else {
-      <ejs-schedule
-        #board
-        id="team-schedule"
-        cssClass="team-schedule"
-        width="100%"
-        height="700px"
-        [readonly]="true"
-        [selectedDate]="initialDate"
-        currentView="TimelineMonth"
-        [firstDayOfWeek]="1"
-        [group]="group"
-        [eventSettings]="eventSettings()"
-        [rowAutoHeight]="true"
-        (navigating)="onNavigating($event)"
-        (eventRendered)="onEventRendered($event)"
-      >
-        <e-views>
-          <e-view option="TimelineMonth"></e-view>
-          <e-view option="TimelineWeek"></e-view>
-          <e-view option="Agenda"></e-view>
-        </e-views>
-        <e-resources>
-          <e-resource
-            field="OwnerId"
-            title="คน"
-            name="People"
-            [dataSource]="boardModel().people"
-            textField="Text"
-            idField="Id"
-            colorField="Color"
-          ></e-resource>
-        </e-resources>
-        <ng-template #eventSettingsTooltipTemplate let-data>
-          <div class="schedule-tip">
-            <p class="schedule-tip-title">{{ data.Subject }}</p>
-            <p>{{ data.Description }}</p>
-          </div>
-        </ng-template>
-      </ejs-schedule>
-    }
+    <app-section-card
+      class="schedule-layout__day"
+      title="รายละเอียดวัน"
+      [subtitle]="selectedDayLabel()"
+      [badge]="dayAgendaAll().length + ' ใบ'"
+      badgeTone="info"
+    >
+      <div class="schedule-day-calendar">
+        <ejs-calendar
+          [value]="selectedDay()"
+          [firstDayOfWeek]="1"
+          (change)="onCalendarChange($event)"
+        ></ejs-calendar>
+      </div>
+
+      <app-filter-chips
+        [options]="dayFilterOptions()"
+        [value]="dayFilter()"
+        (valueChange)="setDayFilter($event)"
+      ></app-filter-chips>
+
+      @if (dayAgenda().length === 0) {
+        <ejs-message
+          content="ไม่มีใบงานในช่วงวันที่เลือกตามตัวกรองปัจจุบัน"
+          severity="Info"
+          variant="Outlined"
+        ></ejs-message>
+      } @else {
+        <div class="schedule-day-agenda">
+          @for (item of dayAgenda(); track item.Id) {
+            <div class="e-card" [class.schedule-day-agenda__slipped]="item.Slipped">
+              <div class="e-card-content flex flex-col gap-2 p-3.5">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div class="min-w-0">
+                    <p class="m-0 font-semibold text-sm leading-snug">{{ item.Subject }}</p>
+                    <p class="fine m-0 mt-1">{{ ownerLabel(item.OwnerId) }}</p>
+                  </div>
+                  <app-status-badge
+                    [label]="item.Slipped ? 'หลุดสัปดาห์' : 'ตรงสัปดาห์'"
+                    [tone]="item.Slipped ? 'warning' : 'success'"
+                  ></app-status-badge>
+                </div>
+                <p class="m-0 text-xs text-muted leading-relaxed">{{ item.Description }}</p>
+                <div class="flex flex-wrap gap-2">
+                  <a ejs-button cssClass="e-outline e-small" routerLink="/work/board">เปิดบอร์ด</a>
+                  <a ejs-button cssClass="e-flat e-small" routerLink="/tickets">ดูตารางคะแนน</a>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </app-section-card>
   </div>
 </section>

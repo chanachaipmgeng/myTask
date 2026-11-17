@@ -101,6 +101,42 @@ export class MyWorkspacePage {
     return this.analytics().deliveryRisks.filter((item) => item.assigneeId === id);
   });
 
+  /** Agenda งานเปิดเรียงตามกำหนดส่ง + checklist ส่งมอบถัดไป */
+  protected readonly dueAgenda = computed(() => {
+    const personId = this.activePerson()?.id ?? '';
+    return this.scorecard
+      .tickets()
+      .filter((ticket) => !ticket.closed && ticket.assigneeId === personId)
+      .map((ticket) => {
+        const dueKey = ticket.dueOn ?? ticket.firstDueOn ?? '';
+        const status = ticket.workflowStatus ?? 'In Progress';
+        return {
+          id: ticket.id,
+          title: ticket.title?.trim() || ticket.module,
+          status,
+          estimateMd: ticket.estimateMd,
+          dueKey,
+          dueLabel: dueKey || 'ไม่ระบุกำหนดส่ง',
+          slipped: ticket.weekOffset > 0,
+          weekOffset: ticket.weekOffset,
+          nextAction: nextDeliveryAction(status),
+          checklist: deliveryChecklist(status, !!ticket.mrLink?.trim()),
+        };
+      })
+      .sort((a, b) => {
+        if (!a.dueKey && !b.dueKey) {
+          return a.id.localeCompare(b.id);
+        }
+        if (!a.dueKey) {
+          return 1;
+        }
+        if (!b.dueKey) {
+          return -1;
+        }
+        return a.dueKey.localeCompare(b.dueKey) || a.id.localeCompare(b.id);
+      });
+  });
+
   protected readonly freeMdLabel = computed(() => {
     const person = this.activePerson();
     if (!person) return '0.0';
@@ -109,4 +145,39 @@ export class MyWorkspacePage {
     const free = Math.max(0, quota - openMd - 1);
     return free.toFixed(2);
   });
+}
+
+interface DeliveryCheckItem {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
+function nextDeliveryAction(status: string): string {
+  switch (status) {
+    case 'In Progress':
+    case 'Reopened':
+      return 'อัปเดตความคืบหน้า / แนบ MR';
+    case 'Code Review':
+      return 'เร่งรีวิวหรือตอบคอมเมนต์ MR';
+    case 'Ready for QA':
+      return 'รอเข้าคิว QA · ตรวจหลักฐาน DoD';
+    case 'In QA':
+      return 'ติดตามผลทดสอบ / แก้บั๊กที่ตีกลับ';
+    case 'Blocked':
+      return 'ระบุบล็อกเกอร์และแจ้งทีมที่เกี่ยวข้อง';
+    default:
+      return 'อัปเดตสถานะบนบอร์ด';
+  }
+}
+
+function deliveryChecklist(status: string, hasMr: boolean): DeliveryCheckItem[] {
+  const inReviewOrLater = ['Code Review', 'Ready for QA', 'In QA', 'Done'].includes(status);
+  const readyForQaOrLater = ['Ready for QA', 'In QA', 'Done'].includes(status);
+  return [
+    { id: 'progress', label: 'งานอยู่ในมือ / อัปเดตสถานะแล้ว', done: status !== 'To Do' && status !== 'Backlog' },
+    { id: 'mr', label: 'มีลิงก์ MR', done: hasMr || inReviewOrLater },
+    { id: 'review', label: 'ผ่าน / อยู่ขั้น Code Review ขึ้นไป', done: inReviewOrLater },
+    { id: 'qa', label: 'พร้อมหรืออยู่ขั้น QA', done: readyForQaOrLater },
+  ];
 }
