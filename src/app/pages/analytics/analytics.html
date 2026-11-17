@@ -32,62 +32,39 @@
   }
 
   <div class="kpi-grid-4">
-    <div class="e-card">
-      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
-        <div class="kpi-card-top">
-          <p class="kpi-note m-0">ความสมบูรณ์ข้อมูลซิงก์</p>
-          <span class="e-badge e-badge-success e-badge-pill">Sync Readiness</span>
-        </div>
-        <p class="kpi-value">{{ report().syncHygiene.readinessScore }}%</p>
-        <ejs-progressbar
-          id="sync-readiness-progress"
-          type="Linear"
-          [theme]="theme.sfTheme()"
-          width="100%"
-          height="12"
-          [minimum]="0"
-          [maximum]="100"
-          [value]="report().syncHygiene.readinessScore"
-          [trackThickness]="8"
-          [progressThickness]="8"
-          progressColor="#22c55e"
-          trackColor="#1e293b"
-        ></ejs-progressbar>
-      </div>
-    </div>
-
-    <div class="e-card">
-      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
-        <div class="kpi-card-top">
-          <p class="kpi-note m-0">ประเด็นข้อมูลไม่สอดคล้อง</p>
-          <span class="e-badge e-badge-warning e-badge-pill">Data Hygiene</span>
-        </div>
-        <p class="kpi-value">{{ report().syncHygiene.issueCount }} รายการ</p>
-        <p class="fine m-0">ใบงานสมบูรณ์ {{ report().syncHygiene.cleanTickets }} / {{ report().syncHygiene.totalTickets }} ใบ</p>
-      </div>
-    </div>
-
-    <div class="e-card">
-      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
-        <div class="kpi-card-top">
-          <p class="kpi-note m-0">ค่าผิดปกติทางสถิติ</p>
-          <span class="e-badge e-badge-info e-badge-pill">|Z-Score| &ge; 1.8</span>
-        </div>
-        <p class="kpi-value">{{ report().syncHygiene.outlierCount }} ใบ</p>
-        <p class="fine m-0">ใบที่ Actual/Estimate สูงผิดปกติเทียบกับขนาดเดียวกัน</p>
-      </div>
-    </div>
-
-    <div class="e-card">
-      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
-        <div class="kpi-card-top">
-          <p class="kpi-note m-0">ใบงานเปิดเสี่ยงหลุดแผนสูง</p>
-          <span class="e-badge e-badge-danger e-badge-pill">Risk Radar</span>
-        </div>
-        <p class="kpi-value">{{ highRiskCount() }} ใบ</p>
-        <p class="fine m-0">จากใบงานที่เปิดอยู่ทั้งหมด {{ report().deliveryRisks.length }} ใบ</p>
-      </div>
-    </div>
+    <app-kpi-stat
+      title="ความสมบูรณ์ข้อมูลซิงก์"
+      [value]="report().syncHygiene.readinessScore + '%'"
+      badge="Sync Readiness"
+      badgeTone="success"
+      accent="success"
+      [progress]="report().syncHygiene.readinessScore"
+      progressColor="#22c55e"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="ประเด็นข้อมูลไม่สอดคล้อง"
+      [value]="report().syncHygiene.issueCount + ' รายการ'"
+      badge="Data Hygiene"
+      badgeTone="warning"
+      accent="warning"
+      [hint]="'ใบงานสมบูรณ์ ' + report().syncHygiene.cleanTickets + ' / ' + report().syncHygiene.totalTickets + ' ใบ'"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="ค่าผิดปกติทางสถิติ"
+      [value]="report().syncHygiene.outlierCount + ' ใบ'"
+      badge="|Z-Score| ≥ 1.8"
+      badgeTone="info"
+      accent="info"
+      hint="ใบที่ Actual/Estimate สูงผิดปกติเทียบกับขนาดเดียวกัน"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="ใบงานเปิดเสี่ยงหลุดแผนสูง"
+      [value]="highRiskCount() + ' ใบ'"
+      badge="Risk Radar"
+      badgeTone="danger"
+      accent="danger"
+      [hint]="'จากใบงานที่เปิดอยู่ทั้งหมด ' + report().deliveryRisks.length + ' ใบ'"
+    ></app-kpi-stat>
   </div>
 
   <div class="section-card">

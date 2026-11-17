@@ -18,7 +18,6 @@ import {
 } from '@syncfusion/ej2-angular-charts';
 import { AggregateService, GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { map } from 'rxjs';
 import { ApiClient } from '../../core/api-client';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
@@ -26,6 +25,7 @@ import { mdCompositionTrend } from '../../core/dashboard-charts';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 
 interface OlsDataPoint {
   month: string;
@@ -41,7 +41,7 @@ interface OlsSummaryInfo {
 @Component({
   selector: 'app-person-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChartModule, AccumulationChartModule, ButtonModule, MessageModule, GridModule, ProgressBarModule],
+  imports: [ChartModule, AccumulationChartModule, ButtonModule, MessageModule, GridModule, KpiStatCardComponent],
   providers: [
     CategoryService,
     LineSeriesService,

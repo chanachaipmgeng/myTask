@@ -6,12 +6,12 @@ import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { KanbanModule } from '@syncfusion/ej2-angular-kanban';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { DragEventArgs, SwimlaneSettingsModel } from '@syncfusion/ej2-kanban';
 import { effectiveRole } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import {
   BUG_CAUSES,
   BugCause,
@@ -48,7 +48,6 @@ type SwimlaneMode = 'none' | 'assignee' | 'track';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     KanbanModule,
-    ProgressBarModule,
     DialogModule,
     DropDownListModule,
     MultiSelectModule,
@@ -57,6 +56,7 @@ type SwimlaneMode = 'none' | 'assignee' | 'track';
     ButtonModule,
     CheckBoxModule,
     MessageModule,
+    KpiStatCardComponent,
   ],
   templateUrl: './work-board.html',
 })
@@ -130,8 +130,6 @@ export class WorkBoard {
     { text: 'ยังไม่เลือก', value: '' },
     ...BUG_CAUSES.map((value) => ({ text: value, value })),
   ];
-  protected readonly barAnimation = { enable: true, duration: 500 };
-  protected readonly barLabel = { color: '#e8f4fb', fontFamily: 'Sarabun, sans-serif', size: '13px' };
 
   protected readonly selectedId = signal<string | null>(null);
   protected readonly blockMessage = signal('');

@@ -21,69 +21,37 @@
   </div>
 
   <div class="kpi-grid-4">
-    <div class="e-card">
-      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
-        <div class="kpi-card-top">
-          <p class="kpi-note m-0">ดัชนีพัฒนาของฉัน</p>
-          <span class="e-badge e-badge-info e-badge-pill">เป้า {{ view().target }}</span>
-        </div>
-        <p class="kpi-value">{{ view().indexLabel }}</p>
-        @if (view().index !== null) {
-          <ejs-progressbar
-            type="Linear"
-            [theme]="theme.sfTheme()"
-            width="100%"
-            height="12"
-            [minimum]="0"
-            [maximum]="100"
-            [value]="view().index!"
-            [trackThickness]="8"
-            [progressThickness]="8"
-            progressColor="#5f7ce3"
-            trackColor="#1e293b"
-          ></ejs-progressbar>
-        }
-      </div>
-    </div>
-
-    <div class="e-card">
-      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
-        <div class="kpi-card-top">
-          <p class="kpi-note m-0">งานที่กำลังถืออยู่ (WIP)</p>
-          <span
-            class="e-badge e-badge-pill"
-            [class.e-badge-success]="view().openCount <= 2"
-            [class.e-badge-warning]="view().openCount > 2"
-          >
-            เพดาน &le; 2 ใบ
-          </span>
-        </div>
-        <p class="kpi-value">{{ view().openCount }} ใบ</p>
-        <p class="fine m-0">เพดาน WIP มาตรฐานไม่เกิน 2 ใบพร้อมกัน</p>
-      </div>
-    </div>
-
-    <div class="e-card">
-      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
-        <div class="kpi-card-top">
-          <p class="kpi-note m-0">โควตาสัปดาห์คงเหลือ</p>
-          <span class="e-badge e-badge-secondary e-badge-pill">กันนอกแผน 1 MD</span>
-        </div>
-        <p class="kpi-value">{{ freeMdLabel() }} MD</p>
-        <p class="fine m-0">โควตาระดับ {{ view().level }}: {{ view().quota }} MD/สัปดาห์</p>
-      </div>
-    </div>
-
-    <div class="e-card">
-      <div class="e-card-content flex flex-col justify-between gap-2 p-4">
-        <div class="kpi-card-top">
-          <p class="kpi-note m-0">ใบงานที่ปิดแล้วสะสม</p>
-          <span class="e-badge e-badge-primary e-badge-pill">{{ view().trackLabel }}</span>
-        </div>
-        <p class="kpi-value">{{ view().closedCount }} ใบ</p>
-        <p class="fine m-0">คำนวณดัชนีจากใบงานที่ปิดแล้วทั้งหมดของฉัน</p>
-      </div>
-    </div>
+    <app-kpi-stat
+      title="ดัชนีพัฒนาของฉัน"
+      [value]="view().indexLabel"
+      [badge]="'เป้า ' + view().target"
+      badgeTone="info"
+      accent="info"
+      [progress]="view().index"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="งานที่กำลังถืออยู่ (WIP)"
+      [value]="view().openCount + ' ใบ'"
+      badge="เพดาน ≤ 2 ใบ"
+      [badgeTone]="view().openCount <= 2 ? 'success' : 'warning'"
+      [accent]="view().openCount <= 2 ? 'success' : 'warning'"
+      hint="เพดาน WIP มาตรฐานไม่เกิน 2 ใบพร้อมกัน"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="โควตาสัปดาห์คงเหลือ"
+      [value]="freeMdLabel() + ' MD'"
+      badge="กันนอกแผน 1 MD"
+      badgeTone="secondary"
+      [hint]="'โควตาระดับ ' + view().level + ': ' + view().quota + ' MD/สัปดาห์'"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="ใบงานที่ปิดแล้วสะสม"
+      [value]="view().closedCount + ' ใบ'"
+      [badge]="view().trackLabel"
+      badgeTone="primary"
+      accent="info"
+      hint="คำนวณดัชนีจากใบงานที่ปิดแล้วทั้งหมดของฉัน"
+    ></app-kpi-stat>
   </div>
 
   @if (myCoaching(); as coach) {

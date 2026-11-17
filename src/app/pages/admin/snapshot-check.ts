@@ -11,6 +11,7 @@ import {
 } from '@syncfusion/ej2-angular-grids';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
+import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
@@ -38,6 +39,7 @@ export class SnapshotCheckPage {
   protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
   private readonly notice = inject(ShellNotice);
+  private readonly api = inject(ApiClient, { optional: true });
 
   protected readonly periodKey = signal('2026-11');
   protected readonly isConfirmed = signal(false);
@@ -58,11 +60,25 @@ export class SnapshotCheckPage {
       return;
     }
     this.isFreezing.set(true);
-    this.notice.show(`บันทึกและแช่แข็งคะแนน KPI งวด ${this.periodKey()} สำเร็จ`);
-    setTimeout(() => {
-      this.isFreezing.set(false);
+    const periodKey = this.periodKey().trim();
+    const periodType = periodKey.includes('Q') ? 'quarter' : 'month';
+    try {
+      if (this.scorecard.usingApi() && this.api) {
+        const result = await this.api.captureKpiSnapshot(periodType, periodKey);
+        if (!result.ok) {
+          this.notice.show(result.message ?? 'แช่แข็ง snapshot ไม่สำเร็จ');
+          return;
+        }
+        this.notice.show(`บันทึกและแช่แข็งคะแนน KPI งวด ${periodKey} แล้ว ${result.count ?? 0} คน`);
+      } else {
+        this.notice.show(`โหมดจำลอง: แช่แข็งงวด ${periodKey} ในเครื่องเท่านั้น`);
+      }
       void this.router.navigate(['/team']);
-    }, 800);
+    } catch (err) {
+      this.notice.show(err instanceof Error ? err.message : 'แช่แข็ง snapshot ไม่สำเร็จ');
+    } finally {
+      this.isFreezing.set(false);
+    }
   }
 
   protected cancel(): void {

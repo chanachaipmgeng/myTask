@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { loadEnv, readConfig } from '../config';
 import { poolAsQueryable } from './db.service';
 import { migrate } from './migrate';
-import { seedIfEmpty } from './seed';
+import { seedEnterpriseIfEmpty, seedIfEmpty } from './seed';
 
 async function main(): Promise<void> {
   loadEnv();
@@ -11,6 +11,7 @@ async function main(): Promise<void> {
   try {
     await migrate(pool, (line) => console.log(line));
     await seedIfEmpty(poolAsQueryable(pool), (line) => console.log(line));
+    await seedEnterpriseIfEmpty(poolAsQueryable(pool), (line) => console.log(line));
   } finally {
     await pool.end();
   }

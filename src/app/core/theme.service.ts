@@ -8,6 +8,9 @@ export class ThemeService {
   readonly theme = this._theme.asReadonly();
   readonly isDark = computed(() => this._theme() === 'dark');
   readonly sfTheme = computed(() => (this._theme() === 'dark' ? 'Tailwind3Dark' : 'Tailwind3'));
+  /** สี track ของ ProgressBar ให้เข้ากับพื้นการ์ดทั้งโหมดสว่าง/มืด */
+  readonly progressTrack = computed(() => (this._theme() === 'dark' ? '#1e293b' : '#e2e8f0'));
+  readonly progressFill = computed(() => (this._theme() === 'dark' ? '#5f7ce3' : '#2e4fc8'));
 
   constructor() {
     this.initTheme();
@@ -41,17 +44,22 @@ export class ThemeService {
     } catch {}
 
     const body = document.body;
+    const root = document.documentElement;
     const linkEl = document.getElementById('sf-theme-link') as HTMLLinkElement | null;
 
     if (mode === 'dark') {
       body.classList.add('e-dark-mode');
       body.classList.remove('e-light-mode');
+      root.classList.add('e-dark-mode');
+      root.classList.remove('e-light-mode');
       if (linkEl) {
         linkEl.href = 'assets/themes/tailwind3-dark.css';
       }
     } else {
       body.classList.remove('e-dark-mode');
       body.classList.add('e-light-mode');
+      root.classList.remove('e-dark-mode');
+      root.classList.add('e-light-mode');
       if (linkEl) {
         linkEl.href = 'assets/themes/tailwind3.css';
       }

@@ -192,8 +192,16 @@ export function moveWorkflow(ticket: Ticket, target: WorkflowStatus, today: stri
   const reopenCount = isBounce(from, target) ? ticket.reopenCount + 1 : ticket.reopenCount;
   const actualStartOn =
     target === 'In Progress' && !ticket.actualStartOn ? today : (ticket.actualStartOn ?? null);
+  const enteringReadyForQa = target === 'Ready for QA' && from !== 'Ready for QA';
+  const readyForQaAt =
+    enteringReadyForQa && !ticket.readyForQaAt ? today : (ticket.readyForQaAt ?? null);
   const devDeliveredOn =
-    target === 'Ready for QA' && !ticket.devDeliveredOn ? today : (ticket.devDeliveredOn ?? null);
+    enteringReadyForQa && !ticket.devDeliveredOn ? today : (ticket.devDeliveredOn ?? null);
+  const deliveryAnchor = readyForQaAt ?? devDeliveredOn ?? null;
+  const weekOffset =
+    deliveryAnchor && ticket.firstDueOn
+      ? weekOffsetFromDelivery(ticket.firstDueOn, deliveryAnchor)
+      : ticket.weekOffset;
   const closing = target === 'Done' && !ticket.closed;
   return {
     ok: true,
@@ -202,11 +210,29 @@ export function moveWorkflow(ticket: Ticket, target: WorkflowStatus, today: stri
       workflowStatus: target,
       reopenCount,
       actualStartOn,
+      readyForQaAt,
       devDeliveredOn,
+      weekOffset,
       closed: closing ? true : ticket.closed,
       closedOn: closing ? today : ticket.closedOn,
     },
   };
+}
+
+function weekOffsetFromDelivery(firstDueOn: string, deliveredOn: string): number {
+  const due = Date.parse(firstDueOn);
+  const delivered = Date.parse(deliveredOn);
+  if (Number.isNaN(due) || Number.isNaN(delivered)) {
+    return 0;
+  }
+  const diffDays = Math.floor((delivered - due) / 86_400_000);
+  if (diffDays <= 0) {
+    return 0;
+  }
+  if (diffDays <= 7) {
+    return 1;
+  }
+  return 2;
 }
 
 export function editWorkflow(ticket: Ticket, fields: WorkflowFields): MoveResult {

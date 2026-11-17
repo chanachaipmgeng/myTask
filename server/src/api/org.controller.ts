@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Put, Req } from '@nestjs/common';
 import { AccessRole, Level, Track } from '../../../shared/domain/models';
-import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
+import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { getPerson, listDepartments, listPeople, listTeams, upsertPerson } from '../data/people.repo';
 import { Db } from '../db/db.service';
 
@@ -18,7 +18,6 @@ export interface AuditLogDto {
 export class OrgController {
   constructor(private readonly db: Db) {}
 
-  @Public()
   @Get()
   async org() {
     const [departments, teams, people] = await Promise.all([

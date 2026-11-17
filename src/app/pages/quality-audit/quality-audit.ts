@@ -12,6 +12,7 @@ import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { effectiveRole } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 
 @Component({
   selector: 'app-quality-audit',
@@ -19,6 +20,7 @@ import { ShellNotice } from '../../core/shell-notice';
   imports: [
     ButtonModule,
     GridModule,
+    KpiStatCardComponent,
     TabModule,
     MessageModule,
   ],
@@ -40,6 +42,20 @@ export class QualityAuditPage {
   protected readonly reopenEscapes = computed(() => this.report().reopenEscapes);
 
   protected rejectToDev(ticketId: string, devName: string): void {
+    const ticket = this.scorecard.tickets().find((item) => item.id === ticketId);
+    if (!ticket) {
+      this.notice.show(`ไม่พบใบงาน ${ticketId}`);
+      return;
+    }
+    const updated = {
+      ...ticket,
+      workflowStatus: 'In Progress' as const,
+      closed: false,
+      closedOn: null,
+      reopenCount: (ticket.reopenCount ?? 0) + 1,
+      note: `${ticket.note ? ticket.note + ' · ' : ''}ตีกลับจาก QA DoD Gate ไปยัง ${devName}`,
+    };
+    this.scorecard.replaceTicket(updated);
     this.notice.show(`ส่งการ์ด ${ticketId} ตีกลับไปยัง ${devName} เนื่องจากหลักฐาน DoD ไม่ครบถ้วน`);
   }
 }

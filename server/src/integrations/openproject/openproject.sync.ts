@@ -1,5 +1,6 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { CronJob } from 'cron';
 import { todayInBangkok } from '../../../../shared/domain/workflow';
 import { APP_CONFIG, AppConfig } from '../../config';
 import { Db } from '../../db/db.service';
@@ -31,16 +32,36 @@ export interface SyncResult {
 }
 
 @Injectable()
-export class OpenProjectSyncService {
+export class OpenProjectSyncService implements OnModuleInit {
   private readonly log = new Logger(OpenProjectSyncService.name);
   private running = false;
 
   constructor(
     private readonly db: Db,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly schedulerRegistry: SchedulerRegistry,
   ) {}
 
-  @Cron('*/15 * * * *')
+  onModuleInit(): void {
+    const expr = this.config.openproject.cron.trim();
+    if (!expr) {
+      this.log.log('OpenProject scheduled sync disabled (OPENPROJECT_SYNC_CRON empty)');
+      return;
+    }
+    try {
+      const job = new CronJob(expr, () => {
+        void this.scheduledSync();
+      });
+      this.schedulerRegistry.addCronJob('openproject-sync', job);
+      job.start();
+      this.log.log(`OpenProject scheduled sync registered: ${expr}`);
+    } catch (error) {
+      this.log.warn(
+        `Invalid OPENPROJECT_SYNC_CRON "${expr}": ${error instanceof Error ? error.message : error}`,
+      );
+    }
+  }
+
   async scheduledSync(): Promise<void> {
     if (!this.config.openproject.cron.trim()) {
       return;

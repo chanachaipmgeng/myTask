@@ -72,22 +72,38 @@ export class LoginPage {
     };
   });
 
+  protected readonly canUsePersonaSwitch = computed(
+    () => !this.usingApi() || this.scorecard.devLoginEnabled(),
+  );
+
   protected async loginAs(person: Person): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     this.message.set('');
     viewAsRole.set(null);
-    setViewer(person.id);
 
     if (this.usingApi()) {
+      if (!this.scorecard.devLoginEnabled()) {
+        this.error.set('โหมดสลับบัญชีปิดอยู่ — ใช้ GitLab OAuth SSO');
+        this.busy.set(false);
+        return;
+      }
       try {
         const result = await this.api.devLogin(person.id);
-        if (result.ok && result.person) {
-          await this.scorecard.reloadFromApi();
+        if (!result.ok || !result.person) {
+          this.error.set(result.message ?? 'เข้าสู่ระบบแบบพัฒนาไม่สำเร็จ');
+          this.busy.set(false);
+          return;
         }
-      } catch {
-        // Fallback to local viewer session when API dev login is disabled
+        setViewer(person.id);
+        await this.scorecard.reloadFromApi();
+      } catch (err) {
+        this.error.set(err instanceof Error ? err.message : 'เข้าสู่ระบบแบบพัฒนาไม่สำเร็จ');
+        this.busy.set(false);
+        return;
       }
+    } else {
+      setViewer(person.id);
     }
 
     const access = person.access ?? 'member';

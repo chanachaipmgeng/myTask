@@ -350,6 +350,12 @@ p {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+  align-items: stretch;
+}
+
+.kpi-grid-4 > .e-card,
+.kpi-grid-4 > app-kpi-stat {
+  min-width: 0;
 }
 
 @media (max-width: 1024px) {
@@ -381,6 +387,103 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+/* Syncfusion KPI Stat Card — ใช้ร่วมทุกหน้า */
+.e-card.kpi-stat {
+  height: 100%;
+  min-height: 132px;
+  overflow: hidden;
+  position: relative;
+}
+
+.e-card.kpi-stat::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 16px 0 0 16px;
+  background: linear-gradient(180deg, #4c68e5, #2e4fc8);
+  opacity: 0.9;
+}
+
+.e-card.kpi-stat[data-accent='success']::before {
+  background: linear-gradient(180deg, #34d399, #059669);
+}
+
+.e-card.kpi-stat[data-accent='warning']::before {
+  background: linear-gradient(180deg, #fbbf24, #d97706);
+}
+
+.e-card.kpi-stat[data-accent='danger']::before {
+  background: linear-gradient(180deg, #fb7185, #e11d48);
+}
+
+.e-card.kpi-stat[data-accent='info']::before {
+  background: linear-gradient(180deg, #38bdf8, #0284c7);
+}
+
+.kpi-stat__header {
+  display: flex !important;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px 0 !important;
+  border: 0 !important;
+}
+
+.kpi-stat__title {
+  margin: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+  line-height: 1.35 !important;
+  color: var(--muted) !important;
+}
+
+.kpi-stat__icon {
+  flex: none;
+  font-size: 16px;
+  line-height: 1;
+  color: #5f7ce3;
+  margin-top: 2px;
+}
+
+.e-card.kpi-stat[data-accent='success'] .kpi-stat__icon {
+  color: #34d399;
+}
+
+.e-card.kpi-stat[data-accent='warning'] .kpi-stat__icon {
+  color: #fbbf24;
+}
+
+.e-card.kpi-stat[data-accent='danger'] .kpi-stat__icon {
+  color: #fb7185;
+}
+
+.e-card.kpi-stat[data-accent='info'] .kpi-stat__icon {
+  color: #38bdf8;
+}
+
+.kpi-stat__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 10px 16px 16px !important;
+  min-height: 88px;
+}
+
+.kpi-stat__value {
+  margin: 0 !important;
+  line-height: 1.1 !important;
+}
+
+.kpi-stat__hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
 }
 
 .avatar-badge {
@@ -973,19 +1076,44 @@ body.e-light-mode {
   .e-grid {
     border: 1px solid #e5ecf5 !important;
     box-shadow: 0 8px 24px -8px rgba(100, 116, 139, 0.14);
+    background: #ffffff !important;
+    color: #142b50 !important;
 
     .e-toolbar {
       background: #f8fafc !important;
       border-bottom: 1px solid #e5ecf5 !important;
+      color: #142b50 !important;
     }
 
-    .e-gridheader {
+    .e-gridheader,
+    .e-headercell,
+    .e-headercelldiv,
+    .e-headertext {
       background: #f0f4fd !important;
       border-bottom: 1px solid #e5ecf5 !important;
+      color: #142b50 !important;
+    }
+
+    .e-rowcell,
+    .e-gridcontent,
+    .e-content {
+      background: #ffffff !important;
+      color: #142b50 !important;
+    }
+
+    .e-altrow .e-rowcell {
+      background: #f8fafc !important;
     }
 
     .e-row:hover .e-rowcell {
       background: rgba(46, 79, 200, 0.06) !important;
+    }
+
+    .e-pager,
+    .e-pagercontainer {
+      background: #ffffff !important;
+      color: #475569 !important;
+      border-top: 1px solid #e5ecf5 !important;
     }
 
     /* Light Theme Frozen Columns (Opaque background so scrolled movable columns do not bleed through) */
@@ -1033,12 +1161,42 @@ body.e-light-mode {
     border-bottom: 1px solid #e5ecf5;
   }
 
-  /* Shell Light Mode Overrides (Global scope) */
+  /* Shell Light Mode — MyHR Royal Blue sidebar (template) */
   #app-nav,
   #app-nav.e-sidebar,
-  .e-sidebar.e-left {
+  #app-nav.e-control,
+  .e-sidebar.e-left,
+  .e-sidebar.e-left.e-control {
     background: linear-gradient(180deg, #2243ac 0%, #4c68e5 100%) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+  }
+
+  #app-nav .e-sidebar-content,
+  #app-nav .e-dock,
+  #app-nav .e-treeview,
+  #app-nav .e-ul,
+  #app-nav .e-list-parent,
+  #app-nav .e-list-item,
+  #app-nav .e-text-content,
+  .side-nav-tree,
+  .side-nav-tree.e-treeview,
+  .side-nav-tree .e-ul,
+  .side-nav-tree .e-list-parent,
+  .side-nav-tree .e-list-item,
+  .side-nav-tree .e-text-content {
+    background: transparent !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+  }
+
+  /* fullrow โปร่งเฉพาะรายการที่ไม่ active — อย่าทับไฮไลต์ด้วย #id */
+  #app-nav .e-list-item:not(.e-active) > .e-fullrow,
+  .side-nav-tree .e-list-item:not(.e-active) > .e-fullrow {
+    background: transparent !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
   }
 
   .brand {
@@ -1069,41 +1227,46 @@ body.e-light-mode {
     color: rgba(255, 255, 255, 0.85) !important;
   }
 
-  .side-nav-tree {
-    .e-list-item.e-level-1 > .e-text-content .e-list-text {
-      color: rgba(255, 255, 255, 0.72) !important;
-    }
+  /* specificity สูงกว่า encapsulation ของ app.scss (_ngcontent + !important) */
+  #app-nav .side-nav-tree .e-list-item.e-level-1 > .e-text-content .e-list-text,
+  #app-nav .side-nav-tree .e-list-item.e-level-1 .e-list-text {
+    color: rgba(255, 255, 255, 0.72) !important;
+  }
 
-    .e-list-item.e-level-2 > .e-text-content .e-list-text {
-      color: rgba(255, 255, 255, 0.95) !important;
-    }
+  #app-nav .side-nav-tree .e-list-item.e-level-2 > .e-text-content .e-list-text,
+  #app-nav .side-nav-tree .e-list-item.e-level-2 .e-list-text {
+    color: #ffffff !important;
+  }
 
-    .e-list-item.e-level-2:hover > .e-fullrow {
-      background: rgba(255, 255, 255, 0.16) !important;
-    }
+  #app-nav .side-nav-tree .e-list-item.e-level-2:hover > .e-fullrow {
+    background: rgba(255, 255, 255, 0.16) !important;
+  }
 
-    .e-list-item.e-level-2:hover > .e-text-content .e-list-text {
-      color: #ffffff !important;
-    }
+  #app-nav .side-nav-tree .e-list-item.e-level-2:hover > .e-text-content .e-list-text {
+    color: #ffffff !important;
+  }
 
-    .e-list-item.e-level-2.e-active > .e-fullrow {
-      background: rgba(255, 255, 255, 0.25) !important;
-      border: 1px solid rgba(255, 255, 255, 0.45) !important;
-      box-shadow: inset 3px 0 0 #ffffff, 0 4px 14px rgba(0, 0, 0, 0.15) !important;
-    }
+  #app-nav .side-nav-tree .e-list-item.e-level-2.e-active > .e-fullrow,
+  #app-nav .side-nav-tree .e-list-item.e-level-2.e-hover > .e-fullrow {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: inset 3px 0 0 #ffffff, 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+  }
 
-    .e-list-item.e-level-2.e-active > .e-text-content .e-list-text {
-      color: #ffffff !important;
-      font-weight: 700;
-    }
+  #app-nav .side-nav-tree .e-list-item.e-level-2.e-active > .e-text-content .e-list-text {
+    color: #ffffff !important;
+    font-weight: 700;
+  }
 
-    .e-list-item.e-level-2 .e-list-icon {
-      color: #dce4fb !important;
-    }
+  #app-nav .side-nav-tree .e-list-item.e-level-2 .e-list-icon,
+  #app-nav .side-nav-tree .e-list-item .e-icons,
+  #app-nav .side-nav-tree .e-list-item .e-icon-collapsible,
+  #app-nav .side-nav-tree .e-list-item .e-icon-expandable {
+    color: #dce4fb !important;
+  }
 
-    .e-list-item.e-level-2.e-active .e-list-icon {
-      color: #ffffff !important;
-    }
+  #app-nav .side-nav-tree .e-list-item.e-level-2.e-active .e-list-icon {
+    color: #ffffff !important;
   }
 
   .shell-appbar {
@@ -1136,5 +1299,35 @@ body.e-light-mode {
     background: #f0f4fd !important;
     border: 1px solid rgba(46, 79, 200, 0.2) !important;
     color: #1e3690 !important;
+  }
+
+  .e-tab {
+    background: #ffffff !important;
+    border-color: #e5ecf5 !important;
+    color: #142b50 !important;
+
+    .e-tab-header,
+    .e-toolbar-items {
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e5ecf5 !important;
+    }
+
+    .e-toolbar-item .e-tab-text {
+      color: #475569 !important;
+    }
+
+    .e-toolbar-item.e-active .e-tab-text {
+      color: #2e4fc8 !important;
+    }
+
+    .e-content,
+    .e-item {
+      background: #ffffff !important;
+      color: #142b50 !important;
+    }
+  }
+
+  .e-message {
+    color: #142b50 !important;
   }
 }

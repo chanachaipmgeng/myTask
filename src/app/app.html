@@ -111,12 +111,12 @@
           ejs-button
           id="appbar-theme-toggle"
           cssClass="e-flat e-small appbar-chip-btn"
-          [iconCss]="theme.isDark() ? 'e-icons e-day' : 'e-icons e-contrast'"
+          [iconCss]="theme.isDark() ? 'e-icons e-contrast' : 'e-icons e-day'"
           type="button"
-          [title]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
+          [title]="theme.isDark() ? 'กำลังใช้โหมดมืด — คลิกเพื่อสลับเป็นโหมดสว่าง' : 'กำลังใช้โหมดสว่าง — คลิกเพื่อสลับเป็นโหมดมืด'"
           (click)="theme.toggleTheme()"
         >
-          {{ theme.isDark() ? 'โหมดสว่าง' : 'โหมดมืด' }}
+          {{ theme.isDark() ? 'โหมดมืด' : 'โหมดสว่าง' }}
         </button>
       </div>
     </ejs-appbar>

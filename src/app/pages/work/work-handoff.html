@@ -24,67 +24,35 @@
     </div>
   </div>
 
-  <!-- KPI Cards (4 คอลัมน์) -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <!-- Card 1 -->
-    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <div class="flex items-center justify-between text-muted text-xs font-semibold">
-        <span>ค้างรอ CODE REVIEW</span>
-        <span class="e-icons e-clock text-amber-500"></span>
-      </div>
-      <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().waitingReviewCount }}</span>
-        <span class="text-xs text-muted">ใบ</span>
-      </div>
-      <div class="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">
-        &gt; 24 ชม.: <strong>{{ kpis().waitingReviewOverdue }} ใบ</strong> (ต้องเร่งตรวจ)
-      </div>
-    </div>
-
-    <!-- Card 2 -->
-    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <div class="flex items-center justify-between text-muted text-xs font-semibold">
-        <span>ค้างรอเข้า QA</span>
-        <span class="e-icons e-check text-blue-500"></span>
-      </div>
-      <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().waitingQaCount }}</span>
-        <span class="text-xs text-muted">ใบ</span>
-      </div>
-      <div class="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">
-        เกิน SLA: <strong>{{ kpis().waitingQaOverdue }} ใบ</strong>
-      </div>
-    </div>
-
-    <!-- Card 3 -->
-    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <div class="flex items-center justify-between text-muted text-xs font-semibold">
-        <span>ติด BLOCKER (BLK / ENV)</span>
-        <span class="e-icons e-warning text-rose-500"></span>
-      </div>
-      <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().blockedCount }}</span>
-        <span class="text-xs text-muted">ใบ</span>
-      </div>
-      <div class="mt-2 text-xs font-medium text-purple-600 dark:text-purple-400">
-        รอ Infra ปลดล็อก: <strong>{{ kpis().blockedInfraCount }} ใบ</strong>
-      </div>
-    </div>
-
-    <!-- Card 4 -->
-    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <div class="flex items-center justify-between text-muted text-xs font-semibold">
-        <span>เวลาส่งต่อเฉลี่ย</span>
-        <span class="e-icons e-timeline-work-week text-emerald-500"></span>
-      </div>
-      <div class="mt-2 flex items-baseline gap-2">
-        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().avgHandoffHours }}</span>
-        <span class="text-xs text-muted">ชม.</span>
-      </div>
-      <div class="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-        เป้าหมาย &le; 6.0 ชม. (อยู่ในเกณฑ์)
-      </div>
-    </div>
+  <div class="kpi-grid-4">
+    <app-kpi-stat
+      title="ค้างรอ CODE REVIEW"
+      [value]="kpis().waitingReviewCount + ' ใบ'"
+      iconCss="e-clock"
+      accent="warning"
+      [hint]="'> 24 ชม.: ' + kpis().waitingReviewOverdue + ' ใบ (ต้องเร่งตรวจ)'"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="ค้างรอเข้า QA"
+      [value]="kpis().waitingQaCount + ' ใบ'"
+      iconCss="e-check"
+      accent="info"
+      [hint]="'เกิน SLA: ' + kpis().waitingQaOverdue + ' ใบ'"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="ติด BLOCKER (BLK / ENV)"
+      [value]="kpis().blockedCount + ' ใบ'"
+      iconCss="e-warning"
+      accent="danger"
+      [hint]="'รอ Infra ปลดล็อก: ' + kpis().blockedInfraCount + ' ใบ'"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="เวลาส่งต่อเฉลี่ย"
+      [value]="kpis().avgHandoffHours + ' ชม.'"
+      iconCss="e-timeline-work-week"
+      accent="success"
+      hint="เป้าหมาย ≤ 6.0 ชม. (อยู่ในเกณฑ์)"
+    ></app-kpi-stat>
   </div>
 
   <!-- ครึ่งบน: กราฟแท่งแนวนอน Stage Aging & Dependency Matrix -->

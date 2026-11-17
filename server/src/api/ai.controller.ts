@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Req } from '@nestjs/common';
-import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
+import { AuthedRequest } from '../auth/auth.guard';
 import { Db } from '../db/db.service';
 import { getPerson } from '../data/people.repo';
 import { listWorkItems } from '../data/work-items.repo';
@@ -8,7 +8,6 @@ import { listWorkItems } from '../data/work-items.repo';
 export class AiController {
   constructor(private readonly db: Db) {}
 
-  @Public()
   @Post('coach-summary')
   async coachSummary(
     @Body() body: { personId: string; prompt?: string },

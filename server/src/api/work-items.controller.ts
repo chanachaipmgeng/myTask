@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
-import { Ticket } from '../../../shared/domain/models';
+import { Ticket, TicketDueShift, TicketStageLog } from '../../../shared/domain/models';
 import { addWorkingDays, applyGanttDateEdit, detectActiveWipTickets } from '../../../shared/domain/work-views';
-import { todayInBangkok } from '../../../shared/domain/workflow';
+import { todayInBangkok, workflowStatusOf } from '../../../shared/domain/workflow';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { APP_CONFIG, AppConfig } from '../config';
+import { closeOpenStageLog, insertDueShift, insertStageLog } from '../data/multi-team.repo';
 import { getPerson } from '../data/people.repo';
 import {
   getWorkItem,
@@ -76,7 +77,29 @@ export class WorkItemsController {
       return { ok: false, message: 'not found' };
     }
     const saved = await upsertWorkItem(this.db, body.ticket);
-    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.replace', id, {});
+    const fromStatus = workflowStatusOf(existing);
+    const toStatus = workflowStatusOf(saved);
+    if (fromStatus !== toStatus) {
+      const nowIso = new Date().toISOString();
+      await closeOpenStageLog(this.db, id, nowIso);
+      const stageLog: TicketStageLog = {
+        id: `slog-${id}-${Date.now()}`,
+        ticketId: id,
+        fromStatus,
+        toStatus,
+        changedBy: req.authUser?.person.id ?? null,
+        blockingTeam: saved.blocker || saved.varianceCode === 'BLK' || saved.varianceCode === 'ENV' ? 'INFRA' : null,
+        blockerFlag: saved.varianceCode !== 'NONE' ? saved.varianceCode : saved.blocker ? 'BLK' : 'NONE',
+        enteredAt: nowIso,
+        exitedAt: null,
+        durationHours: null,
+      };
+      await insertStageLog(this.db, stageLog);
+    }
+    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.replace', id, {
+      fromStatus,
+      toStatus,
+    });
     return { ok: true, ticket: saved };
   }
 
@@ -225,6 +248,22 @@ export class WorkItemsController {
 
       const saved = await upsertWorkItem(this.db, pausedTicket);
       updatedTickets.push(saved);
+
+      if (ticket.firstDueOn && newFirstDueOn) {
+        const dueShift: TicketDueShift = {
+          id: `shift-${targetId}-${Date.now()}`,
+          ticketId: targetId,
+          previousFirstDueOn: ticket.firstDueOn,
+          newFirstDueOn,
+          shiftDays,
+          reason: `MD Mandate pause from ${mdTicket.id}`,
+          status: 'APPROVED',
+          approvedBy: req.authUser?.person.id ?? null,
+          approvedAt: nowIso,
+          createdAt: nowIso,
+        };
+        await insertDueShift(this.db, dueShift);
+      }
 
       if (ticket.opId && this.config.openproject.writeback) {
         await this.openProject.writebackDates(ticket.opId, { dueDate: newDueOn });

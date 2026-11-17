@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Put, Req } from '@nestjs/common';
-import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
+import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { listRubrics, updateRubric } from '../data/rubrics.repo';
 import { Db } from '../db/db.service';
 import { RubricDefinition } from '../../../shared/domain/rubrics';
@@ -8,7 +8,6 @@ import { RubricDefinition } from '../../../shared/domain/rubrics';
 export class RubricsController {
   constructor(private readonly db: Db) {}
 
-  @Public()
   @Get()
   async getRubrics() {
     const rubrics = await listRubrics(this.db);

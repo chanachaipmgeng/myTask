@@ -23,6 +23,7 @@ import { effectiveRole } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 
 @Component({
   selector: 'app-work-handoff',
@@ -32,6 +33,7 @@ import { ThemeService } from '../../core/theme.service';
     ChartModule,
     GridModule,
     DropDownListModule,
+    KpiStatCardComponent,
     MessageModule,
   ],
   providers: [
@@ -107,8 +109,11 @@ export class WorkHandoffPage {
   }
 
   protected pingTarget(ticketId: string, targetName: string): void {
-    void this.scorecard.pingHandoffRecipient(ticketId, targetName, `แจ้งเตือนการส่งต่องาน ${ticketId} เกิน SLA`);
-    this.notice.show(`ส่งการแจ้งเตือน Teams ไปยัง ${targetName} สำหรับใบงาน ${ticketId} สำเร็จ`);
+    void this.scorecard
+      .pingHandoffRecipient(ticketId, targetName, `แจ้งเตือนการส่งต่องาน ${ticketId} เกิน SLA`)
+      .then((result) => {
+        this.notice.show(result.message || `แจ้งเตือนใบงาน ${ticketId} ถึง ${targetName}`);
+      });
   }
 
   protected exportGrid(grid: GridComponent): void {

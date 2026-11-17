@@ -9,6 +9,14 @@ import {
   VarianceCode,
   WorkloadCategory,
 } from './models';
+import { RubricDefinition, SizingRubricParams, getRubricOrDefault } from './rubrics';
+
+export interface ScoreTicketOptions {
+  rubrics?: Record<string, RubricDefinition>;
+  blockedHours?: number;
+  qaWaitHours?: number;
+  hoursPerMd?: number;
+}
 
 export const FOCUS_HOURS_PER_MD = 6;
 export const INDEX_TARGET = 75;
@@ -138,7 +146,36 @@ function roundRatio(actualMd: number, estimateMd: number): number {
  * - L (2.0 MD) & XL (3.0+ MD): Tighter tolerance [0.85, 1.3] full points, [0.7, 1.6] partial points
  *   (larger tasks require stricter delivery discipline).
  */
-export function accuracyBand(ratio: number, size?: Size): { points: number; inBand: boolean } {
+export function accuracyBand(ratio: number, size?: Size, rubrics?: Record<string, RubricDefinition>): { points: number; inBand: boolean } {
+  if (rubrics) {
+    const rubricId =
+      size === 'XS'
+        ? 'RUB-SIZE-XS'
+        : size === 'S'
+          ? 'RUB-SIZE-S'
+          : size === 'L'
+            ? 'RUB-SIZE-L'
+            : size === 'XL'
+              ? 'RUB-SIZE-XL'
+              : 'RUB-SIZE-M';
+    try {
+      const rubric = getRubricOrDefault<SizingRubricParams>(rubricId, rubrics);
+      const minRatio = rubric.params.min_ratio ?? 0.8;
+      const maxRatio = rubric.params.max_ratio ?? 1.5;
+      if (ratio >= minRatio && ratio <= maxRatio) {
+        return { points: 20, inBand: true };
+      }
+      const partialMin = Math.max(0, minRatio - 0.3);
+      const partialMax = maxRatio + 0.5;
+      if ((ratio >= partialMin && ratio < minRatio) || (ratio > maxRatio && ratio <= partialMax)) {
+        return { points: 10, inBand: false };
+      }
+      return { points: 0, inBand: false };
+    } catch {
+      // Fall through to hardcoded bands when rubric id missing.
+    }
+  }
+
   if (size === 'XS' || size === 'S') {
     if (ratio >= 0.5 && ratio <= 2.0) {
       return { points: 20, inBand: true };
@@ -199,7 +236,7 @@ function reopenPoints(reopenCount: number): number {
   return 0;
 }
 
-export function scoreTicket(ticket: Ticket): TicketScore {
+export function scoreTicket(ticket: Ticket, options?: ScoreTicketOptions): TicketScore {
   const points = SIZE_POINTS[ticket.size];
   const category = workloadCategory(ticket.type);
   const exempt = isExemptVariance(ticket.varianceCode) || (ticket.pausedDays != null && ticket.pausedDays > 0 && ticket.isPaused === false);
@@ -226,15 +263,20 @@ export function scoreTicket(ticket: Ticket): TicketScore {
   let accuracy = 0;
   let accuracyInBand = false;
 
-  // If paused previously by MD Mandate, deduct compensated paused days from actual MD for fair accuracy
-  const effectiveActualMd = Math.max(0, ticket.actualMd - (ticket.pausedDays ?? 0));
+  // Net Actual MD: deduct paused days, blocked delays, and QA waiting time.
+  const effectiveActualMd = calculateNetActualMd(
+    ticket,
+    options?.blockedHours ?? 0,
+    options?.qaWaitHours ?? 0,
+    options?.hoursPerMd ?? FOCUS_HOURS_PER_MD,
+  );
 
   if (ticket.estimateMd <= 0) {
     accuracy = 0;
     ratio = null;
   } else {
     ratio = roundRatio(effectiveActualMd, ticket.estimateMd);
-    const band = accuracyBand(ratio, ticket.size);
+    const band = accuracyBand(ratio, ticket.size, options?.rubrics);
     accuracy = band.points;
     accuracyInBand = band.inBand;
   }
@@ -308,9 +350,35 @@ export function scorePerson(
   tickets: readonly Ticket[],
   weights: TrackWeights = DEFAULT_TRACK_WEIGHTS,
 ): PersonScore {
-  const own = tickets.filter((ticket) => ticket.assigneeId === person.id);
+  const assigned = tickets.filter((ticket) => ticket.assigneeId === person.id && !ticket.isSplitEffort);
+  const splitTickets = tickets.filter(
+    (ticket) =>
+      ticket.isSplitEffort &&
+      (ticket.allocations ?? []).some((alloc) => alloc.userId === person.id),
+  );
+  const own = [...assigned, ...splitTickets.filter((t) => !assigned.some((a) => a.id === t.id))];
   const closed = closedTickets(own);
-  const closedMd = closed.reduce((sum, ticket) => sum + ticket.actualMd, 0);
+  const splitClosedMd = splitTickets
+    .filter((t) => t.closed)
+    .reduce((sum, ticket) => {
+      const alloc = (ticket.allocations ?? []).find((a) => a.userId === person.id);
+      return sum + (alloc?.actualMd ?? 0);
+    }, 0);
+  const assignedClosedMd = closed
+    .filter((t) => !t.isSplitEffort)
+    .reduce((sum, ticket) => sum + ticket.actualMd, 0);
+  const peerReviewMd = tickets
+    .filter(
+      (ticket) =>
+        ticket.reviewerId === person.id ||
+        (ticket.reviewers ?? []).includes(person.id) ||
+        (ticket.approvedBy ?? []).includes(person.id),
+    )
+    .reduce((sum, ticket) => sum + (ticket.peerReviewCreditMd ?? calculateReviewerCredit(ticket)), 0);
+  const qaCreditMd = tickets
+    .filter((ticket) => ticket.qaAssigneeId === person.id)
+    .reduce((sum, ticket) => sum + calculateQaCredit(ticket), 0);
+  const closedMd = roundMd(assignedClosedMd + splitClosedMd + peerReviewMd + qaCreditMd);
   const plannedMd = person.plannedMd;
   const planRawPct = plannedMd === 0 ? 0 : (closedMd / plannedMd) * 100;
   const planIndexPct = Math.min(planRawPct, 100);

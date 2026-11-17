@@ -48,10 +48,15 @@ export interface BootstrapResponse {
   settings: BootstrapSettings;
   departments: Department[];
   teams: Team[];
+  disputes?: import('./models').TicketDispute[];
+  leaves?: import('./models').EmployeeLeave[];
+  stageLogs?: import('./models').TicketStageLog[];
+  allocations?: import('./models').TicketAllocation[];
   auth: {
     authenticated: boolean;
     person: Person | null;
     access: AccessRole | null;
+    devLoginEnabled?: boolean;
   };
 }
 
@@ -290,7 +295,7 @@ export class ApiClient {
     return api('/api/auth/me');
   }
 
-  devLogin(personId: string): Promise<{ ok: boolean; person?: Person; access?: AccessRole }> {
+  devLogin(personId: string): Promise<{ ok: boolean; person?: Person; access?: AccessRole; message?: string }> {
     return api('/api/auth/dev', { method: 'POST', body: JSON.stringify({ personId }) });
   }
 
@@ -376,6 +381,24 @@ export class ApiClient {
 
   getPreflightCheck(): Promise<any> {
     return api('/api/v2/snapshots/preflight-check');
+  }
+
+  getLeaves(): Promise<{ ok: boolean; leaves: import('./models').EmployeeLeave[] }> {
+    return api('/api/v2/leaves');
+  }
+
+  createLeave(body: Omit<import('./models').EmployeeLeave, 'id'> & { id?: string }): Promise<{
+    ok: boolean;
+    leave?: import('./models').EmployeeLeave;
+  }> {
+    return api('/api/v2/leaves', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  deleteLeave(id: string): Promise<{ ok: boolean }> {
+    return api(`/api/v2/leaves/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 
   detectWip(assigneeId: string, excludeTicketId?: string): Promise<{ ok: boolean; activeTickets: Ticket[] }> {

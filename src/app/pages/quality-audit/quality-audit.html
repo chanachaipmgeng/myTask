@@ -17,63 +17,39 @@
     </div>
   </div>
 
-  <!-- KPI Cards (4 คอลัมน์) -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <!-- Card 1 -->
-    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <div class="flex items-center justify-between text-muted text-xs font-semibold">
-        <span>FIRST-TIME RIGHT %</span>
-        <span class="e-icons e-check-box text-emerald-500"></span>
-      </div>
-      <div class="mt-2 flex items-baseline gap-1">
-        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().firstTimeRightPct }}%</span>
-      </div>
-      <div class="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-        เป้าหมาย &ge; 85.0% (ผ่านเกณฑ์)
-      </div>
-    </div>
-
-    <!-- Card 2 -->
-    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <div class="flex items-center justify-between text-muted text-xs font-semibold">
-        <span>REOPEN RATE (QA ตีกลับ)</span>
-        <span class="e-icons e-repeat text-amber-500"></span>
-      </div>
-      <div class="mt-2 flex items-baseline gap-1">
-        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().reopenRatePct }}%</span>
-      </div>
-      <div class="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">
-        ตีกลับ {{ kpis().reopenCount }} จาก {{ kpis().totalClosed }} ใบ
-      </div>
-    </div>
-
-    <!-- Card 3 -->
-    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <div class="flex items-center justify-between text-muted text-xs font-semibold">
-        <span>BUG ESCAPE (หลุด PROD)</span>
-        <span class="e-icons e-warning text-rose-500"></span>
-      </div>
-      <div class="mt-2 flex items-baseline gap-1">
-        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().bugEscapePct }}%</span>
-      </div>
-      <div class="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">
-        ตรวจพบ {{ kpis().bugEscapeCount }} ใบ (เกณฑ์ &le; 5.0%)
-      </div>
-    </div>
-
-    <!-- Card 4 -->
-    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <div class="flex items-center justify-between text-muted text-xs font-semibold">
-        <span>DOD EVIDENCE ครบถ้วน</span>
-        <span class="e-icons e-file-protect text-blue-500"></span>
-      </div>
-      <div class="mt-2 flex items-baseline gap-1">
-        <span class="text-3xl font-extrabold text-slate-800 dark:text-slate-100">{{ kpis().dodEvidencePct }}%</span>
-      </div>
-      <div class="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400">
-        ขาดหลักฐาน {{ kpis().dodMissingCount }} ใบ
-      </div>
-    </div>
+  <div class="kpi-grid-4">
+    <app-kpi-stat
+      title="FIRST-TIME RIGHT %"
+      [value]="kpis().firstTimeRightPct + '%'"
+      iconCss="e-check-box"
+      accent="success"
+      hint="เป้าหมาย ≥ 85.0% (ผ่านเกณฑ์)"
+      [progress]="kpis().firstTimeRightPct"
+      progressColor="#22c55e"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="REOPEN RATE (QA ตีกลับ)"
+      [value]="kpis().reopenRatePct + '%'"
+      iconCss="e-repeat"
+      accent="warning"
+      [hint]="'ตีกลับ ' + kpis().reopenCount + ' จาก ' + kpis().totalClosed + ' ใบ'"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="BUG ESCAPE (หลุด PROD)"
+      [value]="kpis().bugEscapePct + '%'"
+      iconCss="e-warning"
+      accent="danger"
+      [hint]="'ตรวจพบ ' + kpis().bugEscapeCount + ' ใบ (เกณฑ์ ≤ 5.0%)'"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="DOD EVIDENCE ครบถ้วน"
+      [value]="kpis().dodEvidencePct + '%'"
+      iconCss="e-file-protect"
+      accent="info"
+      [hint]="'ขาดหลักฐาน ' + kpis().dodMissingCount + ' ใบ'"
+      [progress]="kpis().dodEvidencePct"
+      progressColor="#3b82f6"
+    ></app-kpi-stat>
   </div>
 
   <!-- แถบสลับมุมมอง (ejs-tab) -->

@@ -5,7 +5,7 @@ import { AppModule } from './app.module';
 import { loadEnv, readConfig } from './config';
 import { Db } from './db/db.service';
 import { migrate } from './db/migrate';
-import { seedIfEmpty } from './db/seed';
+import { seedEnterpriseIfEmpty, seedIfEmpty } from './db/seed';
 import { poolAsQueryable } from './db/db.service';
 
 async function bootstrap(): Promise<void> {
@@ -27,6 +27,7 @@ async function bootstrap(): Promise<void> {
   const db = app.get(Db);
   await migrate(db.pool, (line) => console.log(line));
   await seedIfEmpty(poolAsQueryable(db.pool), (line) => console.log(line));
+  await seedEnterpriseIfEmpty(poolAsQueryable(db.pool), (line) => console.log(line));
 
   await app.listen(config.port, config.host);
   console.log(`manday server listening on http://${config.host}:${config.port}`);

@@ -242,43 +242,8 @@ export function computeHandoffSlaSummary(
     avgHandoffHours: handoffCount > 0 ? roundMd(totalHandoffHours / handoffCount) : 4.2,
   };
 
-  const stageAging: StageAgingTrackPoint[] = [
-    { track: 'FE', inProgressHours: 18.5, reviewHours: 6.2, qaHours: 8.0, blockedHours: 2.5 },
-    { track: 'BE', inProgressHours: 22.0, reviewHours: 8.5, qaHours: 10.2, blockedHours: 4.0 },
-    { track: 'QA', inProgressHours: 8.0, reviewHours: 2.0, qaHours: 14.5, blockedHours: 1.0 },
-    { track: 'Implement', inProgressHours: 24.0, reviewHours: 9.0, qaHours: 11.0, blockedHours: 5.5 },
-    { track: 'Infra', inProgressHours: 12.0, reviewHours: 3.5, qaHours: 4.0, blockedHours: 1.5 },
-  ];
-
-  const blockerMatrix: BlockerMatrixItem[] = [
-    {
-      id: 'fe-wait-be',
-      description: 'FE รอ API จาก BE',
-      waitingTeam: 'FE',
-      blockingTeam: 'BE',
-      ticketCount: 2,
-      ticketIds: ['IMP-108', 'RD-FE-02'],
-      canPing: true,
-    },
-    {
-      id: 'dev-wait-infra',
-      description: 'Dev รอแก้ ENV จาก Infra',
-      waitingTeam: 'Dev',
-      blockingTeam: 'Infra',
-      ticketCount: 2,
-      ticketIds: ['RD-AI-04', 'IMP-BLK-01'],
-      canPing: true,
-    },
-    {
-      id: 'qa-wait-dev',
-      description: 'QA รอ Dev แก้ Bug Reopened',
-      waitingTeam: 'QA',
-      blockingTeam: 'Implement',
-      ticketCount: 1,
-      ticketIds: ['IMP-102'],
-      canPing: true,
-    },
-  ];
+  const stageAging = deriveStageAging(tickets, stageLogs, people);
+  const blockerMatrix = deriveBlockerMatrix(tickets, people);
 
   return {
     kpis,
@@ -286,6 +251,111 @@ export function computeHandoffSlaSummary(
     blockerMatrix,
     tickets: ticketRows.sort((a, b) => (b.isOverSla ? 1 : 0) - (a.isOverSla ? 1 : 0) || b.hoursSpent - a.hoursSpent),
   };
+}
+
+function deriveStageAging(
+  tickets: readonly Ticket[],
+  stageLogs: readonly TicketStageLog[],
+  people: readonly Person[],
+): StageAgingTrackPoint[] {
+  const personMap = new Map(people.map((p) => [p.id, p]));
+  const byTrack = new Map<string, StageAgingTrackPoint>();
+
+  const ensure = (track: string): StageAgingTrackPoint => {
+    const existing = byTrack.get(track);
+    if (existing) return existing;
+    const created: StageAgingTrackPoint = {
+      track,
+      inProgressHours: 0,
+      reviewHours: 0,
+      qaHours: 0,
+      blockedHours: 0,
+    };
+    byTrack.set(track, created);
+    return created;
+  };
+
+  for (const log of stageLogs) {
+    const ticket = tickets.find((t) => t.id === log.ticketId);
+    const owner = ticket ? personMap.get(ticket.assigneeId) : undefined;
+    const trackLabel = trackDisplayLabel(owner?.track ?? ticket?.track ?? 'Implement');
+    const bucket = ensure(trackLabel);
+    const hours = log.durationHours ?? 0;
+    const status = log.toStatus;
+    if (log.blockerFlag && log.blockerFlag !== 'NONE') {
+      bucket.blockedHours = roundMd(bucket.blockedHours + hours);
+    } else if (status === 'Code Review') {
+      bucket.reviewHours = roundMd(bucket.reviewHours + hours);
+    } else if (status === 'Ready for QA' || status === 'In QA') {
+      bucket.qaHours = roundMd(bucket.qaHours + hours);
+    } else {
+      bucket.inProgressHours = roundMd(bucket.inProgressHours + hours);
+    }
+  }
+
+  for (const row of tickets.filter((t) => !t.closed)) {
+    const owner = personMap.get(row.assigneeId);
+    const trackLabel = trackDisplayLabel(owner?.track ?? row.track);
+    const bucket = ensure(trackLabel);
+    const status = workflowStatusOf(row);
+    const hours = Math.max(1, (row.actualMd || row.estimateMd || 1) * 6);
+    if (row.blocker || row.varianceCode === 'BLK' || row.varianceCode === 'ENV') {
+      bucket.blockedHours = roundMd(bucket.blockedHours + hours * 0.3);
+    }
+    if (status === 'Code Review') {
+      bucket.reviewHours = roundMd(bucket.reviewHours + hours);
+    } else if (status === 'Ready for QA' || status === 'In QA') {
+      bucket.qaHours = roundMd(bucket.qaHours + hours);
+    } else {
+      bucket.inProgressHours = roundMd(bucket.inProgressHours + hours);
+    }
+  }
+
+  return [...byTrack.values()].sort((a, b) => a.track.localeCompare(b.track, 'th'));
+}
+
+function deriveBlockerMatrix(tickets: readonly Ticket[], people: readonly Person[]): BlockerMatrixItem[] {
+  const personMap = new Map(people.map((p) => [p.id, p]));
+  const groups = new Map<string, BlockerMatrixItem>();
+  const isBlockerTicket = (ticket: Ticket) =>
+    ticket.blocker || ticket.varianceCode === 'BLK' || ticket.varianceCode === 'ENV' || ticket.reopenCount > 0;
+  const openBlocked = tickets.filter((ticket) => !ticket.closed && isBlockerTicket(ticket));
+  const source = openBlocked.length > 0 ? openBlocked : tickets.filter(isBlockerTicket);
+
+  for (const ticket of source) {
+    const isBlocked = ticket.blocker || ticket.varianceCode === 'BLK' || ticket.varianceCode === 'ENV';
+    if (!isBlocked && ticket.reopenCount <= 0) continue;
+
+    const owner = personMap.get(ticket.assigneeId);
+    const waitingTeam = trackDisplayLabel(owner?.track ?? ticket.track);
+    const blockingTeam =
+      ticket.varianceCode === 'ENV' ? 'INFRA' : ticket.varianceCode === 'BLK' ? 'Implement' : ticket.reopenCount > 0 ? 'Implement' : 'QA';
+    const key = `${waitingTeam}->${blockingTeam}-${ticket.varianceCode}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.ticketCount += 1;
+      existing.ticketIds.push(ticket.id);
+      continue;
+    }
+    groups.set(key, {
+      id: key.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      description:
+        ticket.varianceCode === 'ENV'
+          ? `${waitingTeam} รอแก้ ENV จาก ${blockingTeam}`
+          : ticket.varianceCode === 'BLK'
+            ? `${waitingTeam} ติดบล็อกจาก ${blockingTeam}`
+            : ticket.reopenCount > 0
+              ? `QA รอ Dev แก้ Bug Reopened`
+              : `${waitingTeam} รอ ${blockingTeam}`,
+      waitingTeam,
+      blockingTeam,
+      ticketCount: 1,
+      ticketIds: [ticket.id],
+      canPing: true,
+    });
+  }
+
+  return [...groups.values()].sort((a, b) => b.ticketCount - a.ticketCount);
 }
 
 /** Computes Quality & Defect Audit (Screen 22) */

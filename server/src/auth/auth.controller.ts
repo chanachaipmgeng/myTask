@@ -1,24 +1,29 @@
-import { Body, Controller, Get, Post, Query, Res, Req } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Post, Query, Res, Req } from '@nestjs/common';
 import { Response } from 'express';
+import { APP_CONFIG, AppConfig } from '../config';
 import { randomToken } from '../common/crypto';
 import { AuthService } from './auth.service';
 import { AuthedRequest, Public, readSession } from './auth.guard';
 
 @Controller('api/auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
 
   @Public()
   @Get('me')
   async me(@Req() req: AuthedRequest) {
     const user = req.authUser ?? null;
     if (!user) {
-      return { authenticated: false, person: null };
+      return { authenticated: false, person: null, devLoginEnabled: this.config.devLogin };
     }
     return {
       authenticated: true,
       person: user.person,
       access: user.access,
+      devLoginEnabled: this.config.devLogin,
     };
   }
 

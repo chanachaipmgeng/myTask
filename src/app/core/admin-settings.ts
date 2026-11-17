@@ -76,7 +76,8 @@ export const actualRole = computed<AccessRole>(() => {
   if (access) {
     return accessOverrides()[currentSession()?.person.id ?? ''] ?? access;
   }
-  return currentViewer().access;
+  // Offline / mock only: fall back to local viewer persona.
+  return currentViewer().access ?? 'member';
 });
 
 export const effectiveRole = computed<AccessRole>(() => {

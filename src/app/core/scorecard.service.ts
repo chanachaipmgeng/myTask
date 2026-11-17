@@ -225,7 +225,12 @@ export class ScorecardService {
     );
   });
 
-  readonly workPlan = computed(() => planNewWork(this.roster(), this.ticketsState(), weeklyQuotas()));
+  readonly workPlan = computed(() =>
+    planNewWork(this.roster(), this.ticketsState(), weeklyQuotas(), this.leavesState()),
+  );
+
+  private readonly devLoginEnabledState = signal(true);
+  readonly devLoginEnabled = this.devLoginEnabledState.asReadonly();
 
   private readonly api = optionalApiClient();
 
@@ -254,6 +259,11 @@ export class ScorecardService {
       }
       this.peopleState.set(data.people.map((person) => ({ ...person })));
       this.ticketsState.set(data.tickets.map((ticket) => ({ ...ticket })));
+      this.disputesState.set((data.disputes ?? []).map((item) => ({ ...item })));
+      this.leavesState.set((data.leaves ?? []).map((item) => ({ ...item })));
+      this.stageLogsState.set((data.stageLogs ?? []).map((item) => ({ ...item })));
+      this.allocationsState.set((data.allocations ?? []).map((item) => ({ ...item })));
+      this.devLoginEnabledState.set(data.auth.devLoginEnabled ?? false);
       applyRemoteSettings(data.settings);
       if (data.auth.authenticated && data.auth.person) {
         setSessionUser(data.auth.person, data.auth.access ?? data.auth.person.access ?? 'member');
@@ -662,9 +672,16 @@ export class ScorecardService {
   async resolveDispute(id: string, status: 'APPROVED' | 'REJECTED', comment?: string): Promise<boolean> {
     if (this.usingApi() && this.api) {
       try {
-        await this.api.resolveDispute(id, status, comment);
+        const res = await this.api.resolveDispute(id, status, comment);
+        if (res?.dispute) {
+          this.disputesState.update((list) => list.map((d) => (d.id === id ? res.dispute : d)));
+        }
+        if (res?.ticket) {
+          this.replaceLocal(res.ticket);
+        }
+        return Boolean(res?.ok ?? true);
       } catch {
-        // Fallback
+        // Fallback to local state below
       }
     }
 
@@ -681,22 +698,20 @@ export class ScorecardService {
       ),
     );
 
-    // If approved, update ticket variance flag in state
     if (status === 'APPROVED') {
       const dispute = this.disputesState().find((d) => d.id === id);
       if (dispute) {
-        this.ticketsState.update((tickets) =>
-          tickets.map((t) =>
-            t.id === dispute.ticketId
-              ? {
-                  ...t,
-                  varianceCode: dispute.requestedFlag,
-                  reopenCount: dispute.requestedReopenOverride ?? (dispute.requestedFlag === 'REQ' || dispute.requestedFlag === 'BLK' ? 0 : t.reopenCount),
-                  blocker: dispute.requestedFlag === 'BLK' ? false : t.blocker,
-                }
-              : t,
-          ),
-        );
+        const ticket = this.ticketsState().find((t) => t.id === dispute.ticketId);
+        if (ticket) {
+          this.replaceTicket({
+            ...ticket,
+            varianceCode: dispute.requestedFlag,
+            reopenCount:
+              dispute.requestedReopenOverride ??
+              (dispute.requestedFlag === 'REQ' || dispute.requestedFlag === 'BLK' ? 0 : ticket.reopenCount),
+            blocker: dispute.requestedFlag === 'BLK' ? false : ticket.blocker,
+          });
+        }
       }
     }
 
@@ -709,10 +724,20 @@ export class ScorecardService {
       id: `leave-${Date.now()}`,
     };
     this.leavesState.update((list) => [...list, item]);
+    if (this.usingApi() && this.api) {
+      void this.api.createLeave(item).then((res) => {
+        if (res?.leave) {
+          this.leavesState.update((list) => list.map((row) => (row.id === item.id ? res.leave! : row)));
+        }
+      });
+    }
   }
 
   removeEmployeeLeave(id: string): void {
     this.leavesState.update((list) => list.filter((item) => item.id !== id));
+    if (this.usingApi() && this.api) {
+      void this.api.deleteLeave(id);
+    }
   }
 
   updateTicketAllocations(ticketId: string, allocations: TicketAllocation[]): void {
@@ -824,15 +849,24 @@ export class ScorecardService {
     return true;
   }
 
-  async pingHandoffRecipient(ticketId: string, target?: string, message?: string): Promise<boolean> {
+  async pingHandoffRecipient(ticketId: string, target?: string, message?: string): Promise<{
+    ok: boolean;
+    message: string;
+  }> {
     if (this.usingApi() && this.api) {
       try {
-        await this.api.pingHandoff(ticketId, target, message);
-        return true;
-      } catch {
-        // Fallback
+        const res = await this.api.pingHandoff(ticketId, target, message);
+        return {
+          ok: Boolean(res?.ok ?? true),
+          message: res?.message ?? `แจ้งเตือนใบงาน ${ticketId} แล้ว`,
+        };
+      } catch (err) {
+        return {
+          ok: false,
+          message: err instanceof Error ? err.message : 'ส่ง Ping ไม่สำเร็จ',
+        };
       }
     }
-    return true;
+    return { ok: true, message: `จำลอง Ping ใบงาน ${ticketId} ถึง ${target ?? 'ทีมที่เกี่ยวข้อง'}` };
   }
 }

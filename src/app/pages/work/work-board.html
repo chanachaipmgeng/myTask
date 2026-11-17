@@ -19,12 +19,16 @@
     </label>
   </div>
 
-  <div class="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
-    <div class="e-card">
-      <div class="e-card-content p-4">
-        <p class="kpi-note">Velocity (Done)</p>
+  <div class="kpi-grid-4">
+    <div class="e-card kpi-stat">
+      <div class="e-card-header kpi-stat__header">
+        <div class="e-card-header-caption">
+          <div class="e-card-header-title kpi-stat__title">Velocity (Done)</div>
+        </div>
+      </div>
+      <div class="e-card-content kpi-stat__body">
         @if (report().velocity.length === 0) {
-          <p class="fine">ยังไม่มีใบ Done</p>
+          <p class="kpi-stat__hint">ยังไม่มีใบ Done</p>
         } @else {
           @for (row of report().velocity; track row.personId) {
             <div class="flex justify-between text-sm gap-2">
@@ -35,49 +39,27 @@
         }
       </div>
     </div>
-    <div class="e-card">
-      <div class="e-card-content p-4">
-        <p class="kpi-note">ส่งตรงเวลา</p>
-        <p class="kpi-value">{{ report().onTimePct }}%</p>
-        <ejs-progressbar
-          type="Linear"
-          [theme]="theme.sfTheme()"
-          width="100%"
-          height="28"
-          [value]="report().onTimePct"
-          [trackThickness]="12"
-          [progressThickness]="12"
-          progressColor="#3ec6e0"
-          trackColor="#1e4566"
-          [showProgressValue]="true"
-          [labelStyle]="barLabel"
-          [animation]="barAnimation"
-        ></ejs-progressbar>
+    <app-kpi-stat
+      title="ส่งตรงเวลา"
+      [value]="report().onTimePct + '%'"
+      accent="info"
+      [progress]="report().onTimePct"
+      progressColor="#3ec6e0"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="First-time right"
+      [value]="report().firstTimePct + '%'"
+      accent="success"
+      [progress]="report().firstTimePct"
+      progressColor="#22c55e"
+    ></app-kpi-stat>
+    <div class="e-card kpi-stat" data-accent="info">
+      <div class="e-card-header kpi-stat__header">
+        <div class="e-card-header-caption">
+          <div class="e-card-header-title kpi-stat__title">หมวด (story points)</div>
+        </div>
       </div>
-    </div>
-    <div class="e-card">
-      <div class="e-card-content p-4">
-        <p class="kpi-note">First-time right</p>
-        <p class="kpi-value">{{ report().firstTimePct }}%</p>
-        <ejs-progressbar
-          type="Linear"
-          [theme]="theme.sfTheme()"
-          width="100%"
-          height="28"
-          [value]="report().firstTimePct"
-          [trackThickness]="12"
-          [progressThickness]="12"
-          progressColor="#7ee7f7"
-          trackColor="#1e4566"
-          [showProgressValue]="true"
-          [labelStyle]="barLabel"
-          [animation]="barAnimation"
-        ></ejs-progressbar>
-      </div>
-    </div>
-    <div class="e-card">
-      <div class="e-card-content p-4">
-        <p class="kpi-note">หมวด (story points)</p>
+      <div class="e-card-content kpi-stat__body">
         @for (row of report().categories; track row.key) {
           <div class="flex justify-between text-sm gap-2">
             <span>{{ row.label }}</span>
@@ -164,20 +146,20 @@
             สถานะ: {{ ticket.workflowStatus }} · เริ่ม: {{ ticket.actualStartOn || '—' }} · Reopen: {{ ticket.reopenCount }}
           </p>
         </div>
-        <div class="md:col-span-2 rounded-lg border border-slate-700/60 bg-slate-900/60 p-3 flex flex-col gap-2">
-          <span class="text-xs font-semibold text-slate-300">ประวัติและการส่งมอบ (Delivery &amp; Activity Log)</span>
+        <div class="md:col-span-2 rounded-lg border border-slate-200 dark:border-slate-700/60 bg-slate-50 dark:bg-slate-900/60 p-3 flex flex-col gap-2">
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">ประวัติและการส่งมอบ (Delivery &amp; Activity Log)</span>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
             <div class="flex flex-col gap-0.5">
-              <span class="text-slate-400">วันเริ่มงานจริง</span>
-              <span class="font-medium text-slate-200">{{ ticket.actualStartOn || 'ยังไม่ระบุ' }}</span>
+              <span class="text-slate-500 dark:text-slate-400">วันเริ่มงานจริง</span>
+              <span class="font-medium text-slate-800 dark:text-slate-200">{{ ticket.actualStartOn || 'ยังไม่ระบุ' }}</span>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="text-slate-400">วันครบกำหนดส่ง (First Due)</span>
-              <span class="font-medium text-slate-200">{{ ticket.firstDueOn || ticket.dueOn || '—' }}</span>
+              <span class="text-slate-500 dark:text-slate-400">วันครบกำหนดส่ง (First Due)</span>
+              <span class="font-medium text-slate-800 dark:text-slate-200">{{ ticket.firstDueOn || ticket.dueOn || '—' }}</span>
             </div>
             <div class="flex flex-col gap-0.5">
-              <span class="text-slate-400">รอบรีวิว / Reopen</span>
-              <span class="font-medium text-slate-200">รีวิว {{ ticket.reviewRounds || 0 }} รอบ · Reopen {{ ticket.reopenCount || 0 }} ครั้ง</span>
+              <span class="text-slate-500 dark:text-slate-400">รอบรีวิว / Reopen</span>
+              <span class="font-medium text-slate-800 dark:text-slate-200">รีวิว {{ ticket.reviewRounds || 0 }} รอบ · Reopen {{ ticket.reopenCount || 0 }} ครั้ง</span>
             </div>
           </div>
           @if (ticket.isPaused) {
@@ -262,7 +244,7 @@
                 mode="Box"
                 (change)="selectedShiftTargetIds.set($event.value ?? [])"
               ></ejs-multiselect>
-              <span class="fine text-slate-300">ระบบจะขยับ firstDueOn ของงานที่เลือกออกไปอัตโนมัติเมื่อกดบันทึกฟิลด์</span>
+              <span class="fine text-slate-500 dark:text-slate-300">ระบบจะขยับ firstDueOn ของงานที่เลือกออกไปอัตโนมัติเมื่อกดบันทึกฟิลด์</span>
             </div>
           }
         </div>
@@ -326,34 +308,34 @@
   <ng-template #content>
     <div class="flex flex-col gap-3 py-1">
       <div class="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3">
-        <p class="m-0 text-sm font-semibold text-amber-300">
+        <p class="m-0 text-sm font-semibold text-amber-700 dark:text-amber-300">
           ⚡ ใบงานด่วนสั่งตรงจาก MD: {{ pendingMdTicket()?.id }} (ประมาณการ {{ pendingMdTicket()?.estimateMd ?? 1 }} MD)
         </p>
-        <p class="m-0 mt-1 text-xs text-slate-300">
+        <p class="m-0 mt-1 text-xs text-slate-600 dark:text-slate-300">
           พบงานที่กำลังดำเนินการอยู่ (In Progress / Reopened) ของน้องในมือจำนวน {{ conflictingWipTickets().length }} ใบ:
         </p>
-        <ul class="m-0 mt-2 pl-4 text-xs text-slate-300 list-disc space-y-1">
+        <ul class="m-0 mt-2 pl-4 text-xs text-slate-600 dark:text-slate-300 list-disc space-y-1">
           @for (ticket of conflictingWipTickets(); track ticket.id) {
             <li>
               <strong class="text-cyan">{{ ticket.id }}</strong> · {{ ticket.title || ticket.module }}
-              <span class="text-slate-400">(ส่งเดิม: {{ ticket.firstDueOn || '—' }})</span>
+              <span class="text-slate-500 dark:text-slate-400">(ส่งเดิม: {{ ticket.firstDueOn || '—' }})</span>
             </li>
           }
         </ul>
       </div>
 
-      <p class="text-sm font-medium text-slate-200 m-0">
+      <p class="text-sm font-medium text-slate-800 dark:text-slate-200 m-0">
         ต้องการพักเวลา (Pause Clock) และเลื่อนกำหนดส่งแรก (firstDueOn) ของงานเดิมออกไปอีก
-        <span class="text-emerald-400 font-bold">+{{ mdShiftDays() }} วันทำงาน</span>
+        <span class="text-emerald-600 dark:text-emerald-400 font-bold">+{{ mdShiftDays() }} วันทำงาน</span>
         ตามขนาดงานด่วนของ MD หรือไม่?
       </p>
-      <div class="text-xs text-slate-400 space-y-0.5">
+      <div class="text-xs text-slate-500 dark:text-slate-400 space-y-0.5">
         <p class="m-0">✓ งานเดิมจะไม่โดนตัดคะแนนส่งมอบตรงเวลา (40 คะแนน)</p>
         <p class="m-0">✓ เวลาที่หยุดพักจะไม่ถูกนำไปคิดเป็น Actual MD (คุ้มครองคะแนนความแม่นยำ 20 คะแนน)</p>
         <p class="m-0">✓ ระบบจะบันทึกประวัติลง Audit Log โดยอัตโนมัติ</p>
       </div>
 
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-700/60">
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700/60">
         <button ejs-button cssClass="e-flat" type="button" (click)="skipMdShift()">
           ทำคู่ขนาน (ไม่พักงานเดิม)
         </button>

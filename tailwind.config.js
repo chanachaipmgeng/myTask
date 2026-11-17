@@ -1,6 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{html,ts}'],
+  // Bind dark: utilities to the app theme toggle (body.e-dark-mode),
+  // not the OS prefers-color-scheme — otherwise Light Mode stays dark.
+  darkMode: ['selector', '.e-dark-mode'],
   corePlugins: {
     preflight: false,
   },

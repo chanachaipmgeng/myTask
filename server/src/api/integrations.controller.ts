@@ -4,7 +4,7 @@ import { Ticket } from '../../../shared/domain/models';
 import { collectAlerts, projectedActual } from '../../../shared/domain/alerts';
 import { GitLabMergeRequestRaw, mapGitLabMergeRequests } from '../../../shared/domain/gitlab-mr';
 import { formatMd, scoreTicket } from '../../../shared/domain/scoring';
-import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
+import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { APP_CONFIG, AppConfig } from '../config';
 import { listPeople, listUnmappedOpUsers, setPersonOpenProjectUser } from '../data/people.repo';
 import {
@@ -33,7 +33,6 @@ export class IntegrationsController {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
-  @Public()
   @Get('integrations/openproject')
   async getOpenProject() {
     const [settings, connection, runs, unmapped, people] = await Promise.all([
@@ -137,7 +136,6 @@ export class IntegrationsController {
     return this.getOpenProject();
   }
 
-  @Public()
   @Get('sync-runs')
   async syncRuns(@Query('connection') connection = 'openproject') {
     return { runs: await listSyncRuns(this.db, connection, 30) };
@@ -156,7 +154,6 @@ export class IntegrationsController {
     }
   }
 
-  @Public()
   @Get('integrations/gitlab')
   async getGitLab() {
     const [connection, runs] = await Promise.all([
@@ -371,7 +368,6 @@ export class IntegrationsController {
     };
   }
 
-  @Public()
   @Get('integrations/teams')
   async getTeams() {
     const [connection, runs] = await Promise.all([

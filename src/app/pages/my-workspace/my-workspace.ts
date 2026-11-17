@@ -10,13 +10,13 @@ import {
 } from '@syncfusion/ej2-angular-charts';
 import { AggregateService, GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { currentViewer, effectiveRole, trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { buildAnalyticsReport } from '../../core/analytics';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 
 @Component({
   selector: 'app-my-workspace',
@@ -25,8 +25,8 @@ import { ThemeService } from '../../core/theme.service';
     ButtonModule,
     ChartModule,
     GridModule,
+    KpiStatCardComponent,
     MessageModule,
-    ProgressBarModule,
     RouterLink,
   ],
   providers: [

@@ -69,6 +69,15 @@
     </div>
   }
 
+  @if (!canUsePersonaSwitch()) {
+    <ejs-message
+      content="โหมดสลับบัญชี 15 คนปิดอยู่บนเซิร์ฟเวอร์นี้ — เข้าสู่ระบบด้วย GitLab OAuth SSO"
+      severity="Info"
+      variant="Outlined"
+    ></ejs-message>
+  }
+
+  @if (canUsePersonaSwitch()) {
   <div class="section-card">
     <div class="section-card-head">
       <div class="flex flex-wrap gap-2">
@@ -162,4 +171,5 @@
       }
     </div>
   </div>
+  }
 </section>

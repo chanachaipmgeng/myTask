@@ -989,7 +989,7 @@ export const SEED_LEAVES = [
 export const SEED_ALLOCATIONS = [
   {
     id: 'alloc-1',
-    ticketId: 'IMP-108',
+    ticketId: 'IMP-NAT-FEAT',
     userId: 'nattasit',
     roleTrack: 'UXBA' as const,
     subRole: 'UX-UI',
@@ -999,7 +999,7 @@ export const SEED_ALLOCATIONS = [
   },
   {
     id: 'alloc-2',
-    ticketId: 'IMP-108',
+    ticketId: 'IMP-NAT-FEAT',
     userId: 'kanchawee',
     roleTrack: 'IMP' as const,
     subRole: 'BE',
@@ -1009,7 +1009,7 @@ export const SEED_ALLOCATIONS = [
   },
   {
     id: 'alloc-3',
-    ticketId: 'IMP-108',
+    ticketId: 'IMP-NAT-FEAT',
     userId: 'natthaphat',
     roleTrack: 'IMP' as const,
     subRole: 'FE',
@@ -1019,7 +1019,7 @@ export const SEED_ALLOCATIONS = [
   },
   {
     id: 'alloc-4',
-    ticketId: 'IMP-108',
+    ticketId: 'IMP-NAT-FEAT',
     userId: 'sawit',
     roleTrack: 'QA' as const,
     subRole: 'QA',
@@ -1032,7 +1032,7 @@ export const SEED_ALLOCATIONS = [
 export const SEED_STAGE_LOGS = [
   {
     id: 'log-1',
-    ticketId: 'IMP-108',
+    ticketId: 'IMP-KAN-FEAT',
     fromStatus: 'In Progress' as const,
     toStatus: 'Code Review' as const,
     changedBy: 'kanchawee',
@@ -1042,7 +1042,7 @@ export const SEED_STAGE_LOGS = [
   },
   {
     id: 'log-2',
-    ticketId: 'RD-AI-04',
+    ticketId: 'RD-DIR-BLK',
     fromStatus: 'In Progress' as const,
     toStatus: 'In Progress' as const,
     blockingTeam: 'INFRA' as const,
@@ -1057,7 +1057,7 @@ export const SEED_DISPUTES = [
   {
     id: 'dsp-014',
     disputeCode: 'DSP-2026-014',
-    ticketId: 'IMP-102',
+    ticketId: 'IMP-REOPEN',
     requesterId: 'natthaphat',
     requestedFlag: 'BLK' as const,
     requestedReopenOverride: 0,
@@ -1071,8 +1071,8 @@ export const SEED_DISPUTES = [
   {
     id: 'dsp-012',
     disputeCode: 'DSP-2026-012',
-    ticketId: 'RD-FE-02',
-    requesterId: 'natthasit',
+    ticketId: 'RD-NAS-REQ',
+    requesterId: 'nattasit',
     requestedFlag: 'REQ' as const,
     requestedReopenOverride: 0,
     reason: 'ลูกค้าเปลี่ยน Requirement หน้าจอระหว่างเข้า QA ทำให้ต้องแก้ไขสเปก',
@@ -1088,7 +1088,7 @@ export const SEED_DISPUTES = [
   {
     id: 'dsp-010',
     disputeCode: 'DSP-2026-010',
-    ticketId: 'IMP-103',
+    ticketId: 'IMP-PAW-ENV',
     requesterId: 'itsara',
     requestedFlag: 'ENV' as const,
     reason: 'Staging Server ล่ม 1 วันทำการ',

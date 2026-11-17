@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { Controller, Get, Post, Req } from '@nestjs/common';
 import { AnalyticsReport, buildAnalyticsReport } from '../../../shared/domain/analytics';
 import { Person, Ticket } from '../../../shared/domain/models';
-import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
+import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { listPeople } from '../data/people.repo';
 import { listWorkItems } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
@@ -13,7 +13,6 @@ import { Db } from '../db/db.service';
 export class AnalyticsController {
   constructor(private readonly db: Db) {}
 
-  @Public()
   @Get('report')
   async getReport(): Promise<AnalyticsReport> {
     const [people, tickets] = await Promise.all([listPeople(this.db), listWorkItems(this.db)]);

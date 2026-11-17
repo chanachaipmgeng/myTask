@@ -1,5 +1,5 @@
-import { Person, Ticket } from './models';
-import { WEEKLY_QUOTA, formatMd, roundMd } from './scoring';
+import { EmployeeLeave, Person, Ticket } from './models';
+import { WEEKLY_QUOTA, calculateNetWeeklyQuota, formatMd, roundMd } from './scoring';
 
 export const UNPLANNED_RESERVE_MD = 1;
 export const WIP_MAX = 2;
@@ -42,8 +42,9 @@ export function planNewWork(
   people: readonly Person[],
   tickets: readonly Ticket[],
   quotas: Record<Person['level'], number> = WEEKLY_QUOTA,
+  leaves: readonly EmployeeLeave[] = [],
 ): { rows: CapacityRow[]; plans: QueuePlan[] } {
-  const rows = people.map((person) => capacityRow(person, tickets, quotas));
+  const rows = people.map((person) => capacityRow(person, tickets, quotas, leaves));
   const state = new Map<string, LoadState>(
     rows.map((row) => [row.id, { row, freeMd: row.freeMd, openCount: row.openCount, xlCount: row.xlCount }]),
   );
@@ -60,10 +61,18 @@ function capacityRow(
   person: Person,
   tickets: readonly Ticket[],
   quotas: Record<Person['level'], number>,
+  leaves: readonly EmployeeLeave[] = [],
 ): CapacityRow {
   const open = tickets.filter((ticket) => !ticket.closed && ticket.assigneeId === person.id);
   const openMd = roundMd(open.reduce((sum, ticket) => sum + ticket.estimateMd, 0));
-  const quota = quotas[person.level];
+  const personLeaves = leaves.filter((leave) => leave.userId === person.id);
+  const leaveDays = personLeaves
+    .filter((leave) => leave.leaveType !== 'PUBLIC_HOLIDAY')
+    .reduce((sum, leave) => sum + leave.deductMd, 0);
+  const holidays = personLeaves
+    .filter((leave) => leave.leaveType === 'PUBLIC_HOLIDAY')
+    .reduce((sum, leave) => sum + leave.deductMd, 0);
+  const quota = calculateNetWeeklyQuota(quotas[person.level], leaveDays, holidays);
   const freeMd = roundMd(quota - openMd - UNPLANNED_RESERVE_MD);
   const openCount = open.length;
   const xlCount = open.filter((ticket) => ticket.size === 'XL').length;

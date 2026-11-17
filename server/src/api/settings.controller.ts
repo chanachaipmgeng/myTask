@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Put, Req } from '@nestjs/common';
-import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
+import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { AppSettings } from '../data/types';
 import { getSettings, mergeSettings, saveSettings } from '../data/settings.repo';
 import { Db } from '../db/db.service';
@@ -8,7 +8,6 @@ import { Db } from '../db/db.service';
 export class SettingsController {
   constructor(private readonly db: Db) {}
 
-  @Public()
   @Get()
   async get() {
     return { settings: await getSettings(this.db) };

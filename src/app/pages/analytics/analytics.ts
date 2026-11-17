@@ -21,12 +21,12 @@ import {
 } from '@syncfusion/ej2-angular-grids';
 import { TabModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { AnalyticsReport, buildAnalyticsReport } from '../../core/analytics';
 import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 
 @Component({
   selector: 'app-analytics',
@@ -35,9 +35,9 @@ import { ThemeService } from '../../core/theme.service';
     ButtonModule,
     ChartModule,
     GridModule,
+    KpiStatCardComponent,
     TabModule,
     MessageModule,
-    ProgressBarModule,
     RouterLink,
   ],
   providers: [

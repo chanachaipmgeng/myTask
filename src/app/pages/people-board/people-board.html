@@ -28,12 +28,14 @@
 
   <div class="kpi-grid-4">
     @for (item of quotas(); track item.label) {
-      <div class="e-card">
-        <div class="e-card-content flex items-center justify-between gap-2 p-3.5">
-          <span class="font-bold">{{ item.label }}</span>
-          <span class="e-badge e-badge-info e-badge-pill">{{ item.quota }} MD/สัปดาห์</span>
-        </div>
-      </div>
+      <app-kpi-stat
+        [title]="item.label"
+        [value]="item.quota + ' MD'"
+        badge="โควตา/สัปดาห์"
+        badgeTone="info"
+        accent="info"
+        hint="ใช้จัดกำลังคน ไม่เข้าสูตรดัชนี"
+      ></app-kpi-stat>
     }
   </div>
 

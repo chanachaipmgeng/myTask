@@ -314,7 +314,10 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   const closedOn = closed ? (closedOnFromActivities(ctx.activities, mapping) ?? dateOnly(wp.updatedAt)) : null;
   const reopenCount =
     ctx.activities && mapping.countReopens ? countReopens(ctx.activities, mapping) : (ctx.existing?.reopenCount ?? 0);
-  const computedWeekOffset = closed ? weekOffset(firstDueOn, closedOn) : 0;
+  // Fair cutoff: prefer Ready-for-QA delivery date over final closedOn so QA queue does not penalize Dev.
+  const deliveryAnchor =
+    ctx.existing?.readyForQaAt ?? ctx.existing?.devDeliveredOn ?? (closed ? closedOn : null);
+  const computedWeekOffset = deliveryAnchor ? weekOffset(firstDueOn, deliveryAnchor) : 0;
   const actualStartOn = dateOnly(wp.startDate ?? undefined);
 
   const base: Ticket = {

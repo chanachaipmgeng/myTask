@@ -29,13 +29,14 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { Track } from '../../core/models';
 import { INDEX_TARGET } from '../../core/scoring';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 
 type TrackFilter = Track | 'All';
 
 @Component({
   selector: 'app-people-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, ChartModule, DropDownListModule, RouterLink, TextBoxModule],
+  imports: [GridModule, ChartModule, DropDownListModule, RouterLink, TextBoxModule, KpiStatCardComponent],
   providers: [
     PageService,
     SortService,

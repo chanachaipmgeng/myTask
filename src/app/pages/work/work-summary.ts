@@ -27,12 +27,13 @@ import { DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { workSummaryStats } from '../../core/work-views';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-summary',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DashboardLayoutModule, AccumulationChartModule, ChartModule],
+  imports: [DashboardLayoutModule, AccumulationChartModule, ChartModule, KpiStatCardComponent],
   providers: [
     PieSeriesService,
     AccumulationLegendService,
