@@ -1,5 +1,19 @@
 export type { BadgeTone, KpiBadgeTone } from './badge';
-export { badgeToneClass, resolveBadgeTone } from './badge';
+export {
+  badgeToneClass,
+  resolveBadgeTone,
+  workflowStatusToneMap,
+  planToneMap,
+  weekToneMap,
+  trackToneMap,
+  yesNoToneMap,
+  blockerToneMap,
+  closedToneMap,
+  dodToneMap,
+  unplannedYesNoToneMap,
+  toneForWeekLabel,
+  toneForAlertLabel,
+} from './badge';
 export { PageHeadComponent } from './page-head/page-head';
 export { SectionCardComponent } from './section-card/section-card';
 export { StatusBadgeComponent } from './status-badge/status-badge';

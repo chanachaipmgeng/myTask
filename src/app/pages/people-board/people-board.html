@@ -109,7 +109,6 @@
       [filterSettings]="filterSettings"
       [sortSettings]="sortSettings"
       (toolbarClick)="onToolbarClick($event)"
-      (queryCellInfo)="paintIndex($event)"
       (rowSelected)="openPerson($event)"
       height="auto"
     >
@@ -120,17 +119,43 @@
           </ng-template>
         </e-column>
         <e-column field="levelLabel" headerText="ระดับ" width="110"></e-column>
-        <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
+        <e-column field="trackLabel" headerText="สาย" width="110">
+          <ng-template #template let-data>
+            <app-status-badge [value]="data.trackLabel" [toneMap]="trackToneMap"></app-status-badge>
+          </ng-template>
+        </e-column>
         <e-column field="quota" headerText="โควต้า" width="95" textAlign="Right" format="N1"></e-column>
         <e-column field="openCount" headerText="WIP" width="85" textAlign="Right"></e-column>
         <e-column field="closedCount" headerText="ปิดแล้ว" width="105" textAlign="Right"></e-column>
-        <e-column field="index" headerText="ดัชนี" width="105" textAlign="Right" format="N1"></e-column>
+        <e-column field="index" headerText="ดัชนี" width="160">
+          <ng-template #template let-data>
+            <div class="grid-index-cell">
+              <span class="grid-index-value">{{ data.index | number: '1.0-1' }}</span>
+              <ejs-progressbar
+                [id]="'people-index-' + data.id"
+                class="grid-cell-progress"
+                type="Linear"
+                height="12"
+                [minimum]="0"
+                [maximum]="100"
+                [value]="data.index"
+                [theme]="theme.sfTheme()"
+                [trackColor]="theme.progressTrack()"
+                [progressColor]="indexProgressFill(data.index)"
+              ></ejs-progressbar>
+            </div>
+          </ng-template>
+        </e-column>
         <e-column field="planLabel" headerText="ปิดตามแผน" width="200"></e-column>
         <e-column field="accuracyLabel" headerText="ความแม่น" width="110"></e-column>
         <e-column field="weighted" headerText="คะแนนถ่วง" width="115" textAlign="Right" format="N1"></e-column>
         <e-column field="reworkPct" headerText="Rework %" width="115" textAlign="Right" format="N1"></e-column>
         <e-column field="sideLabel" headerText="นอกแผน / Spike" width="150"></e-column>
-        <e-column field="alertLabel" headerText="แจ้งเตือน" width="140"></e-column>
+        <e-column field="alertLabel" headerText="แจ้งเตือน" width="160">
+          <ng-template #template let-data>
+            <app-status-badge [label]="data.alertLabel" [tone]="alertTone(data.alertLabel)"></app-status-badge>
+          </ng-template>
+        </e-column>
       </e-columns>
       <e-aggregates>
         <e-aggregate>

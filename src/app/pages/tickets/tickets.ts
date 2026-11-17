@@ -27,6 +27,17 @@ import { SIZE_POINTS, SIZE_STANDARD_MD, scoreTicket } from '../../core/scoring';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../../core/ticket-file';
 import { ShellNotice } from '../../core/shell-notice';
 import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID } from '../../data/seed';
+import {
+  StatusBadgeComponent,
+  blockerToneMap,
+  closedToneMap,
+  dodToneMap,
+  toneForAlertLabel,
+  trackToneMap,
+  unplannedYesNoToneMap,
+  weekToneMap,
+  type BadgeTone,
+} from '../../shared/ui';
 
 type TrackFilter = Track | 'All';
 type TypeFilter = TicketType | 'All';
@@ -47,6 +58,7 @@ type TypeFilter = TicketType | 'All';
     ButtonModule,
     ChipListModule,
     MessageModule,
+    StatusBadgeComponent,
   ],
   providers: [
     PageService,
@@ -73,6 +85,12 @@ export class TicketsPage {
   protected readonly filterSettings = { type: 'Menu' };
   protected readonly sortSettings = { columns: [{ field: 'score', direction: 'Descending' }] };
   protected readonly gridToolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
+  protected readonly trackToneMap = trackToneMap;
+  protected readonly blockerToneMap = blockerToneMap;
+  protected readonly closedToneMap = closedToneMap;
+  protected readonly dodToneMap = dodToneMap;
+  protected readonly unplannedYesNoToneMap = unplannedYesNoToneMap;
+  protected readonly weekToneMap = weekToneMap;
   protected readonly sizes = (['XS', 'S', 'M', 'L', 'XL'] as const).map((size) => ({
     size,
     points: SIZE_POINTS[size],
@@ -269,6 +287,10 @@ export class TicketsPage {
 
   protected onModule(event: { value?: string | null }): void {
     this.moduleName.set(event.value ?? '');
+  }
+
+  protected alertTone(label: string): BadgeTone {
+    return toneForAlertLabel(label);
   }
 
   protected markReference(args: { data?: object; row?: Element }): void {

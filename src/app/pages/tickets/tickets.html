@@ -224,7 +224,11 @@
     >
       <e-columns>
         <e-column field="id" headerText="รหัส" width="120"></e-column>
-        <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
+        <e-column field="trackLabel" headerText="สาย" width="110">
+          <ng-template #template let-data>
+            <app-status-badge [value]="data.trackLabel" [toneMap]="trackToneMap"></app-status-badge>
+          </ng-template>
+        </e-column>
         <e-column field="type" headerText="ชนิด" width="140"></e-column>
         <e-column field="module" headerText="โมดูล" width="120"></e-column>
         <e-column field="size" headerText="ขนาด" width="80"></e-column>
@@ -233,22 +237,53 @@
         <e-column field="estimateMd" headerText="Est" width="95" textAlign="Right" format="N2"></e-column>
         <e-column field="actualMd" headerText="Actual" width="95" textAlign="Right" format="N2"></e-column>
         <e-column field="ratioLabel" headerText="อัตราส่วน" width="110"></e-column>
-        <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="120"></e-column>
+        <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="120">
+          <ng-template #template let-data>
+            <app-status-badge [value]="data.weekOffsetLabel" [toneMap]="weekToneMap"></app-status-badge>
+          </ng-template>
+        </e-column>
         <e-column field="weekPoints" headerText="คะแนนสัปดาห์" width="130" textAlign="Right"></e-column>
         <e-column field="accuracyPoints" headerText="คะแนนแม่น" width="120" textAlign="Right"></e-column>
         <e-column field="reviewRounds" headerText="รอบรีวิว" width="110" textAlign="Right"></e-column>
-        <e-column field="blockerLabel" headerText="Blocker" width="100"></e-column>
+        <e-column field="blockerLabel" headerText="Blocker" width="100">
+          <ng-template #template let-data>
+            <app-status-badge [value]="data.blockerLabel" [toneMap]="blockerToneMap"></app-status-badge>
+          </ng-template>
+        </e-column>
         <e-column field="reviewPoints" headerText="คะแนนรีวิว" width="120" textAlign="Right"></e-column>
         <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right"></e-column>
         <e-column field="reopenPoints" headerText="คะแนนเปิดซ้ำ" width="130" textAlign="Right"></e-column>
         <e-column field="varianceCode" headerText="Variance" width="110"></e-column>
-        <e-column field="closedLabel" headerText="ปิด" width="80"></e-column>
-        <e-column field="dodLabel" headerText="DoD" width="80"></e-column>
-        <e-column field="spikeLabel" headerText="Spike" width="90"></e-column>
-        <e-column field="unplannedLabel" headerText="นอกแผน" width="100"></e-column>
+        <e-column field="closedLabel" headerText="ปิด" width="90">
+          <ng-template #template let-data>
+            <app-status-badge [value]="data.closedLabel" [toneMap]="closedToneMap"></app-status-badge>
+          </ng-template>
+        </e-column>
+        <e-column field="dodLabel" headerText="DoD" width="90">
+          <ng-template #template let-data>
+            <app-status-badge [value]="data.dodLabel" [toneMap]="dodToneMap"></app-status-badge>
+          </ng-template>
+        </e-column>
+        <e-column field="spikeLabel" headerText="Spike" width="90">
+          <ng-template #template let-data>
+            <app-status-badge
+              [label]="data.spikeLabel"
+              [tone]="data.spikeLabel === '—' ? 'secondary' : 'info'"
+            ></app-status-badge>
+          </ng-template>
+        </e-column>
+        <e-column field="unplannedLabel" headerText="นอกแผน" width="100">
+          <ng-template #template let-data>
+            <app-status-badge [value]="data.unplannedLabel" [toneMap]="unplannedYesNoToneMap"></app-status-badge>
+          </ng-template>
+        </e-column>
         <e-column field="score" headerText="คะแนน" width="100" textAlign="Right"></e-column>
         <e-column field="scoreMeaning" headerText="ที่มาของคะแนน" width="420"></e-column>
-        <e-column field="alertLabel" headerText="แจ้งเตือน" width="180"></e-column>
+        <e-column field="alertLabel" headerText="แจ้งเตือน" width="180">
+          <ng-template #template let-data>
+            <app-status-badge [label]="data.alertLabel" [tone]="alertTone(data.alertLabel)"></app-status-badge>
+          </ng-template>
+        </e-column>
         <e-column field="closedOnLabel" headerText="วันที่ปิด" width="120"></e-column>
         <e-column field="note" headerText="หมายเหตุ" width="260"></e-column>
       </e-columns>

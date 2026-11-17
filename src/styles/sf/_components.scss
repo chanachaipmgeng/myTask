@@ -83,6 +83,27 @@
   background: rgba(var(--primary-rgb), 0.18);
 }
 
+/* Progress ในเซลล์ดัชนี (/people) — สั้น กะทัดรัด ไม่ชนแถว */
+.e-grid .grid-index-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.e-grid .grid-index-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.e-grid .grid-cell-progress,
+.e-grid .grid-cell-progress.e-control {
+  width: 100% !important;
+  max-width: 140px;
+}
+
 body.e-light-mode {
   .e-grid .e-leftfreeze,
   .e-grid .e-rightfreeze,

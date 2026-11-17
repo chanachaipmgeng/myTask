@@ -54,12 +54,13 @@ npm --prefix server run build
   - Shared UI (`src/app/shared/ui/` + barrel `index.ts`):
     - `app-page-head` — หัวหน้า (title / description / breadcrumb / periodBadge + slot `[actions]`)
     - `app-section-card` — แผงเนื้อหา (title / subtitle / badge + slots body / `[actions]`)
-    - `app-status-badge` — ป้าย Syncfusion (`tone` หรือ `value` + `toneMap`) · tone ร่วมใน `badge.ts`
+    - `app-status-badge` — ป้าย Syncfusion (`tone` หรือ `value` + `toneMap`) · tone map ร่วมใน `badge.ts` (`workflowStatusToneMap`, `planToneMap`, `weekToneMap`, `trackToneMap`, ฯลฯ)
     - `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — KPI แถวบน (`e-card` + badge + `ejs-progressbar`)
     - `app-form-field` — ห่อ label + control (variant `field` | `filter`)
     - `app-flash-messages` — รวม success / error / info / warning เป็น `ejs-message`
     - `app-filter-chips` — ชิปกรองสถานะ/บทบาท
     - `app-confirm-dialog` — ยืนยันสั้นๆ (queue writeback, board block)
+  - **DataGrid cell polish** (`/work/list`, `/people`, `/tickets`): badge ในเซลล์ · progress ดัชนีคน · Search ใน toolbar (เมื่อไม่มีช่องค้นหาภายนอก) · Action `ดูสรุป` บน List — แนว Essential UI Kit แบบจุดๆ ไม่ยกบล็อกทั้งชุด · เพิ่มคอลัมน์บน grid ที่ `enablePersistence` ต้องเปลี่ยน `id` (เช่น `work-operational-list-grid-v2`)
   - **แผงรายละเอียดในหน้า**: `/schedule` ใช้คอลัมน์ขวา (ปฏิทินย่อย + รายวัน) · `/tickets/disputes` ใช้ Split View ซ้ายตารางขวารายละเอียด — อย่าใช้ `ejs-sidebar` Over drawer ทับ Timeline/ตาราง
   - **Syncfusion style layers** (ธีมมาตรฐานก่อน แล้วค่อยแต่งจุดกลาง):
     1. Theme CSS — `assets/themes/tailwind3(.css|-dark.css)` ผ่าน `#sf-theme-link` (`ThemeService`)

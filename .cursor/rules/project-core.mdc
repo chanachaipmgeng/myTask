@@ -11,6 +11,7 @@ alwaysApply: true
 - อย่าใส่สูตรคะแนนใน Angular component หรือ Nest controller — เรียกโดเมนแล้วแสดงผล
 - UI ใช้ Syncfusion + ธีม Tailwind 3 (Dark/Light) ที่มีอยู่ อย่าเพิ่มดีไซน์ระบบใหม่โดยไม่จำเป็น
 - Shared UI อยู่ที่ `src/app/shared/ui/`: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips`, `app-confirm-dialog` · KPI ใช้ `app-kpi-stat` · tone ร่วมใน `badge.ts` — ห้ามห่อแผงใหม่ด้วย `rounded-xl … bg-white dark:bg-slate-900 … shadow-sm`
+- **DataGrid cell polish** (แนว Essential UI Kit — จุดๆ ไม่ยกบล็อกทั้งชุด): ตารางหลัก `/work/list` `/people` `/tickets` ใช้ `app-status-badge` + tone map ใน `badge.ts` · ดัชนีคนใช้ `ejs-progressbar` ในเซลล์ · Search ใน grid toolbar เมื่อยังไม่มีช่องค้นหาภายนอก · เพิ่มคอลัมน์ใหม่บน grid ที่มี `enablePersistence` ต้องเปลี่ยน `id` ของ grid (หรือล้าง localStorage) ไม่งั้นคอลัมน์ใหม่ไม่โผล่
 - **Syncfusion style layers**: (1) theme CSS `assets/themes/tailwind3(.css|-dark.css)` ผ่าน `#sf-theme-link` (2) app tokens/layout ใน `src/styles.scss` (3) แต่งจุด Syncfusion เฉพาะที่ `src/styles/sf/` (`index.scss` → `_components.scss`) — ห้ามทับ `.e-btn`/`.e-dialog` ด้วย `transform` · ห้าม `overflow:hidden` บน Gantt/Schedule โดยไม่จำเป็น · อย่าทับ `.e-card` ทั้งโปรเจกต์
 - Tailwind `darkMode` ต้องเป็น `['selector', '.e-dark-mode']` ไม่ผูก `prefers-color-scheme` ของ OS
 - Light Mode sidebar: gradient MyHR `#2243ac → #4c68e5` ตัวอักษร/ไอคอนขาว (อย่าปล่อยพื้นขาวจาก Syncfusion ทับ)

@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
@@ -23,6 +24,7 @@ import {
   SortService,
   ToolbarService,
 } from '@syncfusion/ej2-angular-grids';
+import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { buildPeopleRoster } from '../../core/people-roster';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -30,13 +32,24 @@ import { ThemeService } from '../../core/theme.service';
 import { Track } from '../../core/models';
 import { INDEX_TARGET } from '../../core/scoring';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { StatusBadgeComponent, toneForAlertLabel, trackToneMap, type BadgeTone } from '../../shared/ui';
 
 type TrackFilter = Track | 'All';
 
 @Component({
   selector: 'app-people-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, ChartModule, DropDownListModule, RouterLink, TextBoxModule, KpiStatCardComponent],
+  imports: [
+    DecimalPipe,
+    GridModule,
+    ChartModule,
+    DropDownListModule,
+    RouterLink,
+    TextBoxModule,
+    KpiStatCardComponent,
+    ProgressBarModule,
+    StatusBadgeComponent,
+  ],
   providers: [
     PageService,
     SortService,
@@ -67,7 +80,8 @@ export class PeopleBoard {
   protected readonly pageSettings = { pageSize: 16 };
   protected readonly filterSettings = { type: 'Menu' };
   protected readonly sortSettings = { columns: [{ field: 'index', direction: 'Descending' }] };
-  protected readonly toolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
+  protected readonly toolbar = ['Search', 'ColumnChooser', 'ExcelExport', 'CsvExport'];
+  protected readonly trackToneMap = trackToneMap;
   protected readonly trackOptions = [
     { text: 'ทั้งหมด', value: 'All' },
     { text: 'R&D', value: 'RD' },
@@ -154,11 +168,11 @@ export class PeopleBoard {
     }
   }
 
-  protected paintIndex(args: { column?: { field?: string }; data?: { index?: number }; cell?: HTMLElement }): void {
-    if (args.column?.field !== 'index' || !args.cell || typeof args.data?.index !== 'number') {
-      return;
-    }
-    args.cell.style.color = args.data.index >= INDEX_TARGET ? '#7ee7f7' : '#ff8b7a';
-    args.cell.style.fontWeight = '700';
+  protected alertTone(label: string): BadgeTone {
+    return toneForAlertLabel(label);
+  }
+
+  protected indexProgressFill(index: number): string {
+    return index >= INDEX_TARGET ? '#10b981' : this.theme.progressFill();
   }
 }

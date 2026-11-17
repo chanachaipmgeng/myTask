@@ -9,22 +9,31 @@ import {
   GridModule,
   PageService,
   ResizeService,
+  SearchService,
   SortService,
   ToolbarService,
 } from '@syncfusion/ej2-angular-grids';
 import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { ScorecardService } from '../../core/scorecard.service';
 import { workListRows } from '../../core/work-views';
+import {
+  StatusBadgeComponent,
+  planToneMap,
+  toneForWeekLabel,
+  workflowStatusToneMap,
+  type BadgeTone,
+} from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, DialogModule, ButtonModule],
+  imports: [GridModule, DialogModule, ButtonModule, StatusBadgeComponent],
   providers: [
     PageService,
     SortService,
     FilterService,
+    SearchService,
     ResizeService,
     ColumnChooserService,
     ExcelExportService,
@@ -41,8 +50,10 @@ export class WorkList {
   @ViewChild('listGrid') private listGrid?: GridComponent;
 
   protected readonly pageSettings = { pageSize: 15 };
-  protected readonly toolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
+  protected readonly toolbar = ['Search', 'ColumnChooser', 'ExcelExport', 'CsvExport'];
   protected readonly selectedId = signal<string | null>(null);
+  protected readonly workflowStatusToneMap = workflowStatusToneMap;
+  protected readonly planToneMap = planToneMap;
 
   protected readonly rows = computed(() =>
     workListRows(this.scorecard.tickets(), this.scorecard.people(), {
@@ -59,13 +70,25 @@ export class WorkList {
     return this.rows().find((row) => row.id === id) ?? null;
   });
 
-  protected onRowSelected(event: { data?: { id?: string } }): void {
-    const id = event.data?.id;
+  protected weekTone(label: string): BadgeTone {
+    return toneForWeekLabel(label);
+  }
+
+  protected openDetail(id: string, event?: Event): void {
+    event?.stopPropagation();
     if (!id) {
       return;
     }
     this.selectedId.set(id);
     this.detailDialog?.show();
+  }
+
+  protected onRowSelected(event: { data?: { id?: string } }): void {
+    const id = event.data?.id;
+    if (!id) {
+      return;
+    }
+    this.openDetail(id);
   }
 
   protected onToolbarClick(args: { item?: { id?: string } }): void {

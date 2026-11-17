@@ -38,6 +38,15 @@ description: >-
 
 อย่ากระจาย override Syncfusion กลับไปใน component SCSS หรือ `styles.scss` โดยไม่จำเป็น · ห้าม `transform` บนปุ่ม/dialog · ห้าม `overflow:hidden` บน Gantt โดยไม่จำเป็น
 
+## DataGrid cell polish (แนว Essential UI Kit — จุดๆ)
+
+ตารางหลัก (`/work/list`, `/people`, `/tickets`) ใช้ cell template ไม่ยกบล็อก UI Kit ทั้งชุด:
+- สถานะ/แผน/แจ้งเตือน → `app-status-badge` + tone map ใน `shared/ui/badge.ts`
+- ดัชนีคน → `ejs-progressbar` สั้นในเซลล์ (`.grid-index-cell` ใน `styles/sf`)
+- Search ใน grid toolbar เมื่อยังไม่มีช่องค้นหาภายนอก
+- `/work/list` มีคอลัมน์ Action ปุ่ม `ดูสรุป` · grid id `work-operational-list-grid-v2`
+- เพิ่มคอลัมน์บน grid ที่ `enablePersistence` → เปลี่ยน `id` หรือล้าง `localStorage` key `grid…` ไม่งั้นคอลัมน์ใหม่ไม่โผล่
+
 ## กฎ
 
 - คำนวณแถวในโดเมนก่อน bind UI
