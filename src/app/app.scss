@@ -274,8 +274,7 @@
   gap: 8px;
 }
 
-.appbar-chip-btn,
-.appbar-alert-btn {
+.appbar-chip-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -290,8 +289,49 @@
   background: rgba(30, 41, 59, 0.95) !important;
 }
 
-.appbar-alert-btn.e-warning {
+.appbar-alert-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.appbar-alert-btn.e-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(30, 41, 59, 0.65) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+}
+
+.appbar-alert-btn.e-btn .e-btn-icon {
+  font-size: 16px !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+.appbar-alert-btn.e-btn:hover {
+  border-color: rgba(95, 124, 227, 0.45) !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+}
+
+.appbar-alert-wrap.has-alerts .appbar-alert-btn.e-btn {
   animation: pulseRing 2.4s infinite;
+}
+
+.appbar-alert-wrap .e-badge.e-badge-notification {
+  font-size: 10px;
+  line-height: 1;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 4px;
+  pointer-events: none;
 }
 
 .shell-alerts {
@@ -457,6 +497,18 @@
     &:hover {
       border-color: #2e4fc8 !important;
       background: #ffffff !important;
+    }
+  }
+
+  .appbar-alert-btn.e-btn {
+    background: #f0f4fd !important;
+    border: 1px solid rgba(46, 79, 200, 0.16) !important;
+    color: #1e3690 !important;
+
+    &:hover {
+      border-color: #2e4fc8 !important;
+      background: #ffffff !important;
+      color: #2e4fc8 !important;
     }
   }
 

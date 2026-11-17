@@ -93,19 +93,23 @@
           สลับบัญชี ({{ role() }})
         </button>
 
-        <button
-          ejs-button
-          id="appbar-alerts-btn"
-          [cssClass]="alerts().length > 0 ? 'e-warning e-small appbar-alert-btn' : 'e-flat e-small appbar-alert-btn'"
-          iconCss="e-icons e-Bell"
-          type="button"
-          (click)="openAlerts()"
-        >
-          แจ้งเตือน
-          <span class="e-badge e-badge-pill ml-1" [class.e-badge-danger]="alerts().length > 0" [class.e-badge-secondary]="alerts().length === 0">
-            {{ alerts().length }}
-          </span>
-        </button>
+        <span class="appbar-alert-wrap" [class.has-alerts]="alerts().length > 0">
+          <button
+            ejs-button
+            id="appbar-alerts-btn"
+            cssClass="e-flat e-small e-icon-btn appbar-alert-btn"
+            iconCss="e-icons e-warning"
+            type="button"
+            [title]="alertsTitle()"
+            [attr.aria-label]="alertsTitle()"
+            (click)="openAlerts()"
+          ></button>
+          @if (alerts().length > 0) {
+            <span class="e-badge e-badge-danger e-badge-notification e-badge-overlap">
+              {{ alertsBadge() }}
+            </span>
+          }
+        </span>
 
         <button
           ejs-button

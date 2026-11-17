@@ -960,10 +960,16 @@ body.e-light-mode {
     }
   }
 
-  .appbar-alert-btn:not(.e-warning) {
+  .appbar-alert-btn.e-btn {
     background: #f0f4fd !important;
     border: 1px solid rgba(46, 79, 200, 0.2) !important;
     color: #1e3690 !important;
+
+    &:hover {
+      border-color: #2e4fc8 !important;
+      background: #ffffff !important;
+      color: #2e4fc8 !important;
+    }
   }
 
 }

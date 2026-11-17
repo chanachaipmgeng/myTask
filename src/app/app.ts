@@ -64,6 +64,14 @@ export class App implements AfterViewInit {
   protected readonly collapsed = signal(false);
   protected readonly alertSearch = signal('');
   protected readonly alerts = this.scorecard.alerts;
+  protected readonly alertsBadge = computed(() => {
+    const n = this.alerts().length;
+    return n > 99 ? '99+' : String(n);
+  });
+  protected readonly alertsTitle = computed(() => {
+    const n = this.alerts().length;
+    return n > 0 ? `แจ้งเตือน ${n} รายการ` : 'แจ้งเตือน — ไม่มีรายการ';
+  });
   protected readonly filteredAlerts = computed(() => {
     const query = this.alertSearch().trim().toLowerCase();
     if (!query) {
