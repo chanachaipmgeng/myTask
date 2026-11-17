@@ -17,7 +17,11 @@ import {
   RecordClickEventArgs,
   SortService,
 } from '@syncfusion/ej2-angular-grids';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
+import {
+  SpeechToTextModule,
+  TextBoxModule,
+  TranscriptChangedEventArgs,
+} from '@syncfusion/ej2-angular-inputs';
 import { SplitterModule } from '@syncfusion/ej2-angular-layouts';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { DialogModule } from '@syncfusion/ej2-angular-popups';
@@ -26,6 +30,11 @@ import { TicketDispute, VarianceCode } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import {
+  defaultThaiSpeechButtonSettings,
+  mergeSpeechTranscript,
+  speechErrorMessageTh,
+} from '../../shared/speech-to-text';
 import { BadgeTone } from '../../shared/ui/badge';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
@@ -42,6 +51,7 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
     GridModule,
     DropDownListModule,
     TextBoxModule,
+    SpeechToTextModule,
     DialogModule,
     MessageModule,
     SplitterModule,
@@ -88,6 +98,13 @@ export class DisputesPage implements OnInit {
   protected newEvidenceUrl = signal('');
 
   protected reviewerComment = signal('');
+  private reasonSpeechBase = '';
+
+  protected readonly speechButtonSettings = defaultThaiSpeechButtonSettings;
+  protected readonly speechTooltipSettings = {
+    content: 'พูดเหตุผลเป็นภาษาไทย (ต้องอนุญาตไมโครโฟน)',
+    stopContent: 'หยุดฟัง',
+  };
 
   protected readonly varianceOptions = [
     { text: 'ขอติดป้าย BLK (ติดระบบอื่นภายนอก)', value: 'BLK' },
@@ -153,11 +170,24 @@ export class DisputesPage implements OnInit {
     this.newRequestedFlag.set('BLK');
     this.newReason.set('');
     this.newEvidenceUrl.set('');
+    this.reasonSpeechBase = '';
     this.showCreateDialog.set(true);
   }
 
   protected closeCreateDialog(): void {
     this.showCreateDialog.set(false);
+  }
+
+  protected onReasonSpeechStart(): void {
+    this.reasonSpeechBase = this.newReason().trim();
+  }
+
+  protected onReasonSpeechTranscript(args: TranscriptChangedEventArgs): void {
+    this.newReason.set(mergeSpeechTranscript(this.reasonSpeechBase, String(args.transcript ?? '')));
+  }
+
+  protected onReasonSpeechError(args: { error?: string }): void {
+    this.notice.warning(speechErrorMessageTh(args.error));
   }
 
   protected async submitNewDispute(): Promise<void> {

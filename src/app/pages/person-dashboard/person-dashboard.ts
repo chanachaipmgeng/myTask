@@ -18,7 +18,11 @@ import {
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
 import { AggregateService, GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
+import {
+  SpeechToTextModule,
+  TextBoxModule,
+  TranscriptChangedEventArgs,
+} from '@syncfusion/ej2-angular-inputs';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { map } from 'rxjs';
 import { ApiClient } from '../../core/api-client';
@@ -29,6 +33,11 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
+import {
+  defaultThaiSpeechButtonSettings,
+  mergeSpeechTranscript,
+  speechErrorMessageTh,
+} from '../../shared/speech-to-text';
 
 interface OlsDataPoint {
   month: string;
@@ -52,6 +61,7 @@ interface OlsSummaryInfo {
     GridModule,
     KpiStatCardComponent,
     TextBoxModule,
+    SpeechToTextModule,
     PageHeadComponent,
     SectionCardComponent,
   ],
@@ -275,6 +285,26 @@ export class PersonDashboard {
   protected readonly aiLoading = signal(false);
   protected readonly aiProvider = signal<string | null>(null);
   protected readonly aiError = signal<string | null>(null);
+  private aiSpeechBase = '';
+
+  protected readonly speechButtonSettings = defaultThaiSpeechButtonSettings;
+  protected readonly speechTooltipSettings = {
+    content: 'พูดคำถามเป็นภาษาไทย (ต้องอนุญาตไมโครโฟน)',
+    stopContent: 'หยุดฟัง',
+  };
+
+  protected onAiSpeechStart(): void {
+    this.aiSpeechBase = this.aiInputText().trim();
+    this.aiError.set(null);
+  }
+
+  protected onAiSpeechTranscript(args: TranscriptChangedEventArgs): void {
+    this.aiInputText.set(mergeSpeechTranscript(this.aiSpeechBase, String(args.transcript ?? '')));
+  }
+
+  protected onAiSpeechError(args: { error?: string }): void {
+    this.aiError.set(speechErrorMessageTh(args.error));
+  }
 
   protected async askAi(promptText?: string): Promise<void> {
     const p = (promptText ?? this.aiInputText()).trim();

@@ -39,8 +39,9 @@ import {
 import { ItemModel } from '@syncfusion/ej2-navigations';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
-import { Person, Ticket, Track } from '../../core/models';
-import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
+import { Person, Ticket, Track, WorkflowStatus } from '../../core/models';
+import { workflowStatusOf } from '../../core/workflow';
+import { BadgeTone, FilterChipOption, FilterChipsComponent, workflowStatusToneMap } from '../../shared/ui';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
@@ -72,6 +73,16 @@ interface ScheduleEvent {
   OwnerId: string;
   Slipped: boolean;
   Description: string;
+  /** รายละเอียดใบงานแบบอ่านอย่างเดียวบนแท่ง / tooltip / แผงวัน */
+  TicketId: string;
+  Title: string;
+  Status: WorkflowStatus;
+  Progress: number;
+  Size: string;
+  Type: string;
+  WeekLabel: string;
+  IsPaused: boolean;
+  IsMdDirect: boolean;
 }
 
 interface TeamSchedule {
@@ -434,15 +445,50 @@ export class SchedulePage {
   }
 
   protected onEventRendered(args: EventRenderedArgs): void {
-    if (!args.data['Slipped']) {
-      return;
+    const data = args.data as ScheduleEvent;
+    if (data.Slipped) {
+      args.element.classList.add('ticket-slipped');
     }
-    args.element.classList.add('ticket-slipped');
+    args.element.classList.add('sched-task-appt');
+    args.element.classList.add(`sched-task-appt--${statusTone(data.Status)}`);
+    if (data.IsPaused) {
+      args.element.classList.add('is-paused');
+    }
   }
 
   protected ownerLabel(ownerId: string): string {
     return this.peopleById().get(ownerId) ?? ownerId;
   }
+
+  protected statusTone(status: string): BadgeTone {
+    return statusTone(status);
+  }
+}
+
+function progressFromStatus(status: WorkflowStatus, closed: boolean): number {
+  if (closed || status === 'Done') {
+    return 100;
+  }
+  switch (status) {
+    case 'Backlog':
+      return 0;
+    case 'In Progress':
+      return 30;
+    case 'Code Review':
+      return 50;
+    case 'Ready for QA':
+      return 65;
+    case 'In QA':
+      return 80;
+    case 'Reopened':
+      return 25;
+    default:
+      return 40;
+  }
+}
+
+function statusTone(status: string): BadgeTone {
+  return workflowStatusToneMap[status] ?? 'info';
 }
 
 function spansOverlap(start: Date, endExclusive: Date, rangeStart: Date, rangeEndExclusive: Date): boolean {
@@ -474,8 +520,17 @@ function buildTeamSchedule(
     }
     const slipped = ticket.weekOffset > 0;
     const name = ticket.title?.trim() || ticket.module;
-    const status = ticket.workflowStatus ?? (ticket.closed ? 'Done' : 'In Progress');
-    const slipLabel = slipped ? `หลุด ${ticket.weekOffset} สัปดาห์` : 'ตรงสัปดาห์';
+    const status = workflowStatusOf(ticket);
+    const progress = progressFromStatus(status, ticket.closed);
+    const weekLabel = slipped ? `หลุด ${ticket.weekOffset} สัปดาห์` : 'ตรงสัปดาห์';
+    const tags = [
+      ticket.type,
+      ticket.size,
+      status,
+      weekLabel,
+      ticket.isPaused ? 'พักงาน' : '',
+      ticket.isMdDirect ? 'MD-DIRECT' : '',
+    ].filter(Boolean);
     events.push({
       Id: ticket.id,
       Subject: slipped ? `หลุด · ${ticket.id} · ${name}` : `${ticket.id} · ${name}`,
@@ -484,7 +539,16 @@ function buildTeamSchedule(
       IsAllDay: true,
       OwnerId: ticket.assigneeId,
       Slipped: slipped,
-      Description: `${ticket.type} · ${ticket.size} · ${status} · ${slipLabel}`,
+      Description: tags.join(' · '),
+      TicketId: ticket.id,
+      Title: name,
+      Status: status,
+      Progress: progress,
+      Size: ticket.size,
+      Type: ticket.type,
+      WeekLabel: weekLabel,
+      IsPaused: !!ticket.isPaused,
+      IsMdDirect: !!ticket.isMdDirect,
     });
   }
   return {

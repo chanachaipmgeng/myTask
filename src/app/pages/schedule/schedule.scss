@@ -76,22 +76,119 @@
   min-height: 320px;
 }
 
-/* แท่งงาน Timeline — ข้อความไม่ถูกตัดหัว */
-:host ::ng-deep .team-schedule .e-timeline-month-view .e-appointment,
-:host ::ng-deep .team-schedule .e-timeline-view .e-appointment {
+/* แท่งงาน Timeline — โหมด task อ่านอย่างเดียว */
+:host ::ng-deep .team-schedule .e-timeline-month-view .e-appointment.sched-task-appt,
+:host ::ng-deep .team-schedule .e-timeline-view .e-appointment.sched-task-appt {
   display: flex !important;
-  align-items: center;
-  padding-block: 2px;
-  line-height: 1.25;
+  align-items: stretch;
+  padding: 4px 8px;
+  line-height: 1.2;
   overflow: hidden;
+  border-radius: 6px;
+  min-height: 52px;
 }
 
-:host ::ng-deep .team-schedule .e-timeline-month-view .e-appointment .e-subject,
-:host ::ng-deep .team-schedule .e-timeline-view .e-appointment .e-subject {
+:host ::ng-deep .team-schedule .e-appointment.sched-task-appt .e-appointment-details {
+  width: 100%;
+  padding: 0;
+}
+
+.sched-task {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  width: 100%;
+  color: inherit;
+}
+
+.sched-task__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+.sched-task__id {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  line-height: 1.25;
+}
+
+.sched-task__pct {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.sched-task__title {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sched-task__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  opacity: 0.9;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sched-task__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  background: #94a3b8;
+}
+
+.sched-task__dot[data-tone='primary'] {
+  background: #60a5fa;
+}
+.sched-task__dot[data-tone='success'] {
+  background: #4ade80;
+}
+.sched-task__dot[data-tone='warning'] {
+  background: #fbbf24;
+}
+.sched-task__dot[data-tone='info'] {
+  background: #38bdf8;
+}
+.sched-task__dot[data-tone='danger'] {
+  background: #f87171;
+}
+.sched-task__dot[data-tone='secondary'] {
+  background: #94a3b8;
+}
+
+.sched-task__flag {
+  margin-inline-start: 2px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(251, 191, 36, 0.25);
+  color: #fde68a;
+  font-weight: 700;
+}
+
+.sched-task__flag.is-paused {
+  background: rgba(148, 163, 184, 0.3);
+  color: #e2e8f0;
+}
+
+.sched-task__flag.is-md {
+  background: rgba(167, 139, 250, 0.35);
+  color: #ddd6fe;
+}
+
+:host ::ng-deep .team-schedule .e-appointment.sched-task-appt.is-paused {
+  opacity: 0.78;
 }
 
 .schedule-day-calendar {

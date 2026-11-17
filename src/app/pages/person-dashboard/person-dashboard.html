@@ -504,17 +504,30 @@
         </button>
       </div>
 
-      <!-- Custom Prompt Input -->
-      <div class="flex gap-2 items-center my-3">
+      <!-- Custom Prompt Input (+ Speech-to-Text ภาษาไทย) -->
+      <div class="flex flex-wrap gap-2 items-center my-3 speech-prompt-row">
         <ejs-textbox
-          cssClass="flex-1"
+          cssClass="flex-1 speech-prompt-row__input"
           width="100%"
-          placeholder="พิมพ์คำถามหรือหัวข้อที่ต้องการปรึกษา AI Coach (เช่น 'แนะนำหัวข้อ 1-on-1 ด้าน Work-Life Balance')..."
+          placeholder="พิมพ์หรือพูดคำถาม/หัวข้อที่ต้องการปรึกษา AI Coach..."
           [value]="aiInputText()"
           [enabled]="!aiLoading()"
           (input)="aiInputText.set($event.value ?? '')"
           (change)="aiInputText.set($event.value ?? '')"
         ></ejs-textbox>
+        <button
+          ejs-speechtotext
+          lang="th-TH"
+          cssClass="e-outline"
+          [buttonSettings]="speechButtonSettings"
+          [tooltipSettings]="speechTooltipSettings"
+          [allowInterimResults]="true"
+          [disabled]="aiLoading()"
+          [showTooltip]="true"
+          (onStart)="onAiSpeechStart()"
+          (transcriptChanged)="onAiSpeechTranscript($event)"
+          (onError)="onAiSpeechError($event)"
+        ></button>
         <button
           ejs-button
           cssClass="e-primary"
@@ -532,6 +545,7 @@
           <button ejs-button cssClass="e-outline" type="button" (click)="clearAi()">ล้างผลลัพธ์</button>
         }
       </div>
+      <p class="fine m-0 mb-2">ปุ่ม «พูด» ใช้ไมโครโฟนเบราว์เซอร์ (ภาษาไทย) · ยังไม่แก้คะแนนจากเสียง</p>
 
       <!-- AI Error Message -->
       @if (aiError(); as err) {

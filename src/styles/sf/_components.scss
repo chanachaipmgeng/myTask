@@ -185,12 +185,12 @@ body.e-light-mode .e-kanban.pipeline-board {
   border-inline-start: 3px solid #f0b429;
 }
 
-/* Timeline resource row — ความสูงขั้นต่ำกันแท่งงานถูกบีบ (rowAutoHeight ยังขยายต่อได้) */
+/* Timeline resource row — ความสูงขั้นต่ำสำหรับแท่ง task (รหัส/%/สถานะ) */
 .team-schedule.e-schedule .e-timeline-view .e-resource-cells,
 .team-schedule.e-schedule .e-timeline-month-view .e-resource-cells,
 .team-schedule.e-schedule .e-timeline-view .e-work-cells,
 .team-schedule.e-schedule .e-timeline-month-view .e-work-cells {
-  min-height: 44px;
+  min-height: 56px;
 }
 
 // -----------------------------------------------------------------------------
@@ -202,6 +202,30 @@ body.e-light-mode .e-kanban.pipeline-board {
 
 body.e-light-mode .e-dlg-overlay {
   background: rgba(15, 23, 42, 0.35);
+}
+
+/* Speech-to-Text ข้างช่องพิมพ์ยาว (AI Coach / อุทธรณ์) */
+.speech-prompt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.speech-prompt-row__input,
+.speech-prompt-row .e-control-wrapper {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.speech-prompt-row--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.speech-prompt-row--stack .e-speech-to-text,
+.speech-prompt-row--stack [ejs-speechtotext] {
+  align-self: flex-start;
 }
 
 /* Modal polish (แนว UI Kit จุดๆ) — อย่าใส่ transform บน .e-dialog */

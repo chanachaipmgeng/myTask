@@ -225,14 +225,28 @@
           </app-form-field>
 
           <app-form-field label="เหตุผลประกอบการยื่นขอ">
-            <ejs-textbox
-              [multiline]="true"
-              [htmlAttributes]="{ rows: '3' }"
-              placeholder="อธิบายเหตุการณ์ เช่น รอ API ข้ามทีม หรือเซิร์ฟเวอร์มีปัญหา..."
-              [value]="newReason()"
-              (input)="newReason.set($event.value ?? '')"
-              (change)="newReason.set($event.value ?? '')"
-            ></ejs-textbox>
+            <div class="speech-prompt-row speech-prompt-row--stack">
+              <ejs-textbox
+                [multiline]="true"
+                [htmlAttributes]="{ rows: '3' }"
+                placeholder="พิมพ์หรือพูดอธิบายเหตุการณ์ เช่น รอ API ข้ามทีม หรือเซิร์ฟเวอร์มีปัญหา..."
+                [value]="newReason()"
+                (input)="newReason.set($event.value ?? '')"
+                (change)="newReason.set($event.value ?? '')"
+              ></ejs-textbox>
+              <button
+                ejs-speechtotext
+                lang="th-TH"
+                cssClass="e-outline e-small"
+                [buttonSettings]="speechButtonSettings"
+                [tooltipSettings]="speechTooltipSettings"
+                [allowInterimResults]="true"
+                [showTooltip]="true"
+                (onStart)="onReasonSpeechStart()"
+                (transcriptChanged)="onReasonSpeechTranscript($event)"
+                (onError)="onReasonSpeechError($event)"
+              ></button>
+            </div>
           </app-form-field>
 
           <app-form-field label="ลิงก์หลักฐานแนบ (เช่น แชท Teams หรือ Ticket อ้างอิง)" hint="ไม่บังคับ แต่ช่วยให้ผู้อนุมัติตรวจเร็วขึ้น">

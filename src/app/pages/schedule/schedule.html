@@ -44,7 +44,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3 text-sm mb-1">
-        <span class="e-badge e-badge-primary e-badge-pill">สีแถบตามคน · ตรงสัปดาห์</span>
+        <span class="e-badge e-badge-primary e-badge-pill">แท่งงาน = ใบงาน · สถานะ/% อ่านอย่างเดียว</span>
         <span class="inline-flex items-center gap-2">
           <span class="schedule-swatch is-slipped"></span>
           สีส้ม · หลุดจากสัปดาห์ที่ commit
@@ -94,10 +94,34 @@
                 colorField="Color"
               ></e-resource>
             </e-resources>
+            <ng-template #eventSettingsTemplate let-data>
+              <div class="sched-task" [class.is-slipped]="data.Slipped" [class.is-paused]="data.IsPaused">
+                <div class="sched-task__row">
+                  <span class="sched-task__id">{{ data.TicketId }}</span>
+                  <span class="sched-task__pct">{{ data.Progress }}%</span>
+                </div>
+                <div class="sched-task__title">{{ data.Title }}</div>
+                <div class="sched-task__meta">
+                  <span class="sched-task__dot" [attr.data-tone]="statusTone(data.Status)"></span>
+                  <span>{{ data.Status }}</span>
+                  <span>· {{ data.Size }}</span>
+                  @if (data.Slipped) {
+                    <span class="sched-task__flag">หลุด</span>
+                  }
+                  @if (data.IsPaused) {
+                    <span class="sched-task__flag is-paused">พัก</span>
+                  }
+                  @if (data.IsMdDirect) {
+                    <span class="sched-task__flag is-md">MD</span>
+                  }
+                </div>
+              </div>
+            </ng-template>
             <ng-template #eventSettingsTooltipTemplate let-data>
               <div class="schedule-tip">
-                <p class="schedule-tip-title">{{ data.Subject }}</p>
-                <p>{{ data.Description }}</p>
+                <p class="schedule-tip-title">{{ data.TicketId }} · {{ data.Title }}</p>
+                <p>{{ data.Status }} · ความคืบหน้า {{ data.Progress }}% · {{ data.Type }} · {{ data.Size }}</p>
+                <p>{{ data.WeekLabel }}@if (data.IsPaused) { · พักงาน}@if (data.IsMdDirect) { · MD-DIRECT}</p>
               </div>
             </ng-template>
           </ejs-schedule>
@@ -142,13 +166,16 @@
             >
                 <div class="flex flex-wrap items-start justify-between gap-2">
                   <div class="min-w-0">
-                    <p class="m-0 font-semibold text-sm leading-snug">{{ item.Subject }}</p>
-                    <p class="fine m-0 mt-1">{{ ownerLabel(item.OwnerId) }}</p>
+                    <p class="m-0 font-semibold text-sm leading-snug">{{ item.TicketId }} · {{ item.Title }}</p>
+                    <p class="fine m-0 mt-1">{{ ownerLabel(item.OwnerId) }} · {{ item.Progress }}%</p>
                   </div>
-                  <app-status-badge
-                    [label]="item.Slipped ? 'หลุดสัปดาห์' : 'ตรงสัปดาห์'"
-                    [tone]="item.Slipped ? 'warning' : 'success'"
-                  ></app-status-badge>
+                  <div class="flex flex-wrap gap-1 justify-end">
+                    <app-status-badge [label]="item.Status" [tone]="statusTone(item.Status)"></app-status-badge>
+                    <app-status-badge
+                      [label]="item.Slipped ? 'หลุดสัปดาห์' : 'ตรงสัปดาห์'"
+                      [tone]="item.Slipped ? 'warning' : 'success'"
+                    ></app-status-badge>
+                  </div>
                 </div>
                 <p class="m-0 text-xs text-muted leading-relaxed">{{ item.Description }}</p>
                 <div class="flex flex-wrap gap-2">
