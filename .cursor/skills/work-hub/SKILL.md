@@ -30,6 +30,14 @@ description: >-
 
 ใช้ซ้ำข้ามหน้า: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips`, `app-confirm-dialog` · KPI: `app-kpi-stat` · tone: `badge.ts`
 
+## Syncfusion style layers
+
+1. Theme CSS — `assets/themes/tailwind3(.css|-dark.css)` ผ่าน `#sf-theme-link`
+2. App tokens / layout — `src/styles.scss`
+3. จุดกลางแต่ง SF — `src/styles/sf/` (`_components.scss`: buttons scoped, grid frozen, kanban `.pipeline-board`, gantt/schedule ขอบเบา)
+
+อย่ากระจาย override Syncfusion กลับไปใน component SCSS หรือ `styles.scss` โดยไม่จำเป็น · ห้าม `transform` บนปุ่ม/dialog · ห้าม `overflow:hidden` บน Gantt โดยไม่จำเป็น
+
 ## กฎ
 
 - คำนวณแถวในโดเมนก่อน bind UI

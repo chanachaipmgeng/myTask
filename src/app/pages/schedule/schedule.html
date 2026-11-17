@@ -45,46 +45,49 @@
           variant="Outlined"
         ></ejs-message>
       } @else {
-        <ejs-schedule
-          #board
-          id="team-schedule"
-          cssClass="team-schedule"
-          width="100%"
-          height="700px"
-          [readonly]="true"
-          currentView="TimelineMonth"
-          [firstDayOfWeek]="1"
-          [group]="group"
-          [eventSettings]="eventSettings()"
-          [rowAutoHeight]="true"
-          (navigating)="onNavigating($event)"
-          (eventClick)="onEventClick($event)"
-          (popupOpen)="onPopupOpen($event)"
-          (eventRendered)="onEventRendered($event)"
-        >
-          <e-views>
-            <e-view option="TimelineMonth"></e-view>
-            <e-view option="TimelineWeek"></e-view>
-            <e-view option="Agenda"></e-view>
-          </e-views>
-          <e-resources>
-            <e-resource
-              field="OwnerId"
-              title="คน"
-              name="People"
-              [dataSource]="boardModel().people"
-              textField="Text"
-              idField="Id"
-              colorField="Color"
-            ></e-resource>
-          </e-resources>
-          <ng-template #eventSettingsTooltipTemplate let-data>
-            <div class="schedule-tip">
-              <p class="schedule-tip-title">{{ data.Subject }}</p>
-              <p>{{ data.Description }}</p>
-            </div>
-          </ng-template>
-        </ejs-schedule>
+        <div #boardHost class="schedule-board-host">
+          <ejs-schedule
+            #board
+            id="team-schedule"
+            cssClass="team-schedule"
+            width="100%"
+            [readonly]="true"
+            currentView="TimelineMonth"
+            [firstDayOfWeek]="1"
+            [group]="group"
+            [eventSettings]="eventSettings()"
+            [rowAutoHeight]="false"
+            [height]="scheduleHeight()"
+            (created)="onScheduleCreated()"
+            (navigating)="onNavigating($event)"
+            (eventClick)="onEventClick($event)"
+            (popupOpen)="onPopupOpen($event)"
+            (eventRendered)="onEventRendered($event)"
+          >
+            <e-views>
+              <e-view option="TimelineMonth"></e-view>
+              <e-view option="TimelineWeek"></e-view>
+              <e-view option="Agenda"></e-view>
+            </e-views>
+            <e-resources>
+              <e-resource
+                field="OwnerId"
+                title="คน"
+                name="People"
+                [dataSource]="boardModel().people"
+                textField="Text"
+                idField="Id"
+                colorField="Color"
+              ></e-resource>
+            </e-resources>
+            <ng-template #eventSettingsTooltipTemplate let-data>
+              <div class="schedule-tip">
+                <p class="schedule-tip-title">{{ data.Subject }}</p>
+                <p>{{ data.Description }}</p>
+              </div>
+            </ng-template>
+          </ejs-schedule>
+        </div>
       }
     </app-section-card>
 

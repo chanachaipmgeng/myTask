@@ -1,12 +1,29 @@
 :host {
   display: block;
+  /* appbar ~60 + shell-main padding 16/44 */
+  height: calc(100vh - 120px);
+  min-height: 0;
+}
+
+.schedule-page.page {
+  height: 100%;
+  min-height: 0;
+  max-width: none;
+  overflow: hidden;
+}
+
+.schedule-page > app-page-head {
+  flex: 0 0 auto;
 }
 
 .schedule-layout {
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
   grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
 }
 
 @media (min-width: 1100px) {
@@ -15,9 +32,35 @@
   }
 }
 
-.schedule-layout__day {
-  position: sticky;
-  top: 0.75rem;
+:host ::ng-deep app-section-card.schedule-layout__timeline,
+:host ::ng-deep app-section-card.schedule-layout__day {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+:host ::ng-deep app-section-card.schedule-layout__timeline .section-card,
+:host ::ng-deep app-section-card.schedule-layout__day .section-card {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.schedule-board-host {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+:host ::ng-deep .schedule-board-host #team-schedule,
+:host ::ng-deep .schedule-board-host .e-schedule {
+  height: 100% !important;
 }
 
 .schedule-day-calendar {
@@ -28,6 +71,7 @@
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--surface);
+  flex: 0 0 auto;
 }
 
 .schedule-day-calendar ::ng-deep .e-calendar {
@@ -36,10 +80,15 @@
   background: transparent;
 }
 
+:host ::ng-deep app-section-card.schedule-layout__day app-filter-chips {
+  flex: 0 0 auto;
+}
+
 .schedule-day-agenda {
   display: grid;
   gap: 0.75rem;
-  max-height: min(52vh, 520px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   padding-right: 2px;
 }

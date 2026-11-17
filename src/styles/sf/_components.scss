@@ -1,0 +1,227 @@
+// -----------------------------------------------------------------------------
+// 1) Buttons — แบรนด์สีหลักเท่านั้น ไม่ขยับตำแหน่งด้วย transform
+// -----------------------------------------------------------------------------
+.shell-main .e-btn.e-primary:not(:disabled),
+.appbar-chip-btn.e-primary:not(:disabled),
+.page-head .e-btn.e-primary:not(:disabled),
+.section-card .e-btn.e-primary:not(:disabled) {
+  background: var(--primary) !important;
+  border-color: var(--primary-hover) !important;
+  color: #ffffff !important;
+}
+
+.shell-main .e-btn.e-primary:not(:disabled):hover,
+.page-head .e-btn.e-primary:not(:disabled):hover,
+.section-card .e-btn.e-primary:not(:disabled):hover {
+  background: var(--primary-hover) !important;
+}
+
+.shell-main .e-btn.e-outline:not(:disabled):hover,
+.section-card .e-btn.e-outline:not(:disabled):hover {
+  border-color: var(--primary) !important;
+  color: var(--primary-bright) !important;
+}
+
+// -----------------------------------------------------------------------------
+// 2) Inputs — โฟกัสเฉพาะในฟอร์มแอป (ไม่ทับ dropdown ใน toolbar Syncfusion ทั้งจอ)
+// -----------------------------------------------------------------------------
+.field > .e-input-group,
+.field > .e-control-wrapper,
+.filter > .e-input-group,
+.filter > .e-control-wrapper,
+.form-grid .e-input-group,
+.form-grid .e-control-wrapper {
+  width: 100%;
+}
+
+.field .e-input-group.e-input-focus,
+.field .e-control-wrapper.e-input-focus,
+.filter .e-input-group.e-input-focus,
+.filter .e-control-wrapper.e-input-focus,
+.form-grid .e-input-group.e-input-focus,
+.form-grid .e-control-wrapper.e-input-focus {
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.22);
+}
+
+// -----------------------------------------------------------------------------
+// 3) Grid — frozen columns (จำเป็น) + ขอบบางตาม token
+// -----------------------------------------------------------------------------
+.e-grid {
+  border: 1px solid var(--line) !important;
+}
+
+/* พื้นหลังทึบของคอลัมน์ตรึง — กันข้อความคอลัมน์เลื่อนทะลุ */
+.e-grid .e-leftfreeze,
+.e-grid .e-rightfreeze,
+.e-grid .e-fixedfreeze,
+.e-grid .e-frozenheader,
+.e-grid .e-frozencontent,
+.e-grid .e-frozencontent .e-rowcell,
+.e-grid .e-gridheader .e-frozenheader .e-headercell {
+  background-color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+.e-grid .e-row:hover .e-leftfreeze,
+.e-grid .e-row:hover .e-rightfreeze,
+.e-grid .e-row:hover .e-fixedfreeze,
+.e-grid .e-row:hover .e-frozencontent .e-rowcell {
+  background-color: #1e293b !important;
+}
+
+.e-grid .e-summaryrow .e-summarycell.e-leftfreeze,
+.e-grid .e-summaryrow .e-summarycell.e-rightfreeze,
+.e-grid .e-summaryrow .e-summarycell.e-fixedfreeze {
+  background-color: #0f172a !important;
+}
+
+.e-grid .alert-row .e-rowcell {
+  box-shadow: inset 4px 0 0 var(--copper);
+}
+
+.e-grid .reference-row .e-rowcell {
+  background: rgba(var(--primary-rgb), 0.18);
+}
+
+body.e-light-mode {
+  .e-grid .e-leftfreeze,
+  .e-grid .e-rightfreeze,
+  .e-grid .e-fixedfreeze,
+  .e-grid .e-frozenheader,
+  .e-grid .e-frozencontent,
+  .e-grid .e-frozencontent .e-rowcell,
+  .e-grid .e-gridheader .e-frozenheader .e-headercell {
+    background-color: #ffffff !important;
+  }
+
+  .e-grid .e-row:hover .e-leftfreeze,
+  .e-grid .e-row:hover .e-rightfreeze,
+  .e-grid .e-row:hover .e-fixedfreeze,
+  .e-grid .e-row:hover .e-frozencontent .e-rowcell {
+    background-color: #f0f4fd !important;
+  }
+
+  .e-grid .e-summaryrow .e-summarycell.e-leftfreeze,
+  .e-grid .e-summaryrow .e-summarycell.e-rightfreeze,
+  .e-grid .e-summaryrow .e-summarycell.e-fixedfreeze {
+    background-color: #f8fafc !important;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 4) Kanban — เฉพาะบอร์ด pipeline ของแอป
+// -----------------------------------------------------------------------------
+.e-kanban.pipeline-board {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 6px;
+  background: rgba(15, 23, 42, 0.48);
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.e-kanban.pipeline-board .e-kanban-header,
+.e-kanban.pipeline-board .e-kanban-content {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.e-kanban.pipeline-board .e-kanban-table {
+  width: 100% !important;
+  min-width: 1300px !important;
+}
+
+.e-kanban.pipeline-board .e-header-cells,
+.e-kanban.pipeline-board .e-content-cells {
+  width: 185px;
+  min-width: 185px;
+}
+
+.e-kanban.pipeline-board .e-card {
+  cursor: grab;
+}
+
+.e-kanban.pipeline-board .e-card:active {
+  cursor: grabbing;
+}
+
+body.e-light-mode .e-kanban.pipeline-board {
+  background: rgba(240, 244, 253, 0.7);
+  border-color: var(--line);
+}
+
+// -----------------------------------------------------------------------------
+// 5) Gantt / Schedule — ขอบเบาๆ ไม่ตัด overflow ของ Syncfusion
+// -----------------------------------------------------------------------------
+.e-gantt.e-control,
+.e-schedule.team-schedule {
+  border: 1px solid var(--line);
+}
+
+.team-schedule .e-appointment.ticket-slipped {
+  background-color: #9a3412 !important;
+  color: #fff7ed !important;
+  border-inline-start: 3px solid #f0b429;
+}
+
+// -----------------------------------------------------------------------------
+// 6) Dialog / Message — ไม่ใช้ animation ที่มี transform
+// -----------------------------------------------------------------------------
+.e-dlg-overlay {
+  background: rgba(2, 6, 23, 0.55);
+}
+
+body.e-light-mode .e-dlg-overlay {
+  background: rgba(15, 23, 42, 0.35);
+}
+
+// -----------------------------------------------------------------------------
+// 7) Charts — กินความกว้างของกรอบแอปเท่านั้น
+// -----------------------------------------------------------------------------
+.chart-frame ejs-chart,
+.chart-frame ejs-accumulationchart,
+.chart-frame .e-control.e-chart,
+.chart-frame .e-control.e-accumulationchart,
+.e-dashboardlayout .e-panel ejs-chart,
+.e-dashboardlayout .e-panel ejs-accumulationchart,
+.e-dashboardlayout .e-panel .e-control.e-chart,
+.e-dashboardlayout .e-panel .e-control.e-accumulationchart {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+// -----------------------------------------------------------------------------
+// 8) DashboardLayout — หัวแผงอ่านง่าย (ไม่ใส่ transform ตอน hover)
+// -----------------------------------------------------------------------------
+.e-dashboardlayout .e-panel-header {
+  font-weight: 700;
+  border: 0;
+  padding: 14px 18px 2px;
+  height: auto;
+}
+
+.e-dashboardlayout .e-panel-content {
+  padding: 8px 18px 14px;
+  overflow: hidden;
+}
+
+.e-dashboardlayout .e-panel-content.panel-scroll {
+  overflow: auto;
+}
+
+body.e-dark-mode .e-dashboardlayout .e-panel-header {
+  color: #e2e8f0;
+}
+
+body.e-light-mode .e-dashboardlayout .e-panel-header {
+  color: #142b50;
+}
+
+// -----------------------------------------------------------------------------
+// 9) Workspace — Syncfusion Sidebar Push อย่าดันด้วย transform ของเรา
+// -----------------------------------------------------------------------------
+.workspace {
+  margin-left: 0 !important;
+  transform: none !important;
+}

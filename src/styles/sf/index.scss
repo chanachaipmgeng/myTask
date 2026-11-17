@@ -1,0 +1,16 @@
+// =============================================================================
+// Syncfusion customization layer (จุดกลาง)
+// =============================================================================
+// ชั้นสไตล์:
+//   1) Syncfusion theme CSS  — assets/themes/tailwind3(.css|-dark.css) ผ่าน #sf-theme-link
+//   2) App tokens / layout   — src/styles.scss (page, section-card, shell)
+//   3) ไฟล์นี้               — แต่ง Syncfusion เป็นจุดๆ หลังธีมมาตรฐานเท่านั้น
+//
+// กติกา:
+//   - อย่าใส่ transform บน .e-btn / .e-dialog / .e-panel:hover (รบกวนพิกัด Syncfusion)
+//   - อย่า overflow:hidden บน .e-gantt / .e-schedule โดยไม่จำเป็น (ตัด tooltip/popup)
+//   - อย่าทับ .e-card ทั้งโปรเจกต์ — ใช้ scope (.kpi-stat, .pipeline-board, .section-card)
+//   - เพิ่มจุดใหม่ใส่เป็นหมวดด้านล่าง พร้อมคอมเมนต์สั้นๆ
+// =============================================================================
+
+@import 'components';

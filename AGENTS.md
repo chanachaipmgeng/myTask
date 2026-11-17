@@ -61,9 +61,14 @@ npm --prefix server run build
     - `app-filter-chips` — ชิปกรองสถานะ/บทบาท
     - `app-confirm-dialog` — ยืนยันสั้นๆ (queue writeback, board block)
   - **แผงรายละเอียดในหน้า**: `/schedule` ใช้คอลัมน์ขวา (ปฏิทินย่อย + รายวัน) · `/tickets/disputes` ใช้ Split View ซ้ายตารางขวารายละเอียด — อย่าใช้ `ejs-sidebar` Over drawer ทับ Timeline/ตาราง
+  - **Syncfusion style layers** (ธีมมาตรฐานก่อน แล้วค่อยแต่งจุดกลาง):
+    1. Theme CSS — `assets/themes/tailwind3(.css|-dark.css)` ผ่าน `#sf-theme-link` (`ThemeService`)
+    2. App tokens / layout — `src/styles.scss` (page, section-card, shell)
+    3. จุดกลางแต่ง SF — `src/styles/sf/` (`index.scss` → `_components.scss`: ปุ่ม scoped, input ใน field/filter, grid frozen, kanban `.pipeline-board`, gantt/schedule ขอบเบา, dialog ไม่ใช้ transform)
+    - ห้ามทับ `.e-btn`/`.e-dialog` ด้วย `transform` · ห้าม `overflow:hidden` บน Gantt/Schedule โดยไม่จำเป็น · อย่าทับ `.e-card` ทั้งโปรเจกต์ · เพิ่มจุดใหม่ใส่หมวดใน `_components.scss` เท่านั้น
   - ห้ามห่อแผงใหม่ด้วย `rounded-xl border … bg-white dark:bg-slate-900 … shadow-sm` — ใช้ `app-section-card` / คลาส `.section-card`
 - **SCSS Selector Safety**:
-  - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion
+  - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion — ความกว้าง input จำกัดที่ `.field` / `.filter` / `.form-grid` ใน `src/styles/sf/`
   - ห้ามใช้คลาส `.e-chart` โดดๆ เพราะจะไปชนกับไอคอน `e-icons.e-chart` ในเมนู ให้ใช้ `ejs-chart, .e-control.e-chart` แทน
   - ห้ามใส่ `transform: translateY(...)` บน `.e-dashboardlayout .e-panel:hover` หรือ `.e-card:hover` เพื่อไม่ให้รบกวนพิกัดคำนวณภายในของ DashboardLayout และ Kanban
 - **Sidebar & Layout Pinning (Desktop & Mobile)**:

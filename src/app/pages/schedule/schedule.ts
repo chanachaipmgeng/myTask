@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { CalendarModule } from '@syncfusion/ej2-angular-calendars';
@@ -94,8 +104,11 @@ const COLORS = [
 export class SchedulePage {
   private readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly board = viewChild<ScheduleComponent>('board');
+  private readonly boardHost = viewChild<ElementRef<HTMLElement>>('boardHost');
   private pinned = false;
+  private hostObserver: ResizeObserver | null = null;
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly group = { resources: ['People'] };
@@ -106,6 +119,7 @@ export class SchedulePage {
   ];
   protected readonly track = signal<TrackFilter>('All');
   protected readonly dayFilter = signal<DayFilter>('ALL');
+  protected readonly scheduleHeight = signal('640px');
   protected readonly selectedDay = signal<Date>(
     focusDate(buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), 'All').events),
   );
@@ -162,6 +176,19 @@ export class SchedulePage {
       this.selectedDay.set(focused);
       board.selectedDate = focused;
     });
+
+    effect(() => {
+      const host = this.boardHost()?.nativeElement;
+      if (!host) {
+        return;
+      }
+      this.bindBoardHostResize(host);
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.hostObserver?.disconnect();
+      this.hostObserver = null;
+    });
   }
 
   protected setTrack(event: { value?: string | null }): void {
@@ -173,6 +200,36 @@ export class SchedulePage {
 
   protected setDayFilter(value: string): void {
     this.dayFilter.set(value === 'SLIPPED' ? 'SLIPPED' : 'ALL');
+  }
+
+  protected onScheduleCreated(): void {
+    this.syncScheduleHeight();
+    queueMicrotask(() => this.board()?.refresh());
+  }
+
+  private bindBoardHostResize(host: HTMLElement): void {
+    if (typeof ResizeObserver === 'undefined') {
+      this.syncScheduleHeight();
+      return;
+    }
+    this.hostObserver?.disconnect();
+    this.hostObserver = new ResizeObserver(() => this.syncScheduleHeight());
+    this.hostObserver.observe(host);
+    this.syncScheduleHeight();
+  }
+
+  private syncScheduleHeight(): void {
+    const host = this.boardHost()?.nativeElement;
+    if (!host) {
+      return;
+    }
+    const next = Math.max(480, Math.floor(host.clientHeight));
+    const value = `${next}px`;
+    if (this.scheduleHeight() === value) {
+      return;
+    }
+    this.scheduleHeight.set(value);
+    queueMicrotask(() => this.board()?.refresh());
   }
 
   protected onCalendarChange(event: { value?: Date | null }): void {
