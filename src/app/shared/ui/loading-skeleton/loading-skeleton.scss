@@ -1,0 +1,54 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.app-loading-skeleton {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.app-loading-skeleton__form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.app-loading-skeleton__form-row {
+  display: grid;
+  gap: 0.75rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.app-loading-skeleton__table {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.app-loading-skeleton__table-head,
+.app-loading-skeleton__table-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.app-loading-skeleton__cards {
+  display: grid;
+  gap: 0.75rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.app-loading-skeleton__card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
+}

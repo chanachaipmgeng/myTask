@@ -102,24 +102,67 @@
     } @else {
       <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
         @for (item of dueAgenda(); track item.id) {
-          <app-section-card
-            variant="nested"
-            [title]="item.id + ' · ' + item.title"
-            [subtitle]="'กำหนดส่ง ' + item.dueLabel + ' · Est ' + item.estimateMd + ' MD · ' + item.status"
+          <div
+            class="agenda-reveal"
+            [class.is-open]="revealedAgendaId() === item.id"
           >
-            <div actions class="flex flex-wrap gap-2">
-              @if (item.slipped) {
-                <app-status-badge [label]="'หลุด ' + item.weekOffset + ' สัปดาห์'" tone="warning"></app-status-badge>
-              }
-              <app-status-badge [label]="item.status" tone="info"></app-status-badge>
-            </div>
+            <app-section-card
+              variant="nested"
+              [title]="item.id + ' · ' + item.title"
+              [subtitle]="'กำหนดส่ง ' + item.dueLabel + ' · Est ' + item.estimateMd + ' MD · ' + item.status"
+            >
+              <div actions class="flex flex-wrap gap-2">
+                @if (item.slipped) {
+                  <app-status-badge [label]="'หลุด ' + item.weekOffset + ' สัปดาห์'" tone="warning"></app-status-badge>
+                }
+                <app-status-badge [label]="item.status" tone="info"></app-status-badge>
+              </div>
 
-            <div class="flex flex-col gap-3">
-              <p class="m-0 text-sm">ถัดไป: {{ item.nextAction }}</p>
+              <div class="agenda-reveal__face flex flex-col gap-3">
+                <p class="m-0 text-sm">ถัดไป: {{ item.nextAction }}</p>
+                <p class="fine m-0">Checklist ส่งมอบ {{ checklistProgress(item) }}</p>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    ejs-button
+                    cssClass="e-primary e-small"
+                    type="button"
+                    iconCss="e-icons e-eye"
+                    (click)="openAgendaReveal(item.id)"
+                  >
+                    ดู checklist
+                  </button>
+                  <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-kanban" routerLink="/work/board">
+                    เปิดบนบอร์ด
+                  </a>
+                </div>
+              </div>
+            </app-section-card>
 
-              <ul class="m-0 pl-0 list-none flex flex-col gap-1.5">
+            <div
+              class="agenda-reveal__panel"
+              role="region"
+              [attr.aria-hidden]="revealedAgendaId() !== item.id"
+              [attr.aria-label]="'Checklist ส่งมอบ ' + item.id"
+            >
+              <div class="agenda-reveal__panel-head">
+                <div>
+                  <p class="agenda-reveal__panel-title m-0">Checklist ส่งมอบ</p>
+                  <p class="fine m-0">{{ item.id }} · {{ checklistProgress(item) }}</p>
+                </div>
+                <button
+                  ejs-button
+                  cssClass="e-flat e-small"
+                  type="button"
+                  iconCss="e-icons e-close"
+                  (click)="closeAgendaReveal()"
+                >
+                  ปิด
+                </button>
+              </div>
+
+              <ul class="agenda-reveal__list m-0 pl-0 list-none flex flex-col gap-1.5">
                 @for (check of item.checklist; track check.id) {
-                  <li class="flex items-center gap-2 text-xs">
+                  <li class="flex items-center gap-2 text-sm">
                     <span
                       class="e-icons"
                       [class.e-check]="check.done"
@@ -132,14 +175,14 @@
                 }
               </ul>
 
-              <div class="flex flex-wrap gap-2">
+              <div class="agenda-reveal__actions flex flex-wrap gap-2">
                 <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-kanban" routerLink="/work/board">
                   เปิดบนบอร์ด
                 </a>
                 <a ejs-button cssClass="e-outline e-small" routerLink="/mygit">ซิงก์ MR</a>
               </div>
             </div>
-          </app-section-card>
+          </div>
         }
       </div>
     }

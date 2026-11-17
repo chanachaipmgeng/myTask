@@ -69,9 +69,12 @@
   }
 
   @if (!viewingLive()) {
-    <app-section-card title="ดัชนีแช่แข็งจาก snapshot">
+    <app-section-card title="ดัชนีแช่แข็งจาก snapshot" subtitle="แถวที่แช่แข็งตามเดือน/ไตรมาส — ไม่คำนวณย้อนจากใบปัจจุบัน">
       @if (loadingSnapshot()) {
-        <p class="kpi-note m-0">กำลังโหลด…</p>
+        <div class="flex flex-col gap-3">
+          <app-loading-skeleton variant="cards" [rows]="2"></app-loading-skeleton>
+          <app-loading-skeleton variant="table" [rows]="5"></app-loading-skeleton>
+        </div>
       } @else if (snapshotTableRows().length === 0) {
         <p class="kpi-note m-0">ยังไม่มีแถวในช่วงนี้</p>
       } @else {
@@ -90,6 +93,61 @@
     </app-section-card>
   }
 
+  <div class="kpi-grid-4">
+    <app-kpi-stat
+      title="งานทั้งปี"
+      [value]="tasksLabel"
+      iconCss="e-list-unordered"
+      layout="icon-start"
+      accent="info"
+      [hint]="'งานในรายงาน ' + context.yearLabel"
+      [sparklineData]="sparkPlan()"
+      sparklineType="Area"
+      sparklineId="team-spark-tasks"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="ส่งตรงเวลา"
+      [value]="context.onTimePct + '%'"
+      iconCss="e-circle-check"
+      layout="icon-start"
+      accent="success"
+      [progress]="context.onTimePct"
+      progressColor="#34d399"
+      hint="ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว"
+      [sparklineData]="sparkPlan()"
+      sparklineType="Line"
+      sparklineId="team-spark-ontime"
+      [trendValue]="context.onTimePct >= 75 ? '+แผนดี' : 'ต้องเร่ง'"
+      [trendDirection]="context.onTimePct >= 75 ? 'up' : 'down'"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="ผ่าน QA รอบแรก"
+      [value]="context.firstPassQaPct + '%'"
+      iconCss="e-check-box"
+      layout="icon-start"
+      accent="info"
+      [progress]="context.firstPassQaPct"
+      progressColor="#38bdf8"
+      hint="งานที่ส่งตรวจแล้วยังไม่พังเรื่อง security หรือ boundary"
+      [sparklineData]="sparkAccuracy()"
+      sparklineType="Area"
+      sparklineId="team-spark-qa"
+    ></app-kpi-stat>
+    <app-kpi-stat
+      title="มาทำงาน"
+      [value]="context.attendancePct + '%'"
+      iconCss="e-people"
+      layout="icon-start"
+      accent="warning"
+      [progress]="context.attendancePct"
+      progressColor="#fbbf24"
+      hint="attendance"
+      [sparklineData]="sparkTarget()"
+      sparklineType="Area"
+      sparklineId="team-spark-attend"
+    ></app-kpi-stat>
+  </div>
+
   <ejs-dashboardlayout
     [columns]="4"
     [cellSpacing]="cellSpacing"
@@ -101,75 +159,7 @@
     mediaQuery="max-width: 800px"
     (created)="onDashboardCreated()"
   >
-    <div id="kpi-tasks" class="e-panel" data-row="0" data-col="0" data-sizex="1" data-sizey="1">
-      <div class="e-panel-container e-panel-container--kpi">
-        <app-kpi-stat
-          title="งานทั้งปี"
-          [value]="tasksLabel"
-          iconCss="e-list-unordered"
-          layout="icon-start"
-          accent="info"
-          [hint]="'งานในรายงาน ' + context.yearLabel"
-          [sparklineData]="sparkPlan()"
-          sparklineType="Area"
-          sparklineId="team-spark-tasks"
-        ></app-kpi-stat>
-      </div>
-    </div>
-    <div id="kpi-ontime" class="e-panel" data-row="0" data-col="1" data-sizex="1" data-sizey="1">
-      <div class="e-panel-container e-panel-container--kpi">
-        <app-kpi-stat
-          title="ส่งตรงเวลา"
-          [value]="context.onTimePct + '%'"
-          iconCss="e-circle-check"
-          layout="icon-start"
-          accent="success"
-          [progress]="context.onTimePct"
-          progressColor="#34d399"
-          hint="ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว"
-          [sparklineData]="sparkPlan()"
-          sparklineType="Line"
-          sparklineId="team-spark-ontime"
-          [trendValue]="context.onTimePct >= 75 ? '+แผนดี' : 'ต้องเร่ง'"
-          [trendDirection]="context.onTimePct >= 75 ? 'up' : 'down'"
-        ></app-kpi-stat>
-      </div>
-    </div>
-    <div id="kpi-qa" class="e-panel" data-row="0" data-col="2" data-sizex="1" data-sizey="1">
-      <div class="e-panel-container e-panel-container--kpi">
-        <app-kpi-stat
-          title="ผ่าน QA รอบแรก"
-          [value]="context.firstPassQaPct + '%'"
-          iconCss="e-check-box"
-          layout="icon-start"
-          accent="info"
-          [progress]="context.firstPassQaPct"
-          progressColor="#38bdf8"
-          hint="งานที่ส่งตรวจแล้วยังไม่พังเรื่อง security หรือ boundary"
-          [sparklineData]="sparkAccuracy()"
-          sparklineType="Area"
-          sparklineId="team-spark-qa"
-        ></app-kpi-stat>
-      </div>
-    </div>
-    <div id="kpi-attend" class="e-panel" data-row="0" data-col="3" data-sizex="1" data-sizey="1">
-      <div class="e-panel-container e-panel-container--kpi">
-        <app-kpi-stat
-          title="มาทำงาน"
-          [value]="context.attendancePct + '%'"
-          iconCss="e-people"
-          layout="icon-start"
-          accent="warning"
-          [progress]="context.attendancePct"
-          progressColor="#fbbf24"
-          hint="attendance"
-          [sparklineData]="sparkTarget()"
-          sparklineType="Area"
-          sparklineId="team-spark-attend"
-        ></app-kpi-stat>
-      </div>
-    </div>
-    <div id="chart-context" class="e-panel" data-row="1" data-col="0" data-sizex="2" data-sizey="2">
+    <div id="chart-context" class="e-panel" data-row="0" data-col="0" data-sizex="2" data-sizey="2">
       <div class="e-panel-container">
         <div class="e-panel-header">สัดส่วนงานทีม {{ context.yearLabel }}</div>
         <div class="e-panel-content">
@@ -199,7 +189,7 @@
         </div>
       </div>
     </div>
-    <div id="chart-sample" class="e-panel" data-row="1" data-col="2" data-sizex="2" data-sizey="2">
+    <div id="chart-sample" class="e-panel" data-row="0" data-col="2" data-sizex="2" data-sizey="2">
       <div class="e-panel-container">
         <div class="e-panel-header">Bug / Custom / Enhancement แยกสาย</div>
         <div class="e-panel-content">
@@ -231,7 +221,7 @@
       </div>
     </div>
     @if (viewingLive()) {
-      <div id="kpi-alerts" class="e-panel" data-row="3" data-col="0" data-sizex="2" data-sizey="2">
+      <div id="kpi-alerts" class="e-panel" data-row="2" data-col="0" data-sizex="2" data-sizey="2">
         <div class="e-panel-container">
           <div class="e-panel-header">แจ้งเตือนใบที่เปิดอยู่</div>
           <div class="e-panel-content panel-scroll">
@@ -251,7 +241,7 @@
       </div>
     }
     @if (viewingLive()) {
-      <div id="kpi-meaning" class="e-panel" data-row="3" data-col="2" data-sizex="2" data-sizey="2">
+      <div id="kpi-meaning" class="e-panel" data-row="2" data-col="2" data-sizex="2" data-sizey="2">
         <div class="e-panel-container">
           <div class="e-panel-header">ความหมายของ KPI จากใบในกระดาน</div>
           <div class="e-panel-content panel-scroll">
@@ -271,7 +261,7 @@
       </div>
     }
     @if (viewingLive()) {
-      <div id="chart-monthly" class="e-panel" data-row="5" data-col="0" data-sizex="2" data-sizey="2">
+      <div id="chart-monthly" class="e-panel" data-row="4" data-col="0" data-sizex="2" data-sizey="2">
         <div class="e-panel-container">
           <div class="e-panel-header">เส้นรายเดือน</div>
           <div class="e-panel-content">
@@ -337,7 +327,7 @@
       </div>
     }
     @if (viewingLive()) {
-      <div id="chart-quota" class="e-panel" data-row="5" data-col="2" data-sizex="2" data-sizey="2">
+      <div id="chart-quota" class="e-panel" data-row="4" data-col="2" data-sizex="2" data-sizey="2">
         <div class="e-panel-container">
           <div class="e-panel-header">โควตาที่ใช้กับที่ว่าง</div>
           <div class="e-panel-content">
@@ -380,7 +370,7 @@
       </div>
     }
     @if (viewingLive()) {
-      <div id="chart-md-composition" class="e-panel" data-row="7" data-col="0" data-sizex="4" data-sizey="2">
+      <div id="chart-md-composition" class="e-panel" data-row="6" data-col="0" data-sizex="4" data-sizey="2">
         <div class="e-panel-container">
           <div class="e-panel-header">สัดส่วนภาระงานรายเดือน: Planned MD vs Unplanned vs งานสั่งตรงจาก MD (MD Mandate)</div>
           <div class="e-panel-content">

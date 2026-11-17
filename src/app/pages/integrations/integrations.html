@@ -20,6 +20,14 @@
     <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
   }
 
+  @if (loading()) {
+    <app-section-card title="กำลังโหลดการตั้งค่า Integrations" subtitle="ดึงค่า OpenProject / GitLab / Teams จาก API">
+      <div class="flex flex-col gap-4">
+        <app-loading-skeleton variant="cards" [rows]="3"></app-loading-skeleton>
+        <app-loading-skeleton variant="form"></app-loading-skeleton>
+      </div>
+    </app-section-card>
+  } @else {
   <app-section-card [showHead]="false">
     <ejs-tab id="integrations-tabs">
       <e-tabitems>
@@ -290,4 +298,5 @@
       </e-tabitems>
     </ejs-tab>
   </app-section-card>
+  }
 </section>

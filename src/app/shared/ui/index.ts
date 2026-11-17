@@ -23,6 +23,10 @@ export type { FilterChipOption } from './filter-chips/filter-chips';
 export { FilterChipsComponent } from './filter-chips/filter-chips';
 export { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog';
 export {
+  LoadingSkeletonComponent,
+  type LoadingSkeletonVariant,
+} from './loading-skeleton/loading-skeleton';
+export {
   KpiStatCardComponent,
   type KpiAccent,
   type KpiLayout,

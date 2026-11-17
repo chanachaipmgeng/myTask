@@ -1,0 +1,41 @@
+<div class="app-loading-skeleton" [attr.data-variant]="variant" role="status" aria-live="polite" aria-label="กำลังโหลด">
+  @if (variant === 'form') {
+    <div class="app-loading-skeleton__form">
+      <ejs-skeleton width="40%" height="18px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+      <ejs-skeleton width="100%" height="36px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+      <ejs-skeleton width="100%" height="36px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+      <div class="app-loading-skeleton__form-row">
+        <ejs-skeleton width="100%" height="36px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+        <ejs-skeleton width="100%" height="36px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+      </div>
+      <ejs-skeleton width="28%" height="36px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+    </div>
+  } @else if (variant === 'table') {
+    <div class="app-loading-skeleton__table">
+      <div class="app-loading-skeleton__table-head">
+        <ejs-skeleton width="100%" height="16px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+        <ejs-skeleton width="100%" height="16px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+        <ejs-skeleton width="100%" height="16px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+        <ejs-skeleton width="100%" height="16px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+      </div>
+      @for (row of visibleRows(); track row) {
+        <div class="app-loading-skeleton__table-row">
+          <ejs-skeleton width="100%" height="14px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+          <ejs-skeleton width="100%" height="14px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+          <ejs-skeleton width="100%" height="14px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+          <ejs-skeleton width="100%" height="14px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="app-loading-skeleton__cards">
+      @for (row of visibleRows(); track row) {
+        <div class="app-loading-skeleton__card">
+          <ejs-skeleton width="45%" height="14px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+          <ejs-skeleton width="70%" height="28px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+          <ejs-skeleton width="100%" height="10px" [shimmerEffect]="shimmerEffect"></ejs-skeleton>
+        </div>
+      }
+    </div>
+  }
+</div>

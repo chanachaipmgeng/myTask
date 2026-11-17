@@ -422,16 +422,19 @@ app-section-card:hover > .e-card.section-card,
   gap: 14px;
 }
 
+/* ห่อตามความกว้างจริง (sidebar / หน้าต่างแคบ) — ไม่ซ้อนแบบ DashboardLayout 4 ช่องตายตัว */
 .kpi-grid-4 {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 16px;
   align-items: stretch;
+  width: 100%;
 }
 
 .kpi-grid-4 > .e-card,
 .kpi-grid-4 > app-kpi-stat {
   min-width: 0;
+  width: 100%;
 }
 
 /* สลับจังหวะเข้าของ KPI ในแถวเดียวกัน */
@@ -452,18 +455,6 @@ app-section-card:hover > .e-card.section-card,
 }
 .kpi-grid-4 > app-kpi-stat:nth-child(6) {
   animation-delay: 0.32s;
-}
-
-@media (max-width: 1024px) {
-  .kpi-grid-4 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 600px) {
-  .kpi-grid-4 {
-    grid-template-columns: 1fr;
-  }
 }
 
 .card-grid-2 {

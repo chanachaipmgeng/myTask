@@ -48,6 +48,7 @@ import { TEAM_CONTEXT_2568 } from '../../data/team-context';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
+import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton/loading-skeleton';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
@@ -72,6 +73,7 @@ const LIVE_MODE = 'live';
     SectionCardComponent,
     FormFieldComponent,
     FilterChipsComponent,
+    LoadingSkeletonComponent,
   ],
   providers: [
     PieSeriesService,

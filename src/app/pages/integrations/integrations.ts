@@ -14,6 +14,7 @@ import {
 import { canEditAdmin } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { WORKFLOW_STATUSES } from '../../core/models';
+import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton/loading-skeleton';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
@@ -75,6 +76,7 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
     MessageModule,
     PageHeadComponent,
     SectionCardComponent,
+    LoadingSkeletonComponent,
   ],
   providers: [PageService],
   templateUrl: './integrations.html',

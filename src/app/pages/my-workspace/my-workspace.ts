@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import {
@@ -171,6 +171,22 @@ export class MyWorkspacePage {
     const free = Math.max(0, quota - openMd - 1);
     return free.toFixed(2);
   });
+
+  /** Agenda card reveal — เปิดแผง checklist ทับการ์ดทีละใบ (Syncfusion Card Reveal) */
+  protected readonly revealedAgendaId = signal<string | null>(null);
+
+  protected openAgendaReveal(id: string): void {
+    this.revealedAgendaId.set(id);
+  }
+
+  protected closeAgendaReveal(): void {
+    this.revealedAgendaId.set(null);
+  }
+
+  protected checklistProgress(item: { checklist: DeliveryCheckItem[] }): string {
+    const done = item.checklist.filter((check) => check.done).length;
+    return `${done}/${item.checklist.length}`;
+  }
 }
 
 interface DeliveryCheckItem {
