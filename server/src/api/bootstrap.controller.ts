@@ -17,7 +17,7 @@ export class BootstrapController {
   @Public()
   @Get('bootstrap')
   async bootstrap(@Req() req: AuthedRequest) {
-    const [people, tickets, settings, departments, teams, disputes, leaves, stageLogs, allocations] =
+    const [people, allTickets, settings, departments, teams, disputes, leaves, stageLogs, allocations] =
       await Promise.all([
         listPeople(this.db),
         listWorkItems(this.db),
@@ -29,6 +29,10 @@ export class BootstrapController {
         listStageLogs(this.db),
         listAllocations(this.db),
       ]);
+    const activePeopleIds = new Set(people.map((p) => p.id));
+    const tickets = allTickets.filter(
+      (t) => t.track === 'RD' || (t.assigneeId && activePeopleIds.has(t.assigneeId)),
+    );
     return {
       people,
       tickets,

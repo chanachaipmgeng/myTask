@@ -83,6 +83,10 @@ export interface Person {
   email?: string | null;
   gitlabUsername?: string | null;
   openprojectUserId?: number | null;
+  avatarUrl?: string | null;
+  department?: string | null;
+  jobTitle?: string | null;
+  active?: boolean;
 }
 
 export interface Ticket {

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+import { AccessRole, Person } from '../../../../shared/domain/models';
 import { todayInBangkok } from '../../../../shared/domain/workflow';
 import { APP_CONFIG, AppConfig } from '../../config';
 import { Db } from '../../db/db.service';
@@ -110,6 +111,12 @@ export class OpenProjectSyncService implements OnModuleInit {
         projects: mapping.projects,
       })) {
         try {
+          const assigneeUser = idFromHref(singleLink(wp._links?.['assignee'])?.href);
+          if (assigneeUser !== null && !personByOp.has(assigneeUser)) {
+            // Skip work packages not assigned to active team members during R&D testing
+            continue;
+          }
+
           await this.rememberAssignee(client, wp, personByOp);
           const existing = await getWorkItemByOpId(this.db, wp.id);
           const activities = mapping.countReopens ? await client.getActivities(wp.id) : undefined;
@@ -294,6 +301,202 @@ export class OpenProjectSyncService implements OnModuleInit {
       this.log.warn(`postActivity OP-${opId} failed: ${message}`);
       return message;
     }
+  }
+
+  async syncUsers(startedBy: string | null): Promise<{
+    total: number;
+    created: number;
+    updated: number;
+    linked: number;
+    errors: string[];
+  }> {
+    const creds = await this.resolveCredentials();
+    if (!creds) {
+      throw new Error('OpenProject URL/token is not configured');
+    }
+    const client = new OpenProjectClient(creds.url, creds.token);
+
+    const errors: string[] = [];
+    let total = 0;
+    let created = 0;
+    let updated = 0;
+    let linked = 0;
+
+    const people = await listPeople(this.db, false);
+    const personByOp = new Map<number, Person>();
+    const personByEmail = new Map<string, Person>();
+    const personById = new Map<string, Person>();
+    const usedGitlabUsernames = new Set<string>();
+
+    for (const p of people) {
+      if (p.openprojectUserId != null) {
+        personByOp.set(p.openprojectUserId, p);
+      }
+      if (p.email) {
+        personByEmail.set(p.email.toLowerCase().trim(), p);
+      }
+      personById.set(p.id.toLowerCase().trim(), p);
+      if (p.gitlabUsername) {
+        usedGitlabUsernames.add(p.gitlabUsername.toLowerCase().trim());
+      }
+    }
+
+    try {
+      for await (const user of client.paginateUsers()) {
+        total += 1;
+        const opUserId = user.id;
+        const name =
+          user.name ||
+          (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : `User ${opUserId}`);
+        const login = user.login?.trim() ?? null;
+        const email = user.email?.trim() ?? null;
+
+        await upsertOpUserSeen(this.db, { opUserId, name, login, email });
+
+        const deptTitle = user._links?.customField1?.title ?? null;
+        const roleTitle = user._links?.customField3?.title ?? null;
+        const avatarUrl = user.avatar ?? (opUserId ? `${creds.url}/users/${opUserId}/avatar` : null);
+        const isRd = Boolean(
+          deptTitle && (deptTitle.startsWith('RD-') || deptTitle.toLowerCase().includes('research')),
+        );
+        const active = isRd && user.status !== 'locked';
+
+        let existing: Person | null = personByOp.get(opUserId) ?? null;
+        if (!existing && email) {
+          existing = personByEmail.get(email.toLowerCase().trim()) ?? null;
+        }
+        if (!existing && login) {
+          existing = personById.get(login.toLowerCase().trim()) ?? null;
+        }
+        // Match by login prefix: e.g. 'chanachai.o@myhr.co.th' -> 'chanachai'
+        if (!existing && login) {
+          const prefix = login.split('.')[0]?.toLowerCase().trim();
+          if (prefix && personById.has(prefix)) {
+            existing = personById.get(prefix) ?? null;
+          }
+        }
+
+        if (existing) {
+          let changed = false;
+          const patch: Person & { access?: AccessRole; active?: boolean } = { ...existing };
+          if (patch.openprojectUserId !== opUserId) {
+            patch.openprojectUserId = opUserId;
+            changed = true;
+            linked += 1;
+          }
+          if (!patch.email && email) {
+            patch.email = email;
+            changed = true;
+          }
+          if ((!patch.fullName || patch.fullName.startsWith('User ')) && name) {
+            patch.fullName = name;
+            changed = true;
+          }
+          if (avatarUrl && patch.avatarUrl !== avatarUrl) {
+            patch.avatarUrl = avatarUrl;
+            changed = true;
+          }
+          if (deptTitle && patch.department !== deptTitle) {
+            patch.department = deptTitle;
+            changed = true;
+          }
+          if (roleTitle && patch.jobTitle !== roleTitle) {
+            patch.jobTitle = roleTitle;
+            patch.role = roleTitle;
+            changed = true;
+          }
+          if (isRd) {
+            if (patch.track !== 'RD') {
+              patch.track = 'RD';
+              changed = true;
+            }
+            if (patch.teamId !== 'rd') {
+              patch.teamId = 'rd';
+              changed = true;
+            }
+          }
+          if (patch.active !== active) {
+            patch.active = active;
+            changed = true;
+          }
+          if (user.admin && patch.access !== 'admin') {
+            patch.access = 'admin';
+            changed = true;
+          }
+          if (changed) {
+            await upsertPerson(this.db, patch);
+            personByOp.set(opUserId, patch);
+            if (email) personByEmail.set(email.toLowerCase().trim(), patch);
+            personById.set(patch.id.toLowerCase().trim(), patch);
+            updated += 1;
+          }
+        } else {
+          const rawId =
+            (login ? login.toLowerCase().replace(/[^a-z0-9_-]/g, '') : `op-${opUserId}`) ||
+            `op-${opUserId}`;
+          let candidateId = rawId;
+          let suffix = 1;
+          while (personById.has(candidateId)) {
+            candidateId = `${rawId}-${suffix++}`;
+          }
+
+          const candidateGitlab =
+            login && !usedGitlabUsernames.has(login.toLowerCase()) ? login : null;
+          if (candidateGitlab) {
+            usedGitlabUsernames.add(candidateGitlab.toLowerCase());
+          }
+
+          const nickname =
+            user.firstName ||
+            (name.includes(' ') ? name.split(' ')[0] : name) ||
+            login ||
+            `User ${opUserId}`;
+          const newPerson: Person & { access?: AccessRole; active?: boolean } = {
+            id: candidateId,
+            nickname,
+            fullName: name,
+            role: roleTitle || (user.admin ? 'Lead' : 'Developer'),
+            level: 'Mid',
+            track: isRd ? 'RD' : 'Implement',
+            plannedMd: 3.5,
+            teamId: isRd ? 'rd' : 'implement',
+            access: user.admin ? 'admin' : isRd && roleTitle?.toLowerCase().includes('lead') ? 'lead' : 'member',
+            email,
+            gitlabUsername: candidateGitlab,
+            openprojectUserId: opUserId,
+            active,
+            avatarUrl,
+            department: deptTitle,
+            jobTitle: roleTitle,
+          };
+
+          await upsertPerson(this.db, newPerson);
+          personByOp.set(opUserId, newPerson);
+          if (email) personByEmail.set(email.toLowerCase(), newPerson);
+          personById.set(candidateId, newPerson);
+          created += 1;
+        }
+      }
+
+      // Deactivate any people whose track is not RD or whose department is not RD
+      await this.db.query(
+        `UPDATE people SET active = false WHERE track != 'RD' AND (department IS NULL OR department NOT LIKE 'RD-%')`,
+      );
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      errors.push(msg);
+      this.log.error(`syncUsers failed: ${msg}`);
+    }
+
+    await this.db.audit(startedBy, 'openproject.sync_users', 'openproject', {
+      total,
+      created,
+      updated,
+      linked,
+      errors,
+    });
+
+    return { total, created, updated, linked, errors };
   }
 
   private async resolveCredentials(): Promise<{ url: string; token: string } | null> {

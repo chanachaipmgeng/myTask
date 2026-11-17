@@ -34,8 +34,8 @@ export async function upsertPerson(
   await db.query(
     `INSERT INTO people (
        id, nickname, full_name, role_title, level, track, planned_md, team_id, access,
-       email, gitlab_username, openproject_user_id, active
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       email, gitlab_username, openproject_user_id, active, avatar_url, department, job_title
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
      ON CONFLICT (id) DO UPDATE SET
        nickname = EXCLUDED.nickname,
        full_name = EXCLUDED.full_name,
@@ -48,7 +48,10 @@ export async function upsertPerson(
        email = EXCLUDED.email,
        gitlab_username = EXCLUDED.gitlab_username,
        openproject_user_id = EXCLUDED.openproject_user_id,
-       active = EXCLUDED.active`,
+       active = EXCLUDED.active,
+       avatar_url = COALESCE(EXCLUDED.avatar_url, people.avatar_url),
+       department = COALESCE(EXCLUDED.department, people.department),
+       job_title = COALESCE(EXCLUDED.job_title, people.job_title)`,
     [
       person.id,
       person.nickname,
@@ -63,6 +66,9 @@ export async function upsertPerson(
       person.gitlabUsername ?? null,
       person.openprojectUserId ?? null,
       person.active ?? true,
+      person.avatarUrl ?? null,
+      person.department ?? null,
+      person.jobTitle ?? null,
     ],
   );
   const saved = await getPerson(db, person.id);
@@ -140,9 +146,9 @@ export async function listUnmappedOpUsers(db: Queryable): Promise<OpUserSeenRow[
   );
 }
 
-export async function personByOpUserMap(db: Queryable): Promise<Map<number, string>> {
+export async function personByOpUserMap(db: Queryable, activeOnly = true): Promise<Map<number, string>> {
   const rows = await db.query<{ id: string; openproject_user_id: number }>(
-    'SELECT id, openproject_user_id FROM people WHERE openproject_user_id IS NOT NULL',
+    `SELECT id, openproject_user_id FROM people WHERE openproject_user_id IS NOT NULL ${activeOnly ? 'AND active = true' : ''}`,
   );
   return new Map(rows.map((row) => [row.openproject_user_id, row.id]));
 }

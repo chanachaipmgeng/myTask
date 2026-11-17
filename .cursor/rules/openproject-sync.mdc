@@ -11,6 +11,10 @@ alwaysApply: false
 - `_links.parent` แมปเป็น `opParentId` และ `parentId` (`OP-<id>`) สำหรับแสดง Hierarchy บน Gantt Timeline
 - `firstDueOn` ล็อกจากของเดิมก่อน — อย่าเลื่อนย้อนจาก due ใหม่ใน OP หรือจากการแก้วันบน Gantt
 - ขยาย `OpenProjectMapping.customFields` ต้องอัปเดต `DEFAULT_OPENPROJECT_MAPPING`, Integrations UI, และตารางใน `docs/คู่มือ.md`
+- **OpenProject API v3 Pagination**: พารามิเตอร์ `offset` ใน OpenProject v3 หมายถึง **1-based page number** (1, 2, 3...) ไม่ใช่ item index ดังนั้น loop pagination ต้องใช้ `offset += 1` เสมอ (ห้ามใช้ `offset += pageSize` เพราะจะข้ามหน้า)
+- **User Custom Fields**: ข้อมูลแผนกและตำแหน่งของ OpenProject User จะอยู่ใน `_links` ได้แก่ `_links.customField1.title` (สังกัดแผนก เช่น `RD-Research and Development`), `_links.customField2.title` (ฝ่ายย่อย), และ `_links.customField3.title` (ชื่อตำแหน่งจริง)
+- **Avatar & Image Fallback**: ฟิลด์ `user.avatar` อาจเป็น Gravatar หรือ URL ภายในของ OpenProject ในฝั่ง UI ต้องมี `(error)="onAvatarError()"` เพื่อ fallback เป็นป้ายตัวย่อ 2 ตัวอักษรบน Gradient เสมอ ห้ามแสดงไอคอนรูปแตก
+- **Team Staging / POC Isolation**: ในช่วงทดสอบเฉพาะทีม (เช่น R&D) ให้กำหนด `active = false` สำหรับพนักงานแผนกอื่นในตาราง `people` (ห้ามลบข้อมูล) ซึ่ง `listPeople(db, true)` จะกรองเฉพาะคนที่ active อัตโนมัติ และกรอง work items ใน `bootstrap` ให้แสดงเฉพาะตั๋วของทีมที่ active
 - Writeback (`OPENPROJECT_WRITEBACK=false` เป็นค่าเริ่ม) ใช้กับทั้ง `writebackAssignee` (`patchAssignee`) และ `writebackDates` (`patchDates`) — อย่าเปิดเป็นค่าเริ่มในโค้ด
 - `POST /api/work-items/:id/assign` และ `POST /api/work-items/:id/dates` จำกัด `@Roles('admin', 'lead')` เท่านั้น
 - เมื่อ writeback เปิดและใบมี `opId` → UI คิวต้องแสดง Dialog ยืนยันก่อนเรียก assign; แสดง `writebackError` ถ้า PATCH ล้ม

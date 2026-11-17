@@ -13,6 +13,7 @@ import {
 } from '../../core/api-client';
 import { canEditAdmin } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
+import { ShellNotice } from '../../core/shell-notice';
 import { WORKFLOW_STATUSES } from '../../core/models';
 import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton/loading-skeleton';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
@@ -84,6 +85,7 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
 export class IntegrationsPage {
   private readonly api = inject(ApiClient);
   private readonly scorecard = inject(ScorecardService);
+  private readonly notice = inject(ShellNotice);
 
   protected readonly canEdit = canEditAdmin;
   protected readonly loading = signal(true);
@@ -312,6 +314,29 @@ export class IntegrationsPage {
       }
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'ซิงก์ไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async syncUsersNow(): Promise<void> {
+    this.saving.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const result = await this.api.syncOpenProjectUsers();
+      await this.scorecard.reloadFromApi();
+      await this.reload();
+      const text = `ซิงค์พนักงาน MyProject สำเร็จ · ทั้งหมด ${result.total} คน · เพิ่มใหม่ ${result.created} คน · อัปเดต/เชื่อมโยง ${result.linked + result.updated} คน`;
+      this.message.set(text);
+      this.notice.success(text);
+      if (result.errors && result.errors.length) {
+        this.error.set(result.errors.slice(0, 3).join(' | '));
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ซิงค์พนักงานไม่สำเร็จ';
+      this.error.set(msg);
+      this.notice.error(msg);
     } finally {
       this.saving.set(false);
     }

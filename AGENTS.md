@@ -110,6 +110,11 @@ npm --prefix server run build
     - ใบงาน MD Mandate ให้นับเข้าโควตาผลงานเต็มจำนวน และแสดงผลวิเคราะห์ MD Share (%) บน Dashboard ภาพรวม
 - **OpenProject Sync & FirstDueOn Protection**:
   - เมื่อดึงข้อมูลจาก OpenProject/MyProject: หาก `tickets.first_due_on` มีค่าอยู่แล้ว ห้ามเขียนทับโดยเด็ดขาด ยกเว้นกรณีที่มีคำสั่งอนุมัติจากตาราง `ticket_due_shifts` สถานะ `APPROVED` เท่านั้น
+- **OpenProject User Sync & Team Staging Isolation**:
+  - **Pagination Rule**: พารามิเตอร์ `offset` ใน OpenProject API v3 คือ **1-based page number** (1, 2, 3...) ต้องวนลูปด้วย `offset += 1` เสมอ (ห้ามใช้ `offset += pageSize`)
+  - **User Custom Fields**: ข้อมูลแผนกและตำแหน่งใน OpenProject อยู่ใต้ `_links`: `customField1` (แผนก), `customField2` (ฝ่ายย่อย), `customField3` (ตำแหน่งงานจริง)
+  - **Profile Details**: จัดเก็บ `avatar_url`, `department`, `job_title` ลงในตาราง `people` โดยในฝั่ง UI แสดงรูปโปรไฟล์พร้อม `(error)="onAvatarError()"` เพื่อ fallback เป็นตัวย่อ 2 ตัวอักษรบน Gradient อย่างสวยงาม
+  - **Team Staging Isolation**: ในช่วงทดสอบเฉพาะทีม (เช่น R&D) พนักงานแผนกอื่นถูกตั้งค่า `active = false` ในตาราง `people` (ไม่ลบข้อมูล) โดย `listPeople(db, true)` จะกรองเฉพาะคนที่ active ส่งผลให้หน้า `/login`, ผังคน และการคำนวณคะแนนแสดงเฉพาะทีมที่กำลังทดสอบ และกรองตั๋วใน `bootstrap` ให้โฟกัสเฉพาะ Track RD หรือ Assignee ที่ active
 - **GitLab Approvals & Peer Review Quota**:
   - ซิงก์ผู้ตรวจโค้ด (`reviewers`) และผู้อนุมัติ (`approved_by`) ผ่าน GitLab API `/api/v4/projects/:id/merge_requests/:iid/approvals`
   - คำนวณเครดิตเวลาโควตา **Peer Review MD** (10–15% ของ `estimateMd`) ให้รุ่นพี่/Senior ในทีมเพื่อความเป็นธรรม

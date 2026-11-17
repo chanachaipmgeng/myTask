@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { requireRoles } from './core/role.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'team' },
+  { path: '', pathMatch: 'full', redirectTo: 'login' },
   {
     path: 'me',
     loadComponent: () => import('./pages/my-workspace/my-workspace').then((m) => m.MyWorkspacePage),

@@ -74,4 +74,51 @@ describe('OpenProjectClient.patchAssignee', () => {
     assert.equal(body.startDate, '2026-11-10');
     assert.equal(body.dueDate, '2026-11-20');
   });
+
+  it('listUsers and paginateUsers fetch users with pagination', async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('/api/v3/users') && url.includes('offset=1')) {
+        return new Response(
+          JSON.stringify({
+            total: 3,
+            count: 2,
+            pageSize: 2,
+            offset: 1,
+            _embedded: {
+              elements: [
+                { id: 101, name: 'User 101', login: 'user1', email: 'u1@example.com' },
+                { id: 102, name: 'User 102', login: 'user2', email: 'u2@example.com' },
+              ],
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.includes('/api/v3/users') && url.includes('offset=2')) {
+        return new Response(
+          JSON.stringify({
+            total: 3,
+            count: 1,
+            pageSize: 2,
+            offset: 2,
+            _embedded: {
+              elements: [
+                { id: 103, name: 'User 103', login: 'user3', email: 'u3@example.com' },
+              ],
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    };
+
+    const client = new OpenProjectClient('https://op.example', 'token', fetchImpl);
+    const users: number[] = [];
+    for await (const user of client.paginateUsers({ pageSize: 2 })) {
+      users.push(user.id);
+    }
+    assert.deepEqual(users, [101, 102, 103]);
+  });
 });

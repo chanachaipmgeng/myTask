@@ -1,134 +1,245 @@
-<section class="page">
-  <app-page-head
-    title="เข้าสู่ระบบ &amp; สลับบทบาทผู้ใช้งาน"
-    description="รองรับการยืนยันตัวตนผ่าน GitLab OAuth SSO สำหรับใช้งานจริง และการสลับบัญชีตามบทบาท (admin ผู้ดูแลระบบ · lead หัวหน้าสายงาน · member พนักงานทั่วไป) เพื่อแยกเมนูและสิทธิ์การเข้าถึงอย่างชัดเจน"
-  >
-    <div actions class="flex flex-wrap gap-2">
-      <button ejs-button cssClass="e-primary" iconCss="e-icons e-lock" type="button" (click)="startGitLabSso()">
-        เข้าสู่ระบบด้วย GitLab OAuth SSO
-      </button>
-      @if (session()) {
-        <button ejs-button cssClass="e-outline" type="button" [disabled]="busy()" (click)="logout()">
-          ออกจากระบบ Session
-        </button>
-      }
-    </div>
-  </app-page-head>
+<div class="ai-login-container">
+  <!-- Left Side: Hero AI Showcase (Essential UI Kit Asymmetric Split) -->
+  <aside class="ai-login-hero">
+    <div class="ai-hero-circles" aria-hidden="true"></div>
+    <div class="ai-hero-glow" aria-hidden="true"></div>
 
-  <app-flash-messages [success]="message() || null" [error]="error() || null"></app-flash-messages>
+    <div class="ai-hero-content">
+      <div class="ai-brand-badge">
+        <span class="e-icons e-ai-chat ai-brand-icon"></span>
+        <span class="ai-brand-text">MyHR Intelligence</span>
+      </div>
 
-  @if (activePerson(); as active) {
-    <app-section-card [showHead]="false">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-start gap-3">
-          <div class="avatar-badge">{{ active.nickname.slice(0, 2) }}</div>
-          <div class="flex flex-col gap-1">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-lg font-bold text-cyan">บัญชีที่กำลังใช้งาน: {{ active.nickname }} ({{ active.fullName }})</span>
-              <app-status-badge
-                [label]="'สิทธิ์: ' + role()"
-                [value]="role()"
-                [toneMap]="roleToneMap"
-              ></app-status-badge>
-              <app-status-badge
-                [label]="(active.track === 'RD' ? 'สาย R&D' : 'สาย Implement') + ' · ' + active.level"
-                tone="secondary"
-              ></app-status-badge>
-            </div>
-            <p class="fine m-0">
-              @if (role() === 'admin') {
-                เห็นเมนูครบทุกส่วน: บริหารทีม, ศูนย์วิเคราะห์ Python (/analytics), ตั้งค่าเชื่อมต่อระบบ (/integrations) และจัดการสิทธิ์/Audit Log (/admin)
-              } @else if (role() === 'lead') {
-                เห็นเมนูบริหารทีมและแผนงาน: แดชบอร์ดทีม (/team), ฮับบริหารงาน (/work), จัดคิว (/queue) และศูนย์วิเคราะห์ Python (/analytics)
-              } @else {
-                เห็นเมนูฝั่งพนักงานทั่วไป: พื้นที่ของฉัน (/me), กระดานส่งมอบงาน (/work/board), ปฏิทินทีม (/schedule) และซิงก์ MR (/mygit)
-              }
-            </p>
+      <h1 class="ai-hero-heading">
+        Central Sync &amp;<br />
+        <span class="gradient-text">Man-day Scorecard</span>
+      </h1>
+
+      <p class="ai-hero-desc">
+        ระบบวิเคราะห์และประเมินผลงานการส่งมอบงานระดับองค์กร เชื่อมโยงข้อมูลงานจาก MyProject และ GitLab Merge Requests ด้วยสูตรถ่วงน้ำหนัก 6 สายงานอย่างเป็นธรรมและโปร่งใส
+      </p>
+
+      <div class="ai-feature-list">
+        <div class="ai-feature-pill">
+          <span class="e-icons e-check pill-icon"></span>
+          <div class="pill-text">
+            <strong>6 Tracks Dynamic Formula</strong>
+            <span>R&amp;D, Implement, QA, UX/BA, Support, Infra</span>
           </div>
         </div>
-        <div class="flex flex-wrap gap-2">
-          <a ejs-button cssClass="e-primary" routerLink="/me">เปิดพื้นที่ของฉัน (/me)</a>
-          @if (role() === 'admin' || role() === 'lead') {
-            <a ejs-button cssClass="e-outline" routerLink="/analytics">ศูนย์วิเคราะห์ Python (/analytics)</a>
-          }
-          @if (role() === 'admin') {
-            <a ejs-button cssClass="e-outline" routerLink="/admin">จัดการสิทธิ์ผู้ใช้ (/admin)</a>
-          }
+
+        <div class="ai-feature-pill">
+          <span class="e-icons e-check pill-icon"></span>
+          <div class="pill-text">
+            <strong>Fair Cutoff &amp; MD Mandate</strong>
+            <span>ไม่ตัดคะแนน Dev เมื่อส่งเข้า QA และคุ้มครองงานแทรกฉุกเฉิน</span>
+          </div>
+        </div>
+
+        <div class="ai-feature-pill">
+          <span class="e-icons e-check pill-icon"></span>
+          <div class="pill-text">
+            <strong>Python Intelligence Radar</strong>
+            <span>วิเคราะห์ Z-Score Outlier, Bottleneck และ 1-on-1 Insights</span>
+          </div>
         </div>
       </div>
-    </app-section-card>
-  }
 
-  @if (!canUsePersonaSwitch()) {
-    <ejs-message
-      content="โหมดสลับบัญชี 15 คนปิดอยู่บนเซิร์ฟเวอร์นี้ — เข้าสู่ระบบด้วย GitLab OAuth SSO"
-      severity="Info"
-      variant="Outlined"
-    ></ejs-message>
-  }
-
-  @if (canUsePersonaSwitch()) {
-  <app-section-card title="สลับบัญชีตามบทบาท" subtitle="เลือกบุคคลจากรายชื่อ 15 คนเพื่อจำลองสิทธิ์เมนูและการเข้าถึง">
-    <div actions class="w-full sm:w-72">
-      <ejs-textbox
-        placeholder="ค้นหาชื่อ / รหัส / ตำแหน่ง..."
-        [value]="query()"
-        (input)="query.set($any($event).value ?? '')"
-        width="100%"
-      ></ejs-textbox>
+      <div class="ai-hero-footer">
+        <span class="footer-note">เวอร์ชัน 2.5 · MyHR Plus Backoffice Design Standard</span>
+      </div>
     </div>
-    <app-filter-chips
-      [options]="roleChipOptions()"
-      [value]="roleFilter()"
-      (valueChange)="setRoleFilter($event)"
-    ></app-filter-chips>
+  </aside>
 
-    <div class="card-grid-3">
-      @for (person of filteredPeople(); track person.id) {
-        <app-section-card variant="nested" [showHead]="false">
-            <div class="flex flex-col justify-between gap-3">
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex items-start gap-3">
-                <div class="avatar-badge">{{ person.nickname.slice(0, 2) }}</div>
-                <div>
-                  <div class="flex flex-wrap items-center gap-1.5">
-                    <strong class="text-base">{{ person.nickname }}</strong>
-                    <span class="fine m-0">({{ person.role }})</span>
+  <!-- Right Side: Auth Card Pane -->
+  <main class="ai-login-pane">
+    <div class="ai-login-card">
+      <!-- Card Header -->
+      <div class="card-top">
+        <div class="card-ai-badge">
+          <span class="e-icons e-ai-chat"></span>
+          <span>Intelligent Access</span>
+        </div>
+        <h2 class="card-title">เข้าสู่ระบบการทำงาน</h2>
+        <p class="card-subtitle">
+          เลือกตัวตนพนักงาน หรือเข้าสู่ระบบผ่านการเชื่อมโยงระบบภายนอก
+        </p>
+      </div>
+
+      <app-flash-messages [success]="message() || null" [error]="error() || null"></app-flash-messages>
+
+      <!-- Segmented Mode Switcher -->
+      <div class="segmented-control" role="tablist">
+        <button
+          type="button"
+          class="segmented-btn"
+          [class.is-active]="authMode() === 'persona'"
+          (click)="setAuthMode('persona')"
+          role="tab"
+          [attr.aria-selected]="authMode() === 'persona'"
+        >
+          <span class="e-icons e-people"></span>
+          <span>เลือกบัญชีพนักงาน ({{ roster().length }})</span>
+        </button>
+
+        <button
+          type="button"
+          class="segmented-btn"
+          [class.is-active]="authMode() === 'external'"
+          (click)="setAuthMode('external')"
+          role="tab"
+          [attr.aria-selected]="authMode() === 'external'"
+        >
+          <span class="e-icons e-link"></span>
+          <span>ระบบเชื่อมต่อภายนอก (SSO)</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Persona Grid -->
+      @if (authMode() === 'persona') {
+        <div class="persona-tab">
+          <div class="filter-bar">
+            <div class="search-wrap">
+              <span class="e-icons e-search search-icon"></span>
+              <input
+                type="text"
+                class="search-input"
+                placeholder="ค้นหาชื่อ, รหัส, หรือบทบาท..."
+                [value]="query()"
+                (input)="onSearchInput($event)"
+              />
+              @if (query()) {
+                <button type="button" class="clear-btn" (click)="clearSearch()">×</button>
+              }
+            </div>
+
+            <div class="chips-row">
+              @for (chip of roleChipOptions(); track chip.id) {
+                <button
+                  type="button"
+                  class="role-chip"
+                  [class.is-active]="roleFilter() === chip.id"
+                  (click)="setRoleFilter(chip.id)"
+                >
+                  <span>{{ chip.label }}</span>
+                  <span class="chip-count">{{ chip.count }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="persona-grid-wrap">
+            @if (filteredPeople().length === 0) {
+              <div class="empty-state">
+                <span class="e-icons e-search empty-icon"></span>
+                <p>ไม่พบพนักงานที่ตรงกับ "{{ query() }}"</p>
+                <button ejs-button cssClass="e-flat e-small" (click)="clearSearch()">ล้างคำค้นหา</button>
+              </div>
+            } @else {
+              <div class="persona-grid">
+                @for (person of filteredPeople(); track person.id) {
+                  <div
+                    class="persona-card"
+                    [attr.data-role]="person.access ?? 'member'"
+                    (click)="loginAs(person)"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div class="persona-avatar">
+                      @if (person.avatarUrl && !avatarFailed(person.id)) {
+                        <img
+                          [src]="person.avatarUrl"
+                          [alt]="person.nickname"
+                          class="avatar-img"
+                          (error)="onAvatarError(person.id)"
+                        />
+                      } @else {
+                        <span>{{ person.nickname.slice(0, 2) }}</span>
+                      }
+                    </div>
+                    <div class="persona-info">
+                      <div class="persona-name-row">
+                        <span class="persona-nickname">{{ person.nickname }}</span>
+                        <span class="persona-role-badge" [attr.data-role]="person.access ?? 'member'">
+                          {{ person.access ?? 'member' }}
+                        </span>
+                      </div>
+                      <div class="persona-meta">
+                        <span class="persona-fullname">{{ person.fullName }}</span>
+                        <span class="persona-track">{{ person.jobTitle || person.role }}</span>
+                      </div>
+                    </div>
+                    <span class="e-icons e-chevron-right enter-icon"></span>
                   </div>
-                  <p class="fine m-0">{{ person.fullName }}</p>
-                  <p class="fine m-0 text-xs">GitLab: @{{ person.gitlabUsername || person.id }}</p>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Tab 2: External SSO & MyProject -->
+      @if (authMode() === 'external') {
+        <div class="external-tab">
+          <div class="external-cards-stack">
+            <!-- MyProject Sync Card -->
+            <div class="integration-item-card">
+              <div class="item-head">
+                <div class="item-icon-box op-icon">
+                  <span class="e-icons e-repeat"></span>
+                </div>
+                <div class="item-copy">
+                  <h3>MyProject User Sync</h3>
+                  <p>ดึงรายชื่อพนักงานทั้งหมดจาก OpenProject (myprojectplus.myhr.co.th) เข้าสู่ระบบอัตโนมัติ</p>
                 </div>
               </div>
-              <span
-                class="e-badge e-badge-pill"
-                [class.e-badge-danger]="person.access === 'admin'"
-                [class.e-badge-warning]="person.access === 'lead'"
-                [class.e-badge-info]="(person.access ?? 'member') === 'member'"
-              >
-                {{ person.access ?? 'member' }}
-              </span>
+              <div class="item-action">
+                <button
+                  ejs-button
+                  cssClass="e-primary w-full"
+                  type="button"
+                  iconCss="e-icons e-user"
+                  [disabled]="busy()"
+                  (click)="syncMyProjectUsers()"
+                >
+                  {{ busy() ? 'กำลังซิงค์รายชื่อ...' : 'ซิงค์รายชื่อพนักงานจาก MyProject' }}
+                </button>
+              </div>
             </div>
 
-            <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
-              <div class="flex items-center gap-1.5 text-xs">
-                <span class="e-badge e-badge-secondary e-badge-pill">{{ person.track === 'RD' ? 'R&D' : 'Implement' }}</span>
-                <span class="e-badge e-badge-secondary e-badge-pill">{{ person.level }}</span>
+            <!-- GitLab SSO Card -->
+            <div class="integration-item-card">
+              <div class="item-head">
+                <div class="item-icon-box gl-icon">
+                  <span class="e-icons e-lock"></span>
+                </div>
+                <div class="item-copy">
+                  <h3>GitLab OAuth SSO</h3>
+                  <p>ยืนยันตัวตนสำหรับใช้งานในสภาพแวดล้อมจริง (Staging / Production)</p>
+                </div>
               </div>
-              <button
-                ejs-button
-                [attr.data-login-person]="person.id"
-                [cssClass]="activePerson()?.id === person.id ? 'e-success e-small' : 'e-primary e-small'"
-                type="button"
-                [disabled]="busy()"
-                (click)="loginAs(person)"
-              >
-                {{ activePerson()?.id === person.id ? 'กำลังใช้งานอยู่' : 'เข้าใช้งานบัญชีนี้' }}
-              </button>
+              <div class="item-action">
+                <button
+                  ejs-button
+                  cssClass="e-outline w-full"
+                  type="button"
+                  iconCss="e-icons e-lock"
+                  (click)="startGitLabSso()"
+                >
+                  เข้าสู่ระบบด้วย GitLab OAuth SSO
+                </button>
+              </div>
             </div>
-            </div>
-        </app-section-card>
+          </div>
+        </div>
       }
+
+      <div class="card-footer">
+        <p class="disclaimer-text">
+          ระบบ Man-day Scorecard อยู่ภายใต้การกำกับดูแลมาตรฐาน MyHR Plus Backoffice v5<br />
+          ข้อมูลการส่งมอบและประเมินผลคำนวณตามมาตรฐาน 1 Man-day = 6 ชั่วโมงโฟกัส
+        </p>
+      </div>
     </div>
-  </app-section-card>
-  }
-</section>
+  </main>
+</div>

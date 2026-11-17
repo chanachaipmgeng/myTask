@@ -196,6 +196,17 @@ export class ApiClient {
     return api('/api/integrations/openproject/sync', { method: 'POST', body: '{}' });
   }
 
+  syncOpenProjectUsers(): Promise<{
+    ok: boolean;
+    total: number;
+    created: number;
+    updated: number;
+    linked: number;
+    errors?: string[];
+  }> {
+    return api('/api/integrations/openproject/sync-users', { method: 'POST', body: '{}' });
+  }
+
   mapOpenProjectUser(personId: string, opUserId: number | null): Promise<OpenProjectIntegration> {
     return api('/api/integrations/openproject/user-map', {
       method: 'PUT',

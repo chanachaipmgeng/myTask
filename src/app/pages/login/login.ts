@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
@@ -10,11 +10,13 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession, setSessionUser } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { BadgeTone } from '../../shared/ui/badge';
-import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+
+export interface RoleChipOption {
+  id: 'All' | AccessRole;
+  label: string;
+  count: number;
+}
 
 @Component({
   selector: 'app-login',
@@ -23,14 +25,10 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
     ButtonModule,
     TextBoxModule,
     MessageModule,
-    RouterLink,
-    PageHeadComponent,
-    SectionCardComponent,
     FlashMessagesComponent,
-    FilterChipsComponent,
-    StatusBadgeComponent,
   ],
   templateUrl: './login.html',
+  styleUrl: './login.scss',
 })
 export class LoginPage {
   private readonly scorecard = inject(ScorecardService);
@@ -38,6 +36,7 @@ export class LoginPage {
   private readonly router = inject(Router);
   private readonly notice = inject(ShellNotice);
 
+  protected readonly authMode = signal<'persona' | 'external'>('persona');
   protected readonly session = currentSession;
   protected readonly viewer = currentViewer;
   protected readonly role = effectiveRole;
@@ -48,6 +47,15 @@ export class LoginPage {
   protected readonly message = signal('');
   protected readonly error = signal('');
   protected readonly busy = signal(false);
+  protected readonly failedAvatars = signal<Record<string, boolean>>({});
+
+  protected avatarFailed(personId: string): boolean {
+    return !!this.failedAvatars()[personId];
+  }
+
+  protected onAvatarError(personId: string): void {
+    this.failedAvatars.update((prev) => ({ ...prev, [personId]: true }));
+  }
 
   protected readonly activePerson = computed(() => {
     const sess = this.session();
@@ -94,7 +102,7 @@ export class LoginPage {
     member: 'info',
   };
 
-  protected readonly roleChipOptions = computed<FilterChipOption[]>(() => {
+  protected readonly roleChipOptions = computed<RoleChipOption[]>(() => {
     const counts = this.roleCounts();
     return [
       { id: 'All', label: 'ทั้งหมด', count: counts.total },
@@ -107,6 +115,19 @@ export class LoginPage {
   protected readonly canUsePersonaSwitch = computed(
     () => !this.usingApi() || this.scorecard.devLoginEnabled(),
   );
+
+  protected setAuthMode(mode: 'persona' | 'external'): void {
+    this.authMode.set(mode);
+  }
+
+  protected onSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.query.set(target?.value ?? '');
+  }
+
+  protected clearSearch(): void {
+    this.query.set('');
+  }
 
   protected setRoleFilter(value: string): void {
     if (value === 'admin' || value === 'lead' || value === 'member') {
@@ -177,5 +198,27 @@ export class LoginPage {
 
   protected startGitLabSso(): void {
     window.location.href = '/api/auth/gitlab';
+  }
+
+  protected async syncMyProjectUsers(): Promise<void> {
+    this.busy.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const result = await this.api.syncOpenProjectUsers();
+      await this.scorecard.reloadFromApi();
+      const text = `ซิงค์พนักงาน MyProject สำเร็จ · ทั้งหมด ${result.total} คน · เพิ่มใหม่ ${result.created} คน · อัปเดต/เชื่อมโยง ${result.linked + result.updated} คน`;
+      this.message.set(text);
+      this.notice.success(text);
+      if (result.errors && result.errors.length) {
+        this.error.set(result.errors.slice(0, 3).join(' | '));
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ซิงค์พนักงานไม่สำเร็จ';
+      this.error.set(msg);
+      this.notice.error(msg);
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

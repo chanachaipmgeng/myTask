@@ -1,6 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { AppBarModule, SidebarModule, TreeViewModule } from '@syncfusion/ej2-angular-navigations';
@@ -16,9 +16,10 @@ import {
   viewAsRole,
 } from './core/admin-settings';
 import { AccessRole } from './core/models';
+import { ApiClient } from './core/api-client';
 import { ShellNotice, shellNoticeCssClass, shellNoticeTitle } from './core/shell-notice';
 import { ScorecardService } from './core/scorecard.service';
-import { currentSession } from './core/session';
+import { currentSession, setSessionUser } from './core/session';
 import { ThemeService } from './core/theme.service';
 import { SectionCardComponent } from './shared/ui';
 
@@ -37,6 +38,7 @@ type NavGroup = { id: string; text: string; expanded: boolean; children: NavLeaf
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterOutlet,
+    RouterLink,
     SidebarModule,
     AppBarModule,
     TreeViewModule,
@@ -54,6 +56,7 @@ export class App implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly notice = inject(ShellNotice);
   private readonly scorecard = inject(ScorecardService);
+  private readonly api = inject(ApiClient);
   protected readonly theme = inject(ThemeService);
 
   @ViewChild('toast') private toast?: ToastComponent;
@@ -101,6 +104,35 @@ export class App implements AfterViewInit {
     const sess = currentSession();
     return sess?.person.id ?? currentViewer().id;
   });
+  protected readonly currentPerson = computed(() => {
+    const sess = currentSession();
+    if (sess) {
+      return sess.person;
+    }
+    const id = currentViewer().id;
+    return this.scorecard.roster().find((p) => p.id === id) ?? null;
+  });
+  protected readonly userAvatarInitials = computed(() => {
+    const person = this.currentPerson();
+    const name = person?.nickname || person?.fullName || currentViewer().nickname || 'MD';
+    return name.slice(0, 2);
+  });
+  protected readonly userFullName = computed(() => {
+    const person = this.currentPerson();
+    return person?.fullName || person?.nickname || currentViewer().nickname;
+  });
+  protected readonly userAvatarUrl = computed(() => this.currentPerson()?.avatarUrl ?? null);
+  protected readonly avatarError = signal(false);
+  protected onAvatarError(): void {
+    this.avatarError.set(true);
+  }
+  protected readonly userTrackLevel = computed(() => {
+    const person = this.currentPerson();
+    if (!person) return '';
+    const track = person.track === 'RD' ? 'R&D' : 'IMP';
+    const roleOrLevel = person.jobTitle || `${track} · ${person.level ?? ''}`;
+    return roleOrLevel;
+  });
   protected readonly toastPosition = { X: 'Right', Y: 'Top' };
   protected readonly visibleNavGroups = computed<NavGroup[]>(() => {
     const role = this.role();
@@ -129,6 +161,23 @@ export class App implements AfterViewInit {
     { initialValue: this.router.url },
   );
   protected readonly title = computed(() => screenTitle(this.url()));
+  protected readonly isAuthScreen = computed(() => {
+    const u = this.url();
+    return u === '/login' || u.startsWith('/login?') || u.startsWith('/login#');
+  });
+  protected readonly roleThemeClass = computed(() => `role-layout--${this.role()}`);
+  protected readonly roleDisplayName = computed(() => {
+    const role = this.role();
+    if (role === 'admin') return 'ผู้ดูแลระบบ · Admin';
+    if (role === 'lead') return 'หัวหน้าสายงาน · Lead';
+    return 'พนักงานทั่วไป · Member';
+  });
+  protected readonly roleBadgeTone = computed<'danger' | 'warning' | 'info'>(() => {
+    const role = this.role();
+    if (role === 'admin') return 'danger';
+    if (role === 'lead') return 'warning';
+    return 'info';
+  });
 
   constructor() {
     const media = window.matchMedia('(max-width: 800px)');
@@ -234,6 +283,22 @@ export class App implements AfterViewInit {
       void this.router.navigate(['/me']);
     } else {
       this.notice.info(`กลับสู่มุมมอง ${next} ตามสิทธิ์จริง`);
+    }
+  }
+
+  protected async logout(): Promise<void> {
+    try {
+      if (this.usingApi()) {
+        await this.api.logout();
+        await this.scorecard.reloadFromApi();
+      } else {
+        setSessionUser(null, null);
+      }
+      viewAsRole.set(null);
+      this.notice.info('ออกจากระบบเรียบร้อยแล้ว');
+      void this.router.navigate(['/login']);
+    } catch {
+      this.notice.error('ออกจากระบบไม่สำเร็จ');
     }
   }
 

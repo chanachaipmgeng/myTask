@@ -30,6 +30,9 @@ export interface PersonRow {
   email: string | null;
   gitlab_username: string | null;
   openproject_user_id: number | null;
+  avatar_url?: string | null;
+  department?: string | null;
+  job_title?: string | null;
   active: boolean;
 }
 
@@ -103,6 +106,10 @@ export function personFromRow(row: PersonRow): Person {
     email: row.email,
     gitlabUsername: row.gitlab_username,
     openprojectUserId: row.openproject_user_id,
+    avatarUrl: row.avatar_url ?? null,
+    department: row.department ?? null,
+    jobTitle: row.job_title ?? null,
+    active: row.active ?? true,
   };
 }
 

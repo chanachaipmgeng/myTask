@@ -13,6 +13,17 @@ export interface OpUser {
   name?: string;
   login?: string;
   email?: string;
+  status?: string;
+  admin?: boolean;
+  firstName?: string;
+  lastName?: string;
+  avatar?: string;
+  _links?: {
+    customField1?: { title?: string; href?: string };
+    customField2?: { title?: string; href?: string };
+    customField3?: { title?: string; href?: string };
+    [key: string]: unknown;
+  };
 }
 
 export interface OpTimeEntry {
@@ -69,7 +80,7 @@ export class OpenProjectClient {
       if (elements.length < pageSize) {
         break;
       }
-      offset += pageSize;
+      offset += 1;
     }
   }
 
@@ -114,7 +125,45 @@ export class OpenProjectClient {
       if (elements.length < pageSize) {
         break;
       }
-      offset += pageSize;
+      offset += 1;
+    }
+  }
+
+  async listUsers(params?: {
+    pageSize?: number;
+    offset?: number;
+    status?: string;
+  }): Promise<OpCollection<OpUser>> {
+    const filters: unknown[] = [];
+    if (params?.status) {
+      filters.push({ status: { operator: '=', values: [params.status] } });
+    }
+    const query = new URLSearchParams({
+      pageSize: String(params?.pageSize ?? 100),
+      offset: String(params?.offset ?? 1),
+    });
+    if (filters.length > 0) {
+      query.set('filters', JSON.stringify(filters));
+    }
+    return this.get<OpCollection<OpUser>>(`/api/v3/users?${query.toString()}`);
+  }
+
+  async *paginateUsers(params?: {
+    status?: string;
+    pageSize?: number;
+  }): AsyncGenerator<OpUser> {
+    const pageSize = params?.pageSize ?? 100;
+    let offset = 1;
+    for (;;) {
+      const page = await this.listUsers({ ...params, pageSize, offset });
+      const elements = page._embedded?.elements ?? [];
+      for (const item of elements) {
+        yield item;
+      }
+      if (elements.length < pageSize) {
+        break;
+      }
+      offset += 1;
     }
   }
 

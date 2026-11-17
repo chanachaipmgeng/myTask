@@ -1,10 +1,10 @@
-import { Body, Controller, Get, Put, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Put, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { Ticket } from '../../../shared/domain/models';
 import { collectAlerts, projectedActual } from '../../../shared/domain/alerts';
 import { GitLabMergeRequestRaw, mapGitLabMergeRequests } from '../../../shared/domain/gitlab-mr';
 import { formatMd, scoreTicket } from '../../../shared/domain/scoring';
-import { AuthedRequest, Roles } from '../auth/auth.guard';
+import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
 import { APP_CONFIG, AppConfig } from '../config';
 import { listPeople, listUnmappedOpUsers, setPersonOpenProjectUser } from '../data/people.repo';
 import {
@@ -118,6 +118,16 @@ export class IntegrationsController {
   async syncNow(@Req() req: AuthedRequest) {
     const result = await this.syncService.sync('manual', req.authUser?.person.id ?? null);
     return { ok: result.status === 'success', ...result };
+  }
+
+  @Public()
+  @Post('integrations/openproject/sync-users')
+  async syncUsers(@Req() req: AuthedRequest) {
+    if (!req.authUser && !this.config.devLogin) {
+      throw new UnauthorizedException('login required');
+    }
+    const result = await this.syncService.syncUsers(req.authUser?.person.id ?? 'manual');
+    return { ok: result.errors.length === 0, ...result };
   }
 
   @Put('integrations/openproject/user-map')

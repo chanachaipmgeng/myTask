@@ -116,6 +116,18 @@
                   title="Type map &amp; User mapping"
                   subtitle="แมปชนิด Work Package และจับคู่ผู้ใช้ OpenProject กับคนในระบบ"
                 >
+                  <div actions>
+                    <button
+                      ejs-button
+                      cssClass="e-outline e-primary e-small"
+                      type="button"
+                      iconCss="e-icons e-user"
+                      [disabled]="!canEdit() || saving() || loading()"
+                      (click)="syncUsersNow()"
+                    >
+                      ซิงค์รายชื่อพนักงานจาก MyProject
+                    </button>
+                  </div>
                   <ejs-textarea
                     [value]="typeMapText()"
                     (change)="onTypeMapText($event)"

@@ -1,5 +1,10 @@
-<div class="app-frame" [class.is-narrow]="narrow()" [class.nav-open]="navOpen()" [class.is-collapsed]="!narrow() && collapsed()">
-  <ejs-sidebar
+@if (isAuthScreen()) {
+  <main class="auth-viewport">
+    <router-outlet />
+  </main>
+} @else {
+  <div class="app-frame" [class.is-narrow]="narrow()" [class.nav-open]="navOpen()" [class.is-collapsed]="!narrow() && collapsed()" [class]="roleThemeClass()">
+    <ejs-sidebar
     id="app-nav"
     [type]="narrow() ? 'Over' : 'Push'"
     [width]="!narrow() && collapsed() ? '68px' : '260px'"
@@ -10,28 +15,63 @@
     [animate]="false"
     (close)="onNavClose()"
   >
-    <div class="brand">
-      <div class="brand-mark" aria-hidden="true">MD</div>
-      <div>
-        <p class="eyebrow">Central Sync &amp; Scorecard</p>
-        <p class="brand-title">คะแนนใบงาน</p>
-        <p class="brand-sub">
-          {{ role() === 'member' ? 'พอร์ทัลพนักงาน · 1 MD = 6 ชม.' : 'ฮับบริหาร & วิเคราะห์ · 1 MD = 6 ชม.' }}
-        </p>
+    <div class="sidebar-inner">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">MD</div>
+          <div>
+            <p class="eyebrow">Central Sync &amp; Scorecard</p>
+            <p class="brand-title">คะแนนใบงาน</p>
+            <p class="brand-sub">
+              {{ role() === 'member' ? 'พอร์ทัลพนักงาน · 1 MD = 6 ชม.' : 'ฮับบริหาร & วิเคราะห์ · 1 MD = 6 ชม.' }}
+            </p>
+          </div>
+        </div>
+
+        <ejs-treeview
+          id="app-nav-tree"
+          cssClass="side-nav-tree"
+          [fields]="navFields()"
+          [expandedNodes]="expandedNodes"
+          [selectedNodes]="selectedNodes()"
+          [fullRowSelect]="true"
+          (nodeSelecting)="onNavSelecting($event)"
+          (nodeClicked)="onNavClick($event)"
+          (nodeSelected)="onNavSelect($event)"
+        ></ejs-treeview>
+      </div>
+
+      <div class="sidebar-profile" [attr.data-role]="role()">
+        <div class="sidebar-profile__info" (click)="openMyWorkspace()" title="เปิดพื้นที่ของฉัน (/me)">
+          <div class="sidebar-profile__avatar">
+            @if (userAvatarUrl() && !avatarError()) {
+              <img [src]="userAvatarUrl()" [alt]="userFullName()" (error)="onAvatarError()" class="avatar-img" />
+            } @else {
+              <span>{{ userAvatarInitials() }}</span>
+            }
+          </div>
+          <div class="sidebar-profile__details">
+            <span class="sidebar-profile__name">{{ userFullName() }}</span>
+            <div class="sidebar-profile__meta">
+              <span class="sidebar-profile__role" [attr.data-role]="role()">{{ role() }}</span>
+              @if (userTrackLevel()) {
+                <span class="sidebar-profile__track">{{ userTrackLevel() }}</span>
+              }
+            </div>
+          </div>
+        </div>
+        <button
+          ejs-button
+          cssClass="sidebar-profile__logout e-flat e-small"
+          iconCss="e-icons e-circle-remove"
+          type="button"
+          title="ออกจากระบบ"
+          (click)="logout()"
+        >
+          <span class="sidebar-profile__logout-text">ออก</span>
+        </button>
       </div>
     </div>
-
-    <ejs-treeview
-      id="app-nav-tree"
-      cssClass="side-nav-tree"
-      [fields]="navFields()"
-      [expandedNodes]="expandedNodes"
-      [selectedNodes]="selectedNodes()"
-      [fullRowSelect]="true"
-      (nodeSelecting)="onNavSelecting($event)"
-      (nodeClicked)="onNavClick($event)"
-      (nodeSelected)="onNavSelect($event)"
-    ></ejs-treeview>
   </ejs-sidebar>
 
   @if (narrow() && navOpen()) {
@@ -49,6 +89,41 @@
       </div>
 
       <div class="appbar-actions">
+        <!-- Role Layout Badge -->
+        <div class="role-badge-pill" [attr.data-role]="role()">
+          <span class="role-badge-dot"></span>
+          <span class="role-badge-text">{{ roleDisplayName() }}</span>
+        </div>
+
+        @if (role() === 'admin') {
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/admin" title="จัดการสิทธิ์ & Audit Log">
+            <span class="e-icons e-settings"></span>
+            <span class="shortcut-text">ผู้ดูแล</span>
+          </a>
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/analytics" title="ศูนย์วิเคราะห์ Python">
+            <span class="e-icons e-chart"></span>
+            <span class="shortcut-text">วิเคราะห์ AI</span>
+          </a>
+        } @else if (role() === 'lead') {
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/team" title="แดชบอร์ดทีม">
+            <span class="e-icons e-people"></span>
+            <span class="shortcut-text">ทีม</span>
+          </a>
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/queue" title="คิวงานใหม่">
+            <span class="e-icons e-repeat"></span>
+            <span class="shortcut-text">คิวงาน</span>
+          </a>
+        } @else {
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/me" title="พื้นที่ของฉัน">
+            <span class="e-icons e-user"></span>
+            <span class="shortcut-text">งานของฉัน</span>
+          </a>
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/schedule" title="ปฏิทินส่งมอบ">
+            <span class="e-icons e-day"></span>
+            <span class="shortcut-text">ปฏิทิน</span>
+          </a>
+        }
+
         @if (mockMode()) {
           <span class="e-badge e-badge-danger e-badge-pill">โหมดจำลอง</span>
         } @else if (usingApi()) {
@@ -91,6 +166,18 @@
           (click)="openLogin()"
         >
           สลับบัญชี ({{ role() }})
+        </button>
+
+        <button
+          ejs-button
+          id="appbar-logout-btn"
+          cssClass="e-flat e-small appbar-chip-btn appbar-logout-chip"
+          iconCss="e-icons e-circle-remove"
+          type="button"
+          title="ออกจากระบบ"
+          (click)="logout()"
+        >
+          ออกจากระบบ
         </button>
 
         <span class="appbar-alert-wrap" [class.has-alerts]="alerts().length > 0">
@@ -140,6 +227,7 @@
     </main>
   </div>
 </div>
+}
 
 <ejs-dialog
   #alertDialog
