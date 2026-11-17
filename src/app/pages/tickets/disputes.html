@@ -1,5 +1,4 @@
-<section class="page flex flex-col gap-6">
-  <!-- Header Bar -->
+<section class="page flex flex-col gap-4">
   <div class="page-head flex flex-wrap justify-between items-center gap-4">
     <div>
       <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
@@ -17,7 +16,6 @@
     </div>
   </div>
 
-  <!-- แถบสถานะคำขอ -->
   <div class="flex flex-wrap items-center gap-2">
     <button
       ejs-button
@@ -42,13 +40,13 @@
     </button>
   </div>
 
-  <!-- Split View: รายการคำขอ 7 cols / แผงพิจารณาอนุมัติ 5 cols -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-    <!-- Left Grid 7 cols -->
-    <div class="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col gap-4">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">รายการคำขอทบทวนคะแนน</h3>
-        <span class="text-xs text-muted">คลิกแถวเพื่อดูรายละเอียดและผลจำลองคะแนน</span>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+    <div class="section-card lg:col-span-7">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>รายการคำขอทบทวนคะแนน</h3>
+          <p class="fine">คลิกแถวเพื่อดูรายละเอียดและผลจำลองคะแนน</p>
+        </div>
       </div>
 
       <div class="overflow-x-auto w-full">
@@ -68,15 +66,13 @@
             <e-column field="requesterId" headerText="ผู้ยื่น" width="95"></e-column>
             <e-column field="requestedFlag" headerText="ประเภท" width="105">
               <ng-template #template let-data>
-                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
-                  ขอป้าย {{ data.requestedFlag }}
-                </span>
+                <span class="e-badge e-badge-warning e-badge-pill">ขอป้าย {{ data.requestedFlag }}</span>
               </ng-template>
             </e-column>
-            <e-column headerText="คะแนนเดิม &gt; ใหม่" width="120" textAlign="Right">
+            <e-column headerText="คะแนนเดิม > ใหม่" width="120" textAlign="Right">
               <ng-template #template let-data>
                 <span class="text-xs font-mono">
-                  {{ data.scoreBefore }} &rarr; <strong class="text-emerald-600">{{ data.scoreProjected }}</strong>
+                  {{ data.scoreBefore }} → <strong class="text-emerald-600">{{ data.scoreProjected }}</strong>
                 </span>
               </ng-template>
             </e-column>
@@ -85,118 +81,119 @@
       </div>
     </div>
 
-    <!-- Right Panel 5 cols -->
-    <div class="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col gap-5">
+    <div class="section-card lg:col-span-5">
       @if (selectedDispute(); as sel) {
-        <div>
-          <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-            <div>
-              <span class="text-xs font-mono font-semibold text-muted">{{ sel.disputeCode }}</span>
-              <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100 mt-0.5">ใบงาน: {{ sel.ticketId }}</h3>
+        <div class="section-card-head">
+          <div class="section-card-copy">
+            <span class="text-xs font-mono font-semibold text-muted">{{ sel.disputeCode }}</span>
+            <h3>ใบงาน: {{ sel.ticketId }}</h3>
+          </div>
+          <span
+            class="e-badge e-badge-pill"
+            [class.e-badge-warning]="sel.status === 'PENDING'"
+            [class.e-badge-success]="sel.status === 'APPROVED'"
+            [class.e-badge-danger]="sel.status === 'REJECTED'"
+          >
+            {{ sel.status === 'PENDING' ? 'รอพิจารณา' : sel.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธ' }}
+          </span>
+        </div>
+
+        <div class="flex flex-col gap-3 text-sm">
+          <div class="e-card">
+            <div class="e-card-content p-3.5">
+              <span class="kpi-note m-0 block mb-1">เหตุผลที่ยื่นขอ</span>
+              <p class="m-0 text-xs leading-relaxed">{{ sel.reason }}</p>
             </div>
-            <span
-              class="px-2.5 py-1 rounded-full text-xs font-bold"
-              [class.bg-amber-100]="sel.status === 'PENDING'"
-              [class.text-amber-800]="sel.status === 'PENDING'"
-              [class.bg-emerald-100]="sel.status === 'APPROVED'"
-              [class.text-emerald-800]="sel.status === 'APPROVED'"
-              [class.bg-rose-100]="sel.status === 'REJECTED'"
-              [class.text-rose-800]="sel.status === 'REJECTED'"
-            >
-              {{ sel.status === 'PENDING' ? 'รอพิจารณา' : sel.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธ' }}
-            </span>
           </div>
 
-          <div class="mt-4 flex flex-col gap-3 text-sm">
+          @if (sel.evidenceUrl) {
             <div>
-              <span class="text-xs text-muted block mb-0.5">เหตุผลที่ยื่นขอ:</span>
-              <p class="text-slate-700 dark:text-slate-300 font-medium bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg text-xs leading-relaxed">
-                {{ sel.reason }}
-              </p>
+              <span class="kpi-note m-0 block mb-1">ลิงก์หลักฐานแนบ</span>
+              <a [href]="sel.evidenceUrl" target="_blank" class="text-xs text-blue-600 dark:text-blue-400 underline break-all">
+                {{ sel.evidenceUrl }}
+              </a>
             </div>
+          }
 
-            @if (sel.evidenceUrl) {
-              <div>
-                <span class="text-xs text-muted block mb-0.5">ลิงก์หลักฐานแนบ:</span>
-                <a [href]="sel.evidenceUrl" target="_blank" class="text-xs text-blue-600 dark:text-blue-400 underline break-all">
-                  {{ sel.evidenceUrl }}
-                </a>
+          <div class="e-card kpi-stat" data-accent="info">
+            <div class="e-card-header kpi-stat__header">
+              <div class="e-card-header-caption">
+                <div class="e-card-header-title kpi-stat__title">จำลองผลคะแนนหากอนุมัติ</div>
               </div>
-            }
-
-            <!-- จำลองผลคะแนน (Score Simulation Card) -->
-            <div class="mt-2 p-4 rounded-xl border border-blue-100 dark:border-blue-900 bg-blue-50/60 dark:bg-blue-950/40 flex flex-col gap-2">
-              <span class="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase tracking-wider">
-                📊 จำลองผลคะแนนหากอนุมัติ:
-              </span>
+            </div>
+            <div class="e-card-content kpi-stat__body gap-2">
               <div class="flex justify-between items-center text-xs">
-                <span class="text-slate-600 dark:text-slate-300">คะแนนใบงานนี้:</span>
-                <span class="font-mono font-bold text-slate-800 dark:text-slate-100">
-                  {{ sel.scoreBefore }} &rarr; <span class="text-emerald-600 dark:text-emerald-400">{{ sel.scoreProjected }} (+{{ sel.scoreProjected - sel.scoreBefore }})</span>
+                <span class="text-muted">คะแนนใบงานนี้</span>
+                <span class="font-mono font-bold">
+                  {{ sel.scoreBefore }} →
+                  <span class="text-emerald-600">{{ sel.scoreProjected }} (+{{ sel.scoreProjected - sel.scoreBefore }})</span>
                 </span>
               </div>
               <div class="flex justify-between items-center text-xs">
-                <span class="text-slate-600 dark:text-slate-300">ดัชนีรายคนของผู้ยื่น:</span>
-                <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                <span class="text-muted">ดัชนีรายคนของผู้ยื่น</span>
+                <span class="font-mono font-bold text-emerald-600">
                   +{{ ((sel.scoreProjected - sel.scoreBefore) * 0.15).toFixed(1) }} คะแนน
                 </span>
               </div>
             </div>
+          </div>
 
-            <!-- กล่องข้อคิดเห็นและปุ่มอนุมัติสำหรับ Lead / Admin -->
-            @if (sel.status === 'PENDING') {
-              @if (role() === 'admin' || role() === 'lead') {
-                <div class="mt-2 flex flex-col gap-2">
-                  <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    หมายเหตุผู้อนุมัติ:
-                  </label>
+          @if (sel.status === 'PENDING') {
+            @if (role() === 'admin' || role() === 'lead') {
+              <div class="flex flex-col gap-2">
+                <label class="filter">
+                  <span>หมายเหตุผู้อนุมัติ</span>
                   <ejs-textbox
                     placeholder="ระบุเหตุผลหรือเงื่อนไขในการพิจารณา..."
                     [value]="reviewerComment()"
                     (change)="reviewerComment.set($event.value ?? '')"
                   ></ejs-textbox>
+                </label>
 
-                  <div class="flex gap-2 mt-2">
-                    <button
-                      ejs-button
-                      cssClass="e-primary flex-1"
-                      iconCss="e-icons e-check"
-                      (click)="resolve('APPROVED')"
-                    >
-                      อนุมัติและคำนวณใหม่
-                    </button>
-                    <button
-                      ejs-button
-                      cssClass="e-outline e-danger"
-                      iconCss="e-icons e-close"
-                      (click)="resolve('REJECTED')"
-                    >
-                      ปฏิเสธคำขอ
-                    </button>
-                  </div>
+                <div class="flex gap-2 mt-1">
+                  <button
+                    ejs-button
+                    cssClass="e-primary flex-1"
+                    iconCss="e-icons e-check"
+                    (click)="resolve('APPROVED')"
+                  >
+                    อนุมัติและคำนวณใหม่
+                  </button>
+                  <button
+                    ejs-button
+                    cssClass="e-outline e-danger"
+                    iconCss="e-icons e-close"
+                    (click)="resolve('REJECTED')"
+                  >
+                    ปฏิเสธคำขอ
+                  </button>
                 </div>
-              } @else {
-                <div class="text-xs text-muted italic bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
-                  คำขอนี้กำลังรอการพิจารณาจาก Lead หรือ Admin
-                </div>
-              }
-            } @else {
-              <div class="mt-2 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-xs">
-                <span class="text-muted block">บันทึกของผู้อนุมัติ:</span>
-                <span class="font-medium text-slate-800 dark:text-slate-200">{{ sel.reviewerComment || 'ไม่มีบันทึกเพิ่มเติม' }}</span>
               </div>
+            } @else {
+              <ejs-message
+                severity="Info"
+                variant="Outlined"
+                content="คำขอนี้กำลังรอการพิจารณาจาก Lead หรือ Admin"
+              ></ejs-message>
             }
-          </div>
+          } @else {
+            <ejs-message
+              [severity]="sel.status === 'APPROVED' ? 'Success' : 'Error'"
+              variant="Outlined"
+              [content]="'บันทึกของผู้อนุมัติ: ' + (sel.reviewerComment || 'ไม่มีบันทึกเพิ่มเติม')"
+            ></ejs-message>
+          }
         </div>
       } @else {
-        <div class="py-12 text-center text-muted text-sm">
-          เลือกคำขอจากตารางทางซ้ายเพื่อดูรายละเอียด
-        </div>
+        <ejs-message
+          severity="Info"
+          variant="Outlined"
+          content="เลือกคำขอจากตารางทางซ้ายเพื่อดูรายละเอียด"
+        ></ejs-message>
       }
     </div>
   </div>
 
-  <!-- Dialog สำหรับยื่นคำขอทบทวนคะแนน -->
   @if (showCreateDialog()) {
     <ejs-dialog
       header="ยื่นขอทบทวนคะแนนใบงาน"
@@ -208,53 +205,46 @@
     >
       <ng-template #content>
         <div class="flex flex-col gap-4 py-2">
-          <div>
-            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-              เลือกใบงานที่ต้องการขอทบทวน:
-            </label>
+          <label class="filter">
+            <span>เลือกใบงานที่ต้องการขอทบทวน</span>
             <ejs-dropdownlist
               [dataSource]="ticketOptions()"
               [fields]="{ text: 'text', value: 'value' }"
               [value]="newTicketId()"
               (change)="newTicketId.set($event.value ?? '')"
             ></ejs-dropdownlist>
-          </div>
+          </label>
 
-          <div>
-            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-              ประเภทการยกเว้นที่ขอ:
-            </label>
+          <label class="filter">
+            <span>ประเภทการยกเว้นที่ขอ</span>
             <ejs-dropdownlist
               [dataSource]="varianceOptions"
               [fields]="{ text: 'text', value: 'value' }"
               [value]="newRequestedFlag()"
               (change)="newRequestedFlag.set($event.value ?? 'BLK')"
             ></ejs-dropdownlist>
-          </div>
+          </label>
 
-          <div>
-            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-              เหตุผลประกอบการยื่นขอ:
-            </label>
-            <textarea
-              class="w-full rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-              rows="3"
+          <label class="filter">
+            <span>เหตุผลประกอบการยื่นขอ</span>
+            <ejs-textbox
+              [multiline]="true"
+              [htmlAttributes]="{ rows: '3' }"
               placeholder="อธิบายเหตุการณ์ เช่น รอ API ข้ามทีม หรือเซิร์ฟเวอร์มีปัญหา..."
               [value]="newReason()"
-              (input)="newReason.set($any($event.target).value)"
-            ></textarea>
-          </div>
+              (input)="newReason.set($event.value ?? '')"
+              (change)="newReason.set($event.value ?? '')"
+            ></ejs-textbox>
+          </label>
 
-          <div>
-            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 block">
-              ลิงก์หลักฐานแนบ (เช่น แชท Teams หรือ Ticket อ้างอิง):
-            </label>
+          <label class="filter">
+            <span>ลิงก์หลักฐานแนบ (เช่น แชท Teams หรือ Ticket อ้างอิง)</span>
             <ejs-textbox
               placeholder="https://teams.microsoft.com/..."
               [value]="newEvidenceUrl()"
               (change)="newEvidenceUrl.set($event.value ?? '')"
             ></ejs-textbox>
-          </div>
+          </label>
 
           <div class="flex justify-end gap-2 pt-2">
             <button ejs-button cssClass="e-flat" (click)="closeCreateDialog()">ยกเลิก</button>

@@ -1,5 +1,4 @@
-<section class="page flex flex-col gap-6">
-  <!-- Header Bar -->
+<section class="page flex flex-col gap-4">
   <div class="page-head flex flex-wrap justify-between items-center gap-4">
     <div>
       <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
@@ -10,11 +9,7 @@
         ตรวจสอบ First-Time Right %, อัตราการตีกลับ (Reopen Rate), อัตราหลุดไป Production และหลักฐาน DoD ก่อนส่งทดสอบ
       </p>
     </div>
-    <div class="flex gap-2">
-      <span class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300">
-        งวดปัจจุบัน: 2026-11
-      </span>
-    </div>
+    <span class="e-badge e-badge-info e-badge-pill">งวดปัจจุบัน: 2026-11</span>
   </div>
 
   <div class="kpi-grid-4">
@@ -52,19 +47,17 @@
     ></app-kpi-stat>
   </div>
 
-  <!-- แถบสลับมุมมอง (ejs-tab) -->
-  <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+  <div class="section-card">
     <ejs-tab id="qualityTab" animation="none">
       <e-tabitems>
-        <!-- Tab 1: ตรวจสอบหลักฐาน DoD ก่อนเข้า QA -->
         <e-tabitem [header]="{ text: 'ตรวจสอบหลักฐาน DoD ก่อนเข้า QA (' + dodChecklist().length + ')' }">
           <ng-template #content>
             <div class="pt-4 flex flex-col gap-4">
-              <div class="p-3.5 bg-amber-50 dark:bg-amber-950/40 rounded-lg text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between">
-                <span>
-                  🛡️ <strong>DoD Gate Verifier:</strong> ระบบตรวจอัตโนมัติว่ามีลิงก์ MR, Unit Test ผ่าน, และผล Staging Verified ครบหรือไม่ หากไม่ครบ QA สามารถกดตีกลับ Dev ได้ทันที
-                </span>
-              </div>
+              <ejs-message
+                severity="Warning"
+                variant="Outlined"
+                content="DoD Gate Verifier: ตรวจอัตโนมัติว่ามีลิงก์ MR, Unit Test ผ่าน และผล Staging Verified ครบหรือไม่ — หากไม่ครบ QA สามารถกดตีกลับ Dev ได้ทันที"
+              ></ejs-message>
 
               <ejs-grid [dataSource]="dodChecklist()" [allowSorting]="true">
                 <e-columns>
@@ -82,26 +75,32 @@
                   </e-column>
                   <e-column field="unitTestLabel" headerText="Unit Test" width="130">
                     <ng-template #template let-data>
-                      <span [class.text-emerald-600]="data.unitTestPassed" [class.text-rose-600]="!data.unitTestPassed" class="font-medium text-xs">
+                      <span
+                        class="e-badge e-badge-pill"
+                        [class.e-badge-success]="data.unitTestPassed"
+                        [class.e-badge-danger]="!data.unitTestPassed"
+                      >
                         {{ data.unitTestLabel }}
                       </span>
                     </ng-template>
                   </e-column>
                   <e-column field="stagingVerified" headerText="ผล Staging" width="130">
                     <ng-template #template let-data>
-                      <span class="text-xs">
-                        {{ data.stagingVerified ? 'แนบรูปแล้ว ✅' : 'ยังไม่แนบ ❌' }}
+                      <span
+                        class="e-badge e-badge-pill"
+                        [class.e-badge-success]="data.stagingVerified"
+                        [class.e-badge-warning]="!data.stagingVerified"
+                      >
+                        {{ data.stagingVerified ? 'แนบรูปแล้ว' : 'ยังไม่แนบ' }}
                       </span>
                     </ng-template>
                   </e-column>
                   <e-column field="dodStatus" headerText="สถานะหลักฐาน DoD" width="160">
                     <ng-template #template let-data>
                       <span
-                        class="px-2 py-0.5 rounded text-xs font-semibold"
-                        [class.bg-emerald-100]="data.isComplete"
-                        [class.text-emerald-800]="data.isComplete"
-                        [class.bg-amber-100]="!data.isComplete"
-                        [class.text-amber-800]="!data.isComplete"
+                        class="e-badge e-badge-pill"
+                        [class.e-badge-success]="data.isComplete"
+                        [class.e-badge-warning]="!data.isComplete"
                       >
                         {{ data.dodStatus }}
                       </span>
@@ -128,7 +127,6 @@
           </ng-template>
         </e-tabitem>
 
-        <!-- Tab 2: วิเคราะห์สาเหตุ Reopen & Bug Escape -->
         <e-tabitem [header]="{ text: 'วิเคราะห์สาเหตุ Reopen & Bug Escape (' + reopenEscapes().length + ')' }">
           <ng-template #content>
             <div class="pt-4 flex flex-col gap-4">
@@ -144,15 +142,17 @@
                   </e-column>
                   <e-column field="bugCause" headerText="สาเหตุของบั๊ก" width="160">
                     <ng-template #template let-data>
-                      <span class="px-2 py-0.5 rounded text-xs bg-slate-100 dark:bg-slate-800 font-medium">
-                        {{ data.bugCause }}
-                      </span>
+                      <span class="e-badge e-badge-secondary e-badge-pill">{{ data.bugCause }}</span>
                     </ng-template>
                   </e-column>
                   <e-column field="isBugEscape" headerText="หลุด Prod หรือไม่" width="140" textAlign="Center">
                     <ng-template #template let-data>
-                      <span class="text-xs font-semibold" [class.text-rose-600]="data.isBugEscape" [class.text-muted]="!data.isBugEscape">
-                        {{ data.isBugEscape ? 'หลุด Prod ⚠️' : 'ตรวจพบใน QA' }}
+                      <span
+                        class="e-badge e-badge-pill"
+                        [class.e-badge-danger]="data.isBugEscape"
+                        [class.e-badge-info]="!data.isBugEscape"
+                      >
+                        {{ data.isBugEscape ? 'หลุด Prod' : 'ตรวจพบใน QA' }}
                       </span>
                     </ng-template>
                   </e-column>

@@ -17,6 +17,7 @@ import {
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
 import { AggregateService, GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
+import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { map } from 'rxjs';
 import { ApiClient } from '../../core/api-client';
@@ -41,7 +42,7 @@ interface OlsSummaryInfo {
 @Component({
   selector: 'app-person-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChartModule, AccumulationChartModule, ButtonModule, MessageModule, GridModule, KpiStatCardComponent],
+  imports: [ChartModule, AccumulationChartModule, ButtonModule, MessageModule, GridModule, KpiStatCardComponent, TextBoxModule],
   providers: [
     CategoryService,
     LineSeriesService,

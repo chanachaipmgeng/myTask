@@ -7,12 +7,13 @@ alwaysApply: false
 # มุมมองงานและพนักงาน (`/work`, `/tickets`, `/people`)
 
 - `/work` (ฮับบริหารงาน) เป็นฮับแท็บ Summary · Timeline · Backlog · Board · List · Handoff & SLA — อย่าสร้างเมนูซ้ำสำหรับ Board
-- หน้าจอตรวจสอบใหม่ 5 หน้าจอ (หน้าจอที่ 21–25):
-  - `/work/handoff`: ศูนย์ตรวจสอบการส่งต่อและคอขวดข้ามทีม (Chart StackingBar แนวนอน + Blocker Matrix + Grid ตรึง 2 คอลัมน์)
-  - `/quality/audit`: ศูนย์ตรวจสอบคุณภาพ QA & ช่องโหว่บั๊ก (DoD Gate Verifier ตรวจ MR/Unit Test/Staging Verified พร้อมปุ่ม Reject)
-  - `/analytics/time-audit`: ตรวจสอบเวลา 3 ทาง (3-Way Time Matching Grid เปรียบเทียบ Est vs OP Actual vs Git Span)
-  - `/tickets/disputes`: ศูนย์อุทธรณ์คะแนน (Split View รายการคำขอ + แผงพิจารณาพร้อมแบบจำลอง Projected Score Diff)
-  - `/admin/snapshot-check`: ห้องตรวจสอบก่อนปิดงวด (Readiness Score ProgressBar + เช็คลิสต์ 4 ด่าน + ตาราง Snapshot Preview Diff)
+- หน้าจอตรวจสอบใหม่ 5 หน้าจอ (หน้าจอที่ 21–25) ห่อด้วย `section-card` / `e-card` + KPI แถวบนด้วย `app-kpi-stat`:
+  - `/work/handoff`: Stage Aging `StackingBar` + Blocker Matrix (`e-card` รายการ) + Grid ตรึง 2 คอลัมน์ + `ejs-message` Fair Cutoff
+  - `/quality/audit`: `ejs-tab` ใน `section-card` (DoD Gate + Reopen) · ป้ายสถานะเป็น `e-badge` · แบนเนอร์ DoD เป็น `ejs-message`
+  - `/analytics/time-audit`: ตาราง 3-Way ใน `section-card` · anomaly เป็น `e-badge`
+  - `/tickets/disputes`: Split View `section-card` · จำลองคะแนนเป็น `e-card kpi-stat` · เหตุผลยื่นเป็น `ejs-textbox` multiline
+  - `/admin/snapshot-check`: Readiness ใน `section-card` · เช็คลิสต์ 4 ด่านเป็น `e-card kpi-stat` + `e-badge`
+- KPI แถวบนทุกหน้าใช้ `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — Progress track สีจาก `ThemeService.progressTrack()`
 - `/pipeline` ต้อง redirect ไป `/work/board`
 - `/tickets` (ตารางคะแนนใบงาน) คงเป็นตารางคะแนน+นำเข้าไฟล์ (ยุบฟอร์มนำเข้า/เพิ่มใบงาน/เกณฑ์คะแนนใน `ejs-accordion` และตรึง 2 คอลัมน์แรก `frozenColumns="2"`) — ส่วน List ใน `/work` เป็นมุมมองบริหารงาน ไม่ใช่คอลัมน์คะแนนเต็ม
 - Timeline (`/work/timeline`) ใช้ Syncfusion Gantt แสดงโครงสร้างแม่-ลูก (`parentID: 'ParentID'`), มี Toolbar (`ExpandAll`, `CollapseAll`, `ZoomIn`, `ZoomOut`, `ZoomToFit`, `Search`), และเปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin` | `lead` (`canAssignWork`) ผ่าน `applyGanttDateEdit` + `POST /api/work-items/:id/dates` (ห้ามทับ `firstDueOn`)

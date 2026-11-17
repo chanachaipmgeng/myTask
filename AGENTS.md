@@ -43,11 +43,17 @@ npm --prefix server run build
 - **Light & Dark Theme Architecture (MyHR Plus Design Tokens)**:
   - สีหลักระดับแบรนด์อิงตามเทมเพลต `myhrplus-backoffice-v5`: สีหลัก **MyHR Royal Blue** (`#2e4fc8` / `rgb(46, 79, 200)`), สีรอง/สว่าง (`#4c68e5`, `#5f7ce3`), และแถบเน้น AI/Spike (`#7465e8`)
   - ฟอนต์หลักผสมผสานระหว่าง `'IBM Plex Sans Thai'`, `'Montserrat'`, และ `'Sarabun'` ตามมาตรฐาน MyHR v5
-  - แถบเมนูด้านข้าง (Sidebar): ใน Light Mode ใช้ Gradient สีน้ำเงินเอกลักษณ์ของ MyHR (`#2243ac` → `#4c68e5`) พร้อมป้ายและไอคอนสีขาวคมชัด, ใน Dark Mode ใช้ Deep Navy Gradient (`#0b1120` → `#162b70`)
-  - `ThemeService` (`src/app/core/theme.service.ts`): สลับธีมแบบ zero-reload โดยสลับ `assets/themes/tailwind3.css` vs `assets/themes/tailwind3-dark.css` บน `<link id="sf-theme-link">` และสลับคลาส `e-dark-mode` vs `e-light-mode` บน `document.body`
+  - `tailwind.config.js`: `darkMode: ['selector', '.e-dark-mode']` — คลาส `dark:` ตาม body ไม่ตาม OS
+  - แถบเมนูด้านข้าง (Sidebar): ใน Light Mode ใช้ Gradient MyHR (`#2243ac` → `#4c68e5`) พร้อมป้าย/ไอคอนขาว (บังคับทับ Syncfusion light CSS), ใน Dark Mode ใช้ Deep Navy Gradient (`#0b1120` → `#162b70`)
+  - `ThemeService` (`src/app/core/theme.service.ts`): สลับธีมแบบ zero-reload · `sfTheme()` · `progressTrack()` / `progressFill()` สำหรับ ProgressBar
   - จดจำค่าธีมใน `localStorage.getItem('md-theme')` พร้อม inline script ใน `src/index.html` เพื่อป้องกัน FOUC
-  - คอมโพเนนต์กราฟฟิก (`ejs-chart`, `ejs-accumulationchart`, `ejs-progressbar`) ผูกธีมผ่าน `[theme]="theme.sfTheme()"` (`'Tailwind3Dark'` vs `'Tailwind3'`) โดยอัตโนมัติ
+  - คอมโพเนนต์กราฟฟิก (`ejs-chart`, `ejs-accumulationchart`, `ejs-progressbar`) ผูกธีมผ่าน `[theme]="theme.sfTheme()"` โดยอัตโนมัติ
   - ปุ่มสลับธีมบน AppBar (`#appbar-theme-toggle`): แสดงไอคอนและป้ายสถานะ "โหมดสว่าง" / "โหมดมืด" ชัดเจน
+- **Syncfusion UI Template Standard (P12)**:
+  - แผงเนื้อหา: `section-card` + `section-card-head` / `section-card-copy`
+  - KPI แถวบน: `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — `e-card` + `e-badge` + `ejs-progressbar`
+  - ป้ายสถานะ: `e-badge e-badge-pill` · แบนเนอร์: `ejs-message` · อินพุต: `ejs-textbox`
+  - ห้ามห่อแผงใหม่ด้วย `rounded-xl border … bg-white dark:bg-slate-900 … shadow-sm`
 - **SCSS Selector Safety**:
   - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion
   - ห้ามใช้คลาส `.e-chart` โดดๆ เพราะจะไปชนกับไอคอน `e-icons.e-chart` ในเมนู ให้ใช้ `ejs-chart, .e-control.e-chart` แทน

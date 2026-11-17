@@ -24,6 +24,7 @@ import {
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
 import { DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
+import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { workSummaryStats } from '../../core/work-views';
@@ -33,7 +34,7 @@ import { WorkHubFilter } from './work-hub-filter';
 @Component({
   selector: 'app-work-summary',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DashboardLayoutModule, AccumulationChartModule, ChartModule, KpiStatCardComponent],
+  imports: [DashboardLayoutModule, AccumulationChartModule, ChartModule, KpiStatCardComponent, MessageModule],
   providers: [
     PieSeriesService,
     AccumulationLegendService,

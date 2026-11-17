@@ -55,14 +55,12 @@
     ></app-kpi-stat>
   </div>
 
-  <!-- ครึ่งบน: กราฟแท่งแนวนอน Stage Aging & Dependency Matrix -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <!-- กราฟ Stacking Bar 7 cols -->
-    <div class="lg:col-span-7 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
-      <div class="flex justify-between items-center mb-3">
-        <div>
-          <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">Stage Aging by Track</h3>
-          <p class="text-xs text-muted">เปรียบเทียบชั่วโมงเฉลี่ยที่การ์ดค้างในแต่ละสถานะแยกตามทีม</p>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+    <div class="section-card lg:col-span-7">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>Stage Aging by Track</h3>
+          <p class="fine">เปรียบเทียบชั่วโมงเฉลี่ยที่การ์ดค้างในแต่ละสถานะแยกตามทีม</p>
         </div>
       </div>
       <ejs-chart
@@ -110,51 +108,50 @@
       </ejs-chart>
     </div>
 
-    <!-- Blocker Matrix 5 cols -->
-    <div class="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col justify-between">
-      <div>
-        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100 mb-1">Cross-Team Blocker Matrix</h3>
-        <p class="text-xs text-muted mb-4">ตารางระบุทีมที่กำลังรออีกทีมปลดล็อกงาน</p>
-
-        <div class="flex flex-col gap-3">
-          @for (item of blockerMatrix(); track item.id) {
-            <div class="p-3.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
-              <div>
-                <div class="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                  {{ item.description }}
-                </div>
-                <div class="text-xs text-muted mt-1">
-                  กำลังรอ {{ item.ticketCount }} ใบ ({{ item.ticketIds.join(', ') }})
-                </div>
-              </div>
-              <div>
-                @if (item.canPing && (role() === 'admin' || role() === 'lead')) {
-                  <button
-                    ejs-button
-                    cssClass="e-small e-outline e-primary"
-                    iconCss="e-icons e-comment-show"
-                    (click)="pingTarget(item.ticketIds[0], item.blockingTeam)"
-                  >
-                    Ping Teams
-                  </button>
-                }
-              </div>
-            </div>
-          }
+    <div class="section-card lg:col-span-5">
+      <div class="section-card-head">
+        <div class="section-card-copy">
+          <h3>Cross-Team Blocker Matrix</h3>
+          <p class="fine">ตารางระบุทีมที่กำลังรออีกทีมปลดล็อกงาน</p>
         </div>
       </div>
-      <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg text-xs text-blue-700 dark:text-blue-300">
-        💡 <strong>Fair Cutoff Rule:</strong> Dev ส่งงานตรงสัปดาห์จะวัดจากวันที่การ์ดย้ายเข้า <code>Ready for QA</code> ครั้งแรกเทียบกับ <code>first_due_on</code> เวลาที่รอคิวใน QA จะไม่นำมาหักคะแนน Dev
+
+      <div class="flex flex-col gap-3">
+        @for (item of blockerMatrix(); track item.id) {
+          <div class="e-card">
+            <div class="e-card-content flex items-center justify-between gap-3 p-3.5">
+              <div>
+                <div class="text-sm font-semibold">{{ item.description }}</div>
+                <p class="fine m-0 mt-1">กำลังรอ {{ item.ticketCount }} ใบ ({{ item.ticketIds.join(', ') }})</p>
+              </div>
+              @if (item.canPing && (role() === 'admin' || role() === 'lead')) {
+                <button
+                  ejs-button
+                  cssClass="e-small e-outline e-primary"
+                  iconCss="e-icons e-comment-show"
+                  (click)="pingTarget(item.ticketIds[0], item.blockingTeam)"
+                >
+                  Ping Teams
+                </button>
+              }
+            </div>
+          </div>
+        }
       </div>
+
+      <ejs-message
+        severity="Info"
+        variant="Outlined"
+        content="Fair Cutoff Rule: Dev ส่งงานตรงสัปดาห์วัดจากวันที่การ์ดย้ายเข้า Ready for QA ครั้งแรกเทียบกับ first_due_on — เวลาที่รอคิวใน QA ไม่หักคะแนน Dev"
+      ></ejs-message>
     </div>
   </div>
 
-  <!-- ครึ่งล่าง: ตารางตรวจสอบใบงานค้างส่งต่อเกิน SLA -->
-  <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col gap-4">
-    <div class="flex flex-wrap justify-between items-center gap-3">
-      <div>
-        <h3 class="font-bold text-base text-slate-800 dark:text-slate-100">ตารางตรวจสอบใบงานค้างส่งต่อและ SLA รายใบ</h3>
-        <p class="text-xs text-muted">ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล</p>
+  <div class="section-card">
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        <h3>ตารางตรวจสอบใบงานค้างส่งต่อและ SLA รายใบ</h3>
+        <p class="fine">ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล</p>
       </div>
       <div class="flex flex-wrap gap-2 items-center">
         <button
@@ -188,13 +185,10 @@
           <e-column field="status" headerText="สถานะค้าง" width="125" textAlign="Left">
             <ng-template #template let-data>
               <span
-                class="px-2 py-0.5 rounded text-xs font-medium"
-                [class.bg-amber-100]="data.status === 'Code Review'"
-                [class.text-amber-800]="data.status === 'Code Review'"
-                [class.bg-blue-100]="data.status === 'Ready for QA' || data.status === 'In QA'"
-                [class.text-blue-800]="data.status === 'Ready for QA' || data.status === 'In QA'"
-                [class.bg-rose-100]="data.blockerFlag"
-                [class.text-rose-800]="data.blockerFlag"
+                class="e-badge e-badge-pill"
+                [class.e-badge-warning]="data.status === 'Code Review'"
+                [class.e-badge-info]="data.status === 'Ready for QA' || data.status === 'In QA'"
+                [class.e-badge-danger]="!!data.blockerFlag"
               >
                 {{ data.status }}
                 @if (data.blockerFlag) {
@@ -211,14 +205,14 @@
               <span [class.text-rose-600]="data.isOverSla" [class.font-bold]="data.isOverSla">
                 {{ data.hoursSpent }} ชม.
                 @if (data.isOverSla) {
-                  🔥
+                  !
                 }
               </span>
             </ng-template>
           </e-column>
           <e-column field="slaHours" headerText="เกณฑ์ SLA" width="95" textAlign="Right">
             <ng-template #template let-data>
-              <span>&le; {{ data.slaHours }} ชม.</span>
+              <span>≤ {{ data.slaHours }} ชม.</span>
             </ng-template>
           </e-column>
           <e-column headerText="การจัดการ" width="110" textAlign="Center">

@@ -1,13 +1,13 @@
 <div class="flex flex-col gap-4">
   @if (mdMandate().mdDirectCount > 0) {
-    <div class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 text-xs">
-      <div class="flex items-center gap-2">
-        <span class="px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">MD MANDATE</span>
-        <span class="text-slate-200">
-          ทีมรับงานด่วนสั่งตรงจาก MD รวม <strong>{{ mdMandate().mdDirectCount }} ใบ</strong> คิดเป็น <strong>{{ mdMandate().mdDirectMd }} MD</strong> (<strong>{{ mdMandate().mdDirectSharePct }}%</strong> ของโหลดงานทั้งหมด)
-        </span>
-      </div>
-      <span class="text-slate-400">คุ้มครองคะแนนความแม่นยำและ On-Time อัตโนมัติ</span>
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="e-badge e-badge-warning e-badge-pill">MD MANDATE</span>
+      <ejs-message
+        severity="Warning"
+        variant="Outlined"
+        cssClass="grow"
+        [content]="'ทีมรับงานด่วนสั่งตรงจาก MD รวม ' + mdMandate().mdDirectCount + ' ใบ คิดเป็น ' + mdMandate().mdDirectMd + ' MD (' + mdMandate().mdDirectSharePct + '% ของโหลดงานทั้งหมด) — คุ้มครองคะแนนความแม่นยำและ On-Time อัตโนมัติ'"
+      ></ejs-message>
     </div>
   }
 

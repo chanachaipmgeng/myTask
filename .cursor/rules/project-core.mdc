@@ -9,7 +9,10 @@ alwaysApply: true
 
 - กติกาคะแนน / workflow / มุมมองคำนวณอยู่ใน `shared/domain/` เป็น pure TypeScript ใช้ร่วมเว็บและ Nest
 - อย่าใส่สูตรคะแนนใน Angular component หรือ Nest controller — เรียกโดเมนแล้วแสดงผล
-- UI ใช้ Syncfusion + ธีม Tailwind 3 Dark ที่มีอยู่ อย่าเพิ่มดีไซน์ระบบใหม่โดยไม่จำเป็น
+- UI ใช้ Syncfusion + ธีม Tailwind 3 (Dark/Light) ที่มีอยู่ อย่าเพิ่มดีไซน์ระบบใหม่โดยไม่จำเป็น
+- ห่อแผงเนื้อหาใช้ `section-card` / `e-card` · KPI ใช้ `app-kpi-stat` · ป้ายใช้ `e-badge` · แบนเนอร์ใช้ `ejs-message` · ช่องพิมพ์ใช้ `ejs-textbox` — ห้ามห่อใหม่ด้วย `rounded-xl … bg-white dark:bg-slate-900 … shadow-sm`
+- Tailwind `darkMode` ต้องเป็น `['selector', '.e-dark-mode']` ไม่ผูก `prefers-color-scheme` ของ OS
+- Light Mode sidebar: gradient MyHR `#2243ac → #4c68e5` ตัวอักษร/ไอคอนขาว (อย่าปล่อยพื้นขาวจาก Syncfusion ทับ)
 - Angular 22: `signal`/`computed` + `@if`/`@for` + `ChangeDetectionStrategy.OnPush` · คง Zone (ยังไม่ zoneless)
 - คุยและข้อความ UI หลักเป็นภาษาไทย
 
