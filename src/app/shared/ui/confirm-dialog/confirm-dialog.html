@@ -1,0 +1,31 @@
+<ejs-dialog
+  #dialog
+  [id]="dialogId"
+  [header]="header"
+  [width]="width"
+  [visible]="false"
+  [isModal]="true"
+  [showCloseIcon]="true"
+  [closeOnEscape]="true"
+  (close)="onDialogClose()"
+>
+  <ng-template #content>
+    <p class="confirm-dialog__message">{{ message }}</p>
+    <ng-content></ng-content>
+  </ng-template>
+  <ng-template #footerTemplate>
+    <div class="confirm-dialog__footer">
+      @if (showCancel) {
+        <button ejs-button [cssClass]="'e-outline'" [content]="cancelLabel" type="button" (click)="onCancel()"></button>
+      }
+      <button
+        ejs-button
+        [cssClass]="confirmCssClass"
+        [content]="confirmLabel"
+        [disabled]="confirmDisabled"
+        type="button"
+        (click)="onConfirm()"
+      ></button>
+    </div>
+  </ng-template>
+</ejs-dialog>

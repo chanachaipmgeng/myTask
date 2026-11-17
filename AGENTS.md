@@ -51,9 +51,16 @@ npm --prefix server run build
   - ปุ่มสลับธีมบน AppBar (`#appbar-theme-toggle`): แสดงไอคอนและป้ายสถานะ "โหมดสว่าง" / "โหมดมืด" ชัดเจน
 - **Syncfusion UI Template Standard (P12)**:
   - แผงเนื้อหา: `section-card` + `section-card-head` / `section-card-copy`
-  - KPI แถวบน: `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — `e-card` + `e-badge` + `ejs-progressbar`
-  - ป้ายสถานะ: `e-badge e-badge-pill` · แบนเนอร์: `ejs-message` · อินพุต: `ejs-textbox`
-  - ห้ามห่อแผงใหม่ด้วย `rounded-xl border … bg-white dark:bg-slate-900 … shadow-sm`
+  - Shared UI (`src/app/shared/ui/` + barrel `index.ts`):
+    - `app-page-head` — หัวหน้า (title / description / breadcrumb / periodBadge + slot `[actions]`)
+    - `app-section-card` — แผงเนื้อหา (title / subtitle / badge + slots body / `[actions]`)
+    - `app-status-badge` — ป้าย Syncfusion (`tone` หรือ `value` + `toneMap`) · tone ร่วมใน `badge.ts`
+    - `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — KPI แถวบน (`e-card` + badge + `ejs-progressbar`)
+    - `app-form-field` — ห่อ label + control (variant `field` | `filter`)
+    - `app-flash-messages` — รวม success / error / info / warning เป็น `ejs-message`
+    - `app-filter-chips` — ชิปกรองสถานะ/บทบาท
+    - `app-confirm-dialog` — ยืนยันสั้นๆ (queue writeback, board block)
+  - ห้ามห่อแผงใหม่ด้วย `rounded-xl border … bg-white dark:bg-slate-900 … shadow-sm` — ใช้ `app-section-card` / คลาส `.section-card`
 - **SCSS Selector Safety**:
   - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion
   - ห้ามใช้คลาส `.e-chart` โดดๆ เพราะจะไปชนกับไอคอน `e-icons.e-chart` ในเมนู ให้ใช้ `ejs-chart, .e-control.e-chart` แทน

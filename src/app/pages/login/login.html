@@ -1,14 +1,9 @@
-<section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>เข้าสู่ระบบ &amp; สลับบทบาทผู้ใช้งาน</h2>
-      <p>
-        รองรับการยืนยันตัวตนผ่าน GitLab OAuth SSO สำหรับใช้งานจริง และการสลับบัญชีตามบทบาท
-        (<strong>admin</strong> ผู้ดูแลระบบ · <strong>lead</strong> หัวหน้าสายงาน · <strong>member</strong> พนักงานทั่วไป)
-        เพื่อแยกเมนูและสิทธิ์การเข้าถึงอย่างชัดเจน
-      </p>
-    </div>
-    <div class="flex flex-wrap gap-2">
+<section class="page">
+  <app-page-head
+    title="เข้าสู่ระบบ &amp; สลับบทบาทผู้ใช้งาน"
+    description="รองรับการยืนยันตัวตนผ่าน GitLab OAuth SSO สำหรับใช้งานจริง และการสลับบัญชีตามบทบาท (admin ผู้ดูแลระบบ · lead หัวหน้าสายงาน · member พนักงานทั่วไป) เพื่อแยกเมนูและสิทธิ์การเข้าถึงอย่างชัดเจน"
+  >
+    <div actions class="flex flex-wrap gap-2">
       <button ejs-button cssClass="e-primary" iconCss="e-icons e-lock" type="button" (click)="startGitLabSso()">
         เข้าสู่ระบบด้วย GitLab OAuth SSO
       </button>
@@ -18,32 +13,27 @@
         </button>
       }
     </div>
-  </div>
+  </app-page-head>
 
-  @if (message()) {
-    <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
-  }
-  @if (error()) {
-    <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
-  }
+  <app-flash-messages [success]="message() || null" [error]="error() || null"></app-flash-messages>
 
   @if (activePerson(); as active) {
-    <div class="section-card">
+    <app-section-card [showHead]="false">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-start gap-3">
           <div class="avatar-badge">{{ active.nickname.slice(0, 2) }}</div>
           <div class="flex flex-col gap-1">
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-lg font-bold text-cyan">บัญชีที่กำลังใช้งาน: {{ active.nickname }} ({{ active.fullName }})</span>
-              <span
-                class="e-badge e-badge-pill"
-                [class.e-badge-danger]="role() === 'admin'"
-                [class.e-badge-warning]="role() === 'lead'"
-                [class.e-badge-info]="role() === 'member'"
-              >
-                สิทธิ์: {{ role() }}
-              </span>
-              <span class="e-badge e-badge-secondary e-badge-pill">{{ active.track === 'RD' ? 'สาย R&D' : 'สาย Implement' }} · {{ active.level }}</span>
+              <app-status-badge
+                [label]="'สิทธิ์: ' + role()"
+                [value]="role()"
+                [toneMap]="roleToneMap"
+              ></app-status-badge>
+              <app-status-badge
+                [label]="(active.track === 'RD' ? 'สาย R&D' : 'สาย Implement') + ' · ' + active.level"
+                tone="secondary"
+              ></app-status-badge>
             </div>
             <p class="fine m-0">
               @if (role() === 'admin') {
@@ -66,7 +56,7 @@
           }
         </div>
       </div>
-    </div>
+    </app-section-card>
   }
 
   @if (!canUsePersonaSwitch()) {
@@ -78,51 +68,20 @@
   }
 
   @if (canUsePersonaSwitch()) {
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="flex flex-wrap gap-2">
-        <button
-          ejs-button
-          type="button"
-          [cssClass]="roleFilter() === 'All' ? 'e-primary' : 'e-outline'"
-          (click)="roleFilter.set('All')"
-        >
-          ทั้งหมด ({{ roleCounts().total }})
-        </button>
-        <button
-          ejs-button
-          type="button"
-          [cssClass]="roleFilter() === 'admin' ? 'e-primary' : 'e-outline'"
-          (click)="roleFilter.set('admin')"
-        >
-          ผู้ดูแลระบบ · Admin ({{ roleCounts().admin }})
-        </button>
-        <button
-          ejs-button
-          type="button"
-          [cssClass]="roleFilter() === 'lead' ? 'e-primary' : 'e-outline'"
-          (click)="roleFilter.set('lead')"
-        >
-          หัวหน้าสายงาน · Lead ({{ roleCounts().lead }})
-        </button>
-        <button
-          ejs-button
-          type="button"
-          [cssClass]="roleFilter() === 'member' ? 'e-primary' : 'e-outline'"
-          (click)="roleFilter.set('member')"
-        >
-          พนักงานทั่วไป · Member ({{ roleCounts().member }})
-        </button>
-      </div>
-      <div class="w-full sm:w-72">
-        <ejs-textbox
-          placeholder="ค้นหาชื่อ / รหัส / ตำแหน่ง..."
-          [value]="query()"
-          (input)="query.set($any($event).value ?? '')"
-          width="100%"
-        ></ejs-textbox>
-      </div>
+  <app-section-card title="สลับบัญชีตามบทบาท" subtitle="เลือกบุคคลจากรายชื่อ 15 คนเพื่อจำลองสิทธิ์เมนูและการเข้าถึง">
+    <div actions class="w-full sm:w-72">
+      <ejs-textbox
+        placeholder="ค้นหาชื่อ / รหัส / ตำแหน่ง..."
+        [value]="query()"
+        (input)="query.set($any($event).value ?? '')"
+        width="100%"
+      ></ejs-textbox>
     </div>
+    <app-filter-chips
+      [options]="roleChipOptions()"
+      [value]="roleFilter()"
+      (valueChange)="setRoleFilter($event)"
+    ></app-filter-chips>
 
     <div class="card-grid-3">
       @for (person of filteredPeople(); track person.id) {
@@ -170,6 +129,6 @@
         </div>
       }
     </div>
-  </div>
+  </app-section-card>
   }
 </section>

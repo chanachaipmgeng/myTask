@@ -1,16 +1,10 @@
-<section class="page flex flex-col gap-6">
-  <!-- Header Bar -->
-  <div class="page-head flex flex-wrap justify-between items-center gap-4">
-    <div>
-      <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
-        ฮับบริหารงาน &gt; ตรวจสอบการส่งต่อ &amp; SLA ข้ามทีม (/work/handoff)
-      </div>
-      <h2 class="text-2xl font-bold tracking-tight">ศูนย์ตรวจสอบการส่งต่อและคอขวดข้ามทีม (Handoff &amp; SLA Inspector)</h2>
-      <p class="text-sm text-muted">
-        วิเคราะห์ระยะเวลาค้างส่งต่องานระหว่าง Dev, Reviewer, QA และ Infra เพื่อแก้ปัญหาคอขวดก่อนหลุดกำหนดส่ง
-      </p>
-    </div>
-    <div class="flex flex-wrap gap-3 items-center">
+<section class="page">
+  <app-page-head
+    breadcrumb="ฮับบริหารงาน > ตรวจสอบการส่งต่อ &amp; SLA ข้ามทีม (/work/handoff)"
+    title="ศูนย์ตรวจสอบการส่งต่อและคอขวดข้ามทีม (Handoff &amp; SLA Inspector)"
+    description="วิเคราะห์ระยะเวลาค้างส่งต่องานระหว่าง Dev, Reviewer, QA และ Infra เพื่อแก้ปัญหาคอขวดก่อนหลุดกำหนดส่ง"
+  >
+    <div actions class="flex flex-wrap gap-3 items-center">
       <ejs-dropdownlist
         [dataSource]="trackOptions"
         [fields]="{ text: 'text', value: 'value' }"
@@ -22,7 +16,7 @@
         ซิงก์ข้อมูล
       </button>
     </div>
-  </div>
+  </app-page-head>
 
   <div class="kpi-grid-4">
     <app-kpi-stat
@@ -56,13 +50,11 @@
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-    <div class="section-card lg:col-span-7">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>Stage Aging by Track</h3>
-          <p class="fine">เปรียบเทียบชั่วโมงเฉลี่ยที่การ์ดค้างในแต่ละสถานะแยกตามทีม</p>
-        </div>
-      </div>
+    <app-section-card
+      class="lg:col-span-7"
+      title="Stage Aging by Track"
+      subtitle="เปรียบเทียบชั่วโมงเฉลี่ยที่การ์ดค้างในแต่ละสถานะแยกตามทีม"
+    >
       <ejs-chart
         [primaryXAxis]="primaryXAxis"
         [primaryYAxis]="primaryYAxis"
@@ -106,16 +98,13 @@
           ></e-series>
         </e-series-collection>
       </ejs-chart>
-    </div>
+    </app-section-card>
 
-    <div class="section-card lg:col-span-5">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>Cross-Team Blocker Matrix</h3>
-          <p class="fine">ตารางระบุทีมที่กำลังรออีกทีมปลดล็อกงาน</p>
-        </div>
-      </div>
-
+    <app-section-card
+      class="lg:col-span-5"
+      title="Cross-Team Blocker Matrix"
+      subtitle="ตารางระบุทีมที่กำลังรออีกทีมปลดล็อกงาน"
+    >
       <div class="flex flex-col gap-3">
         @for (item of blockerMatrix(); track item.id) {
           <div class="e-card">
@@ -144,27 +133,24 @@
         variant="Outlined"
         content="Fair Cutoff Rule: Dev ส่งงานตรงสัปดาห์วัดจากวันที่การ์ดย้ายเข้า Ready for QA ครั้งแรกเทียบกับ first_due_on — เวลาที่รอคิวใน QA ไม่หักคะแนน Dev"
       ></ejs-message>
-    </div>
+    </app-section-card>
   </div>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>ตารางตรวจสอบใบงานค้างส่งต่อและ SLA รายใบ</h3>
-        <p class="fine">ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล</p>
-      </div>
-      <div class="flex flex-wrap gap-2 items-center">
-        <button
-          ejs-button
-          [cssClass]="onlyOverSla() ? 'e-danger' : 'e-outline'"
-          (click)="toggleOverSla()"
-        >
-          {{ onlyOverSla() ? 'แสดงทั้งหมด' : 'เฉพาะที่เกิน SLA' }}
-        </button>
-        <button ejs-button cssClass="e-outline" iconCss="e-icons e-export-excel" (click)="exportGrid(handoffGrid)">
-          ส่งออก Excel
-        </button>
-      </div>
+  <app-section-card
+    title="ตารางตรวจสอบใบงานค้างส่งต่อและ SLA รายใบ"
+    subtitle="ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล"
+  >
+    <div actions class="flex flex-wrap gap-2 items-center">
+      <button
+        ejs-button
+        [cssClass]="onlyOverSla() ? 'e-danger' : 'e-outline'"
+        (click)="toggleOverSla()"
+      >
+        {{ onlyOverSla() ? 'แสดงทั้งหมด' : 'เฉพาะที่เกิน SLA' }}
+      </button>
+      <button ejs-button cssClass="e-outline" iconCss="e-icons e-export-excel" (click)="exportGrid(handoffGrid)">
+        ส่งออก Excel
+      </button>
     </div>
 
     <div class="overflow-x-auto w-full">
@@ -184,17 +170,11 @@
           </e-column>
           <e-column field="status" headerText="สถานะค้าง" width="125" textAlign="Left">
             <ng-template #template let-data>
-              <span
-                class="e-badge e-badge-pill"
-                [class.e-badge-warning]="data.status === 'Code Review'"
-                [class.e-badge-info]="data.status === 'Ready for QA' || data.status === 'In QA'"
-                [class.e-badge-danger]="!!data.blockerFlag"
-              >
-                {{ data.status }}
-                @if (data.blockerFlag) {
-                  ({{ data.blockerFlag }})
-                }
-              </span>
+              <app-status-badge
+                [label]="data.blockerFlag ? data.status + ' (' + data.blockerFlag + ')' : data.status"
+                [value]="data.blockerFlag ? 'blocked' : data.status"
+                [toneMap]="statusToneMap"
+              ></app-status-badge>
             </ng-template>
           </e-column>
           <e-column field="title" headerText="ชื่องาน / รายละเอียด" width="190" textAlign="Left"></e-column>
@@ -233,5 +213,5 @@
         </e-columns>
       </ejs-grid>
     </div>
-  </div>
+  </app-section-card>
 </section>

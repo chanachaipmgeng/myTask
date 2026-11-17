@@ -1,13 +1,9 @@
-<section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>พื้นที่ของฉัน · {{ view().name }} ({{ view().role }})</h2>
-      <p>
-        หน้าหลักสำหรับติดตามใบงานที่รับผิดชอบ โควตาคงเหลือในสัปดาห์ และดัชนีพัฒนาของตัวเองเทียบกับตัวเอง
-        (ไม่จัดอันดับเปรียบเทียบกับเพื่อนร่วมงาน)
-      </p>
-    </div>
-    <div class="flex flex-wrap gap-2">
+<section class="page">
+  <app-page-head
+    [title]="'พื้นที่ของฉัน · ' + view().name + ' (' + view().role + ')'"
+    description="หน้าหลักสำหรับติดตามใบงานที่รับผิดชอบ โควตาคงเหลือในสัปดาห์ และดัชนีพัฒนาของตัวเองเทียบกับตัวเอง (ไม่จัดอันดับเปรียบเทียบกับเพื่อนร่วมงาน)"
+  >
+    <div actions class="flex flex-wrap gap-2">
       <a ejs-button cssClass="e-primary" iconCss="e-icons e-kanban" routerLink="/work/board">
         อัปเดตสถานะ / แนบ MR บนบอร์ด
       </a>
@@ -18,7 +14,7 @@
         สลับบัญชีผู้ใช้
       </a>
     </div>
-  </div>
+  </app-page-head>
 
   <div class="kpi-grid-4">
     <app-kpi-stat
@@ -55,27 +51,23 @@
   </div>
 
   @if (myCoaching(); as coach) {
-    <div class="section-card">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <div class="flex flex-wrap items-center gap-2">
-            <h3>สรุปวิเคราะห์พัฒนาการและคำแนะนำส่วนตัว (Self-Coaching Insight)</h3>
-            <span class="e-badge e-badge-info e-badge-pill">{{ coach.trendLabel }} (Slope {{ coach.trendSlope }})</span>
-          </div>
-          <p class="fine">วิเคราะห์จากสถิติการส่งมอบ ความแม่นยำการประเมินขนาด และคุณภาพการรีวิวของตัวเอง</p>
-        </div>
-        <div class="flex flex-wrap gap-2 text-xs">
-          <span class="e-badge e-badge-success e-badge-pill">ส่งตรงสัปดาห์ {{ coach.onTimePct }}%</span>
-          <span class="e-badge e-badge-info e-badge-pill">ความแม่นประเมินขนาด {{ coach.estimationAccuracyPct }}%</span>
-          <span class="e-badge e-badge-primary e-badge-pill">ผ่านรีวิวรอบแรก {{ coach.firstPassPct }}%</span>
-        </div>
+    <app-section-card
+      title="สรุปวิเคราะห์พัฒนาการและคำแนะนำส่วนตัว (Self-Coaching Insight)"
+      subtitle="วิเคราะห์จากสถิติการส่งมอบ ความแม่นยำการประเมินขนาด และคุณภาพการรีวิวของตัวเอง"
+      [badge]="coach.trendLabel + ' (Slope ' + coach.trendSlope + ')'"
+      badgeTone="info"
+    >
+      <div actions class="flex flex-wrap gap-2 text-xs">
+        <app-status-badge [label]="'ส่งตรงสัปดาห์ ' + coach.onTimePct + '%'" tone="success"></app-status-badge>
+        <app-status-badge [label]="'ความแม่นประเมินขนาด ' + coach.estimationAccuracyPct + '%'" tone="info"></app-status-badge>
+        <app-status-badge [label]="'ผ่านรีวิวรอบแรก ' + coach.firstPassPct + '%'" tone="primary"></app-status-badge>
       </div>
       <div class="card-grid-2">
         <div class="e-card">
           <div class="e-card-content flex flex-col gap-1.5 p-4">
             <div class="kpi-card-top">
               <span class="kpi-note m-0">จุดแข็งปัจจุบัน</span>
-              <span class="e-badge e-badge-success e-badge-pill">Strength</span>
+              <app-status-badge label="Strength" tone="success"></app-status-badge>
             </div>
             <p class="m-0 font-medium">{{ coach.strengthNote }}</p>
           </div>
@@ -84,38 +76,31 @@
           <div class="e-card-content flex flex-col gap-1.5 p-4">
             <div class="kpi-card-top">
               <span class="kpi-note m-0">คำแนะนำเพื่อยกระดับในสปรินต์ถัดไป</span>
-              <span class="e-badge e-badge-info e-badge-pill">Next Sprint Focus</span>
+              <app-status-badge label="Next Sprint Focus" tone="info"></app-status-badge>
             </div>
             <p class="m-0 font-medium">{{ coach.coachingFocus }}</p>
           </div>
         </div>
       </div>
-    </div>
+    </app-section-card>
   }
 
   @if (myRisks().length > 0) {
-    <div class="section-card">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>ใบงานที่กำลังทำและสถานะความเสี่ยง ({{ myRisks().length }})</h3>
-          <p class="fine">ใบงานเปิดของคุณพร้อมระดับความเสี่ยง เพื่อวางแผนส่งมอบและแนบลิงก์ MR ล่วงหน้า</p>
-        </div>
-        <a ejs-button cssClass="e-outline e-small" routerLink="/work/board">ไปที่กระดานงาน</a>
-      </div>
+    <app-section-card
+      [title]="'ใบงานที่กำลังทำและสถานะความเสี่ยง (' + myRisks().length + ')'"
+      subtitle="ใบงานเปิดของคุณพร้อมระดับความเสี่ยง เพื่อวางแผนส่งมอบและแนบลิงก์ MR ล่วงหน้า"
+    >
+      <a actions ejs-button cssClass="e-outline e-small" routerLink="/work/board">ไปที่กระดานงาน</a>
       <div class="card-grid-2">
         @for (risk of myRisks(); track risk.ticketId) {
           <div class="e-card">
             <div class="e-card-content flex flex-col gap-2 p-4">
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <span class="font-bold text-cyan">{{ risk.ticketId }} · {{ risk.title }}</span>
-                <span
-                  class="e-badge e-badge-pill"
-                  [class.e-badge-danger]="risk.riskLevel === 'สูงมาก'"
-                  [class.e-badge-warning]="risk.riskLevel === 'ปานกลาง'"
-                  [class.e-badge-success]="risk.riskLevel === 'ต่ำ'"
-                >
-                  ความเสี่ยง {{ risk.riskLevel }} ({{ risk.riskScore }}/100)
-                </span>
+                <app-status-badge
+                  [label]="'ความเสี่ยง ' + risk.riskLevel + ' (' + risk.riskScore + '/100)'"
+                  [tone]="risk.riskLevel === 'สูงมาก' ? 'danger' : risk.riskLevel === 'ปานกลาง' ? 'warning' : 'success'"
+                ></app-status-badge>
               </div>
               <p class="fine m-0">สถานะ: {{ risk.status }} · Est {{ risk.estimateMd }} MD / ใช้จริง {{ risk.actualMd }} MD</p>
               <p class="m-0 text-sm">{{ risk.reasons.join(' · ') }}</p>
@@ -131,18 +116,17 @@
           </div>
         }
       </div>
-    </div>
+    </app-section-card>
   }
 
   <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-    <div class="section-card xl:col-span-7">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>ตารางงานที่กำลังทำของฉัน</h3>
-          <p class="fine">รายการใบงานที่ยังเปิดอยู่และผู้รับผิดชอบเป็นคุณ</p>
-        </div>
-        <span class="e-badge e-badge-info e-badge-pill">{{ view().openWork.length }} ใบ</span>
-      </div>
+    <app-section-card
+      class="xl:col-span-7"
+      title="ตารางงานที่กำลังทำของฉัน"
+      subtitle="รายการใบงานที่ยังเปิดอยู่และผู้รับผิดชอบเป็นคุณ"
+      [badge]="view().openWork.length + ' ใบ'"
+      badgeTone="info"
+    >
       @if (view().openWork.length === 0) {
         <ejs-message content="ตอนนี้ไม่มีใบงานเปิดอยู่ของคุณ" severity="Success" variant="Outlined"></ejs-message>
       } @else {
@@ -166,16 +150,15 @@
           </e-columns>
         </ejs-grid>
       }
-    </div>
+    </app-section-card>
 
-    <div class="section-card xl:col-span-5">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>แนวโน้มดัชนีพัฒนาของฉันรายเดือน</h3>
-          <p class="fine">เทียบพัฒนาการของตัวเองรายเดือนกับเกณฑ์มาตรฐาน 75</p>
-        </div>
-        <span class="e-badge e-badge-secondary e-badge-pill">เป้า 75</span>
-      </div>
+    <app-section-card
+      class="xl:col-span-5"
+      title="แนวโน้มดัชนีพัฒนาของฉันรายเดือน"
+      subtitle="เทียบพัฒนาการของตัวเองรายเดือนกับเกณฑ์มาตรฐาน 75"
+      badge="เป้า 75"
+      badgeTone="secondary"
+    >
       <div class="chart-frame m-0">
         <ejs-chart
           id="my-self-trend"
@@ -212,17 +195,15 @@
           </e-series-collection>
         </ejs-chart>
       </div>
-    </div>
+    </app-section-card>
   </div>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>ประวัติใบงานที่ปิดแล้วของฉัน</h3>
-        <p class="fine">สรุปผลคะแนนใบงานที่ปิดแล้ว พร้อมผลรวม MD และค่าเฉลี่ยคะแนนท้ายตาราง</p>
-      </div>
-      <span class="e-badge e-badge-success e-badge-pill">ปิดแล้ว {{ view().closedWork.length }} ใบ</span>
-    </div>
+  <app-section-card
+    title="ประวัติใบงานที่ปิดแล้วของฉัน"
+    subtitle="สรุปผลคะแนนใบงานที่ปิดแล้ว พร้อมผลรวม MD และค่าเฉลี่ยคะแนนท้ายตาราง"
+    [badge]="'ปิดแล้ว ' + view().closedWork.length + ' ใบ'"
+    badgeTone="success"
+  >
     @if (view().closedWork.length === 0) {
       <ejs-message content="ยังไม่มีใบงานที่ปิดแล้ว" severity="Info" variant="Outlined"></ejs-message>
     } @else {
@@ -263,5 +244,5 @@
         </e-aggregates>
       </ejs-grid>
     }
-  </div>
+  </app-section-card>
 </section>

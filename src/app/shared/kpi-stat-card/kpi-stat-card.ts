@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
 import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { ThemeService } from '../../core/theme.service';
+import { BadgeTone, badgeToneClass } from '../ui/badge';
 
-export type KpiBadgeTone = 'info' | 'success' | 'warning' | 'danger' | 'primary' | 'secondary';
+export type { BadgeTone as KpiBadgeTone } from '../ui/badge';
 export type KpiAccent = 'default' | 'success' | 'warning' | 'danger' | 'info';
 
 @Component({
@@ -19,22 +20,14 @@ export class KpiStatCardComponent {
   @Input() value: string | number = '';
   @Input() hint = '';
   @Input() badge = '';
-  @Input() badgeTone: KpiBadgeTone = 'info';
+  @Input() badgeTone: BadgeTone = 'info';
   @Input() iconCss = '';
   @Input() progress: number | null = null;
   @Input() progressColor = '';
   @Input() accent: KpiAccent = 'default';
 
   protected badgeClass(): string {
-    const map: Record<KpiBadgeTone, string> = {
-      info: 'e-badge-info',
-      success: 'e-badge-success',
-      warning: 'e-badge-warning',
-      danger: 'e-badge-danger',
-      primary: 'e-badge-primary',
-      secondary: 'e-badge-secondary',
-    };
-    return `e-badge e-badge-pill ${map[this.badgeTone] ?? map.info}`;
+    return badgeToneClass(this.badgeTone);
   }
 
   protected fillColor(): string {

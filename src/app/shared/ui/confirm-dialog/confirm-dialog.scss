@@ -1,0 +1,16 @@
+:host {
+  display: contents;
+}
+
+.confirm-dialog__message {
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.confirm-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

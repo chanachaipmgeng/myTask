@@ -1,0 +1,20 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.app-form-field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.app-form-field__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.app-form-field__hint {
+  margin: 0;
+}

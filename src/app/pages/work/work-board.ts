@@ -12,6 +12,8 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import {
   BUG_CAUSES,
   BugCause,
@@ -57,6 +59,8 @@ type SwimlaneMode = 'none' | 'assignee' | 'track';
     CheckBoxModule,
     MessageModule,
     KpiStatCardComponent,
+    ConfirmDialogComponent,
+    FormFieldComponent,
   ],
   templateUrl: './work-board.html',
 })
@@ -68,7 +72,7 @@ export class WorkBoard {
   protected readonly theme = inject(ThemeService);
   private readonly boardRevision = signal(0);
 
-  @ViewChild('blockDialog') private blockDialog?: DialogComponent;
+  @ViewChild('blockDialog') private blockDialog?: ConfirmDialogComponent;
   @ViewChild('editDialog') private editDialog?: DialogComponent;
   @ViewChild('mdShiftDialog') private mdShiftDialog?: DialogComponent;
 
@@ -187,6 +191,28 @@ export class WorkBoard {
 
   protected readonly report = computed(() => pipelineReport(this.visibleTickets(), this.scorecard.people()));
 
+  protected readonly velocityTotal = computed(() =>
+    this.report().velocity.reduce((sum, row) => sum + row.points, 0),
+  );
+
+  protected readonly velocityHint = computed(() => {
+    const rows = this.report().velocity;
+    if (rows.length === 0) {
+      return 'ยังไม่มีใบ Done';
+    }
+    return rows
+      .slice(0, 3)
+      .map((row) => `${row.name} ${row.points}`)
+      .join(' · ');
+  });
+
+  protected readonly categoryHint = computed(() =>
+    this.report()
+      .categories.slice(0, 3)
+      .map((row) => `${row.label} ${row.pct}%`)
+      .join(' · '),
+  );
+
   protected readonly selected = computed(
     () => this.scorecard.tickets().find((ticket) => ticket.id === this.selectedId()) ?? null,
   );
@@ -239,7 +265,7 @@ export class WorkBoard {
       args.cancel = true;
       this.blockMessage.set(roleCheck.message);
       this.boardRevision.update((value) => value + 1);
-      this.blockDialog?.show();
+      this.blockDialog?.open();
       return;
     }
     const result = moveWorkflow(current, target, todayInBangkok());
@@ -247,7 +273,7 @@ export class WorkBoard {
       args.cancel = true;
       this.blockMessage.set(result.message);
       this.boardRevision.update((value) => value + 1);
-      this.blockDialog?.show();
+      this.blockDialog?.open();
       return;
     }
     this.scorecard.replaceTicket(result.ticket);
@@ -379,7 +405,7 @@ export class WorkBoard {
     });
     if (!result.ok) {
       this.blockMessage.set(result.message);
-      this.blockDialog?.show();
+      this.blockDialog?.open();
       return;
     }
     const finalTicket: Ticket = {

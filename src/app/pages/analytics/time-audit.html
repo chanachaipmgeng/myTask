@@ -1,62 +1,35 @@
-<section class="page flex flex-col gap-4">
-  <div class="page-head flex flex-wrap justify-between items-center gap-4">
-    <div>
-      <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
-        ศูนย์วิเคราะห์ Python &gt; ตรวจสอบเวลา 3 ทาง (3-Way Time Inspector)
-      </div>
-      <h2 class="text-2xl font-bold tracking-tight">หน้าจอตรวจสอบความคลาดเคลื่อนของเวลา 3 ทาง (3-Way Time Audit)</h2>
-      <p class="text-sm text-muted">
-        เปรียบเทียบเวลาจาก 3 แหล่ง: (1) Estimate MD (2) เวลาที่กรอกใน OpenProject (3) ระยะเวลา Commit จริงบน GitLab
-      </p>
-    </div>
-    <div class="flex gap-2">
+<section class="page">
+  <app-page-head
+    breadcrumb="ศูนย์วิเคราะห์ Python > ตรวจสอบเวลา 3 ทาง (3-Way Time Inspector)"
+    title="หน้าจอตรวจสอบความคลาดเคลื่อนของเวลา 3 ทาง (3-Way Time Audit)"
+    description="เปรียบเทียบเวลาจาก 3 แหล่ง: (1) Estimate MD (2) เวลาที่กรอกใน OpenProject (3) ระยะเวลา Commit จริงบน GitLab"
+  >
+    <div actions>
       <button ejs-button cssClass="e-primary" iconCss="e-icons e-play" (click)="rerunAudit()">
         รันตรวจสอบใหม่ (Python)
       </button>
     </div>
-  </div>
+  </app-page-head>
 
-  <div class="flex flex-wrap items-center gap-2">
-    <button
-      ejs-button
-      [cssClass]="filterType() === 'ALL' ? 'e-primary' : 'e-outline'"
-      (click)="setFilter('ALL')"
-    >
-      ทั้งหมด ({{ report().totalTickets }})
-    </button>
-    <button
-      ejs-button
-      [cssClass]="filterType() === 'MISSING' ? 'e-danger' : 'e-outline'"
-      (click)="setFilter('MISSING')"
-    >
-      ลืมลงเวลา Actual ({{ report().missingTimeCount }})
-    </button>
-    <button
-      ejs-button
-      [cssClass]="filterType() === 'GHOST' ? 'e-warning' : 'e-outline'"
-      (click)="setFilter('GHOST')"
-    >
-      ไม่มี Git Commit ({{ report().ghostProgressCount }})
-    </button>
-    <button
-      ejs-button
-      [cssClass]="filterType() === 'OVERRUN' ? 'e-danger' : 'e-outline'"
-      (click)="setFilter('OVERRUN')"
-    >
-      เกิน 1.5x / เวลาคลาดเคลื่อน ({{ report().overrunCount }})
-    </button>
-  </div>
+  <app-filter-chips
+    [options]="filterOptions()"
+    [value]="filterType()"
+    (valueChange)="setFilter($event)"
+  ></app-filter-chips>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>ตารางเปรียบเทียบเวลา 3 มิติ (3-Way Time Matching)</h3>
-        <p class="fine">ตรวจจับ Ghost In-Progress, Outlier, และการลืมบันทึกเวลาปิดงาน</p>
-      </div>
-      <button ejs-button cssClass="e-outline" iconCss="e-icons e-export-excel" (click)="exportGrid(timeGrid)">
-        ส่งออก Excel
-      </button>
-    </div>
+  <app-section-card
+    title="ตารางเปรียบเทียบเวลา 3 มิติ (3-Way Time Matching)"
+    subtitle="ตรวจจับ Ghost In-Progress, Outlier, และการลืมบันทึกเวลาปิดงาน"
+  >
+    <button
+      actions
+      ejs-button
+      cssClass="e-outline"
+      iconCss="e-icons e-export-excel"
+      (click)="exportGrid(timeGrid)"
+    >
+      ส่งออก Excel
+    </button>
 
     <ejs-grid
       #timeGrid
@@ -99,17 +72,14 @@
         </e-column>
         <e-column field="anomalyLabel" headerText="ความผิดปกติที่ตรวจพบ" width="180">
           <ng-template #template let-data>
-            <span
-              class="e-badge e-badge-pill"
-              [class.e-badge-secondary]="!data.isAnomaly"
-              [class.e-badge-danger]="data.anomalyType === 'OUTLIER' || data.anomalyType === 'MISSING_TIME'"
-              [class.e-badge-warning]="data.anomalyType === 'GHOST_PROGRESS' || data.anomalyType === 'TIME_MISMATCH'"
-            >
-              {{ data.anomalyLabel }}
-            </span>
+            <app-status-badge
+              [label]="data.anomalyLabel"
+              [value]="data.isAnomaly ? data.anomalyType : 'OK'"
+              [toneMap]="anomalyToneMap"
+            ></app-status-badge>
           </ng-template>
         </e-column>
       </e-columns>
     </ejs-grid>
-  </div>
+  </app-section-card>
 </section>

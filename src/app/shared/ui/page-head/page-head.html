@@ -1,0 +1,17 @@
+<div class="page-head">
+  <div class="page-head__copy">
+    @if (breadcrumb) {
+      <div class="page-head__crumb">{{ breadcrumb }}</div>
+    }
+    <h2>{{ title }}</h2>
+    @if (description) {
+      <p>{{ description }}</p>
+    }
+  </div>
+  <div class="page-head__actions">
+    @if (periodBadge) {
+      <app-status-badge [label]="periodBadge" tone="info"></app-status-badge>
+    }
+    <ng-content select="[actions]"></ng-content>
+  </div>
+</div>

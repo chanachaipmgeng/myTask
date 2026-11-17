@@ -17,6 +17,13 @@ import { effectiveRole } from '../../core/admin-settings';
 import { TicketDispute, VarianceCode } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { BadgeTone } from '../../shared/ui/badge';
+import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
 
 @Component({
   selector: 'app-disputes',
@@ -29,6 +36,12 @@ import { ShellNotice } from '../../core/shell-notice';
     TextBoxModule,
     DialogModule,
     MessageModule,
+    PageHeadComponent,
+    SectionCardComponent,
+    FilterChipsComponent,
+    FormFieldComponent,
+    StatusBadgeComponent,
+    KpiStatCardComponent,
   ],
   providers: [
     PageService,
@@ -74,6 +87,21 @@ export class DisputesPage {
     })),
   );
 
+  protected readonly statusToneMap: Record<string, BadgeTone> = {
+    PENDING: 'warning',
+    APPROVED: 'success',
+    REJECTED: 'danger',
+  };
+
+  protected readonly statusChipOptions = computed<FilterChipOption[]>(() => {
+    const all = this.disputes();
+    return [
+      { id: 'PENDING', label: 'รออนุมัติ', count: all.filter((d) => d.status === 'PENDING').length },
+      { id: 'APPROVED', label: 'อนุมัติแล้ว', count: all.filter((d) => d.status === 'APPROVED').length },
+      { id: 'REJECTED', label: 'ปฏิเสธ', count: all.filter((d) => d.status === 'REJECTED').length },
+    ];
+  });
+
   constructor() {
     // Select first dispute by default if available
     const pending = this.disputes().find((d) => d.status === 'PENDING');
@@ -82,9 +110,13 @@ export class DisputesPage {
     }
   }
 
-  protected setStatus(status: 'PENDING' | 'APPROVED' | 'REJECTED'): void {
-    this.statusFilter.set(status);
-    const first = this.disputes().find((d) => d.status === status);
+  protected setStatus(status: string): void {
+    const next = (status === 'APPROVED' || status === 'REJECTED' ? status : 'PENDING') as
+      | 'PENDING'
+      | 'APPROVED'
+      | 'REJECTED';
+    this.statusFilter.set(next);
+    const first = this.disputes().find((d) => d.status === next);
     this.selectedDispute.set(first ?? null);
   }
 

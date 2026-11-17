@@ -1,16 +1,10 @@
-<section class="page flex flex-col gap-4">
-  <div class="page-head flex flex-wrap justify-between items-center gap-4">
-    <div>
-      <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
-        ภาพรวมและวิเคราะห์ &gt; ตรวจสอบคุณภาพ QA &amp; Defect Audit (/quality/audit)
-      </div>
-      <h2 class="text-2xl font-bold tracking-tight">ศูนย์ตรวจสอบคุณภาพ QA และช่องโหว่บั๊ก (QA &amp; Defect Leakage Audit)</h2>
-      <p class="text-sm text-muted">
-        ตรวจสอบ First-Time Right %, อัตราการตีกลับ (Reopen Rate), อัตราหลุดไป Production และหลักฐาน DoD ก่อนส่งทดสอบ
-      </p>
-    </div>
-    <span class="e-badge e-badge-info e-badge-pill">งวดปัจจุบัน: 2026-11</span>
-  </div>
+<section class="page">
+  <app-page-head
+    breadcrumb="ภาพรวมและวิเคราะห์ > ตรวจสอบคุณภาพ QA &amp; Defect Audit (/quality/audit)"
+    title="ศูนย์ตรวจสอบคุณภาพ QA และช่องโหว่บั๊ก (QA &amp; Defect Leakage Audit)"
+    description="ตรวจสอบ First-Time Right %, อัตราการตีกลับ (Reopen Rate), อัตราหลุดไป Production และหลักฐาน DoD ก่อนส่งทดสอบ"
+    periodBadge="งวดปัจจุบัน: 2026-11"
+  ></app-page-head>
 
   <div class="kpi-grid-4">
     <app-kpi-stat
@@ -47,7 +41,7 @@
     ></app-kpi-stat>
   </div>
 
-  <div class="section-card">
+  <app-section-card [showHead]="false">
     <ejs-tab id="qualityTab" animation="none">
       <e-tabitems>
         <e-tabitem [header]="{ text: 'ตรวจสอบหลักฐาน DoD ก่อนเข้า QA (' + dodChecklist().length + ')' }">
@@ -75,35 +69,26 @@
                   </e-column>
                   <e-column field="unitTestLabel" headerText="Unit Test" width="130">
                     <ng-template #template let-data>
-                      <span
-                        class="e-badge e-badge-pill"
-                        [class.e-badge-success]="data.unitTestPassed"
-                        [class.e-badge-danger]="!data.unitTestPassed"
-                      >
-                        {{ data.unitTestLabel }}
-                      </span>
+                      <app-status-badge
+                        [label]="data.unitTestLabel"
+                        [value]="data.unitTestPassed"
+                      ></app-status-badge>
                     </ng-template>
                   </e-column>
                   <e-column field="stagingVerified" headerText="ผล Staging" width="130">
                     <ng-template #template let-data>
-                      <span
-                        class="e-badge e-badge-pill"
-                        [class.e-badge-success]="data.stagingVerified"
-                        [class.e-badge-warning]="!data.stagingVerified"
-                      >
-                        {{ data.stagingVerified ? 'แนบรูปแล้ว' : 'ยังไม่แนบ' }}
-                      </span>
+                      <app-status-badge
+                        [label]="data.stagingVerified ? 'แนบรูปแล้ว' : 'ยังไม่แนบ'"
+                        [tone]="data.stagingVerified ? 'success' : 'warning'"
+                      ></app-status-badge>
                     </ng-template>
                   </e-column>
                   <e-column field="dodStatus" headerText="สถานะหลักฐาน DoD" width="160">
                     <ng-template #template let-data>
-                      <span
-                        class="e-badge e-badge-pill"
-                        [class.e-badge-success]="data.isComplete"
-                        [class.e-badge-warning]="!data.isComplete"
-                      >
-                        {{ data.dodStatus }}
-                      </span>
+                      <app-status-badge
+                        [label]="data.dodStatus"
+                        [tone]="data.isComplete ? 'success' : 'warning'"
+                      ></app-status-badge>
                     </ng-template>
                   </e-column>
                   <e-column headerText="การจัดการ" width="140" textAlign="Center">
@@ -142,18 +127,15 @@
                   </e-column>
                   <e-column field="bugCause" headerText="สาเหตุของบั๊ก" width="160">
                     <ng-template #template let-data>
-                      <span class="e-badge e-badge-secondary e-badge-pill">{{ data.bugCause }}</span>
+                      <app-status-badge [label]="data.bugCause" tone="secondary"></app-status-badge>
                     </ng-template>
                   </e-column>
                   <e-column field="isBugEscape" headerText="หลุด Prod หรือไม่" width="140" textAlign="Center">
                     <ng-template #template let-data>
-                      <span
-                        class="e-badge e-badge-pill"
-                        [class.e-badge-danger]="data.isBugEscape"
-                        [class.e-badge-info]="!data.isBugEscape"
-                      >
-                        {{ data.isBugEscape ? 'หลุด Prod' : 'ตรวจพบใน QA' }}
-                      </span>
+                      <app-status-badge
+                        [label]="data.isBugEscape ? 'หลุด Prod' : 'ตรวจพบใน QA'"
+                        [tone]="data.isBugEscape ? 'danger' : 'info'"
+                      ></app-status-badge>
                     </ng-template>
                   </e-column>
                   <e-column field="notes" headerText="บันทึกเพิ่มเติม" width="220"></e-column>
@@ -164,5 +146,5 @@
         </e-tabitem>
       </e-tabitems>
     </ejs-tab>
-  </div>
+  </app-section-card>
 </section>

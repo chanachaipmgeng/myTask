@@ -201,6 +201,9 @@ p {
 }
 
 .page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   max-width: 1420px;
   animation: pageFadeUp 0.42s var(--ease-out-expo) both;
 }

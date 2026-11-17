@@ -1,14 +1,8 @@
-<section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>คิวงานใหม่</h2>
-      <p>
-        ใบที่ยังไม่มีผู้รับ แยก R&amp;D กับ Implement. คนว่าง = โควต้าสัปดาห์ &minus; MD ของใบที่ยังไม่ปิด &minus; 1 MD
-        ที่กันไว้นอกแผน. WIP ไม่เกิน 2 และ XL ไม่เกิน 1 ใบต่อคน. ข้อเสนอไม่ย้ายใบจนกว่าจะกดรับ &middot; เฉพาะ
-        admin/lead
-      </p>
-    </div>
-  </div>
+<section class="page">
+  <app-page-head
+    title="คิวงานใหม่"
+    description="ใบที่ยังไม่มีผู้รับ แยก R&amp;D กับ Implement. คนว่าง = โควต้าสัปดาห์ − MD ของใบที่ยังไม่ปิด − 1 MD ที่กันไว้นอกแผน. WIP ไม่เกิน 2 และ XL ไม่เกิน 1 ใบต่อคน. ข้อเสนอไม่ย้ายใบจนกว่าจะกดรับ · เฉพาะ admin/lead"
+  ></app-page-head>
 
   @if (!canAssign()) {
     <ejs-message
@@ -17,6 +11,8 @@
       variant="Outlined"
     ></ejs-message>
   }
+
+  <app-flash-messages [success]="message()" [error]="error()"></app-flash-messages>
 
   <ejs-toolbar id="queue-toolbar" cssClass="page-toolbar" overflowMode="Scroll" width="100%">
     <e-items>
@@ -36,14 +32,12 @@
     </div>
   </ng-template>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>กำลังคนที่เหลือในสัปดาห์</h3>
-        <p class="fine">ตรวจสอบโควตาคงเหลือหลังหักใบงานเปิดและสำรองนอกแผน 1 MD</p>
-      </div>
-      <span class="e-badge e-badge-info e-badge-pill">ว่าง {{ freePeople().length }} คน</span>
-    </div>
+  <app-section-card
+    title="กำลังคนที่เหลือในสัปดาห์"
+    subtitle="ตรวจสอบโควตาคงเหลือหลังหักใบงานเปิดและสำรองนอกแผน 1 MD"
+    [badge]="'ว่าง ' + freePeople().length + ' คน'"
+    badgeTone="info"
+  >
     <ejs-grid [dataSource]="plan().rows" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="320">
       <e-columns>
         <e-column field="personLabel" headerText="คน" width="180"></e-column>
@@ -57,17 +51,15 @@
         <e-column field="status" headerText="สถานะ" width="110"></e-column>
       </e-columns>
     </ejs-grid>
-  </div>
+  </app-section-card>
 
   <div class="card-grid-2">
-    <div class="section-card">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>คิวสาย Implement</h3>
-          <p class="fine">ใบงานสาย Implement ที่รอจัดสรรผู้รับผิดชอบ</p>
-        </div>
-        <span class="e-badge e-badge-primary e-badge-pill">{{ implementQueue().length }} ใบ</span>
-      </div>
+    <app-section-card
+      title="คิวสาย Implement"
+      subtitle="ใบงานสาย Implement ที่รอจัดสรรผู้รับผิดชอบ"
+      [badge]="implementQueue().length + ' ใบ'"
+      badgeTone="primary"
+    >
       <ejs-grid class="queue-grid" [dataSource]="implementQueue()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
         <e-columns>
           <e-column field="id" headerText="รหัส" width="120"></e-column>
@@ -78,16 +70,14 @@
           <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
         </e-columns>
       </ejs-grid>
-    </div>
+    </app-section-card>
 
-    <div class="section-card">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>คิวสาย R&amp;D</h3>
-          <p class="fine">ใบงานสาย R&amp;D / Spike ที่รอจัดสรรผู้รับผิดชอบ</p>
-        </div>
-        <span class="e-badge e-badge-info e-badge-pill">{{ researchQueue().length }} ใบ</span>
-      </div>
+    <app-section-card
+      title="คิวสาย R&amp;D"
+      subtitle="ใบงานสาย R&amp;D / Spike ที่รอจัดสรรผู้รับผิดชอบ"
+      [badge]="researchQueue().length + ' ใบ'"
+      badgeTone="info"
+    >
       <ejs-grid class="queue-grid" [dataSource]="researchQueue()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
         <e-columns>
           <e-column field="id" headerText="รหัส" width="120"></e-column>
@@ -98,17 +88,15 @@
           <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
         </e-columns>
       </ejs-grid>
-    </div>
+    </app-section-card>
   </div>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>วิเคราะห์แผนและข้อเสนอรับงาน</h3>
-        <p class="fine">ข้อเสนอการจับคู่ใบงานกับพนักงานที่โควตาว่างและ WIP ยังไม่เต็ม</p>
-      </div>
-      <span class="e-badge e-badge-secondary e-badge-pill">{{ plan().plans.length }} รายการ</span>
-    </div>
+  <app-section-card
+    title="วิเคราะห์แผนและข้อเสนอรับงาน"
+    subtitle="ข้อเสนอการจับคู่ใบงานกับพนักงานที่โควตาว่างและ WIP ยังไม่เต็ม"
+    [badge]="plan().plans.length + ' รายการ'"
+    badgeTone="secondary"
+  >
     <div class="grid grid-cols-1 gap-3">
       @for (item of plan().plans; track item.ticket.id) {
         <div class="e-card">
@@ -142,38 +130,17 @@
         </div>
       }
     </div>
-  </div>
-
-  @if (message()) {
-    <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
-  }
-  @if (error()) {
-    <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
-  }
+  </app-section-card>
 </section>
 
-<ejs-dialog
-  #writebackDialog
+<app-confirm-dialog
+  #writebackConfirm
+  dialogId="queueWritebackDialog"
   header="ยืนยันเขียนกลับ OpenProject"
+  [message]="writebackMessage()"
+  confirmLabel="ยืนยันและรับข้อเสนอ"
+  [confirmDisabled]="accepting()"
   width="480px"
-  [visible]="false"
-  [isModal]="true"
-  [showCloseIcon]="true"
-  (close)="cancelWriteback()"
->
-  <ng-template #content>
-    @if (pendingAccept(); as item) {
-      <p class="m-0">
-        รับ {{ item.ticket.id }} ให้ {{ item.personLabel }} และ
-        <strong>PATCH ผู้รับผิดชอบกลับ myProject (OpenProject)</strong> เพราะเปิด
-        OPENPROJECT_WRITEBACK อยู่
-      </p>
-    }
-  </ng-template>
-  <ng-template #footerTemplate>
-    <button ejs-button cssClass="e-flat" type="button" (click)="cancelWriteback()">ยกเลิก</button>
-    <button ejs-button cssClass="e-primary" type="button" [disabled]="accepting()" (click)="confirmWriteback()">
-      ยืนยันและรับข้อเสนอ
-    </button>
-  </ng-template>
-</ejs-dialog>
+  (confirmed)="confirmWriteback()"
+  (cancelled)="cancelWriteback()"
+></app-confirm-dialog>

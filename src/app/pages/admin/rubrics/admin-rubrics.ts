@@ -17,6 +17,9 @@ import { ApiClient } from '../../../core/api-client';
 import { DEFAULT_RUBRICS, RubricDefinition } from '../../../core/rubrics';
 import { ThemeService } from '../../../core/theme.service';
 import { KpiStatCardComponent } from '../../../shared/kpi-stat-card/kpi-stat-card';
+import { FlashMessagesComponent } from '../../../shared/ui/flash-messages/flash-messages';
+import { PageHeadComponent } from '../../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../../shared/ui/section-card/section-card';
 
 interface RubricGridRow {
   rubric_id: string;
@@ -32,7 +35,16 @@ interface RubricGridRow {
 @Component({
   selector: 'app-admin-rubrics',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, GridModule, KpiStatCardComponent, MessageModule, RouterLink],
+  imports: [
+    ButtonModule,
+    GridModule,
+    KpiStatCardComponent,
+    MessageModule,
+    RouterLink,
+    PageHeadComponent,
+    SectionCardComponent,
+    FlashMessagesComponent,
+  ],
   providers: [PageService, SortService, ResizeService, EditService, ToolbarService],
   templateUrl: './admin-rubrics.html',
 })

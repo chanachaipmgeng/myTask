@@ -6,8 +6,7 @@
       variant="Outlined"
       cssClass="grow"
     ></ejs-message>
-    <label class="filter">
-      <span>จัดกลุ่มบอร์ด (Swimlane)</span>
+    <app-form-field label="จัดกลุ่มบอร์ด (Swimlane)" variant="filter">
       <ejs-dropdownlist
         id="board-swimlane-select"
         [dataSource]="swimlaneOptions"
@@ -16,29 +15,16 @@
         (change)="setSwimlane($event)"
         width="220px"
       ></ejs-dropdownlist>
-    </label>
+    </app-form-field>
   </div>
 
   <div class="kpi-grid-4">
-    <div class="e-card kpi-stat">
-      <div class="e-card-header kpi-stat__header">
-        <div class="e-card-header-caption">
-          <div class="e-card-header-title kpi-stat__title">Velocity (Done)</div>
-        </div>
-      </div>
-      <div class="e-card-content kpi-stat__body">
-        @if (report().velocity.length === 0) {
-          <p class="kpi-stat__hint">ยังไม่มีใบ Done</p>
-        } @else {
-          @for (row of report().velocity; track row.personId) {
-            <div class="flex justify-between text-sm gap-2">
-              <span>{{ row.name }}</span>
-              <span class="text-cyan">{{ row.points }}</span>
-            </div>
-          }
-        }
-      </div>
-    </div>
+    <app-kpi-stat
+      title="Velocity (Done)"
+      [value]="velocityTotal() + ' pts'"
+      accent="default"
+      [hint]="velocityHint()"
+    ></app-kpi-stat>
     <app-kpi-stat
       title="ส่งตรงเวลา"
       [value]="report().onTimePct + '%'"
@@ -53,21 +39,12 @@
       [progress]="report().firstTimePct"
       progressColor="#22c55e"
     ></app-kpi-stat>
-    <div class="e-card kpi-stat" data-accent="info">
-      <div class="e-card-header kpi-stat__header">
-        <div class="e-card-header-caption">
-          <div class="e-card-header-title kpi-stat__title">หมวด (story points)</div>
-        </div>
-      </div>
-      <div class="e-card-content kpi-stat__body">
-        @for (row of report().categories; track row.key) {
-          <div class="flex justify-between text-sm gap-2">
-            <span>{{ row.label }}</span>
-            <span>{{ row.points }} · {{ row.pct }}%</span>
-          </div>
-        }
-      </div>
-    </div>
+    <app-kpi-stat
+      title="หมวด (story points)"
+      [value]="report().categories.length + ' หมวด'"
+      accent="info"
+      [hint]="categoryHint()"
+    ></app-kpi-stat>
   </div>
 
   <ejs-kanban
@@ -289,18 +266,15 @@
   </ng-template>
 </ejs-dialog>
 
-<ejs-dialog
+<app-confirm-dialog
   #blockDialog
+  dialogId="boardBlockDialog"
   header="ยังเปลี่ยนสถานะหรือบันทึกไม่ได้"
+  [message]="blockMessage()"
+  confirmLabel="รับทราบ"
+  [showCancel]="false"
   width="440px"
-  [visible]="false"
-  [isModal]="true"
-  [showCloseIcon]="true"
->
-  <ng-template #content>
-    <p class="m-0">{{ blockMessage() }}</p>
-  </ng-template>
-</ejs-dialog>
+></app-confirm-dialog>
 
 <ejs-dialog
   #mdShiftDialog

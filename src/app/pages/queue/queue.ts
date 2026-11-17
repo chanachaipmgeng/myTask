@@ -3,17 +3,30 @@ import { ButtonModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
 import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
 import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { canAssignWork } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
 import { QueuePlan } from '../../core/capacity';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
+import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
+import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
 @Component({
   selector: 'app-queue',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, ToolbarModule, ButtonModule, ChipListModule, MessageModule, DialogModule],
+  imports: [
+    GridModule,
+    ToolbarModule,
+    ButtonModule,
+    ChipListModule,
+    MessageModule,
+    PageHeadComponent,
+    SectionCardComponent,
+    FlashMessagesComponent,
+    ConfirmDialogComponent,
+  ],
   providers: [PageService, SortService, FilterService],
   templateUrl: './queue.html',
 })
@@ -22,7 +35,7 @@ export class QueuePage {
   private readonly notice = inject(ShellNotice);
   private readonly api = inject(ApiClient, { optional: true });
 
-  @ViewChild('writebackDialog') private writebackDialog?: DialogComponent;
+  @ViewChild('writebackConfirm') private writebackConfirm?: ConfirmDialogComponent;
 
   protected readonly canAssign = canAssignWork;
   protected readonly pageSettings = { pageSize: 8 };
@@ -31,6 +44,14 @@ export class QueuePage {
   protected readonly writebackEnabled = signal(false);
   protected readonly pendingAccept = signal<QueuePlan | null>(null);
   protected readonly accepting = signal(false);
+
+  protected readonly writebackMessage = computed(() => {
+    const item = this.pendingAccept();
+    if (!item) {
+      return '';
+    }
+    return `รับ ${item.ticket.id} ให้ ${item.personLabel} และ PATCH ผู้รับผิดชอบกลับ myProject (OpenProject) เพราะเปิด OPENPROJECT_WRITEBACK อยู่`;
+  });
 
   protected readonly plan = this.scorecard.workPlan;
   protected readonly freePeople = computed(() => this.plan().rows.filter((row) => row.available));
@@ -64,7 +85,7 @@ export class QueuePage {
     const needsConfirm = this.writebackEnabled() && typeof item.ticket.opId === 'number';
     if (needsConfirm) {
       this.pendingAccept.set(item);
-      this.writebackDialog?.show();
+      this.writebackConfirm?.open();
       return;
     }
     void this.runAssign(item);
@@ -135,7 +156,6 @@ export class QueuePage {
 
   protected confirmWriteback(): void {
     const item = this.pendingAccept();
-    this.writebackDialog?.hide();
     this.pendingAccept.set(null);
     if (item) {
       void this.runAssign(item);
@@ -143,7 +163,6 @@ export class QueuePage {
   }
 
   protected cancelWriteback(): void {
-    this.writebackDialog?.hide();
     this.pendingAccept.set(null);
   }
 

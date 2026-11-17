@@ -1,0 +1,9 @@
+<label [class]="variant" class="app-form-field">
+  @if (label) {
+    <span class="app-form-field__label">{{ label }}</span>
+  }
+  <ng-content></ng-content>
+  @if (hint) {
+    <span class="fine app-form-field__hint">{{ hint }}</span>
+  }
+</label>

@@ -1,0 +1,21 @@
+<div class="section-card">
+  @if (hasHead) {
+    <div class="section-card-head">
+      <div class="section-card-copy">
+        @if (title) {
+          <h3>{{ title }}</h3>
+        }
+        @if (subtitle) {
+          <p class="fine">{{ subtitle }}</p>
+        }
+      </div>
+      <div class="section-card__actions">
+        @if (badge) {
+          <app-status-badge [label]="badge" [tone]="badgeTone"></app-status-badge>
+        }
+        <ng-content select="[actions]"></ng-content>
+      </div>
+    </div>
+  }
+  <ng-content></ng-content>
+</div>

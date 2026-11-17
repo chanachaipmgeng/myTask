@@ -31,6 +31,11 @@ import { DEFAULT_TRACK_WEIGHTS } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
+import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
 
 @Component({
   selector: 'app-admin',
@@ -45,6 +50,11 @@ import { ThemeService } from '../../core/theme.service';
     MessageModule,
     ProgressBarModule,
     RouterLink,
+    PageHeadComponent,
+    SectionCardComponent,
+    FormFieldComponent,
+    FlashMessagesComponent,
+    StatusBadgeComponent,
   ],
   providers: [PageService, SortService, ResizeService],
   templateUrl: './admin.html',

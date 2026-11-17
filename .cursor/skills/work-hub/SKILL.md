@@ -23,7 +23,12 @@ description: >-
 | Backlog | Grid ใน `section-card` | `workBacklogRows` |
 | Board | `app-kpi-stat` + Kanban + Swimlane + Rich Card (`e-badge` MD-DIRECT/PAUSED) + `#editDialog` | `workflow` + `ScorecardService` |
 | List | Grid งาน (`ColumnChooser`, `ExcelExport`, `CsvExport`, `ResizeService`, ปุ่มไป Board) | `workListRows` |
-| Handoff | `app-kpi-stat` + `section-card` (chart / blocker / SLA grid) | `multi-team` / Scorecard handoff report |
+| Handoff | `app-page-head` + `app-section-card` + `app-kpi-stat` + `app-status-badge` (chart / blocker / SLA grid) | `multi-team` / Scorecard handoff report |
+| Board block | `app-confirm-dialog` (รับทราบ) · edit dialog ยังเป็น `#editDialog` เต็ม | workflow guards |
+
+## Shared UI (`src/app/shared/ui/`)
+
+ใช้ซ้ำข้ามหน้า: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips`, `app-confirm-dialog` · KPI: `app-kpi-stat` · tone: `badge.ts`
 
 ## กฎ
 
@@ -36,5 +41,5 @@ description: >-
 - ตารางหลัก (`/tickets`, `/work/list`): เปิด `[enablePersistence]="true"` เพื่อจดจำการตั้งค่าคอลัมน์ของผู้ใช้
 - โครงสร้าง Sidebar: รองรับ Sticky Pinning (100vh) และสลับ Mini-Sidebar 68px/260px ผ่าน `.nav-toggle` เพื่อเพิ่มพื้นที่ทำงาน
 - การตรวจผลงาน 1-on-1 (`/people/:id`): มีปุ่ม `prevPerson` / `nextPerson` ให้ตรวจประเมินต่อเนื่องได้ครบทั้ง 15 คน · AI Coach ใช้ `ejs-textbox` + ผลลัพธ์ใน `e-card`
-- UI chrome: แผงใช้ `section-card`/`e-card` · KPI ใช้ `app-kpi-stat` · ห้ามห่อใหม่ด้วย Tailwind `rounded-xl … shadow-sm`
+- UI chrome: ใช้ shared UI ด้านบน · ห้ามห่อใหม่ด้วย Tailwind `rounded-xl … shadow-sm`
 - หลังแก้โดเมน มุมมอง: เพิ่ม assert ใน `scripts/verify-scores.ts` แล้ว `npm run verify`

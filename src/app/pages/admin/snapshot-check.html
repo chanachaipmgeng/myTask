@@ -1,33 +1,21 @@
-<section class="page flex flex-col gap-4">
-  <div class="page-head flex flex-wrap justify-between items-center gap-4">
-    <div>
-      <div class="text-xs font-semibold uppercase tracking-wider text-muted mb-1">
-        แดชบอร์ดทีม &gt; ตรวจสอบความพร้อมก่อนแช่แข็งคะแนน (/admin/snapshot-check)
-      </div>
-      <h2 class="text-2xl font-bold tracking-tight">ห้องตรวจสอบความพร้อมก่อนปิดงวดคะแนน (Pre-Snapshot Freeze Gate)</h2>
-      <p class="text-sm text-muted">
-        รันเช็คลิสต์อัตโนมัติ 4 ด่านเพื่อยืนยันความถูกต้องของข้อมูลก่อนทำการบันทึกและแช่แข็งคะแนนประจำงวด
-      </p>
-    </div>
-    <span class="e-badge e-badge-primary e-badge-pill">งวดที่กำลังปิด: {{ periodKey() }}</span>
-  </div>
+<section class="page">
+  <app-page-head
+    breadcrumb="แดชบอร์ดทีม > ตรวจสอบความพร้อมก่อนแช่แข็งคะแนน (/admin/snapshot-check)"
+    title="ห้องตรวจสอบความพร้อมก่อนปิดงวดคะแนน (Pre-Snapshot Freeze Gate)"
+    description="รันเช็คลิสต์อัตโนมัติ 4 ด่านเพื่อยืนยันความถูกต้องของข้อมูลก่อนทำการบันทึกและแช่แข็งคะแนนประจำงวด"
+    [periodBadge]="'งวดที่กำลังปิด: ' + periodKey()"
+  ></app-page-head>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>คะแนนความพร้อมรวม (Overall Readiness Score)</h3>
-        <p class="fine">ต้องผ่านเกณฑ์อย่างน้อย 75% และไม่มี Blocker ที่ร้ายแรง</p>
-      </div>
-      <div class="text-right">
-        <p class="kpi-value m-0">{{ readinessScore() }}%</p>
-        <span
-          class="e-badge e-badge-pill"
-          [class.e-badge-success]="readinessScore() >= 75"
-          [class.e-badge-warning]="readinessScore() < 75"
-        >
-          {{ readinessScore() >= 75 ? 'ผ่านเกณฑ์พร้อมแช่แข็ง' : 'ยังไม่พร้อม' }}
-        </span>
-      </div>
+  <app-section-card
+    title="คะแนนความพร้อมรวม (Overall Readiness Score)"
+    subtitle="ต้องผ่านเกณฑ์อย่างน้อย 75% และไม่มี Blocker ที่ร้ายแรง"
+  >
+    <div actions class="text-right">
+      <p class="kpi-value m-0">{{ readinessScore() }}%</p>
+      <app-status-badge
+        [label]="readinessScore() >= 75 ? 'ผ่านเกณฑ์พร้อมแช่แข็ง' : 'ยังไม่พร้อม'"
+        [tone]="readinessScore() >= 75 ? 'success' : 'warning'"
+      ></app-status-badge>
     </div>
     <ejs-progressbar
       [value]="readinessScore()"
@@ -36,41 +24,25 @@
       progressColor="#10b981"
       [trackColor]="theme.progressTrack()"
     ></ejs-progressbar>
-  </div>
+  </app-section-card>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     @for (item of checks(); track item.stage) {
-      <div class="e-card kpi-stat" [attr.data-accent]="item.status === 'PASS' ? 'success' : 'warning'">
-        <div class="e-card-header kpi-stat__header">
-          <div class="e-card-header-caption">
-            <div class="e-card-header-title kpi-stat__title">
-              ด่านที่ {{ item.stage }}: {{ item.name }}
-            </div>
-          </div>
-          <span
-            class="e-badge e-badge-pill"
-            [class.e-badge-success]="item.status === 'PASS'"
-            [class.e-badge-warning]="item.status === 'WARN'"
-          >
-            {{ item.status }}
-          </span>
-        </div>
-        <div class="e-card-content kpi-stat__body">
-          <p class="font-semibold m-0">{{ item.summary }}</p>
-          <p class="kpi-stat__hint">{{ item.detail }}</p>
-        </div>
-      </div>
+      <app-kpi-stat
+        [title]="'ด่านที่ ' + item.stage + ': ' + item.name"
+        [value]="item.summary"
+        [hint]="item.detail"
+        [badge]="item.status"
+        [badgeTone]="item.status === 'PASS' ? 'success' : 'warning'"
+        [accent]="item.status === 'PASS' ? 'success' : 'warning'"
+      ></app-kpi-stat>
     }
   </div>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>ตารางเปรียบเทียบคะแนนดัชนีรายบุคคล (Snapshot Preview Diff Table)</h3>
-        <p class="fine">เปรียบเทียบดัชนีพัฒนาการงวดก่อนหน้าเทียบกับงวดปัจจุบันที่จะถูกแช่แข็ง</p>
-      </div>
-    </div>
-
+  <app-section-card
+    title="ตารางเปรียบเทียบคะแนนดัชนีรายบุคคล (Snapshot Preview Diff Table)"
+    subtitle="เปรียบเทียบดัชนีพัฒนาการงวดก่อนหน้าเทียบกับงวดปัจจุบันที่จะถูกแช่แข็ง"
+  >
     <ejs-grid [dataSource]="previewDiffs()" [allowSorting]="true">
       <e-columns>
         <e-column field="nickname" headerText="พนักงาน" width="150">
@@ -102,13 +74,10 @@
         </e-column>
         <e-column field="statusLabel" headerText="สถานะเทียบเป้า" width="140" textAlign="Center">
           <ng-template #template let-data>
-            <span
-              class="e-badge e-badge-pill"
-              [class.e-badge-success]="data.isTargetMet"
-              [class.e-badge-danger]="!data.isTargetMet"
-            >
-              {{ data.statusLabel }}
-            </span>
+            <app-status-badge
+              [label]="data.statusLabel"
+              [value]="data.isTargetMet"
+            ></app-status-badge>
           </ng-template>
         </e-column>
       </e-columns>
@@ -134,5 +103,5 @@
         </button>
       </div>
     </div>
-  </div>
+  </app-section-card>
 </section>

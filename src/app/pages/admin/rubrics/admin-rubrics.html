@@ -1,22 +1,11 @@
-<section class="page flex flex-col gap-4">
-  <div class="page-head flex flex-wrap items-center justify-between gap-4">
-    <div>
-      <div class="flex items-center gap-2 mb-1">
-        <a routerLink="/admin" class="text-xs text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1">
-          <span class="e-icons e-arrow-left text-[10px]"></span> ย้อนกลับหน้า Admin Hub
-        </a>
-        <span class="e-badge e-badge-secondary e-badge-pill">v2026.4</span>
-      </div>
-      <h2 class="text-2xl font-bold tracking-tight flex items-center gap-2">
-        <span class="e-icons e-settings"></span>
-        ทะเบียนเกณฑ์มาตรฐาน (Rubric Registry)
-      </h2>
-      <p class="text-sm text-muted">
-        ปรับแต่งเกณฑ์ประเมินขนาดงาน (Sizing), น้ำหนักคะแนนใบงาน (Ticket Score), และสูตรดัชนีชี้วัด (Person Index) แบบไดนามิกโดยไม่ต้องแก้ไขโค้ด
-      </p>
-    </div>
-
-    <div class="flex flex-wrap items-center gap-2">
+<section class="page">
+  <app-page-head
+    breadcrumb="Admin Hub > ทะเบียนเกณฑ์มาตรฐาน"
+    title="ทะเบียนเกณฑ์มาตรฐาน (Rubric Registry)"
+    description="ปรับแต่งเกณฑ์ประเมินขนาดงาน (Sizing), น้ำหนักคะแนนใบงาน (Ticket Score), และสูตรดัชนีชี้วัด (Person Index) แบบไดนามิกโดยไม่ต้องแก้ไขโค้ด"
+    periodBadge="v2026.4"
+  >
+    <div actions class="flex flex-wrap items-center gap-2">
       <a routerLink="/admin" ejs-button cssClass="e-outline e-small" iconCss="e-icons e-home">
         สิทธิ์ &amp; โควตา
       </a>
@@ -27,11 +16,9 @@
         รีเฟรชข้อมูล
       </button>
     </div>
-  </div>
+  </app-page-head>
 
-  @if (saveNotice()) {
-    <ejs-message severity="Success" [content]="saveNotice()!"></ejs-message>
-  }
+  <app-flash-messages [success]="saveNotice()"></app-flash-messages>
 
   <div class="kpi-grid-4">
     <app-kpi-stat
@@ -68,14 +55,10 @@
     ></app-kpi-stat>
   </div>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>ตารางพารามิเตอร์เกณฑ์มาตรฐาน</h3>
-        <p class="fine">ดับเบิลคลิกที่แถวเพื่อแก้ไขแบบ Inline — รองรับปุ่ม Edit, Update, Cancel บน Toolbar</p>
-      </div>
-    </div>
-
+  <app-section-card
+    title="ตารางพารามิเตอร์เกณฑ์มาตรฐาน"
+    subtitle="ดับเบิลคลิกที่แถวเพื่อแก้ไขแบบ Inline — รองรับปุ่ม Edit, Update, Cancel บน Toolbar"
+  >
     <div class="overflow-x-auto w-full">
       <ejs-grid
         #rubricGrid
@@ -140,5 +123,5 @@
         </e-columns>
       </ejs-grid>
     </div>
-  </div>
+  </app-section-card>
 </section>

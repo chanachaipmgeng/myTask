@@ -9,11 +9,27 @@ import { AccessRole, Person } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession, setSessionUser } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
+import { BadgeTone } from '../../shared/ui/badge';
+import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
+import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
 
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, TextBoxModule, MessageModule, RouterLink],
+  imports: [
+    ButtonModule,
+    TextBoxModule,
+    MessageModule,
+    RouterLink,
+    PageHeadComponent,
+    SectionCardComponent,
+    FlashMessagesComponent,
+    FilterChipsComponent,
+    StatusBadgeComponent,
+  ],
   templateUrl: './login.html',
 })
 export class LoginPage {
@@ -72,9 +88,33 @@ export class LoginPage {
     };
   });
 
+  protected readonly roleToneMap: Record<string, BadgeTone> = {
+    admin: 'danger',
+    lead: 'warning',
+    member: 'info',
+  };
+
+  protected readonly roleChipOptions = computed<FilterChipOption[]>(() => {
+    const counts = this.roleCounts();
+    return [
+      { id: 'All', label: 'ทั้งหมด', count: counts.total },
+      { id: 'admin', label: 'ผู้ดูแลระบบ · Admin', count: counts.admin },
+      { id: 'lead', label: 'หัวหน้าสายงาน · Lead', count: counts.lead },
+      { id: 'member', label: 'พนักงานทั่วไป · Member', count: counts.member },
+    ];
+  });
+
   protected readonly canUsePersonaSwitch = computed(
     () => !this.usingApi() || this.scorecard.devLoginEnabled(),
   );
+
+  protected setRoleFilter(value: string): void {
+    if (value === 'admin' || value === 'lead' || value === 'member') {
+      this.roleFilter.set(value);
+      return;
+    }
+    this.roleFilter.set('All');
+  }
 
   protected async loginAs(person: Person): Promise<void> {
     this.busy.set(true);

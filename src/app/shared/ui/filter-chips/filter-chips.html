@@ -1,0 +1,11 @@
+<div class="app-filter-chips" role="group">
+  @for (opt of options; track opt.id) {
+    <button
+      ejs-button
+      [cssClass]="value === opt.id ? 'e-info' : 'e-outline'"
+      [content]="chipLabel(opt)"
+      type="button"
+      (click)="select(opt.id)"
+    ></button>
+  }
+</div>

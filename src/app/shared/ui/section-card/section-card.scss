@@ -1,0 +1,11 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.section-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}

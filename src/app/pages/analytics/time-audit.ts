@@ -11,6 +11,11 @@ import {
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
+import { BadgeTone } from '../../shared/ui/badge';
+import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
 
 @Component({
   selector: 'app-time-audit',
@@ -19,6 +24,10 @@ import { ShellNotice } from '../../core/shell-notice';
     ButtonModule,
     GridModule,
     MessageModule,
+    PageHeadComponent,
+    SectionCardComponent,
+    FilterChipsComponent,
+    StatusBadgeComponent,
   ],
   providers: [
     PageService,
@@ -34,6 +43,24 @@ export class TimeAuditPage {
 
   protected readonly filterType = signal<string>('ALL');
   protected readonly report = this.scorecard.threeWayTimeReport;
+
+  protected readonly anomalyToneMap: Record<string, BadgeTone> = {
+    OK: 'secondary',
+    OUTLIER: 'danger',
+    MISSING_TIME: 'danger',
+    GHOST_PROGRESS: 'warning',
+    TIME_MISMATCH: 'warning',
+  };
+
+  protected readonly filterOptions = computed<FilterChipOption[]>(() => {
+    const r = this.report();
+    return [
+      { id: 'ALL', label: 'ทั้งหมด', count: r.totalTickets },
+      { id: 'MISSING', label: 'ลืมลงเวลา Actual', count: r.missingTimeCount },
+      { id: 'GHOST', label: 'ไม่มี Git Commit', count: r.ghostProgressCount },
+      { id: 'OVERRUN', label: 'เกิน 1.5x / เวลาคลาดเคลื่อน', count: r.overrunCount },
+    ];
+  });
 
   protected readonly filteredRows = computed(() => {
     const ft = this.filterType();

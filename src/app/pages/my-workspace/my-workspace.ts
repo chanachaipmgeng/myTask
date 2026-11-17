@@ -17,6 +17,9 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
 
 @Component({
   selector: 'app-my-workspace',
@@ -28,6 +31,9 @@ import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
     KpiStatCardComponent,
     MessageModule,
     RouterLink,
+    PageHeadComponent,
+    SectionCardComponent,
+    StatusBadgeComponent,
   ],
   providers: [
     CategoryService,

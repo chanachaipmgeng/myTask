@@ -24,6 +24,10 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { BadgeTone } from '../../shared/ui/badge';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
 
 @Component({
   selector: 'app-work-handoff',
@@ -35,6 +39,9 @@ import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
     DropDownListModule,
     KpiStatCardComponent,
     MessageModule,
+    PageHeadComponent,
+    SectionCardComponent,
+    StatusBadgeComponent,
   ],
   providers: [
     CategoryService,
@@ -99,6 +106,13 @@ export class WorkHandoffPage {
 
   protected readonly chartTooltip = { enable: true };
   protected readonly chartLegend = { visible: true, position: 'Top' };
+
+  protected readonly statusToneMap: Record<string, BadgeTone> = {
+    'Code Review': 'warning',
+    'Ready for QA': 'info',
+    'In QA': 'info',
+    blocked: 'danger',
+  };
 
   protected setTrack(event: { value?: string }): void {
     this.trackFilter.set(event.value ?? 'All');
