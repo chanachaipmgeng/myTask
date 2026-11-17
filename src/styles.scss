@@ -357,6 +357,26 @@ p {
   min-width: 0;
 }
 
+/* สลับจังหวะเข้าของ KPI ในแถวเดียวกัน */
+.kpi-grid-4 > app-kpi-stat:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.kpi-grid-4 > app-kpi-stat:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.kpi-grid-4 > app-kpi-stat:nth-child(3) {
+  animation-delay: 0.14s;
+}
+.kpi-grid-4 > app-kpi-stat:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.kpi-grid-4 > app-kpi-stat:nth-child(5) {
+  animation-delay: 0.26s;
+}
+.kpi-grid-4 > app-kpi-stat:nth-child(6) {
+  animation-delay: 0.32s;
+}
+
 @media (max-width: 1024px) {
   .kpi-grid-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -388,102 +408,7 @@ p {
   gap: 8px;
 }
 
-/* Syncfusion KPI Stat Card — ใช้ร่วมทุกหน้า */
-.e-card.kpi-stat {
-  height: 100%;
-  min-height: 132px;
-  overflow: hidden;
-  position: relative;
-}
-
-.e-card.kpi-stat::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  border-radius: 16px 0 0 16px;
-  background: linear-gradient(180deg, #4c68e5, #2e4fc8);
-  opacity: 0.9;
-}
-
-.e-card.kpi-stat[data-accent='success']::before {
-  background: linear-gradient(180deg, #34d399, #059669);
-}
-
-.e-card.kpi-stat[data-accent='warning']::before {
-  background: linear-gradient(180deg, #fbbf24, #d97706);
-}
-
-.e-card.kpi-stat[data-accent='danger']::before {
-  background: linear-gradient(180deg, #fb7185, #e11d48);
-}
-
-.e-card.kpi-stat[data-accent='info']::before {
-  background: linear-gradient(180deg, #38bdf8, #0284c7);
-}
-
-.kpi-stat__header {
-  display: flex !important;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 14px 16px 0 !important;
-  border: 0 !important;
-}
-
-.kpi-stat__title {
-  margin: 0 !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.02em;
-  line-height: 1.35 !important;
-  color: var(--muted) !important;
-}
-
-.kpi-stat__icon {
-  flex: none;
-  font-size: 16px;
-  line-height: 1;
-  color: #5f7ce3;
-  margin-top: 2px;
-}
-
-.e-card.kpi-stat[data-accent='success'] .kpi-stat__icon {
-  color: #34d399;
-}
-
-.e-card.kpi-stat[data-accent='warning'] .kpi-stat__icon {
-  color: #fbbf24;
-}
-
-.e-card.kpi-stat[data-accent='danger'] .kpi-stat__icon {
-  color: #fb7185;
-}
-
-.e-card.kpi-stat[data-accent='info'] .kpi-stat__icon {
-  color: #38bdf8;
-}
-
-.kpi-stat__body {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 10px 16px 16px !important;
-  min-height: 88px;
-}
-
-.kpi-stat__value {
-  margin: 0 !important;
-  line-height: 1.1 !important;
-}
-
-.kpi-stat__hint {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.45;
-  color: var(--muted);
-}
+/* KPI card chrome อยู่ใน src/app/shared/kpi-stat-card/kpi-stat-card.scss */
 
 .avatar-badge {
   display: inline-grid;

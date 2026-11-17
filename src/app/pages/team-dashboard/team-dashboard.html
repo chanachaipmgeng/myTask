@@ -118,39 +118,71 @@
     (created)="onDashboardCreated()"
   >
     <div id="kpi-tasks" class="e-panel" data-row="0" data-col="0" data-sizex="1" data-sizey="1">
-      <div class="e-panel-container">
-        <div class="e-panel-header">งานทั้งปี</div>
-        <div class="e-panel-content">
-          <p class="kpi-value">{{ tasksLabel }}</p>
-          <p class="kpi-note">งานในรายงาน {{ context.yearLabel }}</p>
-        </div>
+      <div class="e-panel-container e-panel-container--kpi">
+        <app-kpi-stat
+          title="งานทั้งปี"
+          [value]="tasksLabel"
+          iconCss="e-list-unordered"
+          layout="icon-start"
+          accent="info"
+          [hint]="'งานในรายงาน ' + context.yearLabel"
+          [sparklineData]="sparkPlan()"
+          sparklineType="Area"
+          sparklineId="team-spark-tasks"
+        ></app-kpi-stat>
       </div>
     </div>
     <div id="kpi-ontime" class="e-panel" data-row="0" data-col="1" data-sizex="1" data-sizey="1">
-      <div class="e-panel-container">
-        <div class="e-panel-header">ส่งตรงเวลา</div>
-        <div class="e-panel-content">
-          <p class="kpi-value">{{ context.onTimePct }}%</p>
-          <p class="kpi-note">ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว</p>
-        </div>
+      <div class="e-panel-container e-panel-container--kpi">
+        <app-kpi-stat
+          title="ส่งตรงเวลา"
+          [value]="context.onTimePct + '%'"
+          iconCss="e-circle-check"
+          layout="icon-start"
+          accent="success"
+          [progress]="context.onTimePct"
+          progressColor="#34d399"
+          hint="ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว"
+          [sparklineData]="sparkPlan()"
+          sparklineType="Line"
+          sparklineId="team-spark-ontime"
+          [trendValue]="context.onTimePct >= 75 ? '+แผนดี' : 'ต้องเร่ง'"
+          [trendDirection]="context.onTimePct >= 75 ? 'up' : 'down'"
+        ></app-kpi-stat>
       </div>
     </div>
     <div id="kpi-qa" class="e-panel" data-row="0" data-col="2" data-sizex="1" data-sizey="1">
-      <div class="e-panel-container">
-        <div class="e-panel-header">ผ่าน QA รอบแรก</div>
-        <div class="e-panel-content">
-          <p class="kpi-value">{{ context.firstPassQaPct }}%</p>
-          <p class="kpi-note">งานที่ส่งตรวจแล้วยังไม่พังเรื่อง security หรือ boundary</p>
-        </div>
+      <div class="e-panel-container e-panel-container--kpi">
+        <app-kpi-stat
+          title="ผ่าน QA รอบแรก"
+          [value]="context.firstPassQaPct + '%'"
+          iconCss="e-check-box"
+          layout="icon-start"
+          accent="info"
+          [progress]="context.firstPassQaPct"
+          progressColor="#38bdf8"
+          hint="งานที่ส่งตรวจแล้วยังไม่พังเรื่อง security หรือ boundary"
+          [sparklineData]="sparkAccuracy()"
+          sparklineType="Area"
+          sparklineId="team-spark-qa"
+        ></app-kpi-stat>
       </div>
     </div>
     <div id="kpi-attend" class="e-panel" data-row="0" data-col="3" data-sizex="1" data-sizey="1">
-      <div class="e-panel-container">
-        <div class="e-panel-header">มาทำงาน</div>
-        <div class="e-panel-content">
-          <p class="kpi-value">{{ context.attendancePct }}%</p>
-          <p class="kpi-note">attendance</p>
-        </div>
+      <div class="e-panel-container e-panel-container--kpi">
+        <app-kpi-stat
+          title="มาทำงาน"
+          [value]="context.attendancePct + '%'"
+          iconCss="e-people"
+          layout="icon-start"
+          accent="warning"
+          [progress]="context.attendancePct"
+          progressColor="#fbbf24"
+          hint="attendance"
+          [sparklineData]="sparkTarget()"
+          sparklineType="Area"
+          sparklineId="team-spark-attend"
+        ></app-kpi-stat>
       </div>
     </div>
     <div id="chart-context" class="e-panel" data-row="1" data-col="0" data-sizex="2" data-sizey="2">

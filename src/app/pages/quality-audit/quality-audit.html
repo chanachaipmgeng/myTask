@@ -11,15 +11,19 @@
       title="FIRST-TIME RIGHT %"
       [value]="kpis().firstTimeRightPct + '%'"
       iconCss="e-check-box"
+      layout="icon-start"
       accent="success"
       hint="เป้าหมาย ≥ 85.0% (ผ่านเกณฑ์)"
       [progress]="kpis().firstTimeRightPct"
+      [trendValue]="kpis().firstTimeRightPct >= 85 ? '+ผ่านเป้า' : 'ต่ำกว่าเป้า'"
+      [trendDirection]="kpis().firstTimeRightPct >= 85 ? 'up' : 'down'"
       progressColor="#22c55e"
     ></app-kpi-stat>
     <app-kpi-stat
       title="REOPEN RATE (QA ตีกลับ)"
       [value]="kpis().reopenRatePct + '%'"
       iconCss="e-repeat"
+      layout="icon-start"
       accent="warning"
       [hint]="'ตีกลับ ' + kpis().reopenCount + ' จาก ' + kpis().totalClosed + ' ใบ'"
     ></app-kpi-stat>
@@ -27,6 +31,7 @@
       title="BUG ESCAPE (หลุด PROD)"
       [value]="kpis().bugEscapePct + '%'"
       iconCss="e-warning"
+      layout="icon-start"
       accent="danger"
       [hint]="'ตรวจพบ ' + kpis().bugEscapeCount + ' ใบ (เกณฑ์ ≤ 5.0%)'"
     ></app-kpi-stat>
@@ -34,6 +39,7 @@
       title="DOD EVIDENCE ครบถ้วน"
       [value]="kpis().dodEvidencePct + '%'"
       iconCss="e-file-protect"
+      layout="icon-start"
       accent="info"
       [hint]="'ขาดหลักฐาน ' + kpis().dodMissingCount + ' ใบ'"
       [progress]="kpis().dodEvidencePct"

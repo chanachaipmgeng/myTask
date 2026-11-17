@@ -38,6 +38,8 @@
       badge="Sync Readiness"
       badgeTone="success"
       accent="success"
+      layout="icon-start"
+      iconCss="e-data-check"
       [progress]="report().syncHygiene.readinessScore"
       progressColor="#22c55e"
     ></app-kpi-stat>
@@ -47,6 +49,8 @@
       badge="Data Hygiene"
       badgeTone="warning"
       accent="warning"
+      layout="icon-start"
+      iconCss="e-warning"
       [hint]="'ใบงานสมบูรณ์ ' + report().syncHygiene.cleanTickets + ' / ' + report().syncHygiene.totalTickets + ' ใบ'"
     ></app-kpi-stat>
     <app-kpi-stat
@@ -55,6 +59,8 @@
       badge="|Z-Score| ≥ 1.8"
       badgeTone="info"
       accent="info"
+      layout="icon-start"
+      iconCss="e-chart"
       hint="ใบที่ Actual/Estimate สูงผิดปกติเทียบกับขนาดเดียวกัน"
     ></app-kpi-stat>
     <app-kpi-stat
@@ -63,6 +69,8 @@
       badge="Risk Radar"
       badgeTone="danger"
       accent="danger"
+      layout="icon-start"
+      iconCss="e-critical"
       [hint]="'จากใบงานที่เปิดอยู่ทั้งหมด ' + report().deliveryRisks.length + ' ใบ'"
     ></app-kpi-stat>
   </div>

@@ -23,26 +23,38 @@
       title="Velocity (Done)"
       [value]="velocityTotal() + ' pts'"
       accent="default"
+      layout="icon-start"
+      iconCss="e-chart"
       [hint]="velocityHint()"
     ></app-kpi-stat>
     <app-kpi-stat
       title="ส่งตรงเวลา"
       [value]="report().onTimePct + '%'"
       accent="info"
+      layout="icon-start"
+      iconCss="e-circle-check"
       [progress]="report().onTimePct"
       progressColor="#3ec6e0"
+      [trendValue]="report().onTimePct >= 80 ? '+ดี' : 'ต้องเร่ง'"
+      [trendDirection]="report().onTimePct >= 80 ? 'up' : 'down'"
     ></app-kpi-stat>
     <app-kpi-stat
       title="First-time right"
       [value]="report().firstTimePct + '%'"
       accent="success"
+      layout="icon-start"
+      iconCss="e-check-box"
       [progress]="report().firstTimePct"
       progressColor="#22c55e"
+      [trendValue]="report().firstTimePct >= 85 ? '+ผ่านเป้า' : 'ต่ำกว่าเป้า'"
+      [trendDirection]="report().firstTimePct >= 85 ? 'up' : 'down'"
     ></app-kpi-stat>
     <app-kpi-stat
       title="หมวด (story points)"
       [value]="report().categories.length + ' หมวด'"
       accent="info"
+      layout="icon-start"
+      iconCss="e-list-unordered"
       [hint]="categoryHint()"
     ></app-kpi-stat>
   </div>

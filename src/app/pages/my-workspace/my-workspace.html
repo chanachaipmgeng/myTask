@@ -23,7 +23,11 @@
       [badge]="'เป้า ' + view().target"
       badgeTone="info"
       accent="info"
+      layout="icon-start"
+      iconCss="e-chart"
       [progress]="view().index"
+      [trendValue]="view().index >= view().target ? '+ถึงเป้า' : 'ต่ำกว่าเป้า'"
+      [trendDirection]="view().index >= view().target ? 'up' : 'down'"
     ></app-kpi-stat>
     <app-kpi-stat
       title="งานที่กำลังถืออยู่ (WIP)"
@@ -31,6 +35,8 @@
       badge="เพดาน ≤ 2 ใบ"
       [badgeTone]="view().openCount <= 2 ? 'success' : 'warning'"
       [accent]="view().openCount <= 2 ? 'success' : 'warning'"
+      layout="icon-start"
+      iconCss="e-folder-open"
       hint="เพดาน WIP มาตรฐานไม่เกิน 2 ใบพร้อมกัน"
     ></app-kpi-stat>
     <app-kpi-stat
@@ -38,6 +44,9 @@
       [value]="freeMdLabel() + ' MD'"
       badge="กันนอกแผน 1 MD"
       badgeTone="secondary"
+      accent="warning"
+      layout="icon-start"
+      iconCss="e-circle-info"
       [hint]="'โควตาระดับ ' + view().level + ': ' + view().quota + ' MD/สัปดาห์'"
     ></app-kpi-stat>
     <app-kpi-stat
@@ -46,6 +55,8 @@
       [badge]="view().trackLabel"
       badgeTone="primary"
       accent="info"
+      layout="icon-start"
+      iconCss="e-circle-check"
       hint="คำนวณดัชนีจากใบงานที่ปิดแล้วทั้งหมดของฉัน"
     ></app-kpi-stat>
   </div>

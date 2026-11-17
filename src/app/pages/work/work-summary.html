@@ -17,7 +17,9 @@
         [title]="card.label"
         [value]="card.value"
         [hint]="card.hint"
-        accent="info"
+        [accent]="cardAccent(card.id)"
+        layout="icon-start"
+        [iconCss]="cardIcon(card.id)"
       ></app-kpi-stat>
     }
   </div>

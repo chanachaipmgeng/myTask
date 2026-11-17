@@ -227,6 +227,21 @@ body.e-light-mode .e-dlg-overlay {
   overflow: hidden;
 }
 
+/* KPI ใน DashboardLayout panel — ใช้ app-kpi-stat เต็มแผง */
+.e-dashboardlayout .e-panel-container--kpi {
+  padding: 8px !important;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.e-dashboardlayout .e-panel-container--kpi app-kpi-stat {
+  height: 100%;
+}
+
+.snapshot-readiness-kpi {
+  min-width: min(100%, 280px);
+}
+
 .e-dashboardlayout .e-panel-content.panel-scroll {
   overflow: auto;
 }

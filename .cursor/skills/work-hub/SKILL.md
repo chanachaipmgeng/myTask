@@ -28,7 +28,7 @@ description: >-
 
 ## Shared UI (`src/app/shared/ui/`)
 
-ใช้ซ้ำข้ามหน้า: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips`, `app-confirm-dialog` · KPI: `app-kpi-stat` · tone: `badge.ts`
+ใช้ซ้ำข้ามหน้า: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips`, `app-confirm-dialog` · KPI: `app-kpi-stat` (layout/trend/progress/sparkline) · tone: `badge.ts` · แถวสถิติทุกหน้าต้องเรียก `app-kpi-stat` ห้ามห่อ `kpi-value` ดิบ
 
 ## Syncfusion style layers
 

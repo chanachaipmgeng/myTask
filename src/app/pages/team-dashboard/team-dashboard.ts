@@ -44,6 +44,7 @@ import { INDEX_TARGET, formatMd, sampleWorkloadPoints } from '../../core/scoring
 import { ShellNotice } from '../../core/shell-notice';
 import { todayInBangkok } from '../../core/workflow';
 import { TEAM_CONTEXT_2568 } from '../../data/team-context';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 
 type TrackFilter = Track | 'All';
 
@@ -61,6 +62,7 @@ const LIVE_MODE = 'live';
     GridModule,
     TextBoxModule,
     MessageModule,
+    KpiStatCardComponent,
   ],
   providers: [
     PieSeriesService,
@@ -177,6 +179,18 @@ export class TeamDashboard implements AfterViewInit {
 
   protected readonly monthlyPoints = computed(() =>
     monthlyTrend(this.scorecard.people(), this.scorecard.tickets(), this.track()),
+  );
+  protected readonly sparkPlan = computed(() =>
+    this.monthlyPoints().map((p) => ({ x: p.month, y: p.plan })),
+  );
+  protected readonly sparkAccuracy = computed(() =>
+    this.monthlyPoints().map((p) => ({ x: p.month, y: p.accuracy })),
+  );
+  protected readonly sparkRework = computed(() =>
+    this.monthlyPoints().map((p) => ({ x: p.month, y: p.rework })),
+  );
+  protected readonly sparkTarget = computed(() =>
+    this.monthlyPoints().map((p) => ({ x: p.month, y: p.target })),
   );
   protected readonly quotaPoints = computed(() =>
     quotaBars(this.scorecard.people(), this.scorecard.tickets(), this.track()),

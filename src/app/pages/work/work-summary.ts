@@ -78,6 +78,34 @@ export class WorkSummary implements AfterViewInit {
     }),
   );
 
+  protected cardIcon(id: string): string {
+    switch (id) {
+      case 'open':
+        return 'e-folder-open';
+      case 'closed':
+        return 'e-circle-check';
+      case 'overdue':
+        return 'e-warning';
+      case 'unplanned':
+        return 'e-clock';
+      default:
+        return 'e-chart';
+    }
+  }
+
+  protected cardAccent(id: string): 'info' | 'success' | 'warning' | 'danger' {
+    switch (id) {
+      case 'closed':
+        return 'success';
+      case 'overdue':
+        return 'danger';
+      case 'unplanned':
+        return 'warning';
+      default:
+        return 'info';
+    }
+  }
+
   protected readonly mdMandate = this.scorecard.mdMandateReport;
 
   ngAfterViewInit(): void {

@@ -13,7 +13,7 @@ alwaysApply: false
   - `/analytics/time-audit`: ตาราง 3-Way ใน `section-card` · anomaly เป็น `e-badge`
   - `/tickets/disputes`: Split View `section-card` · จำลองคะแนนเป็น `e-card kpi-stat` · เหตุผลยื่นเป็น `ejs-textbox` multiline
   - `/admin/snapshot-check`: Readiness ใน `section-card` · เช็คลิสต์ 4 ด่านเป็น `e-card kpi-stat` + `e-badge`
-- KPI แถวบนทุกหน้าใช้ `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — Progress track สีจาก `ThemeService.progressTrack()`
+- KPI แถวบนทุกหน้าใช้ `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — รองรับ layout/trend/progress/`ejs-sparkline` · Progress track สีจาก `ThemeService.progressTrack()` · ห้ามห่อ KPI ด้วย `kpi-value` ดิบ
 - `/pipeline` ต้อง redirect ไป `/work/board`
 - `/tickets` (ตารางคะแนนใบงาน) คงเป็นตารางคะแนน+นำเข้าไฟล์ (ยุบฟอร์มนำเข้า/เพิ่มใบงาน/เกณฑ์คะแนนใน `ejs-accordion` และตรึง 2 คอลัมน์แรก `frozenColumns="2"`) — ส่วน List ใน `/work` เป็นมุมมองบริหารงาน ไม่ใช่คอลัมน์คะแนนเต็ม
 - Timeline (`/work/timeline`) ใช้ Syncfusion Gantt แสดงโครงสร้างแม่-ลูก (`parentID: 'ParentID'`), มี Toolbar (`ExpandAll`, `CollapseAll`, `ZoomIn`, `ZoomOut`, `ZoomToFit`, `Search`), และเปิดแก้ไข `StartDate`/`EndDate` เฉพาะ `admin` | `lead` (`canAssignWork`) ผ่าน `applyGanttDateEdit` + `POST /api/work-items/:id/dates` (ห้ามทับ `firstDueOn`)

@@ -55,7 +55,11 @@
           [badge]="'เป้า ' + view().target"
           badgeTone="info"
           accent="info"
+          layout="icon-start"
+          iconCss="e-chart"
           [progress]="view().index"
+          [trendValue]="view().index >= view().target ? '+ถึงเป้า' : 'ต่ำกว่าเป้า'"
+          [trendDirection]="view().index >= view().target ? 'up' : 'down'"
           progressColor="#3ec6e0"
         ></app-kpi-stat>
         <div class="e-card">

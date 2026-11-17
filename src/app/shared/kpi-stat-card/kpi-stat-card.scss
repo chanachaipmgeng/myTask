@@ -2,4 +2,365 @@
   display: block;
   min-width: 0;
   height: 100%;
+  animation: kpi-stat-enter 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes kpi-stat-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes kpi-stat-value-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes kpi-stat-icon-pop {
+  0% {
+    transform: scale(0.82);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes kpi-stat-accent-glow {
+  0%,
+  100% {
+    opacity: 0.85;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.15);
+  }
+}
+
+/* Syncfusion KPI Stat Card — ตัวกลางทุกหน้า (แนว Essential UI Kit) */
+.e-card.kpi-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  min-height: 156px;
+  overflow: hidden;
+  position: relative;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--border, #e2e8f0) 80%, transparent);
+  background-clip: padding-box;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 10px 24px -12px rgba(46, 79, 200, 0.32);
+  transition:
+    box-shadow 0.28s ease,
+    border-color 0.28s ease,
+    background-color 0.28s ease;
+}
+
+:host:hover .e-card.kpi-stat {
+  border-color: color-mix(in srgb, #4c68e5 28%, var(--border, #e2e8f0));
+  box-shadow:
+    0 2px 4px rgba(15, 23, 42, 0.05),
+    0 16px 28px -14px rgba(46, 79, 200, 0.42);
+}
+
+:host:hover .kpi-stat__icon-wrap {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 4px rgba(76, 104, 229, 0.1);
+}
+
+:host:hover .e-card.kpi-stat[data-accent='success'] .kpi-stat__icon-wrap {
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.14);
+}
+
+:host:hover .e-card.kpi-stat[data-accent='warning'] .kpi-stat__icon-wrap {
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.16);
+}
+
+:host:hover .e-card.kpi-stat[data-accent='danger'] .kpi-stat__icon-wrap {
+  box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.16);
+}
+
+:host:hover .e-card.kpi-stat[data-accent='info'] .kpi-stat__icon-wrap {
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16);
+}
+
+.e-card.kpi-stat::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 16px 0 0 16px;
+  background: linear-gradient(180deg, #4c68e5, #2e4fc8);
+  opacity: 0.95;
+  z-index: 2;
+  animation: kpi-stat-accent-glow 3.6s ease-in-out infinite;
+}
+
+.e-card.kpi-stat[data-accent='success']::before {
+  background: linear-gradient(180deg, #34d399, #059669);
+}
+
+.e-card.kpi-stat[data-accent='warning']::before {
+  background: linear-gradient(180deg, #fbbf24, #d97706);
+}
+
+.e-card.kpi-stat[data-accent='danger']::before {
+  background: linear-gradient(180deg, #fb7185, #e11d48);
+}
+
+.e-card.kpi-stat[data-accent='info']::before {
+  background: linear-gradient(180deg, #38bdf8, #0284c7);
+}
+
+.kpi-stat__wash {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(76, 104, 229, 0.1), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), transparent 42%);
+  opacity: 1;
+  transition: opacity 0.28s ease;
+}
+
+.e-card.kpi-stat[data-accent='success'] .kpi-stat__wash {
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(52, 211, 153, 0.12), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), transparent 42%);
+}
+
+.e-card.kpi-stat[data-accent='warning'] .kpi-stat__wash {
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(251, 191, 36, 0.14), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), transparent 42%);
+}
+
+.e-card.kpi-stat[data-accent='danger'] .kpi-stat__wash {
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(251, 113, 133, 0.12), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), transparent 42%);
+}
+
+.e-card.kpi-stat[data-accent='info'] .kpi-stat__wash {
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(56, 189, 248, 0.14), transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.04), transparent 42%);
+}
+
+:host:hover .kpi-stat__wash {
+  opacity: 1;
+  filter: saturate(1.08);
+}
+
+.kpi-stat__main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.kpi-stat__header {
+  display: flex !important;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 0 !important;
+  border: 0 !important;
+}
+
+.kpi-stat__caption {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.kpi-stat__title {
+  margin: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em;
+  line-height: 1.4 !important;
+  color: var(--muted) !important;
+}
+
+.kpi-stat__chips {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kpi-stat__icon-wrap {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(76, 104, 229, 0.14);
+  margin: 0;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.28s ease,
+    background-color 0.28s ease;
+  animation: kpi-stat-icon-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.12s;
+}
+
+.kpi-stat__icon {
+  font-size: 18px;
+  line-height: 1;
+  color: #5f7ce3;
+}
+
+.e-card.kpi-stat[data-accent='success'] .kpi-stat__icon-wrap {
+  background: rgba(52, 211, 153, 0.16);
+}
+
+.e-card.kpi-stat[data-accent='warning'] .kpi-stat__icon-wrap {
+  background: rgba(251, 191, 36, 0.16);
+}
+
+.e-card.kpi-stat[data-accent='danger'] .kpi-stat__icon-wrap {
+  background: rgba(251, 113, 133, 0.16);
+}
+
+.e-card.kpi-stat[data-accent='info'] .kpi-stat__icon-wrap {
+  background: rgba(56, 189, 248, 0.16);
+}
+
+.e-card.kpi-stat[data-accent='success'] .kpi-stat__icon {
+  color: #34d399;
+}
+
+.e-card.kpi-stat[data-accent='warning'] .kpi-stat__icon {
+  color: #fbbf24;
+}
+
+.e-card.kpi-stat[data-accent='danger'] .kpi-stat__icon {
+  color: #fb7185;
+}
+
+.e-card.kpi-stat[data-accent='info'] .kpi-stat__icon {
+  color: #38bdf8;
+}
+
+.kpi-stat__body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 16px 16px !important;
+  min-height: 92px;
+  flex: 1;
+}
+
+.kpi-stat__value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.kpi-stat__value {
+  margin: 0 !important;
+  line-height: 1.1 !important;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  animation: kpi-stat-value-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.08s;
+}
+
+.kpi-stat__hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.kpi-stat__progress,
+.kpi-stat__spark {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.kpi-stat__progress {
+  border-radius: 999px;
+}
+
+.kpi-stat__spark {
+  min-height: 44px;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.kpi-stat__progress ejs-progressbar,
+.kpi-stat__progress .e-progressbar,
+.kpi-stat__spark ejs-sparkline,
+.kpi-stat__spark .e-sparkline {
+  display: block;
+  max-width: 100% !important;
+}
+
+body.e-light-mode .e-card.kpi-stat .kpi-stat__value {
+  color: #142b50;
+}
+
+:host-context(body.e-light-mode) .kpi-stat__value {
+  color: #142b50;
+}
+
+:host-context(body.e-dark-mode) .e-card.kpi-stat {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.24),
+    0 10px 24px -14px rgba(76, 104, 229, 0.35);
+}
+
+:host-context(body.e-dark-mode):hover .e-card.kpi-stat {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    0 18px 32px -14px rgba(76, 104, 229, 0.48);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host,
+  .kpi-stat__icon-wrap,
+  .kpi-stat__value,
+  .e-card.kpi-stat::before {
+    animation: none !important;
+  }
+
+  .e-card.kpi-stat,
+  .kpi-stat__icon-wrap,
+  .kpi-stat__wash {
+    transition: none !important;
+  }
+
+  :host:hover .kpi-stat__icon-wrap {
+    transform: none;
+  }
 }

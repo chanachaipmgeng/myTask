@@ -23,13 +23,17 @@
       title="ค้างรอ CODE REVIEW"
       [value]="kpis().waitingReviewCount + ' ใบ'"
       iconCss="e-clock"
+      layout="icon-start"
       accent="warning"
       [hint]="'> 24 ชม.: ' + kpis().waitingReviewOverdue + ' ใบ (ต้องเร่งตรวจ)'"
+      [trendValue]="kpis().waitingReviewOverdue > 0 ? 'เกิน SLA' : 'ปกติ'"
+      [trendDirection]="kpis().waitingReviewOverdue > 0 ? 'down' : 'up'"
     ></app-kpi-stat>
     <app-kpi-stat
       title="ค้างรอเข้า QA"
       [value]="kpis().waitingQaCount + ' ใบ'"
       iconCss="e-check"
+      layout="icon-start"
       accent="info"
       [hint]="'เกิน SLA: ' + kpis().waitingQaOverdue + ' ใบ'"
     ></app-kpi-stat>
@@ -37,6 +41,7 @@
       title="ติด BLOCKER (BLK / ENV)"
       [value]="kpis().blockedCount + ' ใบ'"
       iconCss="e-warning"
+      layout="icon-start"
       accent="danger"
       [hint]="'รอ Infra ปลดล็อก: ' + kpis().blockedInfraCount + ' ใบ'"
     ></app-kpi-stat>
@@ -44,8 +49,11 @@
       title="เวลาส่งต่อเฉลี่ย"
       [value]="kpis().avgHandoffHours + ' ชม.'"
       iconCss="e-timeline-work-week"
+      layout="icon-start"
       accent="success"
       hint="เป้าหมาย ≤ 6.0 ชม. (อยู่ในเกณฑ์)"
+      [trendValue]="kpis().avgHandoffHours <= 6 ? '≤ เป้า' : '> เป้า'"
+      [trendDirection]="kpis().avgHandoffHours <= 6 ? 'up' : 'down'"
     ></app-kpi-stat>
   </div>
 

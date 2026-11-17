@@ -55,7 +55,7 @@ npm --prefix server run build
     - `app-page-head` — หัวหน้า (title / description / breadcrumb / periodBadge + slot `[actions]`)
     - `app-section-card` — แผงเนื้อหา (title / subtitle / badge + slots body / `[actions]`)
     - `app-status-badge` — ป้าย Syncfusion (`tone` หรือ `value` + `toneMap`) · tone map ร่วมใน `badge.ts` (`workflowStatusToneMap`, `planToneMap`, `weekToneMap`, `trackToneMap`, ฯลฯ)
-    - `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — KPI แถวบน (`e-card` + badge + `ejs-progressbar`)
+    - `app-kpi-stat` (`src/app/shared/kpi-stat-card/`) — KPI ตัวกลางทุกหน้า (`e-card` + badge/trend + `ejs-progressbar` + `ejs-sparkline` ออปชัน) · layout `stack`/`icon-start`/`icon-end` · export จาก `shared/ui`
     - `app-form-field` — ห่อ label + control (variant `field` | `filter`)
     - `app-flash-messages` — รวม success / error / info / warning เป็น `ejs-message`
     - `app-filter-chips` — ชิปกรองสถานะ/บทบาท

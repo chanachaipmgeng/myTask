@@ -22,3 +22,12 @@ export { FlashMessagesComponent } from './flash-messages/flash-messages';
 export type { FilterChipOption } from './filter-chips/filter-chips';
 export { FilterChipsComponent } from './filter-chips/filter-chips';
 export { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog';
+export {
+  KpiStatCardComponent,
+  type KpiAccent,
+  type KpiLayout,
+  type KpiTrendDirection,
+  type KpiSparklineType,
+  type KpiSparklinePoint,
+  type KpiSparklineData,
+} from '../kpi-stat-card/kpi-stat-card';

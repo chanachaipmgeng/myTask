@@ -1,33 +1,73 @@
-<div class="e-card kpi-stat" [attr.data-accent]="accent">
-  <div class="e-card-header kpi-stat__header">
-    <div class="e-card-header-caption">
-      <div class="e-card-header-title kpi-stat__title">{{ title }}</div>
+<div class="e-card kpi-stat" [attr.data-accent]="accent" [attr.data-layout]="layout">
+  <div class="kpi-stat__wash" aria-hidden="true"></div>
+
+  <div class="kpi-stat__main">
+    <div class="e-card-header kpi-stat__header">
+      <div class="e-card-header-caption kpi-stat__caption">
+        <div class="e-card-header-title kpi-stat__title">{{ title }}</div>
+        @if (badge || trendValue) {
+          <div class="kpi-stat__chips">
+            @if (badge) {
+              <span [class]="badgeClass()">{{ badge }}</span>
+            }
+            @if (trendValue) {
+              <span [class]="trendChipClass()">{{ trendValue }}</span>
+            }
+          </div>
+        }
+      </div>
+      @if (iconCss && layout !== 'stack') {
+        <span class="kpi-stat__icon-wrap" aria-hidden="true">
+          <span class="kpi-stat__icon e-icons {{ iconCss }}"></span>
+        </span>
+      }
     </div>
-    @if (badge) {
-      <span [class]="badgeClass()">{{ badge }}</span>
-    } @else if (iconCss) {
-      <span class="kpi-stat__icon e-icons {{ iconCss }}" aria-hidden="true"></span>
-    }
-  </div>
-  <div class="e-card-content kpi-stat__body">
-    <p class="kpi-value kpi-stat__value">{{ value }}</p>
-    @if (progress !== null && progress !== undefined) {
-      <ejs-progressbar
-        type="Linear"
-        [theme]="theme.sfTheme()"
-        width="100%"
-        height="12"
-        [minimum]="0"
-        [maximum]="100"
-        [value]="progress"
-        [trackThickness]="8"
-        [progressThickness]="8"
-        [progressColor]="fillColor()"
-        [trackColor]="theme.progressTrack()"
-      ></ejs-progressbar>
-    }
-    @if (hint) {
-      <p class="kpi-stat__hint">{{ hint }}</p>
-    }
+
+    <div class="e-card-content kpi-stat__body">
+      <div class="kpi-stat__value-row">
+        <p class="kpi-value kpi-stat__value">{{ value }}</p>
+      </div>
+
+      @if (progress !== null && progress !== undefined) {
+        <div #progressHost class="kpi-stat__progress">
+          <ejs-progressbar
+            type="Linear"
+            [theme]="theme.sfTheme()"
+            [width]="progressWidth"
+            height="12"
+            [minimum]="0"
+            [maximum]="100"
+            [value]="progress"
+            [trackThickness]="8"
+            [progressThickness]="8"
+            [progressColor]="fillColor()"
+            [trackColor]="theme.progressTrack()"
+          ></ejs-progressbar>
+        </div>
+      }
+
+      @if (hasSparkline()) {
+        <div #sparkHost class="kpi-stat__spark">
+          <ejs-sparkline
+            [id]="resolvedSparkId()"
+            [dataSource]="sparkPoints()"
+            [type]="sparklineType"
+            [valueType]="sparkValueType()"
+            xName="x"
+            yName="y"
+            height="44px"
+            [width]="sparkWidth"
+            [theme]="theme.sfTheme()"
+            [fill]="sparkFill()"
+            [lineWidth]="2"
+            [tooltipSettings]="{ visible: true, format: '${x} : ${y}' }"
+          ></ejs-sparkline>
+        </div>
+      }
+
+      @if (trendLabel || hint) {
+        <p class="kpi-stat__hint">{{ trendLabel || hint }}</p>
+      }
+    </div>
   </div>
 </div>
