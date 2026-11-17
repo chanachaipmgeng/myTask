@@ -185,6 +185,14 @@ body.e-light-mode .e-kanban.pipeline-board {
   border-inline-start: 3px solid #f0b429;
 }
 
+/* Timeline resource row — ความสูงขั้นต่ำกันแท่งงานถูกบีบ (rowAutoHeight ยังขยายต่อได้) */
+.team-schedule.e-schedule .e-timeline-view .e-resource-cells,
+.team-schedule.e-schedule .e-timeline-month-view .e-resource-cells,
+.team-schedule.e-schedule .e-timeline-view .e-work-cells,
+.team-schedule.e-schedule .e-timeline-month-view .e-work-cells {
+  min-height: 44px;
+}
+
 // -----------------------------------------------------------------------------
 // 6) Dialog / Message — ไม่ใช้ animation ที่มี transform
 // -----------------------------------------------------------------------------

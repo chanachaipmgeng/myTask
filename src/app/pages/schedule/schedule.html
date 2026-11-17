@@ -14,6 +14,19 @@
           width="180px"
         ></ejs-dropdownlist>
       </app-form-field>
+      <app-form-field label="คน" variant="filter">
+        <ejs-dropdownlist
+          id="schedule-person"
+          [dataSource]="personOptions()"
+          [fields]="fields"
+          [value]="personId()"
+          (change)="setPerson($event)"
+          [allowFiltering]="true"
+          filterBarPlaceholder="ค้นหาชื่อ"
+          placeholder="เลือกคน"
+          width="220px"
+        ></ejs-dropdownlist>
+      </app-form-field>
     </div>
   </app-page-head>
 
@@ -40,7 +53,7 @@
 
       @if (boardModel().shown === 0) {
         <ejs-message
-          content="ไม่มีใบงานที่แสดงในปฏิทินตามสายที่เลือก (ต้องมีผู้รับและช่วงวันที่)"
+          content="ไม่มีใบงานที่แสดงในปฏิทินตามตัวกรองสาย/คนปัจจุบัน (ต้องมีผู้รับและช่วงวันที่)"
           severity="Info"
           variant="Outlined"
         ></ejs-message>
@@ -56,9 +69,10 @@
             [firstDayOfWeek]="1"
             [group]="group"
             [eventSettings]="eventSettings()"
-            [rowAutoHeight]="false"
+            [rowAutoHeight]="true"
             [height]="scheduleHeight()"
             (created)="onScheduleCreated()"
+            (actionBegin)="onActionBegin($event)"
             (navigating)="onNavigating($event)"
             (eventClick)="onEventClick($event)"
             (popupOpen)="onPopupOpen($event)"
@@ -148,3 +162,66 @@
     </app-section-card>
   </div>
 </section>
+
+<ejs-dialog
+  #loadChartDialog
+  cssClass="app-modal schedule-load-chart-dialog"
+  header="กราฟโหลดงานตามคน"
+  [visible]="false"
+  [isModal]="true"
+  [showCloseIcon]="true"
+  width="760px"
+  [animationSettings]="chartDialogAnimation"
+  (open)="onLoadChartDialogOpen()"
+>
+  <ng-template #content>
+    <div class="flex flex-col gap-3">
+      <p class="fine m-0">
+        นับใบงานที่ทับซ้อนเดือน <strong>{{ loadChartMonthLabel() }}</strong>
+        ตามสายที่กรอง · แท่งเขียว = ตรงสัปดาห์ · ส้ม = หลุดสัปดาห์
+      </p>
+      @if (loadChartRows().every((row) => row.total === 0)) {
+        <ejs-message
+          content="ไม่มีใบงานในช่วงเดือนที่โฟกัสตามตัวกรองปัจจุบัน"
+          severity="Info"
+          variant="Outlined"
+        ></ejs-message>
+      } @else {
+        <ejs-chart
+          #loadChart
+          height="360px"
+          width="100%"
+          [theme]="theme.sfTheme()"
+          [primaryXAxis]="chartPrimaryX"
+          [primaryYAxis]="chartPrimaryY"
+          [tooltip]="chartTooltip"
+          [legendSettings]="chartLegend"
+          [chartArea]="chartArea"
+          [enableAnimation]="false"
+        >
+          <e-series-collection>
+            <e-series
+              type="StackingColumn"
+              [dataSource]="loadChartRows()"
+              xName="name"
+              yName="onTrack"
+              name="ตรงสัปดาห์"
+              fill="#54b054"
+              columnWidth="0.55"
+            ></e-series>
+            <e-series
+              type="StackingColumn"
+              [dataSource]="loadChartRows()"
+              xName="name"
+              yName="slipped"
+              name="หลุดสัปดาห์"
+              fill="#d83b01"
+              columnWidth="0.55"
+              [cornerRadius]="chartCorner"
+            ></e-series>
+          </e-series-collection>
+        </ejs-chart>
+      }
+    </div>
+  </ng-template>
+</ejs-dialog>

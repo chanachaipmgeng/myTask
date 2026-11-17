@@ -12,9 +12,19 @@ import {
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { CalendarModule } from '@syncfusion/ej2-angular-calendars';
+import {
+  CategoryService,
+  ChartComponent,
+  ChartModule,
+  LegendService,
+  StackingColumnSeriesService,
+  TooltipService,
+} from '@syncfusion/ej2-angular-charts';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import {
+  ActionEventArgs,
   AgendaService,
   EventClickArgs,
   EventRenderedArgs,
@@ -24,7 +34,9 @@ import {
   ScheduleModule,
   TimelineMonthService,
   TimelineViewsService,
+  ToolbarActionArgs,
 } from '@syncfusion/ej2-angular-schedule';
+import { ItemModel } from '@syncfusion/ej2-navigations';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { Person, Ticket, Track } from '../../core/models';
@@ -33,6 +45,14 @@ import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+
+interface LoadChartRow {
+  name: string;
+  onTrack: number;
+  slipped: number;
+  total: number;
+  color: string;
+}
 
 type TrackFilter = Track | 'All';
 type DayFilter = 'ALL' | 'SLIPPED';
@@ -87,6 +107,8 @@ const COLORS = [
   imports: [
     ScheduleModule,
     CalendarModule,
+    ChartModule,
+    DialogModule,
     DropDownListModule,
     ButtonModule,
     MessageModule,
@@ -97,7 +119,15 @@ const COLORS = [
     FilterChipsComponent,
     StatusBadgeComponent,
   ],
-  providers: [TimelineViewsService, TimelineMonthService, AgendaService],
+  providers: [
+    TimelineViewsService,
+    TimelineMonthService,
+    AgendaService,
+    CategoryService,
+    StackingColumnSeriesService,
+    LegendService,
+    TooltipService,
+  ],
   templateUrl: './schedule.html',
   styleUrl: './schedule.scss',
 })
@@ -107,25 +137,62 @@ export class SchedulePage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly board = viewChild<ScheduleComponent>('board');
   private readonly boardHost = viewChild<ElementRef<HTMLElement>>('boardHost');
+  private readonly loadChartDialog = viewChild<DialogComponent>('loadChartDialog');
+  private readonly loadChart = viewChild<ChartComponent>('loadChart');
   private pinned = false;
   private hostObserver: ResizeObserver | null = null;
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly group = { resources: ['People'] };
+  protected readonly chartDialogAnimation = { effect: 'Fade' as const };
+  protected readonly chartPrimaryX = {
+    valueType: 'Category' as const,
+    majorGridLines: { width: 0 },
+    labelIntersectAction: 'Rotate45' as const,
+  };
+  protected readonly chartPrimaryY = {
+    title: 'จำนวนใบ',
+    minimum: 0,
+    interval: 1,
+    majorTickLines: { width: 0 },
+    lineStyle: { width: 0 },
+  };
+  protected readonly chartTooltip = { enable: true, shared: true };
+  protected readonly chartLegend = { visible: true, position: 'Bottom' as const };
+  protected readonly chartArea = { border: { width: 0 } };
+  protected readonly chartCorner = { topLeft: 4, topRight: 4 };
   protected readonly trackOptions = [
     { text: 'ทุกสาย', value: 'All' },
     { text: 'Implement', value: 'Implement' },
     { text: 'R&D', value: 'RD' },
   ];
   protected readonly track = signal<TrackFilter>('All');
+  /** All = ทุกคนในสายที่กรอง · หรือ person.id รายคน */
+  protected readonly personId = signal<string>('All');
   protected readonly dayFilter = signal<DayFilter>('ALL');
   protected readonly scheduleHeight = signal('640px');
   protected readonly selectedDay = signal<Date>(
-    focusDate(buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), 'All').events),
+    focusDate(buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), 'All', 'All').events),
   );
 
+  protected readonly personOptions = computed(() => {
+    const track = this.track();
+    const people = this.scorecard
+      .people()
+      .filter((person) => track === 'All' || person.track === track)
+      .slice()
+      .sort((a, b) => a.nickname.localeCompare(b.nickname, 'th'));
+    return [
+      { text: 'ทุกคน', value: 'All' },
+      ...people.map((person) => ({
+        text: `${person.nickname} · ${person.track === 'RD' ? 'R&D' : 'Implement'}`,
+        value: person.id,
+      })),
+    ];
+  });
+
   protected readonly boardModel = computed(() =>
-    buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), this.track()),
+    buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), this.track(), this.personId()),
   );
   protected readonly eventSettings = computed(() => ({
     dataSource: this.boardModel().events,
@@ -155,6 +222,29 @@ export class SchedulePage {
     ];
   });
 
+  /** กราฟโหลดงานตามคนในเดือนที่โฟกัสบนปฏิทิน */
+  protected readonly loadChartMonthLabel = computed(() => formatThaiMonth(this.selectedDay()));
+
+  protected readonly loadChartRows = computed((): LoadChartRow[] => {
+    const focus = this.selectedDay();
+    const monthStart = new Date(focus.getFullYear(), focus.getMonth(), 1);
+    const monthEnd = new Date(focus.getFullYear(), focus.getMonth() + 1, 1);
+    const model = this.boardModel();
+    return model.people.map((person) => {
+      const mine = model.events.filter(
+        (event) => event.OwnerId === person.Id && spansOverlap(event.StartTime, event.EndTime, monthStart, monthEnd),
+      );
+      const slipped = mine.filter((event) => event.Slipped).length;
+      return {
+        name: person.Text.split(' · ')[0] ?? person.Text,
+        onTrack: mine.length - slipped,
+        slipped,
+        total: mine.length,
+        color: person.Color,
+      };
+    });
+  });
+
   private readonly peopleById = computed(() => {
     const map = new Map<string, string>();
     for (const person of this.boardModel().people) {
@@ -167,7 +257,7 @@ export class SchedulePage {
     effect(() => {
       const ready = this.scorecard.apiReady();
       const board = this.board();
-      const events = buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), 'All').events;
+      const events = buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), 'All', 'All').events;
       if (!ready || !board || this.pinned) {
         return;
       }
@@ -185,6 +275,24 @@ export class SchedulePage {
       this.bindBoardHostResize(host);
     });
 
+    // เปลี่ยนสาย/คนแล้ว refresh resource rows ของ Schedule
+    effect(() => {
+      const model = this.boardModel();
+      const board = this.board();
+      if (!board) {
+        return;
+      }
+      void model.shown;
+      queueMicrotask(() => {
+        const live = this.board();
+        if (!live) {
+          return;
+        }
+        live.refresh();
+        this.syncScheduleHeight();
+      });
+    });
+
     this.destroyRef.onDestroy(() => {
       this.hostObserver?.disconnect();
       this.hostObserver = null;
@@ -195,7 +303,20 @@ export class SchedulePage {
     const value = event.value;
     if (value === 'All' || value === 'Implement' || value === 'RD') {
       this.track.set(value);
+      // ถ้าคนที่เลือกไม่อยู่ในสายใหม่ ให้กลับเป็นทุกคน
+      const current = this.personId();
+      if (current !== 'All') {
+        const stillVisible = this.personOptions().some((opt) => opt.value === current);
+        if (!stillVisible) {
+          this.personId.set('All');
+        }
+      }
     }
+  }
+
+  protected setPerson(event: { value?: string | null }): void {
+    const value = event.value?.trim() || 'All';
+    this.personId.set(value);
   }
 
   protected setDayFilter(value: string): void {
@@ -205,6 +326,32 @@ export class SchedulePage {
   protected onScheduleCreated(): void {
     this.syncScheduleHeight();
     queueMicrotask(() => this.board()?.refresh());
+  }
+
+  protected onActionBegin(args: ActionEventArgs): void {
+    if (args.requestType !== 'toolbarItemRendering') {
+      return;
+    }
+    const toolbarArgs = args as ToolbarActionArgs;
+    const chartItem: ItemModel = {
+      align: 'Right',
+      overflow: 'Show',
+      showTextOn: 'Both',
+      prefixIcon: 'e-icons e-chart',
+      text: 'กราฟโหลด',
+      tooltipText: 'เปิดกราฟจำนวนใบงานตามคนในเดือนที่โฟกัส',
+      cssClass: 'e-schedule-load-chart',
+      click: () => this.openLoadChart(),
+    };
+    toolbarArgs.items = [...(toolbarArgs.items ?? []), chartItem];
+  }
+
+  protected openLoadChart(): void {
+    this.loadChartDialog()?.show();
+  }
+
+  protected onLoadChartDialogOpen(): void {
+    queueMicrotask(() => this.loadChart()?.refresh());
   }
 
   private bindBoardHostResize(host: HTMLElement): void {
@@ -298,8 +445,23 @@ export class SchedulePage {
   }
 }
 
-function buildTeamSchedule(people: readonly Person[], tickets: readonly Ticket[], track: TrackFilter): TeamSchedule {
-  const visiblePeople = people.filter((person) => track === 'All' || person.track === track);
+function spansOverlap(start: Date, endExclusive: Date, rangeStart: Date, rangeEndExclusive: Date): boolean {
+  return start < rangeEndExclusive && endExclusive > rangeStart;
+}
+
+function formatThaiMonth(date: Date): string {
+  return new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric' }).format(date);
+}
+
+function buildTeamSchedule(
+  people: readonly Person[],
+  tickets: readonly Ticket[],
+  track: TrackFilter,
+  personId: string,
+): TeamSchedule {
+  const byTrack = people.filter((person) => track === 'All' || person.track === track);
+  const visiblePeople =
+    personId === 'All' ? byTrack : byTrack.filter((person) => person.id === personId);
   const ids = new Set(visiblePeople.map((person) => person.id));
   const scoped = tickets.filter((ticket) => track === 'All' || ticket.track === track);
   const events: ScheduleEvent[] = [];
