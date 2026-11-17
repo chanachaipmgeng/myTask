@@ -82,9 +82,21 @@ export class AnalyticsPage {
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
-  protected readonly tooltip = { enable: true, shared: true };
-  protected readonly legend = { visible: true, position: 'Top', textStyle: this.axisFont };
+  protected readonly tooltip = {
+    enable: true,
+    shared: true,
+    enableMarker: true,
+    header: '${point.x}',
+    format: '${series.name}: <b>${point.y}</b>',
+  };
+  protected readonly legend = {
+    visible: true,
+    position: 'Top',
+    alignment: 'Center',
+    textStyle: this.axisFont,
+  };
   protected readonly chartArea = { border: { width: 0 } };
+  protected readonly columnCorner = { topLeft: 4, topRight: 4 };
 
   protected readonly running = signal(false);
   protected readonly message = signal('');

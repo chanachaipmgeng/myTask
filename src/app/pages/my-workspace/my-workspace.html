@@ -213,7 +213,7 @@
     <app-section-card
       class="xl:col-span-5"
       title="แนวโน้มดัชนีพัฒนาของฉันรายเดือน"
-      subtitle="เทียบพัฒนาการของตัวเองรายเดือนกับเกณฑ์มาตรฐาน 75"
+      subtitle="เส้นทึบ = ดัชนีของฉัน · เส้นประเพชร = เป้ามาตรฐาน 75"
       badge="เป้า 75"
       badgeTone="secondary"
     >
@@ -236,8 +236,8 @@
               xName="month"
               yName="index"
               name="ดัชนีของฉัน"
-              width="2"
-              fill="#5f7ce3"
+              width="2.5"
+              fill="#4c68e5"
               [marker]="marker"
             ></e-series>
             <e-series
@@ -248,7 +248,9 @@
               name="เป้ามาตรฐาน 75"
               width="2"
               fill="#f59e0b"
-              [marker]="marker"
+              dashArray="6,4"
+              legendShape="Diamond"
+              [marker]="targetMarker"
             ></e-series>
           </e-series-collection>
         </ejs-chart>

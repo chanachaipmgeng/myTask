@@ -120,7 +120,7 @@ npm --prefix server run build
 - **Frontend MD Mandate Controls (Syncfusion Components)**:
   - **Kanban Board (`/work/board`)**: ใน Card Edit Dialog มี `ejs-checkbox` ติ๊กงานสั่งตรงจาก MD พร้อม `ejs-multiselect` ดึงรายการงาน `In Progress` ของน้องคนนั้นเพื่อสั่ง Auto-Shift Due Date ในคลิกเดียว
   - **New Work Queue (`/queue`)**: มีปุ่มคำสั่ง `⚡ รับงานด่วน MD & เลื่อนงานเดิม` ให้ Lead จ่ายงานแทรกและปรับตารางเวลาให้น้องทันที
-  - **Team & Person Dashboards (`/team` และ `/people/:id`)**: ใช้ `StackingColumn` บน `ejs-chart` แสดงสัดส่วน Planned MD vs Unplanned ทั่วไป vs MD Mandate
+  - **Team & Person Dashboards (`/team` และ `/people/:id`)**: ใช้ `StackingArea` บน `ejs-chart` แสดงแนวโน้มสัดส่วน Planned MD vs Unplanned ทั่วไป vs MD Mandate
 
 
 ## อย่าทำ

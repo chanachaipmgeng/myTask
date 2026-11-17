@@ -41,9 +41,20 @@ export class AiTrackingPage {
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
-  protected readonly tooltip = { enable: true };
-  protected readonly legend = { visible: true, position: 'Top', textStyle: this.axisFont };
+  protected readonly tooltip = {
+    enable: true,
+    shared: true,
+    header: '${point.x}',
+    format: '${series.name}: <b>${point.y}</b>',
+  };
+  protected readonly legend = {
+    visible: true,
+    position: 'Top',
+    alignment: 'Center',
+    textStyle: this.axisFont,
+  };
   protected readonly chartArea = { border: { width: 0 } };
+  protected readonly columnCorner = { topLeft: 4, topRight: 4 };
 
   protected readonly points = computed(() => aiTicketPoints(this.scorecard.tickets()));
   protected readonly share = computed(() => researchSpikeShare(this.scorecard.people(), this.scorecard.tickets()));

@@ -104,8 +104,20 @@ export class WorkHandoffPage {
     majorTickLines: { width: 0 },
   };
 
-  protected readonly chartTooltip = { enable: true };
-  protected readonly chartLegend = { visible: true, position: 'Top' };
+  protected readonly chartTooltip = {
+    enable: true,
+    shared: true,
+    header: '${point.x}',
+    format: '${series.name}: <b>${point.y}</b> ชม.',
+  };
+  protected readonly chartLegend = {
+    visible: true,
+    position: 'Top',
+    alignment: 'Center',
+  };
+  protected readonly chartArea = { border: { width: 0 } };
+  /** มุมปลายแท่ง StackingBar (ชั้นนอกสุด) */
+  protected readonly barEndCorner = { topRight: 4, bottomRight: 4 };
 
   protected readonly statusToneMap: Record<string, BadgeTone> = {
     'Code Review': 'warning',

@@ -20,6 +20,7 @@ import {
   ChartComponent,
   ChartModule,
   ColumnSeriesService,
+  StackingAreaSeriesService,
   StackingColumnSeriesService,
   LegendService,
   LineSeriesService,
@@ -76,6 +77,7 @@ const LIVE_MODE = 'live';
     CategoryService,
     LineSeriesService,
     ColumnSeriesService,
+    StackingAreaSeriesService,
     StackingColumnSeriesService,
     LegendService,
     TooltipService,
@@ -163,10 +165,40 @@ export class TeamDashboard implements AfterViewInit {
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
-  protected readonly chartTooltip = { enable: true, shared: true };
-  protected readonly chartLegend = { visible: true, position: 'Top', textStyle: this.axisFont };
+  protected readonly chartTooltip = {
+    enable: true,
+    shared: true,
+    enableMarker: true,
+    header: '${point.x}',
+    format: '${series.name}: <b>${point.y}</b>',
+  };
+  protected readonly chartLegend = {
+    visible: true,
+    position: 'Top',
+    alignment: 'Center',
+    textStyle: this.axisFont,
+  };
   protected readonly chartArea = { border: { width: 0 } };
-  protected readonly targetMarker = { visible: true, width: 7, height: 7, fill: '#f0b429' };
+  /** จุดข้อมูลบนเส้นแนวโน้ม (multi-series) */
+  protected readonly seriesMarker = {
+    visible: true,
+    width: 7,
+    height: 7,
+    shape: 'Circle',
+    isFilled: true,
+  };
+  /** เส้นเป้า — แยกด้วย dash + diamond ตามแนว Actual vs Ideal */
+  protected readonly targetMarker = {
+    visible: true,
+    width: 8,
+    height: 8,
+    shape: 'Diamond',
+    isFilled: true,
+    fill: '#f0b429',
+    border: { width: 1, color: '#f0b429' },
+  };
+  /** มุมบนแท่ง Grouped/Stacked Column (แนว UI Kit) */
+  protected readonly columnCorner = { topLeft: 4, topRight: 4 };
 
   protected readonly alerts = this.scorecard.alerts;
   protected readonly explanations = computed(() => kpiExplanations(this.scorecard.tickets(), this.scorecard.people()));

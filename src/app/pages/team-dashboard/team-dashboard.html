@@ -279,7 +279,7 @@
         <div class="e-panel-container">
           <div class="e-panel-header">เส้นรายเดือน</div>
           <div class="e-panel-content">
-            <p class="kpi-note">ปิดตามแผน ความแม่น และ rework ของใบที่ปิดในเดือนนั้น เป้า {{ target }}</p>
+            <p class="kpi-note">ปิดตามแผน ความแม่น และ rework ของใบที่ปิดในเดือนนั้น · เส้นประคือเป้า {{ target }}</p>
             <ejs-chart
               id="monthly-line"
               style="display: block; height: 260px; width: 100%"
@@ -292,10 +292,48 @@
               [enableAnimation]="true"
             >
               <e-series-collection>
-                <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="plan" name="ปิดตามแผน" width="2" fill="#7eb6ff"></e-series>
-                <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="accuracy" name="ความแม่น" width="2" fill="#3ec6e0"></e-series>
-                <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="rework" name="Rework" width="2" fill="#9f3a2f"></e-series>
-                <e-series type="Line" [dataSource]="monthlyPoints()" xName="month" yName="target" name="เป้า 75" width="2" fill="#f0b429" [marker]="targetMarker"></e-series>
+                <e-series
+                  type="Line"
+                  [dataSource]="monthlyPoints()"
+                  xName="month"
+                  yName="plan"
+                  name="ปิดตามแผน"
+                  width="2.5"
+                  fill="#4c68e5"
+                  [marker]="seriesMarker"
+                ></e-series>
+                <e-series
+                  type="Line"
+                  [dataSource]="monthlyPoints()"
+                  xName="month"
+                  yName="accuracy"
+                  name="ความแม่น"
+                  width="2.5"
+                  fill="#3ec6e0"
+                  [marker]="seriesMarker"
+                ></e-series>
+                <e-series
+                  type="Line"
+                  [dataSource]="monthlyPoints()"
+                  xName="month"
+                  yName="rework"
+                  name="Rework"
+                  width="2.5"
+                  fill="#e35d6a"
+                  [marker]="seriesMarker"
+                ></e-series>
+                <e-series
+                  type="Line"
+                  [dataSource]="monthlyPoints()"
+                  xName="month"
+                  yName="target"
+                  name="เป้า 75"
+                  width="2"
+                  fill="#f0b429"
+                  dashArray="6,4"
+                  legendShape="Diamond"
+                  [marker]="targetMarker"
+                ></e-series>
               </e-series-collection>
             </ejs-chart>
           </div>
@@ -307,7 +345,7 @@
         <div class="e-panel-container">
           <div class="e-panel-header">โควตาที่ใช้กับที่ว่าง</div>
           <div class="e-panel-content">
-            <p class="kpi-note">ใช้แล้วคือ MD ของใบที่ยังไม่ปิด ที่ว่างคือโควต้าสัปดาห์หักใบที่เปิดอยู่และกัน 1 MD</p>
+            <p class="kpi-note">แท่งซ้อน = โควตาสัปดาห์ · ใช้แล้วคือ MD ใบที่ยังไม่ปิด · ว่างคือโควตาที่เหลือ (กัน 1 MD)</p>
             <ejs-chart
               id="quota-bars"
               style="display: block; height: 260px; width: 100%"
@@ -320,8 +358,25 @@
               [enableAnimation]="true"
             >
               <e-series-collection>
-                <e-series type="Column" [dataSource]="quotaPoints()" xName="nickname" yName="used" name="ใช้แล้ว" fill="#7eb6ff" columnWidth="0.5"></e-series>
-                <e-series type="Column" [dataSource]="quotaPoints()" xName="nickname" yName="free" name="ว่าง" fill="#3ec6e0" columnWidth="0.5"></e-series>
+                <e-series
+                  type="StackingColumn"
+                  [dataSource]="quotaPoints()"
+                  xName="nickname"
+                  yName="used"
+                  name="ใช้แล้ว"
+                  fill="#4c68e5"
+                  columnWidth="0.55"
+                ></e-series>
+                <e-series
+                  type="StackingColumn"
+                  [dataSource]="quotaPoints()"
+                  xName="nickname"
+                  yName="free"
+                  name="ว่าง"
+                  fill="#93c5fd"
+                  columnWidth="0.55"
+                  [cornerRadius]="columnCorner"
+                ></e-series>
               </e-series-collection>
             </ejs-chart>
           </div>
@@ -333,7 +388,7 @@
         <div class="e-panel-container">
           <div class="e-panel-header">สัดส่วนภาระงานรายเดือน: Planned MD vs Unplanned vs งานสั่งตรงจาก MD (MD Mandate)</div>
           <div class="e-panel-content">
-            <p class="kpi-note">กราฟแท่งซ้อน (Stacked Column) แสดงสัดส่วน Man-day จริงที่ใช้ไปตามหมวดงาน เพื่อตรวจสอบผลกระทบต่องานตามแผน</p>
+            <p class="kpi-note">กราฟพื้นที่ซ้อน (Stacked Area) แสดงแนวโน้มสัดส่วน Man-day จริงรายเดือนตามหมวดงาน เพื่อดูผลกระทบต่องานตามแผนต่อเนื่อง</p>
             <ejs-chart
               id="md-composition-chart"
               style="display: block; height: 260px; width: 100%"
@@ -346,9 +401,36 @@
               [enableAnimation]="true"
             >
               <e-series-collection>
-                <e-series type="StackingColumn" [dataSource]="mdCompositionPoints()" xName="month" yName="plannedMd" name="Planned (ในแผน)" fill="#4c68e5" columnWidth="0.5"></e-series>
-                <e-series type="StackingColumn" [dataSource]="mdCompositionPoints()" xName="month" yName="unplannedGeneralMd" name="Unplanned ทั่วไป" fill="#3ec6e0" columnWidth="0.5"></e-series>
-                <e-series type="StackingColumn" [dataSource]="mdCompositionPoints()" xName="month" yName="mdMandateMd" name="⚡ MD Mandate (สั่งตรง)" fill="#f59e0b" columnWidth="0.5"></e-series>
+                <e-series
+                  type="StackingArea"
+                  [dataSource]="mdCompositionPoints()"
+                  xName="month"
+                  yName="plannedMd"
+                  name="Planned (ในแผน)"
+                  fill="#4c68e5"
+                  opacity="0.85"
+                  [border]="{ width: 1.5, color: '#2e4fc8' }"
+                ></e-series>
+                <e-series
+                  type="StackingArea"
+                  [dataSource]="mdCompositionPoints()"
+                  xName="month"
+                  yName="unplannedGeneralMd"
+                  name="Unplanned ทั่วไป"
+                  fill="#3ec6e0"
+                  opacity="0.85"
+                  [border]="{ width: 1.5, color: '#0891b2' }"
+                ></e-series>
+                <e-series
+                  type="StackingArea"
+                  [dataSource]="mdCompositionPoints()"
+                  xName="month"
+                  yName="mdMandateMd"
+                  name="⚡ MD Mandate (สั่งตรง)"
+                  fill="#f59e0b"
+                  opacity="0.9"
+                  [border]="{ width: 1.5, color: '#d97706' }"
+                ></e-series>
               </e-series-collection>
             </ejs-chart>
           </div>

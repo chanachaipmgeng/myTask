@@ -96,7 +96,7 @@
     <div class="card-grid-2">
       <app-section-card
         title="แนวโน้มดัชนีรายเดือน (OLS Trendline)"
-        subtitle="เปรียบเทียบดัชนีรายเดือนของตัวเองกับเป้ามาตรฐาน 75 พร้อมเส้นแนวโน้มทางสถิติ OLS Regression"
+        subtitle="เส้นทึบ = ดัชนีของตัวเอง · เส้นประเพชร = เป้า 75 · เส้นประม่วง = OLS Slope"
       >
         @if (olsSummary(); as ols) {
           <span
@@ -126,8 +126,8 @@
                 xName="month"
                 yName="index"
                 name="ดัชนีของตัวเอง"
-                width="2"
-                fill="#3ec6e0"
+                width="2.5"
+                fill="#4c68e5"
                 [marker]="marker"
               ></e-series>
               <e-series
@@ -138,7 +138,9 @@
                 name="เป้า 75"
                 width="2"
                 fill="#f0b429"
-                [marker]="marker"
+                dashArray="6,4"
+                legendShape="Diamond"
+                [marker]="targetMarker"
               ></e-series>
               <e-series
                 type="Line"
@@ -149,13 +151,14 @@
                 width="2"
                 dashArray="5,5"
                 fill="#a855f7"
+                legendShape="HorizontalLine"
               ></e-series>
             </e-series-collection>
           </ejs-chart>
         </div>
       </app-section-card>
 
-      <app-section-card title="แผน vs จริง (ใบที่ปิด)" subtitle="เทียบ Estimate MD กับ Actual MD ของแต่ละใบงาน">
+      <app-section-card title="แผน vs จริง (ใบที่ปิด)" subtitle="Grouped Column เทียบ Estimate MD กับ Actual MD ของแต่ละใบงาน">
         @if (view().effortBars.length === 0) {
           <ejs-message content="ยังไม่มีใบที่ปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
         } @else {
@@ -169,7 +172,7 @@
               [tooltip]="tooltip"
               [legendSettings]="legend"
               [chartArea]="chartArea"
-              [enableAnimation]="false"
+              [enableAnimation]="true"
             >
               <e-series-collection>
                 <e-series
@@ -178,8 +181,10 @@
                   xName="label"
                   yName="estimateMd"
                   name="Estimate MD"
-                  fill="#7eb6ff"
-                  columnWidth="0.4"
+                  fill="#4c68e5"
+                  columnWidth="0.45"
+                  columnSpacing="0.2"
+                  [cornerRadius]="columnCorner"
                 ></e-series>
                 <e-series
                   type="Column"
@@ -188,7 +193,9 @@
                   yName="actualMd"
                   name="Actual MD"
                   fill="#3ec6e0"
-                  columnWidth="0.4"
+                  columnWidth="0.45"
+                  columnSpacing="0.2"
+                  [cornerRadius]="columnCorner"
                 ></e-series>
               </e-series-collection>
             </ejs-chart>
@@ -268,7 +275,7 @@
               [tooltip]="tooltip"
               [legendSettings]="legend"
               [chartArea]="chartArea"
-              [enableAnimation]="false"
+              [enableAnimation]="true"
             >
               <e-series-collection>
                 <e-series
@@ -277,8 +284,10 @@
                   xName="label"
                   yName="reviewRounds"
                   name="รอบรีวิว"
-                  fill="#8764b8"
-                  columnWidth="0.4"
+                  fill="#7465e8"
+                  columnWidth="0.45"
+                  columnSpacing="0.2"
+                  [cornerRadius]="columnCorner"
                 ></e-series>
                 <e-series
                   type="Column"
@@ -286,8 +295,10 @@
                   xName="label"
                   yName="reopenCount"
                   name="Reopen"
-                  fill="#e3008c"
-                  columnWidth="0.4"
+                  fill="#e35d6a"
+                  columnWidth="0.45"
+                  columnSpacing="0.2"
+                  [cornerRadius]="columnCorner"
                 ></e-series>
               </e-series-collection>
             </ejs-chart>
@@ -298,7 +309,7 @@
       <app-section-card
         class="md:col-span-2"
         title="สัดส่วนภาระงาน (Planned MD vs Unplanned vs งานสั่งตรงจาก MD)"
-        subtitle="กราฟแท่งซ้อน (Stacked Column) แสดง Man-day รวมของพนักงาน เพื่อดูว่าแต่ละเดือนโดนงานแทรกจาก MD กินเวลาไปเท่าไหร่"
+        subtitle="กราฟพื้นที่ซ้อน (Stacked Area) แสดงแนวโน้ม Man-day รวมของพนักงาน เพื่อดูว่าแต่ละเดือนโดนงานแทรกจาก MD กินเวลาไปเท่าไหร่"
       >
         @if (mdComposition().length === 0) {
           <ejs-message content="ยังไม่มีประวัติใบงานปิดสำหรับแสดงสัดส่วนภาระงาน" severity="Info" variant="Outlined"></ejs-message>
@@ -317,31 +328,34 @@
             >
               <e-series-collection>
                 <e-series
-                  type="StackingColumn"
+                  type="StackingArea"
                   [dataSource]="mdComposition()"
                   xName="month"
                   yName="plannedMd"
                   name="Planned (ในแผน)"
                   fill="#4c68e5"
-                  columnWidth="0.4"
+                  opacity="0.85"
+                  [border]="{ width: 1.5, color: '#2e4fc8' }"
                 ></e-series>
                 <e-series
-                  type="StackingColumn"
+                  type="StackingArea"
                   [dataSource]="mdComposition()"
                   xName="month"
                   yName="unplannedGeneralMd"
                   name="Unplanned ทั่วไป"
                   fill="#3ec6e0"
-                  columnWidth="0.4"
+                  opacity="0.85"
+                  [border]="{ width: 1.5, color: '#0891b2' }"
                 ></e-series>
                 <e-series
-                  type="StackingColumn"
+                  type="StackingArea"
                   [dataSource]="mdComposition()"
                   xName="month"
                   yName="mdMandateMd"
                   name="⚡ MD Mandate (สั่งตรง)"
                   fill="#f59e0b"
-                  columnWidth="0.4"
+                  opacity="0.9"
+                  [border]="{ width: 1.5, color: '#d97706' }"
                 ></e-series>
               </e-series-collection>
             </ejs-chart>

@@ -59,8 +59,14 @@ export class WorkSummary implements AfterViewInit {
 
   protected readonly cellSpacing = [12, 12];
   protected readonly legend = { visible: true, position: 'Bottom' as const };
-  protected readonly tooltip = { enable: true };
+  protected readonly tooltip = {
+    enable: true,
+    shared: true,
+    header: '${point.x}',
+    format: '${series.name}: <b>${point.y}</b>',
+  };
   protected readonly chartArea = { border: { width: 0 } };
+  protected readonly columnCorner = { topLeft: 4, topRight: 4 };
   protected readonly categoryAxis = { valueType: 'Category' as const, majorGridLines: { width: 0 } };
   protected readonly valueAxis = { title: 'MD', majorGridLines: { width: 0 } };
   protected readonly statusLabel = {

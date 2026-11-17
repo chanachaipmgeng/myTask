@@ -68,10 +68,36 @@ export class MyWorkspacePage {
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
-  protected readonly tooltip = { enable: true, shared: true };
-  protected readonly legend = { visible: true, position: 'Top', textStyle: this.axisFont };
+  protected readonly tooltip = {
+    enable: true,
+    shared: true,
+    enableMarker: true,
+    header: '${point.x}',
+    format: '${series.name}: <b>${point.y}</b>',
+  };
+  protected readonly legend = {
+    visible: true,
+    position: 'Top',
+    alignment: 'Center',
+    textStyle: this.axisFont,
+  };
   protected readonly chartArea = { border: { width: 0 } };
-  protected readonly marker = { visible: true, width: 8, height: 8 };
+  protected readonly marker = {
+    visible: true,
+    width: 7,
+    height: 7,
+    shape: 'Circle',
+    isFilled: true,
+  };
+  protected readonly targetMarker = {
+    visible: true,
+    width: 8,
+    height: 8,
+    shape: 'Diamond',
+    isFilled: true,
+    fill: '#f59e0b',
+    border: { width: 1, color: '#f59e0b' },
+  };
 
   protected readonly activePerson = computed(() => {
     const sess = currentSession();

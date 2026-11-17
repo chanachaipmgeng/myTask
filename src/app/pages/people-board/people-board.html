@@ -67,7 +67,7 @@
             pointColorMapping="color"
             name="ดัชนีพัฒนา"
             columnWidth="0.55"
-            [cornerRadius]="{ topLeft: 3, topRight: 3 }"
+            [cornerRadius]="{ topLeft: 4, topRight: 4 }"
           ></e-series>
           <e-series
             type="Line"
@@ -77,6 +77,8 @@
             name="เป้า 75"
             width="2"
             fill="#f0b429"
+            dashArray="6,4"
+            legendShape="Diamond"
             [marker]="marker"
           ></e-series>
         </e-series-collection>
