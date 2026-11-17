@@ -16,7 +16,7 @@ import {
   viewAsRole,
 } from './core/admin-settings';
 import { AccessRole } from './core/models';
-import { ShellNotice } from './core/shell-notice';
+import { ShellNotice, shellNoticeCssClass, shellNoticeTitle } from './core/shell-notice';
 import { ScorecardService } from './core/scorecard.service';
 import { currentSession } from './core/session';
 import { ThemeService } from './core/theme.service';
@@ -222,16 +222,21 @@ export class App implements AfterViewInit {
   protected togglePersonaPreview(): void {
     const next = toggleViewAsMember();
     if (next === 'member') {
-      this.notice.show('สลับเป็นมุมมองพนักงานทั่วไป (Member View) — ซ่อนเมนูตั้งค่าระบบ');
+      this.notice.info('สลับเป็นมุมมองพนักงานทั่วไป (Member View) — ซ่อนเมนูตั้งค่าระบบ');
       void this.router.navigate(['/me']);
     } else {
-      this.notice.show(`กลับสู่มุมมอง ${next} ตามสิทธิ์จริง`);
+      this.notice.info(`กลับสู่มุมมอง ${next} ตามสิทธิ์จริง`);
     }
   }
 
   ngAfterViewInit(): void {
-    this.notice.bind((text) => {
-      this.toast?.show({ title: 'คะแนนใบงาน', content: text });
+    this.notice.bind((payload) => {
+      const type = payload.type ?? 'info';
+      this.toast?.show({
+        title: shellNoticeTitle(type, payload.title),
+        content: payload.text,
+        cssClass: shellNoticeCssClass(type),
+      });
     });
   }
 }

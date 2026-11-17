@@ -50,7 +50,7 @@ export class QualityAuditPage {
   protected rejectToDev(ticketId: string, devName: string): void {
     const ticket = this.scorecard.tickets().find((item) => item.id === ticketId);
     if (!ticket) {
-      this.notice.show(`ไม่พบใบงาน ${ticketId}`);
+      this.notice.error(`ไม่พบใบงาน ${ticketId}`);
       return;
     }
     const updated = {
@@ -62,6 +62,6 @@ export class QualityAuditPage {
       note: `${ticket.note ? ticket.note + ' · ' : ''}ตีกลับจาก QA DoD Gate ไปยัง ${devName}`,
     };
     this.scorecard.replaceTicket(updated);
-    this.notice.show(`ส่งการ์ด ${ticketId} ตีกลับไปยัง ${devName} เนื่องจากหลักฐาน DoD ไม่ครบถ้วน`);
+    this.notice.warning(`ส่งการ์ด ${ticketId} ตีกลับไปยัง ${devName} เนื่องจากหลักฐาน DoD ไม่ครบถ้วน`);
   }
 }

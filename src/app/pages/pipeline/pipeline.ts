@@ -178,11 +178,11 @@ export class PipelinePage {
     this.scorecard.replaceTicket(result.ticket);
     this.selectedId.set(result.ticket.id);
     const bounced = result.ticket.reopenCount > current.reopenCount;
-    this.notice.show(
-      bounced
-        ? `ตีกลับ ${result.ticket.id} แล้ว Reopen Count เป็น ${result.ticket.reopenCount}`
-        : `ย้าย ${result.ticket.id} ไป ${target}`,
-    );
+    if (bounced) {
+      this.notice.warning(`ตีกลับ ${result.ticket.id} แล้ว Reopen Count เป็น ${result.ticket.reopenCount}`);
+    } else {
+      this.notice.success(`ย้าย ${result.ticket.id} ไป ${target}`);
+    }
   }
 
   protected setDiscipline(event: { value?: string | null }): void {
@@ -251,7 +251,7 @@ export class PipelinePage {
       return;
     }
     this.scorecard.replaceTicket(result.ticket);
-    this.notice.show(`บันทึกฟิลด์ ${ticket.id} แล้ว`);
+    this.notice.success(`บันทึกฟิลด์ ${ticket.id} แล้ว`);
   }
 
   protected bugCategory(): boolean {

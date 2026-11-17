@@ -294,11 +294,11 @@ export class WorkBoard {
     this.scorecard.replaceTicket(result.ticket);
     this.selectedId.set(result.ticket.id);
     const bounced = result.ticket.reopenCount > current.reopenCount;
-    this.notice.show(
-      bounced
-        ? `ตีกลับ ${result.ticket.id} แล้ว Reopen Count เป็น ${result.ticket.reopenCount}`
-        : `ย้าย ${result.ticket.id} ไป ${target}`,
-    );
+    if (bounced) {
+      this.notice.warning(`ตีกลับ ${result.ticket.id} แล้ว Reopen Count เป็น ${result.ticket.reopenCount}`);
+    } else {
+      this.notice.success(`ย้าย ${result.ticket.id} ไป ${target}`);
+    }
 
     // Active WIP Detection for MD-DIRECT ticket entering In Progress
     if (result.ticket.isMdDirect && target === 'In Progress' && result.ticket.assigneeId) {
@@ -332,7 +332,7 @@ export class WorkBoard {
       const targetIds = wips.map((t) => t.id);
       void this.scorecard.applyMdMandateShift(mdTicket.id, targetIds, days).then((ok) => {
         if (ok) {
-          this.notice.show(`พักงานเดิม ${wips.length} ใบ และเลื่อนวันส่งออกไป +${days} วันทำงานเรียบร้อยแล้ว`);
+          this.notice.success(`พักงานเดิม ${wips.length} ใบ และเลื่อนวันส่งออกไป +${days} วันทำงานเรียบร้อยแล้ว`);
         }
       });
     }
@@ -345,13 +345,13 @@ export class WorkBoard {
     this.mdShiftDialog?.hide();
     this.pendingMdTicket.set(null);
     this.conflictingWipTickets.set([]);
-    this.notice.show('ดำเนินการต่อแบบทำคู่ขนาน (ไม่พักงานเดิม)');
+    this.notice.info('ดำเนินการต่อแบบทำคู่ขนาน (ไม่พักงานเดิม)');
   }
 
   protected resumePaused(ticketId: string): void {
     void this.scorecard.resumePausedTicket(ticketId).then((ok) => {
       if (ok) {
-        this.notice.show(`ปลดพักงาน ${ticketId} และนำกลับเข้าสู่สถานะดำเนินงานเรียบร้อย`);
+        this.notice.success(`ปลดพักงาน ${ticketId} และนำกลับเข้าสู่สถานะดำเนินงานเรียบร้อย`);
       }
     });
   }
@@ -435,13 +435,13 @@ export class WorkBoard {
       const shiftDays = Math.max(1, Math.ceil(finalTicket.estimateMd || 1));
       void this.scorecard.applyMdMandateShift(finalTicket.id, shiftTargets, shiftDays).then((ok) => {
         if (ok) {
-          this.notice.show(`สั่ง Auto-Shift และพักงานเดิม ${shiftTargets.length} ใบ (+${shiftDays} วัน) เรียบร้อย`);
+          this.notice.success(`สั่ง Auto-Shift และพักงานเดิม ${shiftTargets.length} ใบ (+${shiftDays} วัน) เรียบร้อย`);
         }
       });
     }
 
     this.editDialog?.hide();
-    this.notice.show(`บันทึกฟิลด์ ${ticket.id} แล้ว`);
+    this.notice.success(`บันทึกฟิลด์ ${ticket.id} แล้ว`);
   }
 
   protected bugCategory(): boolean {

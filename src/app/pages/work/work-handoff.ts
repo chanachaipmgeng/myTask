@@ -151,7 +151,7 @@ export class WorkHandoffPage {
     void this.scorecard
       .pingHandoffRecipient(ticketId, targetName, `แจ้งเตือนการส่งต่องาน ${ticketId} เกิน SLA`)
       .then((result) => {
-        this.notice.show(result.message || `แจ้งเตือนใบงาน ${ticketId} ถึง ${targetName}`);
+        this.notice.success(result.message || `แจ้งเตือนใบงาน ${ticketId} ถึง ${targetName}`);
       });
   }
 

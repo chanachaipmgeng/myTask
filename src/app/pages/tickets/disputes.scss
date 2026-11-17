@@ -1,3 +1,55 @@
 :host {
   display: block;
 }
+
+.disputes-pane {
+  height: 100%;
+  min-height: 0;
+  padding: 2px 4px 4px 0;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.disputes-pane--detail {
+  padding-left: 4px;
+  padding-right: 0;
+}
+
+:host ::ng-deep .disputes-splitter.e-splitter {
+  border: 0;
+  background: transparent;
+}
+
+:host ::ng-deep .disputes-splitter > .e-pane {
+  overflow: hidden;
+  background: transparent;
+}
+
+:host ::ng-deep .disputes-splitter .e-split-bar {
+  background: transparent;
+}
+
+:host ::ng-deep .disputes-splitter .e-split-bar.e-split-bar-horizontal {
+  border-left: 1px solid rgba(148, 163, 184, 0.35);
+  border-right: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+:host ::ng-deep .disputes-splitter .e-split-bar.e-split-bar-vertical {
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+:host-context(body.e-dark-mode) ::ng-deep .disputes-splitter .e-split-bar.e-split-bar-horizontal {
+  border-left-color: rgba(148, 163, 184, 0.28);
+  border-right-color: rgba(148, 163, 184, 0.28);
+}
+
+:host-context(body.e-dark-mode) ::ng-deep .disputes-splitter .e-split-bar.e-split-bar-vertical {
+  border-top-color: rgba(148, 163, 184, 0.28);
+  border-bottom-color: rgba(148, 163, 184, 0.28);
+}
+
+:host ::ng-deep .disputes-pane > app-section-card,
+:host ::ng-deep .disputes-pane > app-section-card > .e-card.section-card {
+  height: 100%;
+}

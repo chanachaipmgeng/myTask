@@ -393,7 +393,7 @@ export class TicketsPage {
       (this.typeFilter() !== 'All' && this.typeFilter() !== ticket.type);
     const text = hidden ? `เพิ่ม ${ticket.id} แล้ว — เปลี่ยนตัวกรองเพื่อดูใบนี้` : `เพิ่ม ${ticket.id} แล้ว`;
     this.message.set(text);
-    this.notice.show(text);
+    this.notice.success(text);
   }
 
   private draft(id: string, moduleName = this.moduleName().trim() || 'Preview', week = Number(this.weekOffset())): Omit<Ticket, 'id'> & { id: string } {
@@ -432,7 +432,7 @@ export class TicketsPage {
         ? `${action} ${added} แล้ว คะแนนคำนวณจากสูตร ไม่ได้เขียนกลับ${skipped}`
         : `${action} ไม่มีใบใหม่${skipped}`;
     this.message.set(text);
-    this.notice.show(text);
+    this.notice.success(text);
   }
 
   private describeImported(id: string): string {

@@ -82,7 +82,7 @@ export class TimeAuditPage {
   }
 
   protected rerunAudit(): void {
-    this.notice.show('กำลังเรียกเครื่องยนต์ Python Analytics เพื่อคำนวณและตรวจสอบเวลา 3 ทางใหม่...');
+    this.notice.info('กำลังเรียกเครื่องยนต์ Python Analytics เพื่อคำนวณและตรวจสอบเวลา 3 ทางใหม่...');
     void this.scorecard.reloadFromApi();
   }
 

@@ -117,18 +117,20 @@ export class WorkTimeline {
       const msg = result.message ?? 'แก้ไขวันที่ไม่สำเร็จ';
       this.errorMessage.set(msg);
       this.statusMessage.set('');
-      this.notice.show(msg);
+      this.notice.error(msg);
       return;
     }
     let text = `บันทึกวันของ ${taskId} แล้ว (ล็อก firstDueOn คงเดิม)`;
     if (result.writebackError) {
       text += ` · เขียนกลับ OpenProject ไม่สำเร็จ: ${result.writebackError}`;
       this.errorMessage.set(result.writebackError);
-    } else {
-      this.errorMessage.set('');
+      this.statusMessage.set(text);
+      this.notice.warning(text);
+      return;
     }
+    this.errorMessage.set('');
     this.statusMessage.set(text);
-    this.notice.show(text);
+    this.notice.success(text);
   }
 }
 

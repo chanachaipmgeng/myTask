@@ -13,7 +13,7 @@ export function requireRoles(...allowed: AccessRole[]): CanActivateFn {
     const router = inject(Router);
 
     if (scorecard.usingApi() && !currentSession()) {
-      notice.show('กรุณาเข้าสู่ระบบก่อนเข้าหน้านี้');
+      notice.warning('กรุณาเข้าสู่ระบบก่อนเข้าหน้านี้');
       return router.createUrlTree(['/login']);
     }
 
@@ -21,7 +21,7 @@ export function requireRoles(...allowed: AccessRole[]): CanActivateFn {
     if (allowed.includes(role)) {
       return true;
     }
-    notice.show(`สิทธิ์ปัจจุบัน (${role}) ไม่สามารถเข้าหน้านี้ได้ — ต้องใช้สิทธิ์ ${allowed.join(' หรือ ')}`);
+    notice.warning(`สิทธิ์ปัจจุบัน (${role}) ไม่สามารถเข้าหน้านี้ได้ — ต้องใช้สิทธิ์ ${allowed.join(' หรือ ')}`);
     return router.createUrlTree([role === 'member' ? '/me' : '/team']);
   };
 }

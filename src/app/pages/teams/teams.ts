@@ -89,10 +89,12 @@ export class TeamsPage {
           ? `บันทึก ${entries.length} ข้อความที่จะส่ง ยังไม่ยิง webhook`
           : 'ไม่มีใบที่เข้าเงื่อนไข';
       this.message.set(text);
-      this.notice.show(text);
+      this.notice.success(text);
     } catch (error) {
       this.message.set('');
-      this.error.set(error instanceof Error ? error.message : 'บันทึกไม่สำเร็จ');
+      const text = error instanceof Error ? error.message : 'บันทึกไม่สำเร็จ';
+      this.error.set(text);
+      this.notice.error(text);
     }
   }
 
@@ -121,7 +123,9 @@ export class TeamsPage {
         })),
       );
       if (!result.ok && result.message) {
-        this.error.set(`ส่งเข้า Teams ไม่สำเร็จ: ${result.message}`);
+        const text = `ส่งเข้า Teams ไม่สำเร็จ: ${result.message}`;
+        this.error.set(text);
+        this.notice.error(text);
       } else {
         const text = result.sent
           ? `ส่งเข้า Teams สำเร็จ (${msgs.length} ข้อความ)`
@@ -129,11 +133,13 @@ export class TeamsPage {
             ? 'ไม่มีใบที่เข้าเงื่อนไขต้องแจ้งเตือน'
             : `ร่างข้อความ ${msgs.length} รายการ (ยังไม่ได้ตั้งค่า TEAMS_WEBHOOK_URL หรือปิดการส่ง)`;
         this.message.set(text);
-        this.notice.show(text);
+        this.notice.show(text, result.sent ? 'success' : 'info');
       }
     } catch (err) {
       this.message.set('');
-      this.error.set(err instanceof Error ? err.message : 'ส่งเข้า Teams ไม่สำเร็จ');
+      const text = err instanceof Error ? err.message : 'ส่งเข้า Teams ไม่สำเร็จ';
+      this.error.set(text);
+      this.notice.error(text);
     } finally {
       this.sending.set(false);
     }

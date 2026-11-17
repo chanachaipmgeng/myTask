@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
@@ -10,6 +18,7 @@ import {
   SortService,
 } from '@syncfusion/ej2-angular-grids';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
+import { SplitterModule } from '@syncfusion/ej2-angular-layouts';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { DialogModule } from '@syncfusion/ej2-angular-popups';
 import { effectiveRole } from '../../core/admin-settings';
@@ -35,6 +44,7 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
     TextBoxModule,
     DialogModule,
     MessageModule,
+    SplitterModule,
     PageHeadComponent,
     SectionCardComponent,
     FilterChipsComponent,
@@ -50,9 +60,14 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
   templateUrl: './disputes.html',
   styleUrl: './disputes.scss',
 })
-export class DisputesPage {
+export class DisputesPage implements OnInit {
   protected readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** กว้าง: ซ้าย–ขวา · แคบ: บน–ล่าง */
+  protected readonly splitterOrientation = signal<'Horizontal' | 'Vertical'>('Horizontal');
+  protected readonly splitterHeight = signal('560px');
 
   protected readonly role = effectiveRole;
   protected readonly statusFilter = signal<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
@@ -102,6 +117,21 @@ export class DisputesPage {
     ];
   });
 
+  ngOnInit(): void {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+    const mq = window.matchMedia('(max-width: 800px)');
+    const apply = (): void => {
+      const narrow = mq.matches;
+      this.splitterOrientation.set(narrow ? 'Vertical' : 'Horizontal');
+      this.splitterHeight.set(narrow ? '920px' : '560px');
+    };
+    apply();
+    mq.addEventListener('change', apply);
+    this.destroyRef.onDestroy(() => mq.removeEventListener('change', apply));
+  }
+
   protected setStatus(status: string): void {
     const next = (status === 'APPROVED' || status === 'REJECTED' ? status : 'PENDING') as
       | 'PENDING'
@@ -132,7 +162,7 @@ export class DisputesPage {
 
   protected async submitNewDispute(): Promise<void> {
     if (!this.newTicketId() || !this.newReason().trim()) {
-      this.notice.show('กรุณากรอกรหัสใบงานและเหตุผลในการยื่นคำขอ');
+      this.notice.warning('กรุณากรอกรหัสใบงานและเหตุผลในการยื่นคำขอ');
       return;
     }
     const created = await this.scorecard.submitDispute(
@@ -143,7 +173,7 @@ export class DisputesPage {
     );
     this.showCreateDialog.set(false);
     this.selectedDispute.set(created);
-    this.notice.show(`ส่งคำขอทบทวนคะแนน ${created.disputeCode} สำเร็จ`);
+    this.notice.success(`ส่งคำขอทบทวนคะแนน ${created.disputeCode} สำเร็จ`);
   }
 
   protected async resolve(status: 'APPROVED' | 'REJECTED'): Promise<void> {
@@ -151,11 +181,11 @@ export class DisputesPage {
     if (!sel) return;
 
     await this.scorecard.resolveDispute(sel.id, status, this.reviewerComment());
-    this.notice.show(
-      status === 'APPROVED'
-        ? `อนุมัติคำขอ ${sel.disputeCode} และคำนวณคะแนนใหม่เรียบร้อยแล้ว`
-        : `ปฏิเสธคำขอ ${sel.disputeCode}`,
-    );
+    if (status === 'APPROVED') {
+      this.notice.success(`อนุมัติคำขอ ${sel.disputeCode} และคำนวณคะแนนใหม่เรียบร้อยแล้ว`);
+    } else {
+      this.notice.warning(`ปฏิเสธคำขอ ${sel.disputeCode}`);
+    }
 
     const updated = this.scorecard.disputes().find((d) => d.id === sel.id);
     this.selectedDispute.set(updated ?? null);

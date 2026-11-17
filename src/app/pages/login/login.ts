@@ -150,7 +150,7 @@ export class LoginPage {
     const targetRoute = access === 'member' ? '/me' : '/team';
     const text = `เข้าสู่ระบบเป็น ${person.nickname} (${access}) เรียบร้อยแล้ว`;
     this.message.set(text);
-    this.notice.show(text);
+    this.notice.success(text);
     this.busy.set(false);
     void this.router.navigate([targetRoute]);
   }
@@ -166,9 +166,10 @@ export class LoginPage {
       }
       viewAsRole.set(null);
       this.message.set('ออกจากระบบเซสชันแล้ว');
-      this.notice.show('ออกจากระบบแล้ว');
+      this.notice.info('ออกจากระบบแล้ว');
     } catch {
       this.error.set('ออกจากระบบไม่สำเร็จ');
+      this.notice.error('ออกจากระบบไม่สำเร็จ');
     } finally {
       this.busy.set(false);
     }

@@ -139,13 +139,13 @@ export class AnalyticsPage {
         this.remoteReport.set(res);
         const text = `รันวิเคราะห์ด้วย ${res.engine === 'python' ? 'Python Engine' : 'Fallback Engine'} สำเร็จ · ความพร้อมข้อมูล ${res.syncHygiene.readinessScore}%`;
         this.message.set(text);
-        this.notice.show(text);
+        this.notice.success(text);
       } else {
         const local = buildAnalyticsReport(this.scorecard.roster(), this.scorecard.tickets(), 'python');
         this.remoteReport.set(local);
         const text = `คำนวณวิเคราะห์ชุดข้อมูลปัจจุบันแล้ว · ความพร้อมข้อมูล ${local.syncHygiene.readinessScore}% (พบ ${local.syncHygiene.issueCount} รายการต้องตรวจสอบ)`;
         this.message.set(text);
-        this.notice.show(text);
+        this.notice.success(text);
       }
     } finally {
       this.running.set(false);

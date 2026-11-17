@@ -396,19 +396,19 @@ export class TeamDashboard implements AfterViewInit {
       if (!result.ok) {
         const text = result.message ?? 'จับ snapshot ไม่สำเร็จ';
         this.snapshotError.set(text);
-        this.notice.show(text);
+        this.notice.error(text);
         return;
       }
       const text = `จับ snapshot ${periodType} ${periodKey} แล้ว ${result.count ?? 0} คน`;
       this.snapshotMessage.set(text);
-      this.notice.show(text);
+      this.notice.success(text);
       await this.reloadPeriods();
       this.periodMode.set(`${periodType}|${periodKey}`);
       await this.loadSnapshot(periodType, periodKey);
     } catch (error) {
       const text = error instanceof Error ? error.message : 'จับ snapshot ไม่สำเร็จ';
       this.snapshotError.set(text);
-      this.notice.show(text);
+      this.notice.error(text);
     } finally {
       this.capturing.set(false);
     }

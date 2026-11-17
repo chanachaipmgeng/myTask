@@ -109,7 +109,7 @@ export class QueuePage {
         if (!assignRes.ok) {
           const text = assignRes.message ?? 'ยังไม่ย้ายใบ';
           this.error.set(text);
-          this.notice.show(text);
+          this.notice.error(text);
           return;
         }
 
@@ -135,14 +135,14 @@ export class QueuePage {
           if (wips.length > 0) {
             const targetIds = wips.map((w) => w.id);
             await this.scorecard.applyMdMandateShift(mdTicket.id, targetIds, shiftDays);
-            this.notice.show(
+            this.notice.success(
               `รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} และเลื่อนงานเดิม ${wips.length} ใบ (+${shiftDays} วัน) แล้ว`,
             );
             this.message.set(
               `รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} สำเร็จ พร้อมสั่งพักและเลื่อนวันส่งงานเดิม ${wips.length} ใบ (+${shiftDays} วัน)`,
             );
           } else {
-            this.notice.show(`รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} เรียบร้อย (ไม่มีงานค้างต้องเลื่อน)`);
+            this.notice.success(`รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} เรียบร้อย (ไม่มีงานค้างต้องเลื่อน)`);
             this.message.set(`รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} เรียบร้อย`);
           }
         }
@@ -175,18 +175,20 @@ export class QueuePage {
         const text = result.message ?? 'ยังไม่ย้ายใบ';
         this.message.set('');
         this.error.set(text);
-        this.notice.show(text);
+        this.notice.error(text);
         return;
       }
       let text = `รับ ${item.ticket.id} ให้ ${item.personLabel} แล้ว`;
       if (result.writebackError) {
         text += ` · เขียนกลับ OpenProject ไม่สำเร็จ: ${result.writebackError}`;
         this.error.set(result.writebackError);
-      } else {
-        this.error.set('');
+        this.message.set(text);
+        this.notice.warning(text);
+        return;
       }
+      this.error.set('');
       this.message.set(text);
-      this.notice.show(text);
+      this.notice.success(text);
     } finally {
       this.accepting.set(false);
     }

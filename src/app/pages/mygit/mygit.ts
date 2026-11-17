@@ -59,10 +59,12 @@ export class MyGitPage {
       this.error.set('');
       const text = 'ซิงก์จากไฟล์ตัวอย่างในเครื่องแล้ว ไม่ได้เขียนคะแนนกลับ';
       this.message.set(text);
-      this.notice.show(text);
+      this.notice.success(text);
     } catch (error) {
       this.message.set('');
-      this.error.set(error instanceof Error ? error.message : 'ซิงก์ไม่สำเร็จ');
+      const text = error instanceof Error ? error.message : 'ซิงก์ไม่สำเร็จ';
+      this.error.set(text);
+      this.notice.error(text);
     }
   }
 
@@ -76,6 +78,7 @@ export class MyGitPage {
       const result = await this.api.syncGitLab();
       if (!result.ok && result.message) {
         this.error.set(result.message);
+        this.notice.error(result.message);
         return;
       }
       await this.scorecard.reloadFromApi();
@@ -98,15 +101,19 @@ export class MyGitPage {
       this.unmatched.set(unmatchedList);
       this.synced.set(true);
       if (errorsList.length > 0) {
-        this.error.set(errorsList.join(' | '));
+        const text = errorsList.join(' | ');
+        this.error.set(text);
+        this.notice.warning(text);
       } else {
         const text = `ซิงก์จาก GitLab API สำเร็จ · จับคู่ ${result.updated ?? matchedList.length} ใบ · ไม่ตรง ${unmatchedList.length} รายการ`;
         this.message.set(text);
-        this.notice.show(text);
+        this.notice.success(text);
       }
     } catch (err) {
       this.message.set('');
-      this.error.set(err instanceof Error ? err.message : 'ซิงก์ GitLab API ไม่สำเร็จ');
+      const text = err instanceof Error ? err.message : 'ซิงก์ GitLab API ไม่สำเร็จ';
+      this.error.set(text);
+      this.notice.error(text);
     } finally {
       this.syncing.set(false);
     }

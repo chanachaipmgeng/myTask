@@ -64,7 +64,7 @@ export class SnapshotCheckPage {
 
   protected async freezeSnapshot(): Promise<void> {
     if (!this.isConfirmed()) {
-      this.notice.show('กรุณาทำเครื่องหมายยืนยันว่าได้ตรวจสอบข้อมูลครบถ้วนแล้ว');
+      this.notice.warning('กรุณาทำเครื่องหมายยืนยันว่าได้ตรวจสอบข้อมูลครบถ้วนแล้ว');
       return;
     }
     this.isFreezing.set(true);
@@ -74,16 +74,16 @@ export class SnapshotCheckPage {
       if (this.scorecard.usingApi() && this.api) {
         const result = await this.api.captureKpiSnapshot(periodType, periodKey);
         if (!result.ok) {
-          this.notice.show(result.message ?? 'แช่แข็ง snapshot ไม่สำเร็จ');
+          this.notice.error(result.message ?? 'แช่แข็ง snapshot ไม่สำเร็จ');
           return;
         }
-        this.notice.show(`บันทึกและแช่แข็งคะแนน KPI งวด ${periodKey} แล้ว ${result.count ?? 0} คน`);
+        this.notice.success(`บันทึกและแช่แข็งคะแนน KPI งวด ${periodKey} แล้ว ${result.count ?? 0} คน`);
       } else {
-        this.notice.show(`โหมดจำลอง: แช่แข็งงวด ${periodKey} ในเครื่องเท่านั้น`);
+        this.notice.info(`โหมดจำลอง: แช่แข็งงวด ${periodKey} ในเครื่องเท่านั้น`);
       }
       void this.router.navigate(['/team']);
     } catch (err) {
-      this.notice.show(err instanceof Error ? err.message : 'แช่แข็ง snapshot ไม่สำเร็จ');
+      this.notice.error(err instanceof Error ? err.message : 'แช่แข็ง snapshot ไม่สำเร็จ');
     } finally {
       this.isFreezing.set(false);
     }
