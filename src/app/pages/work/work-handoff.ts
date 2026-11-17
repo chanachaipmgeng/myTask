@@ -25,6 +25,8 @@ import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { BadgeTone } from '../../shared/ui/badge';
+import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
@@ -42,6 +44,8 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
     PageHeadComponent,
     SectionCardComponent,
     StatusBadgeComponent,
+    FormFieldComponent,
+    FilterChipsComponent,
   ],
   providers: [
     CategoryService,
@@ -74,6 +78,11 @@ export class WorkHandoffPage {
     { text: 'UX-UI / BA', value: 'UXBA' },
     { text: 'Infra / DevOps', value: 'INFRA' },
   ];
+  protected readonly slaChipOptions: FilterChipOption[] = [
+    { id: 'all', label: 'ทั้งหมด' },
+    { id: 'over', label: 'เฉพาะที่เกิน SLA' },
+  ];
+  protected readonly slaChipValue = computed(() => (this.onlyOverSla() ? 'over' : 'all'));
 
   protected readonly report = this.scorecard.handoffReport;
   protected readonly kpis = computed(() => this.report().kpis);
@@ -132,6 +141,10 @@ export class WorkHandoffPage {
 
   protected toggleOverSla(): void {
     this.onlyOverSla.update((v) => !v);
+  }
+
+  protected setSlaChip(value: string): void {
+    this.onlyOverSla.set(value === 'over');
   }
 
   protected pingTarget(ticketId: string, targetName: string): void {

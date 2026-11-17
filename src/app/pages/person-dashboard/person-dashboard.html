@@ -216,6 +216,7 @@
               [theme]="theme.sfTheme()"
               [legendSettings]="pieLegend"
               [tooltip]="pieTooltip"
+              [centerLabel]="slipCenter()"
               [enableAnimation]="true"
             >
               <e-accumulation-series-collection>
@@ -224,8 +225,11 @@
                   [dataSource]="view().slipShare"
                   xName="x"
                   yName="y"
-                  [dataLabel]="dataLabel"
-                  innerRadius="45%"
+                  [dataLabel]="donutLabel"
+                  [palettes]="piePalette"
+                  innerRadius="62%"
+                  radius="80%"
+                  legendShape="Circle"
                 ></e-accumulation-series>
               </e-accumulation-series-collection>
             </ejs-accumulationchart>
@@ -244,6 +248,7 @@
               [theme]="theme.sfTheme()"
               [legendSettings]="pieLegend"
               [tooltip]="pieTooltip"
+              [centerLabel]="categoryCenter()"
               [enableAnimation]="true"
             >
               <e-accumulation-series-collection>
@@ -252,8 +257,11 @@
                   [dataSource]="view().categoryShare"
                   xName="x"
                   yName="y"
-                  [dataLabel]="dataLabel"
-                  innerRadius="45%"
+                  [dataLabel]="donutLabel"
+                  [palettes]="piePalette"
+                  innerRadius="62%"
+                  radius="80%"
+                  legendShape="Circle"
                 ></e-accumulation-series>
               </e-accumulation-series-collection>
             </ejs-accumulationchart>

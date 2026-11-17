@@ -4,19 +4,27 @@
     title="ศูนย์ตรวจสอบการส่งต่อและคอขวดข้ามทีม (Handoff &amp; SLA Inspector)"
     description="วิเคราะห์ระยะเวลาค้างส่งต่องานระหว่าง Dev, Reviewer, QA และ Infra เพื่อแก้ปัญหาคอขวดก่อนหลุดกำหนดส่ง"
   >
-    <div actions class="flex flex-wrap gap-3 items-center">
-      <ejs-dropdownlist
-        [dataSource]="trackOptions"
-        [fields]="{ text: 'text', value: 'value' }"
-        [value]="trackFilter()"
-        (change)="setTrack($event)"
-        width="180px"
-      ></ejs-dropdownlist>
+    <div actions class="flex flex-wrap gap-3 items-end">
+      <app-form-field label="สายงาน" variant="filter">
+        <ejs-dropdownlist
+          [dataSource]="trackOptions"
+          [fields]="{ text: 'text', value: 'value' }"
+          [value]="trackFilter()"
+          (change)="setTrack($event)"
+          width="180px"
+        ></ejs-dropdownlist>
+      </app-form-field>
       <button ejs-button cssClass="e-outline" iconCss="e-icons e-refresh" (click)="scorecard.reloadFromApi()">
         ซิงก์ข้อมูล
       </button>
     </div>
   </app-page-head>
+
+  <app-filter-chips
+    [options]="slaChipOptions"
+    [value]="slaChipValue()"
+    (valueChange)="setSlaChip($event)"
+  ></app-filter-chips>
 
   <div class="kpi-grid-4">
     <app-kpi-stat
@@ -160,13 +168,6 @@
     subtitle="ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล"
   >
     <div actions class="flex flex-wrap gap-2 items-center">
-      <button
-        ejs-button
-        [cssClass]="onlyOverSla() ? 'e-danger' : 'e-outline'"
-        (click)="toggleOverSla()"
-      >
-        {{ onlyOverSla() ? 'แสดงทั้งหมด' : 'เฉพาะที่เกิน SLA' }}
-      </button>
       <button ejs-button cssClass="e-outline" iconCss="e-icons e-export-excel" (click)="exportGrid(handoffGrid)">
         ส่งออก Excel
       </button>

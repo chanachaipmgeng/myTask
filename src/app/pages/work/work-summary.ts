@@ -58,24 +58,35 @@ export class WorkSummary implements AfterViewInit {
   @ViewChildren(ChartComponent) private readonly charts!: QueryList<ChartComponent>;
 
   protected readonly cellSpacing = [12, 12];
-  protected readonly legend = { visible: true, position: 'Bottom' as const };
+  protected readonly legend = {
+    visible: true,
+    position: 'Right' as const,
+    alignment: 'Center' as const,
+    shape: 'Circle' as const,
+    textStyle: { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' },
+  };
   protected readonly tooltip = {
     enable: true,
     shared: true,
     header: '${point.x}',
     format: '${series.name}: <b>${point.y}</b>',
   };
+  protected readonly pieTooltip = {
+    enable: true,
+    format: '${point.x}: <b>${point.y}</b>',
+  };
   protected readonly chartArea = { border: { width: 0 } };
   protected readonly columnCorner = { topLeft: 4, topRight: 4 };
   protected readonly categoryAxis = { valueType: 'Category' as const, majorGridLines: { width: 0 } };
   protected readonly valueAxis = { title: 'MD', majorGridLines: { width: 0 } };
-  protected readonly statusLabel = {
-    visible: true,
-    name: 'text',
-    position: 'Outside' as const,
-    font: { size: '11px' },
-  };
-  protected readonly palette = ['#479ef5', '#62bfff', '#54b054', '#f0b429', '#eeacb2', '#a78bfa', '#94a3b8'];
+  protected readonly donutLabel = { visible: false };
+  protected readonly centerTextStyle = computed(() => ({
+    fontFamily: 'Sarabun, Tahoma, sans-serif',
+    fontWeight: '700',
+    size: '15px',
+    color: this.theme.isDark() ? '#e2e8f0' : '#1e293b',
+  }));
+  protected readonly palette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6', '#94a3b8'];
 
   protected readonly view = computed(() =>
     workSummaryStats(this.scorecard.tickets(), this.scorecard.people(), {
@@ -83,6 +94,16 @@ export class WorkSummary implements AfterViewInit {
       query: this.hub.query(),
     }),
   );
+
+  protected readonly statusCenter = computed(() => {
+    const total = this.view().statusShare.reduce((sum, row) => sum + row.y, 0);
+    return { text: `${total}<br>ใบ`, textStyle: this.centerTextStyle() };
+  });
+
+  protected readonly trackCenter = computed(() => {
+    const total = this.view().trackShare.reduce((sum, row) => sum + row.y, 0);
+    return { text: `${total}<br>ใบ`, textStyle: this.centerTextStyle() };
+  });
 
   protected cardIcon(id: string): string {
     switch (id) {

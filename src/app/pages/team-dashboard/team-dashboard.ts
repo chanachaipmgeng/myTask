@@ -46,6 +46,8 @@ import { ShellNotice } from '../../core/shell-notice';
 import { todayInBangkok } from '../../core/workflow';
 import { TEAM_CONTEXT_2568 } from '../../data/team-context';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
@@ -68,6 +70,8 @@ const LIVE_MODE = 'live';
     KpiStatCardComponent,
     PageHeadComponent,
     SectionCardComponent,
+    FormFieldComponent,
+    FilterChipsComponent,
   ],
   providers: [
     PieSeriesService,
@@ -106,6 +110,11 @@ export class TeamDashboard implements AfterViewInit {
     { text: 'R&D', value: 'RD' },
     { text: 'Implement', value: 'Implement' },
   ];
+  protected readonly trackChipOptions: FilterChipOption[] = [
+    { id: 'All', label: 'ทั้งหมด' },
+    { id: 'RD', label: 'R&D' },
+    { id: 'Implement', label: 'Implement' },
+  ];
   protected readonly captureTypeOptions = [
     { text: 'เดือน', value: 'month' },
     { text: 'ไตรมาส', value: 'quarter' },
@@ -126,22 +135,36 @@ export class TeamDashboard implements AfterViewInit {
   protected readonly snapshotError = signal('');
   protected readonly loadingSnapshot = signal(false);
 
-  protected readonly legend = { visible: true, position: 'Bottom' };
-  protected readonly contextLabel = {
+  /** Legend ขวาแบบ Expense doughnut ใน UI Kit */
+  protected readonly legend = {
     visible: true,
-    name: 'text',
-    position: 'Inside',
-    font: { fontFamily: 'Sarabun, Tahoma, sans-serif', color: '#fffdf8', size: '12px', fontWeight: '600' },
+    position: 'Right',
+    alignment: 'Center',
+    shape: 'Circle',
+    textStyle: { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' },
   };
-  protected readonly sampleLabel = {
-    visible: true,
-    name: 'text',
-    position: 'Outside',
-    font: { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '11px' },
+  /** ซ่อน label นอกวง — อ่านจาก legend + tooltip แทน */
+  protected readonly donutLabel = { visible: false };
+  protected readonly contextTooltip = {
+    enable: true,
+    format: '${point.x}: <b>${point.y}%</b>',
   };
-  protected readonly contextTooltip = { enable: true, format: '${point.x}: ${point.y}%' };
-  protected readonly sampleTooltip = { enable: true, format: '${point.x}: ${point.y} MD' };
-  protected readonly palette = ['#7eb6ff', '#3ec6e0', '#f0b429', '#8fd0c6', '#ff8b7a', '#c4b5fd'];
+  protected readonly sampleTooltip = {
+    enable: true,
+    format: '${point.x}: <b>${point.y}</b> MD',
+  };
+  protected readonly palette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6'];
+  protected readonly centerTextStyle = computed(() => ({
+    fontFamily: 'Sarabun, Tahoma, sans-serif',
+    fontWeight: '700',
+    size: '15px',
+    color: this.theme.isDark() ? '#e2e8f0' : '#1e293b',
+  }));
+
+  protected readonly workloadCenter = computed(() => ({
+    text: `${TEAM_CONTEXT_2568.tasks.toLocaleString('en-US')}<br>งาน`,
+    textStyle: this.centerTextStyle(),
+  }));
   protected readonly target = INDEX_TARGET;
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
@@ -251,6 +274,14 @@ export class TeamDashboard implements AfterViewInit {
     return `${tickets.length} ใบ · ${formatMd(md)} MD`;
   });
 
+  protected readonly sampleCenter = computed(() => {
+    const md = this.samplePoints().reduce((sum, point) => sum + point.y, 0);
+    return {
+      text: `${formatMd(md)}<br>MD`,
+      textStyle: this.centerTextStyle(),
+    };
+  });
+
   protected readonly snapshotTableRows = computed(() => {
     const track = this.track();
     return this.snapshotRows()
@@ -310,7 +341,10 @@ export class TeamDashboard implements AfterViewInit {
   }
 
   protected setTrack(event: { value?: string | null }): void {
-    const value = event.value;
+    this.setTrackChip(event.value ?? '');
+  }
+
+  protected setTrackChip(value: string): void {
     if (value === 'All' || value === 'RD' || value === 'Implement') {
       this.track.set(value);
     }

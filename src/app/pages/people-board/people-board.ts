@@ -33,6 +33,9 @@ import { Track } from '../../core/models';
 import { INDEX_TARGET } from '../../core/scoring';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import {
+  FilterChipOption,
+  FilterChipsComponent,
+  FormFieldComponent,
   SectionCardComponent,
   StatusBadgeComponent,
   toneForAlertLabel,
@@ -56,6 +59,8 @@ type TrackFilter = Track | 'All';
     ProgressBarModule,
     StatusBadgeComponent,
     SectionCardComponent,
+    FormFieldComponent,
+    FilterChipsComponent,
   ],
   providers: [
     PageService,
@@ -105,6 +110,16 @@ export class PeopleBoard {
   });
   protected readonly track = signal<TrackFilter>('All');
   protected readonly query = signal('');
+  protected readonly trackChipOptions = computed<FilterChipOption[]>(() => {
+    const rows = this.roster();
+    const rd = rows.filter((row) => row.track === 'RD').length;
+    const imp = rows.filter((row) => row.track === 'Implement').length;
+    return [
+      { id: 'All', label: 'ทั้งหมด', count: rows.length },
+      { id: 'RD', label: 'R&D', count: rd },
+      { id: 'Implement', label: 'Implement', count: imp },
+    ];
+  });
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly primaryXAxis = {
     valueType: 'Category',
@@ -168,7 +183,10 @@ export class PeopleBoard {
   });
 
   protected setTrack(event: { value?: string | null }): void {
-    const value = event.value;
+    this.setTrackChip(event.value ?? '');
+  }
+
+  protected setTrackChip(value: string): void {
     if (value === 'All' || value === 'RD' || value === 'Implement') {
       this.track.set(value);
     }

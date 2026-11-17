@@ -4,8 +4,7 @@
     description="ตัวเลขปี {{ context.yearLabel }} เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง เส้นรายเดือน และแท่งโควตา เป้า {{ target }} อยู่บนเส้นรายเดือน · เลือก snapshot เพื่อดูดัชนีที่แช่แข็งตามเดือน/ไตรมาส"
   >
     <div actions class="flex flex-wrap items-end gap-3">
-      <label class="filter">
-        <span>มุมมองคะแนน</span>
+      <app-form-field label="มุมมองคะแนน" variant="filter">
         <ejs-dropdownlist
           [dataSource]="periodOptions()"
           [fields]="fields"
@@ -13,25 +12,19 @@
           (change)="setPeriodMode($event)"
           width="260px"
         ></ejs-dropdownlist>
-      </label>
-      <label class="filter">
-        <span>สายงาน</span>
-        <ejs-dropdownlist
-          [dataSource]="trackOptions"
-          [fields]="fields"
-          [value]="track()"
-          (change)="setTrack($event)"
-          width="180px"
-        ></ejs-dropdownlist>
-      </label>
+      </app-form-field>
+      <app-filter-chips
+        [options]="trackChipOptions"
+        [value]="track()"
+        (valueChange)="setTrackChip($event)"
+      ></app-filter-chips>
     </div>
   </app-page-head>
 
   @if (canCapture()) {
     <app-section-card [showHead]="false">
       <div class="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
-        <label class="filter">
-          <span>จับ snapshot</span>
+        <app-form-field label="จับ snapshot" variant="filter">
           <ejs-dropdownlist
             [dataSource]="captureTypeOptions"
             [fields]="fields"
@@ -39,16 +32,17 @@
             (change)="setCaptureType($event)"
             width="140px"
           ></ejs-dropdownlist>
-        </label>
-        <label class="filter grow">
-          <span>รหัสช่วง</span>
-          <ejs-textbox
-            [value]="captureKey()"
-            (change)="onCaptureKey($event)"
-            placeholder="2025-10 หรือ 2025-Q3"
-            width="100%"
-          ></ejs-textbox>
-        </label>
+        </app-form-field>
+        <div class="grow min-w-[12rem]">
+          <app-form-field label="รหัสช่วง" variant="filter">
+            <ejs-textbox
+              [value]="captureKey()"
+              (change)="onCaptureKey($event)"
+              placeholder="2025-10 หรือ 2025-Q3"
+              width="100%"
+            ></ejs-textbox>
+          </app-form-field>
+        </div>
         <button
           ejs-button
           [isPrimary]="true"
@@ -181,22 +175,23 @@
         <div class="e-panel-content">
           <ejs-accumulationchart
             id="team-workload-donut"
-            style="display: block; height: 220px; width: 100%"
+            style="display: block; height: 240px; width: 100%"
             [theme]="theme.sfTheme()"
             [legendSettings]="legend"
             [tooltip]="contextTooltip"
+            [centerLabel]="workloadCenter()"
             [enableAnimation]="true"
-            [enableSmartLabels]="true"
           >
             <e-accumulation-series-collection>
-              <!-- This Syncfusion build draws a doughnut as a pie series with innerRadius. -->
               <e-accumulation-series
                 type="Pie"
                 [dataSource]="context.workload"
                 xName="x"
                 yName="y"
-                innerRadius="58%"
-                [dataLabel]="contextLabel"
+                innerRadius="62%"
+                radius="80%"
+                legendShape="Circle"
+                [dataLabel]="donutLabel"
                 [palettes]="palette"
               ></e-accumulation-series>
             </e-accumulation-series-collection>
@@ -211,22 +206,23 @@
           <p class="kpi-note">{{ sampleSummary() }} จากใบตัวอย่าง ไม่ใช่ 1,319 งาน</p>
           <ejs-accumulationchart
             id="team-sample-donut"
-            style="display: block; height: 220px; width: 100%"
+            style="display: block; height: 240px; width: 100%"
             [theme]="theme.sfTheme()"
             [legendSettings]="legend"
             [tooltip]="sampleTooltip"
+            [centerLabel]="sampleCenter()"
             [enableAnimation]="true"
-            [enableSmartLabels]="true"
           >
             <e-accumulation-series-collection>
-              <!-- This Syncfusion build draws a doughnut as a pie series with innerRadius. -->
               <e-accumulation-series
                 type="Pie"
                 [dataSource]="samplePoints()"
                 xName="x"
                 yName="y"
-                innerRadius="52%"
-                [dataLabel]="sampleLabel"
+                innerRadius="62%"
+                radius="80%"
+                legendShape="Circle"
+                [dataLabel]="donutLabel"
                 [palettes]="palette"
               ></e-accumulation-series>
             </e-accumulation-series-collection>

@@ -6,20 +6,14 @@
     </div>
     <div class="flex flex-wrap gap-3 items-end">
       <a ejs-button cssClass="e-outline" routerLink="/tickets">ตารางคะแนนใบงาน (/tickets)</a>
-      <label class="filter">
-        <span>สายงาน</span>
-        <ejs-dropdownlist
-          [dataSource]="trackOptions"
-          [fields]="fields"
-          [value]="filter.track()"
-          (change)="setTrack($event)"
-          width="160px"
-        ></ejs-dropdownlist>
-      </label>
-      <label class="filter">
-        <span>ค้นหา</span>
+      <app-filter-chips
+        [options]="trackChipOptions"
+        [value]="filter.track()"
+        (valueChange)="setTrackChip($event)"
+      ></app-filter-chips>
+      <app-form-field label="ค้นหา" variant="filter">
         <ejs-textbox placeholder="รหัสหรือชื่อใบ" (change)="setQuery($event)" width="220px"></ejs-textbox>
-      </label>
+      </app-form-field>
     </div>
   </div>
 

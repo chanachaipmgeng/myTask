@@ -146,14 +146,25 @@ export class PersonDashboard {
     border: { width: 1, color: '#f0b429' },
   };
   protected readonly columnCorner = { topLeft: 4, topRight: 4 };
-  protected readonly pieLegend = { visible: true, position: 'Bottom', textStyle: this.axisFont };
-  protected readonly pieTooltip = { enable: true };
-  protected readonly dataLabel = {
+  protected readonly pieLegend = {
     visible: true,
-    name: 'text',
-    position: 'Outside',
-    font: this.axisFont,
+    position: 'Right',
+    alignment: 'Center',
+    shape: 'Circle',
+    textStyle: this.axisFont,
   };
+  protected readonly pieTooltip = {
+    enable: true,
+    format: '${point.x}: <b>${point.y}</b>',
+  };
+  protected readonly donutLabel = { visible: false };
+  protected readonly piePalette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6'];
+  protected readonly centerTextStyle = computed(() => ({
+    fontFamily: 'Sarabun, Tahoma, sans-serif',
+    fontWeight: '700',
+    size: '15px',
+    color: this.theme.isDark() ? '#e2e8f0' : '#1e293b',
+  }));
 
   protected readonly view = computed(() => {
     const person = this.scorecard.roster().find((item) => item.id === this.personId());
@@ -166,6 +177,17 @@ export class PersonDashboard {
   protected readonly mdComposition = computed(() =>
     mdCompositionTrend(this.scorecard.tickets(), this.personId()),
   );
+
+  protected readonly slipCenter = computed(() => {
+    const total = this.view().slipShare.reduce((sum, row) => sum + row.y, 0);
+    return { text: `${total}<br>ใบ`, textStyle: this.centerTextStyle() };
+  });
+
+  protected readonly categoryCenter = computed(() => {
+    const total = this.view().categoryShare.reduce((sum, row) => sum + row.y, 0);
+    const rounded = Math.round(total * 10) / 10;
+    return { text: `${rounded}<br>MD`, textStyle: this.centerTextStyle() };
+  });
 
   protected readonly prevPerson = computed(() => {
     const list = this.scorecard.people();

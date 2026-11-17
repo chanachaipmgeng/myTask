@@ -2,9 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { filter, map, startWith } from 'rxjs';
+import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { WorkHubFilter } from './work-hub-filter';
 
 const TABS = [
@@ -19,7 +20,15 @@ const TABS = [
 @Component({
   selector: 'app-work-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, DropDownListModule, TextBoxModule],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    ButtonModule,
+    TextBoxModule,
+    FilterChipsComponent,
+    FormFieldComponent,
+  ],
   providers: [WorkHubFilter],
   templateUrl: './work-shell.html',
 })
@@ -27,11 +36,10 @@ export class WorkShell {
   private readonly router = inject(Router);
   protected readonly filter = inject(WorkHubFilter);
 
-  protected readonly fields = { text: 'text', value: 'value' };
-  protected readonly trackOptions = [
-    { text: 'ทั้งหมด', value: 'All' },
-    { text: 'Implement', value: 'Implement' },
-    { text: 'R&D', value: 'RD' },
+  protected readonly trackChipOptions: FilterChipOption[] = [
+    { id: 'All', label: 'ทั้งหมด' },
+    { id: 'Implement', label: 'Implement' },
+    { id: 'RD', label: 'R&D' },
   ];
   protected readonly tabs = TABS;
 
@@ -50,8 +58,7 @@ export class WorkShell {
     return found?.path ?? 'summary';
   });
 
-  protected setTrack(event: { value?: string | null }): void {
-    const value = event.value;
+  protected setTrackChip(value: string): void {
     if (value === 'All' || value === 'Implement' || value === 'RD') {
       this.filter.track.set(value);
     }

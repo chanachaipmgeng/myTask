@@ -9,20 +9,14 @@
       </p>
     </div>
     <div class="flex flex-wrap gap-3 items-end">
-      <label class="filter">
-        <span>สายงาน</span>
-        <ejs-dropdownlist
-          [dataSource]="trackOptions"
-          [fields]="fields"
-          [value]="track()"
-          (change)="setTrack($event)"
-          width="180px"
-        ></ejs-dropdownlist>
-      </label>
-      <label class="filter">
-        <span>ค้นหาชื่อ</span>
+      <app-filter-chips
+        [options]="trackChipOptions()"
+        [value]="track()"
+        (valueChange)="setTrackChip($event)"
+      ></app-filter-chips>
+      <app-form-field label="ค้นหาชื่อ" variant="filter">
         <ejs-textbox placeholder="ชื่อหรือบทบาท" (change)="setQuery($event)" width="200px"></ejs-textbox>
-      </label>
+      </app-form-field>
     </div>
   </div>
 
