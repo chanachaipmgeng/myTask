@@ -1,12 +1,12 @@
-<div class="section-card">
+<div class="e-card section-card" [attr.data-variant]="variant">
   @if (hasHead) {
-    <div class="section-card-head">
-      <div class="section-card-copy">
+    <div class="e-card-header section-card-head">
+      <div class="e-card-header-caption section-card-copy">
         @if (title) {
-          <h3>{{ title }}</h3>
+          <div class="e-card-header-title">{{ title }}</div>
         }
         @if (subtitle) {
-          <p class="fine">{{ subtitle }}</p>
+          <p class="fine section-card-subtitle">{{ subtitle }}</p>
         }
       </div>
       <div class="section-card__actions">
@@ -17,5 +17,7 @@
       </div>
     </div>
   }
-  <ng-content></ng-content>
+  <div class="e-card-content section-card-body">
+    <ng-content></ng-content>
+  </div>
 </div>

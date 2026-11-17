@@ -1,14 +1,9 @@
 <section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>แดชบอร์ดทีม</h2>
-      <p>
-        ตัวเลขปี {{ context.yearLabel }} เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง
-        เส้นรายเดือน และแท่งโควตา เป้า {{ target }} อยู่บนเส้นรายเดือน · เลือก snapshot
-        เพื่อดูดัชนีที่แช่แข็งตามเดือน/ไตรมาส
-      </p>
-    </div>
-    <div class="flex flex-wrap items-end gap-3">
+  <app-page-head
+    title="แดชบอร์ดทีม"
+    description="ตัวเลขปี {{ context.yearLabel }} เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง เส้นรายเดือน และแท่งโควตา เป้า {{ target }} อยู่บนเส้นรายเดือน · เลือก snapshot เพื่อดูดัชนีที่แช่แข็งตามเดือน/ไตรมาส"
+  >
+    <div actions class="flex flex-wrap items-end gap-3">
       <label class="filter">
         <span>มุมมองคะแนน</span>
         <ejs-dropdownlist
@@ -30,11 +25,11 @@
         ></ejs-dropdownlist>
       </label>
     </div>
-  </div>
+  </app-page-head>
 
   @if (canCapture()) {
-    <div class="e-card">
-      <div class="e-card-content flex flex-col gap-3 p-4 md:flex-row md:flex-wrap md:items-end">
+    <app-section-card [showHead]="false">
+      <div class="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
         <label class="filter">
           <span>จับ snapshot</span>
           <ejs-dropdownlist
@@ -69,7 +64,7 @@
           </span>
         }
       </div>
-    </div>
+    </app-section-card>
   }
 
   @if (snapshotMessage()) {
@@ -80,30 +75,25 @@
   }
 
   @if (!viewingLive()) {
-    <div class="e-card">
-      <div class="e-card-header">
-        <div class="e-card-title">ดัชนีแช่แข็งจาก snapshot</div>
-      </div>
-      <div class="e-card-content p-4">
-        @if (loadingSnapshot()) {
-          <p class="kpi-note m-0">กำลังโหลด…</p>
-        } @else if (snapshotTableRows().length === 0) {
-          <p class="kpi-note m-0">ยังไม่มีแถวในช่วงนี้</p>
-        } @else {
-          <ejs-grid [dataSource]="snapshotTableRows()" [allowSorting]="true" [allowResizing]="true" height="320">
-            <e-columns>
-              <e-column field="nickname" headerText="คน" width="140"></e-column>
-              <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
-              <e-column field="index" headerText="ดัชนี" width="100" textAlign="Right" format="N1"></e-column>
-              <e-column field="closedCount" headerText="ใบปิด" width="90" textAlign="Right"></e-column>
-              <e-column field="closedMd" headerText="MD ปิด" width="100" textAlign="Right" format="N2"></e-column>
-              <e-column field="planIndex" headerText="แผน %" width="100" textAlign="Right" format="N1"></e-column>
-              <e-column field="weighted" headerText="ถ่วงใบ" width="100" textAlign="Right" format="N1"></e-column>
-            </e-columns>
-          </ejs-grid>
-        }
-      </div>
-    </div>
+    <app-section-card title="ดัชนีแช่แข็งจาก snapshot">
+      @if (loadingSnapshot()) {
+        <p class="kpi-note m-0">กำลังโหลด…</p>
+      } @else if (snapshotTableRows().length === 0) {
+        <p class="kpi-note m-0">ยังไม่มีแถวในช่วงนี้</p>
+      } @else {
+        <ejs-grid [dataSource]="snapshotTableRows()" [allowSorting]="true" [allowResizing]="true" height="320">
+          <e-columns>
+            <e-column field="nickname" headerText="คน" width="140"></e-column>
+            <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
+            <e-column field="index" headerText="ดัชนี" width="100" textAlign="Right" format="N1"></e-column>
+            <e-column field="closedCount" headerText="ใบปิด" width="90" textAlign="Right"></e-column>
+            <e-column field="closedMd" headerText="MD ปิด" width="100" textAlign="Right" format="N2"></e-column>
+            <e-column field="planIndex" headerText="แผน %" width="100" textAlign="Right" format="N1"></e-column>
+            <e-column field="weighted" headerText="ถ่วงใบ" width="100" textAlign="Right" format="N1"></e-column>
+          </e-columns>
+        </ejs-grid>
+      }
+    </app-section-card>
   }
 
   <ejs-dashboardlayout
@@ -254,9 +244,9 @@
             } @else {
               <div class="grid grid-cols-1 gap-2">
                 @for (alert of alerts(); track alert.id) {
-                  <div class="e-card">
-                    <div class="e-card-content p-3">{{ alert.message }}</div>
-                  </div>
+                  <app-section-card variant="nested" [showHead]="false">
+                    <p class="m-0">{{ alert.message }}</p>
+                  </app-section-card>
                 }
               </div>
             }
@@ -271,13 +261,13 @@
           <div class="e-panel-content panel-scroll">
             <div class="grid grid-cols-1 gap-2">
               @for (item of explanations(); track item.id) {
-                <div class="e-card">
-                  <div class="e-card-content flex flex-col gap-1 p-3">
-                    <span class="kpi-inline">{{ item.value }} {{ item.label }}</span>
-                    <span>{{ item.meaning }}</span>
-                    <span class="kpi-note">{{ item.criterion }}</span>
-                  </div>
-                </div>
+                <app-section-card
+                  variant="nested"
+                  [title]="item.value + ' ' + item.label"
+                  [subtitle]="item.criterion"
+                >
+                  <p class="m-0">{{ item.meaning }}</p>
+                </app-section-card>
               }
             </div>
           </div>

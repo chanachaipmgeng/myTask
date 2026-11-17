@@ -12,12 +12,13 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { workGanttTasks } from '../../core/work-views';
+import { SectionCardComponent } from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-timeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GanttAllModule, MessageModule],
+  imports: [GanttAllModule, MessageModule, SectionCardComponent],
   providers: [SelectionService, DayMarkersService, EditService, ToolbarService],
   templateUrl: './work-timeline.html',
 })

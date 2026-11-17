@@ -1,33 +1,31 @@
 <section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>ซิงก์ mygit (GitLab MR)</h2>
-      <p>
-        ดึงข้อมูล Merge Request / รอบรีวิว / reopen และลิงก์ MR จากไฟล์ตัวอย่างในเครื่อง หรือจาก GitLab API v4
-        เพื่อเติมลงใบงานที่จับคู่รหัสได้ (ไม่นับจำนวนไฟล์หรือจำนวน commit เป็นคะแนน)
-      </p>
-    </div>
+  <app-page-head
+    title="ซิงก์ mygit (GitLab MR)"
+    description="ดึงข้อมูล Merge Request / รอบรีวิว / reopen และลิงก์ MR จากไฟล์ตัวอย่างในเครื่อง หรือจาก GitLab API v4 เพื่อเติมลงใบงานที่จับคู่รหัสได้ (ไม่นับจำนวนไฟล์หรือจำนวน commit เป็นคะแนน)"
+  >
     @if (gitlabInfo(); as info) {
-      <span class="e-badge" [class.e-badge-success]="info.configured && info.enabled" [class.e-badge-secondary]="!info.configured || !info.enabled">
+      <span
+        actions
+        class="e-badge"
+        [class.e-badge-success]="info.configured && info.enabled"
+        [class.e-badge-secondary]="!info.configured || !info.enabled"
+      >
         {{ info.configured && info.enabled ? 'GitLab API พร้อมซิงก์' : 'โหมดไฟล์ตัวอย่าง' }}
       </span>
     }
-  </div>
+  </app-page-head>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>สั่งซิงก์ข้อมูล Merge Request</h3>
-        <p class="fine">เลือกดึงจากไฟล์ตัวอย่างในเครื่องเพื่อทดสอบ หรือดึงจาก GitLab API v4 จริง</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <button ejs-button [isPrimary]="true" type="button" id="mygit-sync" (click)="sync()">ซิงก์จากไฟล์ตัวอย่าง</button>
-        @if (canSyncApi()) {
-          <button ejs-button cssClass="e-info" type="button" id="mygit-sync-api" [disabled]="syncing()" (click)="syncFromGitLabApi()">
-            ซิงก์ MR จาก GitLab API
-          </button>
-        }
-      </div>
+  <app-section-card
+    title="สั่งซิงก์ข้อมูล Merge Request"
+    subtitle="เลือกดึงจากไฟล์ตัวอย่างในเครื่องเพื่อทดสอบ หรือดึงจาก GitLab API v4 จริง"
+  >
+    <div actions class="flex flex-wrap gap-2">
+      <button ejs-button [isPrimary]="true" type="button" id="mygit-sync" (click)="sync()">ซิงก์จากไฟล์ตัวอย่าง</button>
+      @if (canSyncApi()) {
+        <button ejs-button cssClass="e-info" type="button" id="mygit-sync-api" [disabled]="syncing()" (click)="syncFromGitLabApi()">
+          ซิงก์ MR จาก GitLab API
+        </button>
+      }
     </div>
 
     @if (message()) {
@@ -40,17 +38,15 @@
     @if (!synced()) {
       <ejs-message content="ยังไม่ได้ซิงก์ กดปุ่มด้านบนเพื่ออ่านไฟล์ตัวอย่างในเครื่อง หรือดึงจาก GitLab API" severity="Info" variant="Outlined"></ejs-message>
     }
-  </div>
+  </app-section-card>
 
   @if (synced()) {
-    <div class="section-card">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>ใบงานที่จับคู่ MR ได้</h3>
-          <p class="fine">อัปเดตลิงก์ MR, รอบรีวิว และจำนวน Reopen ลงในใบงานอัตโนมัติ</p>
-        </div>
-        <span class="e-badge e-badge-success e-badge-pill">{{ matched().length }} รายการ</span>
-      </div>
+    <app-section-card
+      title="ใบงานที่จับคู่ MR ได้"
+      subtitle="อัปเดตลิงก์ MR, รอบรีวิว และจำนวน Reopen ลงในใบงานอัตโนมัติ"
+      [badge]="matched().length + ' รายการ'"
+      badgeTone="success"
+    >
       <ejs-grid [dataSource]="matched()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="220">
         <e-columns>
           <e-column field="sha" headerText="Commit / MR" width="120"></e-column>
@@ -64,16 +60,14 @@
           <e-column field="message" headerText="ข้อความ" width="260"></e-column>
         </e-columns>
       </ejs-grid>
-    </div>
+    </app-section-card>
 
-    <div class="section-card">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>Commit / MR ที่จับใบงานไม่ได้</h3>
-          <p class="fine">รายการที่ไม่มีรหัสใบงานตรงกับระบบ</p>
-        </div>
-        <span class="e-badge e-badge-warning e-badge-pill">{{ unmatched().length }} รายการ</span>
-      </div>
+    <app-section-card
+      title="Commit / MR ที่จับใบงานไม่ได้"
+      subtitle="รายการที่ไม่มีรหัสใบงานตรงกับระบบ"
+      [badge]="unmatched().length + ' รายการ'"
+      badgeTone="warning"
+    >
       <ejs-grid [dataSource]="unmatched()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="180">
         <e-columns>
           <e-column field="sha" headerText="Commit / MR" width="120"></e-column>
@@ -82,6 +76,6 @@
           <e-column field="message" headerText="ข้อความ" width="320"></e-column>
         </e-columns>
       </ejs-grid>
-    </div>
+    </app-section-card>
   }
 </section>

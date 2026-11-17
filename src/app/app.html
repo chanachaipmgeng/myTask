@@ -166,15 +166,14 @@
           <p class="fine m-0 text-center py-4">ไม่พบรายการแจ้งเตือนที่ตรงกับคำค้นหา</p>
         } @else {
           @for (alert of filteredAlerts(); track alert.id) {
-            <div class="e-card">
-              <div class="e-card-content flex flex-col gap-2 p-3">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="font-bold text-cyan">{{ alert.ticketId }}</span>
-                  <span class="e-badge e-badge-warning e-badge-pill">{{ alert.shortLabel }}</span>
-                </div>
-                <p class="m-0 text-sm">{{ alert.message }}</p>
-              </div>
-            </div>
+            <app-section-card
+              variant="nested"
+              [title]="alert.ticketId"
+              [badge]="alert.shortLabel"
+              badgeTone="warning"
+            >
+              <p class="m-0 text-sm">{{ alert.message }}</p>
+            </app-section-card>
           }
         }
       </div>

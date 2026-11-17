@@ -1,14 +1,11 @@
-<div class="section-card">
-  <div class="section-card-head">
-    <div class="section-card-copy">
-      <h3>รายการงานรอจัดสรร (Backlog)</h3>
-      <p class="fine">ใบใน Backlog หรือยังไม่มีผู้รับ &middot; สำหรับจัดคิวเต็มรูปแบบไปที่คิวงานใหม่</p>
-    </div>
-    <div class="flex flex-wrap items-center gap-2">
-      <span class="e-badge e-badge-info e-badge-pill">{{ rows().length }} ใบ</span>
-      <a ejs-button cssClass="e-outline e-small" routerLink="/queue">เปิดคิวงานใหม่</a>
-    </div>
-  </div>
+<app-section-card
+  title="รายการงานรอจัดสรร (Backlog)"
+  subtitle="ใบใน Backlog หรือยังไม่มีผู้รับ · สำหรับจัดคิวเต็มรูปแบบไปที่คิวงานใหม่"
+  [badge]="rows().length + ' ใบ'"
+  badgeTone="info"
+>
+  <a actions ejs-button cssClass="e-outline e-small" routerLink="/queue">เปิดคิวงานใหม่</a>
+
   @if (rows().length === 0) {
     <p class="fine">ไม่มีใบใน Backlog ตามตัวกรองปัจจุบัน</p>
   } @else {
@@ -50,4 +47,4 @@
       </e-aggregates>
     </ejs-grid>
   }
-</div>
+</app-section-card>

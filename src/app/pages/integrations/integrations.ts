@@ -14,6 +14,8 @@ import {
 import { canEditAdmin } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { WORKFLOW_STATUSES } from '../../core/models';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
 type CustomFieldKey =
   | 'size'
@@ -71,6 +73,8 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
     GridModule,
     TabModule,
     MessageModule,
+    PageHeadComponent,
+    SectionCardComponent,
   ],
   providers: [PageService],
   templateUrl: './integrations.html',

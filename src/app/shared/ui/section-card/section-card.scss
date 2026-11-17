@@ -1,6 +1,7 @@
 :host {
   display: block;
   min-width: 0;
+  height: 100%;
 }
 
 .section-card__actions {
@@ -8,4 +9,5 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  flex: none;
 }

@@ -7,11 +7,13 @@ import { ApiClient, GitLabIntegration } from '../../core/api-client';
 import { ShellNotice } from '../../core/shell-notice';
 import { MyGitMatch, MyGitSyncAdapter, MyGitUnmatched } from '../../core/mygit-sync';
 import { ScorecardService } from '../../core/scorecard.service';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
 @Component({
   selector: 'app-mygit',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, ButtonModule, MessageModule],
+  imports: [GridModule, ButtonModule, MessageModule, PageHeadComponent, SectionCardComponent],
   providers: [PageService],
   templateUrl: './mygit.html',
 })

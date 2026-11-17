@@ -32,7 +32,13 @@ import { ThemeService } from '../../core/theme.service';
 import { Track } from '../../core/models';
 import { INDEX_TARGET } from '../../core/scoring';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
-import { StatusBadgeComponent, toneForAlertLabel, trackToneMap, type BadgeTone } from '../../shared/ui';
+import {
+  SectionCardComponent,
+  StatusBadgeComponent,
+  toneForAlertLabel,
+  trackToneMap,
+  type BadgeTone,
+} from '../../shared/ui';
 
 type TrackFilter = Track | 'All';
 
@@ -49,6 +55,7 @@ type TrackFilter = Track | 'All';
     KpiStatCardComponent,
     ProgressBarModule,
     StatusBadgeComponent,
+    SectionCardComponent,
   ],
   providers: [
     PageService,

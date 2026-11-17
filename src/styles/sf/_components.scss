@@ -242,6 +242,30 @@ body.e-light-mode .e-dlg-overlay {
   min-width: min(100%, 280px);
 }
 
+// -----------------------------------------------------------------------------
+// Section cards — Syncfusion e-card + .section-card (อย่าทับ .e-card ทั้งโปรเจกต์)
+// -----------------------------------------------------------------------------
+.e-card.section-card {
+  .e-card-header {
+    background: transparent;
+  }
+
+  .e-card-header-caption {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .e-card-content {
+    background: transparent;
+  }
+}
+
+.card-grid-2 > app-section-card,
+.card-grid-3 > app-section-card {
+  min-width: 0;
+  height: 100%;
+}
+
 .e-dashboardlayout .e-panel-content.panel-scroll {
   overflow: auto;
 }

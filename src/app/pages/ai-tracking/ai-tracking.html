@@ -1,21 +1,11 @@
 <section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>ติดตามงาน AI</h2>
-      <p>
-        เฉพาะใบ Spike, AI, myBOX และ AI Agent. ไม่ใช่คะแนนชุดใหม่.
-        สัดส่วน Spike ใช้สูตร R&amp;D เดิม คือ MD ของใบ Spike ต่อ MD ที่วางไว้.
-      </p>
-    </div>
-  </div>
+  <app-page-head
+    title="ติดตามงาน AI"
+    description="เฉพาะใบ Spike, AI, myBOX และ AI Agent. ไม่ใช่คะแนนชุดใหม่. สัดส่วน Spike ใช้สูตร R&amp;D เดิม คือ MD ของใบ Spike ต่อ MD ที่วางไว้."
+  ></app-page-head>
 
-  <div class="e-card" id="ai-spike-ratio" [attr.data-ratio]="share().ratio">
-    <div class="e-card-header">
-      <div class="e-card-header-caption">
-        <div class="e-card-header-title">สัดส่วน Spike ของ R&amp;D</div>
-      </div>
-    </div>
-    <div class="e-card-content p-4 flex flex-col gap-2">
+  <app-section-card id="ai-spike-ratio" title="สัดส่วน Spike ของ R&amp;D" [attr.data-ratio]="share().ratio">
+    <div class="flex flex-col gap-2">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <span>{{ share().percentLabel }} ({{ share().spikeMd }} / {{ share().plannedMd }} MD)</span>
         <span class="e-badge e-badge-info">{{ share().bandLabel }}</span>
@@ -36,16 +26,14 @@
       ></ejs-progressbar>
       <p class="fine m-0 pt-1">MD ในมุมนี้ {{ trackedMd() }} &middot; MD ที่ปิดแล้ว {{ acceptedMd() }}</p>
     </div>
-  </div>
+  </app-section-card>
 
   <div class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-    <div class="section-card xl:col-span-5">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>กราฟเปรียบเทียบ MD รายใบงาน AI / Spike</h3>
-          <p class="fine">ปริมาณ Man-day ที่ใช้ในงานวิจัยและ AI</p>
-        </div>
-      </div>
+    <app-section-card
+      class="xl:col-span-5"
+      title="กราฟเปรียบเทียบ MD รายใบงาน AI / Spike"
+      subtitle="ปริมาณ Man-day ที่ใช้ในงานวิจัยและ AI"
+    >
       <div class="chart-frame m-0">
         <ejs-chart
           id="ai-md-chart"
@@ -71,16 +59,15 @@
           </e-series-collection>
         </ejs-chart>
       </div>
-    </div>
+    </app-section-card>
 
-    <div class="section-card xl:col-span-7">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>รายการใบงาน AI และ Spike</h3>
-          <p class="fine">ตารางรายละเอียดใบงานพร้อมผลรวม MD ท้ายตาราง</p>
-        </div>
-        <span class="e-badge e-badge-info e-badge-pill">{{ points().length }} ใบ</span>
-      </div>
+    <app-section-card
+      class="xl:col-span-7"
+      title="รายการใบงาน AI และ Spike"
+      subtitle="ตารางรายละเอียดใบงานพร้อมผลรวม MD ท้ายตาราง"
+      [badge]="points().length + ' ใบ'"
+      badgeTone="info"
+    >
       <ejs-grid
         id="ai-tickets-grid"
         [dataSource]="points()"
@@ -109,6 +96,6 @@
           </e-aggregate>
         </e-aggregates>
       </ejs-grid>
-    </div>
+    </app-section-card>
   </div>
 </section>

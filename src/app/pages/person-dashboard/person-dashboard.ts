@@ -27,6 +27,7 @@ import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
 
 interface OlsDataPoint {
   month: string;
@@ -42,7 +43,17 @@ interface OlsSummaryInfo {
 @Component({
   selector: 'app-person-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChartModule, AccumulationChartModule, ButtonModule, MessageModule, GridModule, KpiStatCardComponent, TextBoxModule],
+  imports: [
+    ChartModule,
+    AccumulationChartModule,
+    ButtonModule,
+    MessageModule,
+    GridModule,
+    KpiStatCardComponent,
+    TextBoxModule,
+    PageHeadComponent,
+    SectionCardComponent,
+  ],
   providers: [
     CategoryService,
     LineSeriesService,

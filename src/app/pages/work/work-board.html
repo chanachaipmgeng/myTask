@@ -135,8 +135,8 @@
             สถานะ: {{ ticket.workflowStatus }} · เริ่ม: {{ ticket.actualStartOn || '—' }} · Reopen: {{ ticket.reopenCount }}
           </p>
         </div>
-        <div class="e-card md:col-span-2">
-          <div class="e-card-content p-3 flex flex-col gap-2">
+        <app-section-card variant="nested" [showHead]="false" class="md:col-span-2">
+          <div class="flex flex-col gap-2">
           <span class="text-xs font-semibold">ประวัติและการส่งมอบ (Delivery &amp; Activity Log)</span>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
             <div class="flex flex-col gap-0.5">
@@ -172,7 +172,7 @@
             </div>
           }
           </div>
-        </div>
+        </app-section-card>
         <label class="grid gap-1">
           <span class="fine">สายงาน (Discipline)</span>
           <ejs-dropdownlist
@@ -212,8 +212,8 @@
             (change)="setDue($event)"
           ></ejs-datepicker>
         </label>
-        <div class="e-card md:col-span-2">
-          <div class="e-card-content p-3 flex flex-col gap-2">
+        <app-section-card variant="nested" [showHead]="false" class="md:col-span-2">
+          <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between gap-2">
             <ejs-checkbox
               label="งานสั่งตรงจาก MD (MD Mandate) — ได้รับสิทธิ์ Auto-Pause คุ้มครองคะแนนงานเดิม"
@@ -242,7 +242,7 @@
             </div>
           }
           </div>
-        </div>
+        </app-section-card>
         <label class="grid gap-1 md:col-span-2">
           <span class="fine">ลิงก์ MR (จำเป็นก่อนเข้า Code Review)</span>
           <ejs-textbox [value]="mrLink()" (change)="setMr($event)" placeholder="https://git.local/mr/..."></ejs-textbox>
@@ -304,8 +304,7 @@
         variant="Outlined"
         [content]="'ใบงานด่วนสั่งตรงจาก MD: ' + (pendingMdTicket()?.id ?? '') + ' (ประมาณการ ' + (pendingMdTicket()?.estimateMd ?? 1) + ' MD) — พบงาน In Progress / Reopened ในมือ ' + conflictingWipTickets().length + ' ใบ'"
       ></ejs-message>
-      <div class="e-card">
-        <div class="e-card-content p-3">
+      <app-section-card variant="nested" [showHead]="false">
           <ul class="m-0 pl-4 text-xs list-disc space-y-1">
             @for (ticket of conflictingWipTickets(); track ticket.id) {
               <li>
@@ -314,8 +313,7 @@
               </li>
             }
           </ul>
-        </div>
-      </div>
+      </app-section-card>
 
       <p class="text-sm font-medium m-0">
         ต้องการพักเวลา (Pause Clock) และเลื่อนกำหนดส่งแรก (firstDueOn) ของงานเดิมออกไปอีก

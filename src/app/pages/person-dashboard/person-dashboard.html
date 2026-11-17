@@ -1,21 +1,24 @@
 <section class="page flex flex-col gap-4">
   @if (!view().found) {
-    <div class="section-card">
-      <h2>ไม่พบพนักงานนี้</h2>
-      <div>
-        <button ejs-button cssClass="e-outline" type="button" (click)="back()">กลับรายชื่อพนักงาน</button>
-      </div>
-    </div>
+    <app-section-card title="ไม่พบพนักงานนี้">
+      <button ejs-button cssClass="e-outline" type="button" (click)="back()">กลับรายชื่อพนักงาน</button>
+    </app-section-card>
   } @else {
-    <div class="page-head">
-      <div>
-        <h2>{{ view().name }} · {{ view().role }}</h2>
-        <p>
-          {{ view().trackLabel }} · {{ view().level }} · โควต้า {{ view().quota }} MD/สัปดาห์ · งานเปิด
-          {{ view().openCount }} · ปิดแล้ว {{ view().closedCount }}
-        </p>
-      </div>
-      <div class="flex flex-wrap items-center gap-2">
+    <app-page-head
+      [title]="view().name + ' · ' + view().role"
+      [description]="
+        view().trackLabel +
+        ' · ' +
+        view().level +
+        ' · โควต้า ' +
+        view().quota +
+        ' MD/สัปดาห์ · งานเปิด ' +
+        view().openCount +
+        ' · ปิดแล้ว ' +
+        view().closedCount
+      "
+    >
+      <div actions class="flex flex-wrap items-center gap-2">
         @if (prevPerson(); as prev) {
           <button
             ejs-button
@@ -45,9 +48,9 @@
           กลับรายชื่อพนักงาน
         </button>
       </div>
-    </div>
+    </app-page-head>
 
-    <div class="section-card">
+    <app-section-card [showHead]="false">
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
         <app-kpi-stat
           title="ดัชนีพัฒนา"
@@ -62,50 +65,48 @@
           [trendDirection]="view().index >= view().target ? 'up' : 'down'"
           progressColor="#3ec6e0"
         ></app-kpi-stat>
-        <div class="e-card">
-          <div class="e-card-content flex flex-col justify-between gap-2 p-4">
+        <app-section-card variant="nested" [showHead]="false">
+          <div class="flex flex-col justify-between gap-2">
             <p class="kpi-note m-0">เป้า {{ view().target }} ของคนนี้ ไม่ได้เรียงอันดับกับคนอื่น</p>
             <ejs-message [attr.data-formula]="view().formulaId" [content]="view().formula" severity="Info" variant="Outlined"></ejs-message>
             <p class="fine m-0">{{ view().calculation }}</p>
           </div>
-        </div>
+        </app-section-card>
       </div>
       <ejs-message [content]="view().quarterText" severity="Info" variant="Outlined"></ejs-message>
-    </div>
+    </app-section-card>
 
-    <div class="section-card">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>ความหมายขององค์ประกอบ KPI</h3>
-          <p class="fine">รายละเอียดคะแนนแต่ละมิติและเกณฑ์มาตรฐานที่ใช้คำนวณ</p>
-        </div>
-      </div>
+    <app-section-card
+      title="ความหมายขององค์ประกอบ KPI"
+      subtitle="รายละเอียดคะแนนแต่ละมิติและเกณฑ์มาตรฐานที่ใช้คำนวณ"
+    >
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
         @for (item of view().kpis; track item.id) {
-          <div class="e-card">
-            <div class="e-card-content flex flex-col gap-1 p-3.5">
+          <app-section-card variant="nested" [showHead]="false">
+            <div class="flex flex-col gap-1">
               <span class="kpi-inline">{{ item.value }} {{ item.label }}</span>
               <span>{{ item.meaning }}</span>
               <span class="kpi-note">{{ item.criterion }}</span>
             </div>
-          </div>
+          </app-section-card>
         }
       </div>
-    </div>
+    </app-section-card>
 
     <div class="card-grid-2">
-      <div class="section-card">
-        <div class="section-card-head">
-          <div class="section-card-copy">
-            <h3>แนวโน้มดัชนีรายเดือน (OLS Trendline)</h3>
-            <p class="fine">เปรียบเทียบดัชนีรายเดือนของตัวเองกับเป้ามาตรฐาน 75 พร้อมเส้นแนวโน้มทางสถิติ OLS Regression</p>
-          </div>
-          @if (olsSummary(); as ols) {
-            <span class="e-badge {{ ols.badgeClass }} e-badge-pill" title="ความชัน OLS Regression (Least-Squares Slope)">
-              Slope: {{ ols.text }}
-            </span>
-          }
-        </div>
+      <app-section-card
+        title="แนวโน้มดัชนีรายเดือน (OLS Trendline)"
+        subtitle="เปรียบเทียบดัชนีรายเดือนของตัวเองกับเป้ามาตรฐาน 75 พร้อมเส้นแนวโน้มทางสถิติ OLS Regression"
+      >
+        @if (olsSummary(); as ols) {
+          <span
+            actions
+            class="e-badge {{ ols.badgeClass }} e-badge-pill"
+            title="ความชัน OLS Regression (Least-Squares Slope)"
+          >
+            Slope: {{ ols.text }}
+          </span>
+        }
         <div class="chart-frame m-0">
           <ejs-chart
             id="self-trend"
@@ -152,15 +153,9 @@
             </e-series-collection>
           </ejs-chart>
         </div>
-      </div>
+      </app-section-card>
 
-      <div class="section-card">
-        <div class="section-card-head">
-          <div class="section-card-copy">
-            <h3>แผน vs จริง (ใบที่ปิด)</h3>
-            <p class="fine">เทียบ Estimate MD กับ Actual MD ของแต่ละใบงาน</p>
-          </div>
-        </div>
+      <app-section-card title="แผน vs จริง (ใบที่ปิด)" subtitle="เทียบ Estimate MD กับ Actual MD ของแต่ละใบงาน">
         @if (view().effortBars.length === 0) {
           <ejs-message content="ยังไม่มีใบที่ปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
         } @else {
@@ -199,16 +194,11 @@
             </ejs-chart>
           </div>
         }
-      </div>
+      </app-section-card>
     </div>
 
     <div class="card-grid-3">
-      <div class="section-card">
-        <div class="section-card-head">
-          <div class="section-card-copy">
-            <h3>ส่งตรง / เลื่อนสัปดาห์</h3>
-          </div>
-        </div>
+      <app-section-card title="ส่งตรง / เลื่อนสัปดาห์">
         @if (view().slipShare.length === 0) {
           <ejs-message content="ยังไม่มีข้อมูล weekOffset" severity="Info" variant="Outlined"></ejs-message>
         } @else {
@@ -234,14 +224,9 @@
             </ejs-accumulationchart>
           </div>
         }
-      </div>
+      </app-section-card>
 
-      <div class="section-card">
-        <div class="section-card-head">
-          <div class="section-card-copy">
-            <h3>สัดส่วนประเภทงาน</h3>
-          </div>
-        </div>
+      <app-section-card title="สัดส่วนประเภทงาน">
         @if (view().categoryShare.length === 0) {
           <ejs-message content="ยังไม่มีใบปิดสำหรับสัดส่วนประเภท" severity="Info" variant="Outlined"></ejs-message>
         } @else {
@@ -267,14 +252,9 @@
             </ejs-accumulationchart>
           </div>
         }
-      </div>
+      </app-section-card>
 
-      <div class="section-card">
-        <div class="section-card-head">
-          <div class="section-card-copy">
-            <h3>คุณภาพส่งมอบ (รีวิว / reopen)</h3>
-          </div>
-        </div>
+      <app-section-card title="คุณภาพส่งมอบ (รีวิว / reopen)">
         @if (view().qualityBars.length === 0) {
           <ejs-message content="ยังไม่มีใบปิดสำหรับคุณภาพส่งมอบ" severity="Info" variant="Outlined"></ejs-message>
         } @else {
@@ -313,15 +293,13 @@
             </ejs-chart>
           </div>
         }
-      </div>
+      </app-section-card>
 
-      <div class="section-card md:col-span-2">
-        <div class="section-card-head">
-          <div class="section-card-copy">
-            <h3>สัดส่วนภาระงาน (Planned MD vs Unplanned vs งานสั่งตรงจาก MD)</h3>
-            <p class="fine">กราฟแท่งซ้อน (Stacked Column) แสดง Man-day รวมของพนักงาน เพื่อดูว่าแต่ละเดือนโดนงานแทรกจาก MD กินเวลาไปเท่าไหร่</p>
-          </div>
-        </div>
+      <app-section-card
+        class="md:col-span-2"
+        title="สัดส่วนภาระงาน (Planned MD vs Unplanned vs งานสั่งตรงจาก MD)"
+        subtitle="กราฟแท่งซ้อน (Stacked Column) แสดง Man-day รวมของพนักงาน เพื่อดูว่าแต่ละเดือนโดนงานแทรกจาก MD กินเวลาไปเท่าไหร่"
+      >
         @if (mdComposition().length === 0) {
           <ejs-message content="ยังไม่มีประวัติใบงานปิดสำหรับแสดงสัดส่วนภาระงาน" severity="Info" variant="Outlined"></ejs-message>
         } @else {
@@ -369,16 +347,14 @@
             </ejs-chart>
           </div>
         }
-      </div>
+      </app-section-card>
     </div>
 
-    <div class="section-card">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>งานที่กำลังทำ</h3>
-        </div>
-        <span class="e-badge e-badge-info e-badge-pill">{{ view().openWork.length }} ใบ</span>
-      </div>
+    <app-section-card
+      title="งานที่กำลังทำ"
+      [badge]="view().openWork.length + ' ใบ'"
+      badgeTone="info"
+    >
       @if (view().openWork.length === 0) {
         <ejs-message content="ไม่มีใบเปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
       } @else {
@@ -407,15 +383,13 @@
           </e-aggregates>
         </ejs-grid>
       }
-    </div>
+    </app-section-card>
 
-    <div class="section-card">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <h3>งานที่ปิดแล้ว</h3>
-        </div>
-        <span class="e-badge e-badge-success e-badge-pill">{{ view().closedWork.length }} ใบ</span>
-      </div>
+    <app-section-card
+      title="งานที่ปิดแล้ว"
+      [badge]="view().closedWork.length + ' ใบ'"
+      badgeTone="success"
+    >
       @if (view().closedWork.length === 0) {
         <ejs-message content="ยังไม่มีใบปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
       } @else {
@@ -449,24 +423,19 @@
           </e-aggregates>
         </ejs-grid>
       }
-    </div>
+    </app-section-card>
 
     <!-- AI Coach 1-on-1 Dialogue Panel -->
-    <div class="section-card border-t-2 border-indigo-500/30">
-      <div class="section-card-head">
-        <div class="section-card-copy">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">🤖</span>
-            <h3 class="text-base font-semibold">AI Coach 1-on-1 Assistant · ที่ปรึกษาการโค้ชรายบุคคล</h3>
-            @if (aiProvider(); as provider) {
-              <span class="e-badge e-badge-info e-badge-pill text-xs">
-                {{ provider === 'gemini-2.5-flash' ? '✨ Gemini 2.5 Flash' : '⚡ Local Rule Engine' }}
-              </span>
-            }
-          </div>
-          <p class="fine">วิเคราะห์เจาะลึกผลงาน จุดแข็ง ข้อควรระวัง และแนวทางคำถามสำหรับพูดคุย 1-on-1 สิ้นเดือน</p>
-        </div>
-      </div>
+    <app-section-card
+      class="border-t-2 border-indigo-500/30"
+      title="🤖 AI Coach 1-on-1 Assistant · ที่ปรึกษาการโค้ชรายบุคคล"
+      subtitle="วิเคราะห์เจาะลึกผลงาน จุดแข็ง ข้อควรระวัง และแนวทางคำถามสำหรับพูดคุย 1-on-1 สิ้นเดือน"
+    >
+      @if (aiProvider(); as provider) {
+        <span actions class="e-badge e-badge-info e-badge-pill text-xs">
+          {{ provider === 'gemini-2.5-flash' ? '✨ Gemini 2.5 Flash' : '⚡ Local Rule Engine' }}
+        </span>
+      }
 
       <!-- Quick Prompt Suggestion Chips -->
       <div class="flex flex-wrap items-center gap-2 my-2">
@@ -538,14 +507,7 @@
           }
         </button>
         @if (aiResponse()) {
-          <button
-            ejs-button
-            cssClass="e-outline"
-            type="button"
-            (click)="clearAi()"
-          >
-            ล้างผลลัพธ์
-          </button>
+          <button ejs-button cssClass="e-outline" type="button" (click)="clearAi()">ล้างผลลัพธ์</button>
         }
       </div>
 
@@ -555,18 +517,15 @@
       }
 
       @if (aiResponse(); as resp) {
-        <div class="e-card mt-3">
-          <div class="e-card-header">
-            <div class="e-card-header-caption">
-              <div class="e-card-header-title">บทวิเคราะห์จาก AI Coach: "{{ aiPrompt() }}"</div>
-              <div class="e-card-sub-title">{{ aiProvider() }}</div>
-            </div>
-          </div>
-          <div class="e-card-content p-4">
-            <div class="text-sm whitespace-pre-wrap leading-relaxed">{{ resp }}</div>
-          </div>
-        </div>
+        <app-section-card
+          variant="nested"
+          class="mt-3"
+          [title]="'บทวิเคราะห์จาก AI Coach: ' + aiPrompt()"
+          [subtitle]="aiProvider() ?? ''"
+        >
+          <div class="text-sm whitespace-pre-wrap leading-relaxed">{{ resp }}</div>
+        </app-section-card>
       }
-    </div>
+    </app-section-card>
   }
 </section>

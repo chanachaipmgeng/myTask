@@ -156,9 +156,7 @@
             <ejs-chiplist [chips]="sizeChips" selection="None" cssClass="legend-chips"></ejs-chiplist>
             <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
               @for (text of scoreMeaningCards; track text) {
-                <div class="e-card">
-                  <div class="e-card-content p-3">{{ text }}</div>
-                </div>
+                <app-section-card variant="nested" [showHead]="false">{{ text }}</app-section-card>
               }
             </div>
           </div>
@@ -167,15 +165,12 @@
     </e-accordionitems>
   </ejs-accordion>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>รายการใบงานและผลคะแนน</h3>
-        <p class="fine">กรองตามสายงาน ชนิดใบงาน หรือค้นหารหัส/โมดูล พร้อมส่งออกเป็น Excel หรือ CSV</p>
-      </div>
-      <span class="e-badge e-badge-info e-badge-pill">{{ rows().length }} ใบ</span>
-    </div>
-
+  <app-section-card
+    title="รายการใบงานและผลคะแนน"
+    subtitle="กรองตามสายงาน ชนิดใบงาน หรือค้นหารหัส/โมดูล พร้อมส่งออกเป็น Excel หรือ CSV"
+    [badge]="rows().length + ' ใบ'"
+    badgeTone="info"
+  >
     <ejs-toolbar id="ticket-toolbar" cssClass="page-toolbar m-0" overflowMode="Scroll" width="100%">
       <e-items>
         <e-item [template]="searchTemplate"></e-item>
@@ -306,5 +301,5 @@
         </e-aggregate>
       </e-aggregates>
     </ejs-grid>
-  </div>
+  </app-section-card>
 </section>

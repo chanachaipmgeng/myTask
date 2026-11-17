@@ -115,8 +115,8 @@
     >
       <div class="flex flex-col gap-3">
         @for (item of blockerMatrix(); track item.id) {
-          <div class="e-card">
-            <div class="e-card-content flex items-center justify-between gap-3 p-3.5">
+          <app-section-card variant="nested" [showHead]="false">
+            <div class="flex items-center justify-between gap-3">
               <div>
                 <div class="text-sm font-semibold">{{ item.description }}</div>
                 <p class="fine m-0 mt-1">กำลังรอ {{ item.ticketCount }} ใบ ({{ item.ticketIds.join(', ') }})</p>
@@ -132,7 +132,7 @@
                 </button>
               }
             </div>
-          </div>
+          </app-section-card>
         }
       </div>
 

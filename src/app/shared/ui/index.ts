@@ -15,7 +15,7 @@ export {
   toneForAlertLabel,
 } from './badge';
 export { PageHeadComponent } from './page-head/page-head';
-export { SectionCardComponent } from './section-card/section-card';
+export { SectionCardComponent, type SectionCardVariant } from './section-card/section-card';
 export { StatusBadgeComponent } from './status-badge/status-badge';
 export { FormFieldComponent } from './form-field/form-field';
 export { FlashMessagesComponent } from './flash-messages/flash-messages';

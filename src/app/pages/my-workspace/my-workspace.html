@@ -74,24 +74,17 @@
         <app-status-badge [label]="'ผ่านรีวิวรอบแรก ' + coach.firstPassPct + '%'" tone="primary"></app-status-badge>
       </div>
       <div class="card-grid-2">
-        <div class="e-card">
-          <div class="e-card-content flex flex-col gap-1.5 p-4">
-            <div class="kpi-card-top">
-              <span class="kpi-note m-0">จุดแข็งปัจจุบัน</span>
-              <app-status-badge label="Strength" tone="success"></app-status-badge>
-            </div>
-            <p class="m-0 font-medium">{{ coach.strengthNote }}</p>
-          </div>
-        </div>
-        <div class="e-card">
-          <div class="e-card-content flex flex-col gap-1.5 p-4">
-            <div class="kpi-card-top">
-              <span class="kpi-note m-0">คำแนะนำเพื่อยกระดับในสปรินต์ถัดไป</span>
-              <app-status-badge label="Next Sprint Focus" tone="info"></app-status-badge>
-            </div>
-            <p class="m-0 font-medium">{{ coach.coachingFocus }}</p>
-          </div>
-        </div>
+        <app-section-card variant="nested" title="จุดแข็งปัจจุบัน" badge="Strength" badgeTone="success">
+          <p class="m-0 font-medium">{{ coach.strengthNote }}</p>
+        </app-section-card>
+        <app-section-card
+          variant="nested"
+          title="คำแนะนำเพื่อยกระดับในสปรินต์ถัดไป"
+          badge="Next Sprint Focus"
+          badgeTone="info"
+        >
+          <p class="m-0 font-medium">{{ coach.coachingFocus }}</p>
+        </app-section-card>
       </div>
     </app-section-card>
   }
@@ -109,23 +102,19 @@
     } @else {
       <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
         @for (item of dueAgenda(); track item.id) {
-          <div class="e-card">
-            <div class="e-card-content flex flex-col gap-3 p-4">
-              <div class="flex flex-wrap items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <p class="m-0 font-bold text-cyan">{{ item.id }} · {{ item.title }}</p>
-                  <p class="fine m-0 mt-1">
-                    กำหนดส่ง {{ item.dueLabel }} · Est {{ item.estimateMd }} MD · {{ item.status }}
-                  </p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  @if (item.slipped) {
-                    <app-status-badge [label]="'หลุด ' + item.weekOffset + ' สัปดาห์'" tone="warning"></app-status-badge>
-                  }
-                  <app-status-badge [label]="item.status" tone="info"></app-status-badge>
-                </div>
-              </div>
+          <app-section-card
+            variant="nested"
+            [title]="item.id + ' · ' + item.title"
+            [subtitle]="'กำหนดส่ง ' + item.dueLabel + ' · Est ' + item.estimateMd + ' MD · ' + item.status"
+          >
+            <div actions class="flex flex-wrap gap-2">
+              @if (item.slipped) {
+                <app-status-badge [label]="'หลุด ' + item.weekOffset + ' สัปดาห์'" tone="warning"></app-status-badge>
+              }
+              <app-status-badge [label]="item.status" tone="info"></app-status-badge>
+            </div>
 
+            <div class="flex flex-col gap-3">
               <p class="m-0 text-sm">ถัดไป: {{ item.nextAction }}</p>
 
               <ul class="m-0 pl-0 list-none flex flex-col gap-1.5">
@@ -150,7 +139,7 @@
                 <a ejs-button cssClass="e-outline e-small" routerLink="/mygit">ซิงก์ MR</a>
               </div>
             </div>
-          </div>
+          </app-section-card>
         }
       </div>
     }
@@ -164,15 +153,13 @@
       <a actions ejs-button cssClass="e-outline e-small" routerLink="/work/board">ไปที่กระดานงาน</a>
       <div class="card-grid-2">
         @for (risk of myRisks(); track risk.ticketId) {
-          <div class="e-card">
-            <div class="e-card-content flex flex-col gap-2 p-4">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <span class="font-bold text-cyan">{{ risk.ticketId }} · {{ risk.title }}</span>
-                <app-status-badge
-                  [label]="'ความเสี่ยง ' + risk.riskLevel + ' (' + risk.riskScore + '/100)'"
-                  [tone]="risk.riskLevel === 'สูงมาก' ? 'danger' : risk.riskLevel === 'ปานกลาง' ? 'warning' : 'success'"
-                ></app-status-badge>
-              </div>
+          <app-section-card
+            variant="nested"
+            [title]="risk.ticketId + ' · ' + risk.title"
+            [badge]="'ความเสี่ยง ' + risk.riskLevel + ' (' + risk.riskScore + '/100)'"
+            [badgeTone]="risk.riskLevel === 'สูงมาก' ? 'danger' : risk.riskLevel === 'ปานกลาง' ? 'warning' : 'success'"
+          >
+            <div class="flex flex-col gap-2">
               <p class="fine m-0">สถานะ: {{ risk.status }} · Est {{ risk.estimateMd }} MD / ใช้จริง {{ risk.actualMd }} MD</p>
               <p class="m-0 text-sm">{{ risk.reasons.join(' · ') }}</p>
               <div class="mt-2 flex flex-wrap gap-2">
@@ -184,7 +171,7 @@
                 </a>
               </div>
             </div>
-          </div>
+          </app-section-card>
         }
       </div>
     </app-section-card>

@@ -96,8 +96,8 @@
 
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
       @for (person of filteredRoster(); track person.id) {
-        <div class="e-card">
-          <div class="e-card-content flex flex-col justify-between gap-3 p-3.5 sm:flex-row sm:items-center">
+        <app-section-card variant="nested" [showHead]="false">
+          <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div class="flex items-center gap-3">
               <div class="avatar-badge">{{ person.nickname.slice(0, 2) }}</div>
               <div class="flex flex-col gap-0.5">
@@ -128,7 +128,7 @@
               ></ejs-dropdownlist>
             </div>
           </div>
-        </div>
+        </app-section-card>
       }
     </div>
   </app-section-card>
@@ -142,7 +142,8 @@
     }
 
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-      <div class="e-card p-3.5 flex flex-col gap-1.5">
+      <app-section-card variant="nested" [showHead]="false">
+        <div class="flex flex-col gap-1.5">
         <div class="flex justify-between items-center">
           <strong>ผลรวมสาย Implement</strong>
           <app-status-badge
@@ -151,8 +152,10 @@
           ></app-status-badge>
         </div>
         <ejs-progressbar id="imp-weight-progress" type="Linear" [theme]="theme.sfTheme()" height="12" [minimum]="0" [maximum]="100" [value]="implementWeightSum()"></ejs-progressbar>
-      </div>
-      <div class="e-card p-3.5 flex flex-col gap-1.5">
+        </div>
+      </app-section-card>
+      <app-section-card variant="nested" [showHead]="false">
+        <div class="flex flex-col gap-1.5">
         <div class="flex justify-between items-center">
           <strong>ผลรวมสาย R&amp;D</strong>
           <app-status-badge
@@ -161,7 +164,8 @@
           ></app-status-badge>
         </div>
         <ejs-progressbar id="rd-weight-progress" type="Linear" [theme]="theme.sfTheme()" height="12" [minimum]="0" [maximum]="100" [value]="researchWeightSum()"></ejs-progressbar>
-      </div>
+        </div>
+      </app-section-card>
     </div>
 
     @if (implementWeightSum() !== 100 || researchWeightSum() !== 100) {
@@ -191,8 +195,8 @@
     <a actions ejs-button cssClass="e-outline e-small" routerLink="/integrations">ตั้งค่าละเอียด (/integrations)</a>
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
       @for (link of links(); track link.id) {
-        <div class="e-card">
-          <div class="e-card-content flex flex-wrap items-center justify-between gap-3 p-3.5">
+        <app-section-card variant="nested" [showHead]="false">
+          <div class="flex flex-wrap items-center justify-between gap-3">
             <span>{{ link.label }} · {{ link.detail }}</span>
             <ejs-dropdownlist
               [id]="'connection-' + link.id"
@@ -204,7 +208,7 @@
               width="180px"
             ></ejs-dropdownlist>
           </div>
-        </div>
+        </app-section-card>
       }
     </div>
   </app-section-card>

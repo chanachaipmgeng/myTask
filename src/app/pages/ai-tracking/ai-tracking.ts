@@ -11,11 +11,13 @@ import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { acceptedTrackedMd, aiTicketPoints, formatTrackedMd, researchSpikeShare } from '../../core/ai-tracking';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
 @Component({
   selector: 'app-ai-tracking',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChartModule, GridModule, ProgressBarModule],
+  imports: [ChartModule, GridModule, PageHeadComponent, ProgressBarModule, SectionCardComponent],
   providers: [CategoryService, ColumnSeriesService, LegendService, TooltipService, PageService, SortService, ResizeService, AggregateService],
   templateUrl: './ai-tracking.html',
 })

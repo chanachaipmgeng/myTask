@@ -1,14 +1,9 @@
 <section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>ศูนย์วิเคราะห์ข้อมูลเชิงลึกด้วย Python (Sync &amp; Analytics Hub)</h2>
-      <p>
-        ศูนย์กลางตรวจสอบคุณภาพข้อมูลที่ซิงก์มาจาก OpenProject + GitLab ตรวจจับค่าผิดปกติทางสถิติ (Z-Score Outlier),
-        พยากรณ์ใบงานเสี่ยงหลุดแผน, วิเคราะห์คอขวดโมดูล และสรุปแนวโน้มพัฒนาการรายบุคคล (OLS Regression)
-        เพื่อการโค้ชและติดตามงานครบวงจร
-      </p>
-    </div>
-    <div class="flex flex-wrap items-center gap-2">
+  <app-page-head
+    title="ศูนย์วิเคราะห์ข้อมูลเชิงลึกด้วย Python (Sync &amp; Analytics Hub)"
+    description="ศูนย์กลางตรวจสอบคุณภาพข้อมูลที่ซิงก์มาจาก OpenProject + GitLab ตรวจจับค่าผิดปกติทางสถิติ (Z-Score Outlier), พยากรณ์ใบงานเสี่ยงหลุดแผน, วิเคราะห์คอขวดโมดูล และสรุปแนวโน้มพัฒนาการรายบุคคล (OLS Regression) เพื่อการโค้ชและติดตามงานครบวงจร"
+  >
+    <div actions class="flex flex-wrap items-center gap-2">
       <span class="e-badge e-badge-info e-badge-pill">
         Engine: {{ report().engine === 'python' ? 'Python 3 Statistical Engine' : 'TypeScript Domain Engine' }}
       </span>
@@ -25,7 +20,7 @@
       </button>
       <a ejs-button cssClass="e-outline" routerLink="/integrations">ตั้งค่าการซิงก์</a>
     </div>
-  </div>
+  </app-page-head>
 
   @if (message()) {
     <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
@@ -75,7 +70,7 @@
     ></app-kpi-stat>
   </div>
 
-  <div class="section-card">
+  <app-section-card [showHead]="false">
     <ejs-tab id="analytics-tabs" overflowMode="Scroll">
       <e-tabitems>
         <e-tabitem>
@@ -204,35 +199,33 @@
           <ng-template #content>
             <div class="flex flex-col gap-4 pt-4">
               <div class="card-grid-2">
-                <div class="e-card">
-                  <div class="e-card-content flex flex-col gap-2.5 p-4">
-                    <div class="kpi-card-top">
-                      <strong class="text-base">สัดส่วนรหัสความคลาดเคลื่อน (Variance Code)</strong>
-                      <span class="e-badge e-badge-info e-badge-pill">จากใบปิดทั้งหมด</span>
+                <app-section-card
+                  variant="nested"
+                  title="สัดส่วนรหัสความคลาดเคลื่อน (Variance Code)"
+                  badge="จากใบปิดทั้งหมด"
+                  badgeTone="info"
+                >
+                  @for (item of report().bottlenecks.varianceBreakdown; track item.code) {
+                    <div class="flex items-center justify-between gap-2 text-sm">
+                      <span>รหัส <strong>{{ item.code }}</strong></span>
+                      <span class="e-badge e-badge-secondary e-badge-pill">{{ item.count }} ใบ ({{ item.pct }}%)</span>
                     </div>
-                    @for (item of report().bottlenecks.varianceBreakdown; track item.code) {
-                      <div class="flex items-center justify-between gap-2 text-sm">
-                        <span>รหัส <strong>{{ item.code }}</strong></span>
-                        <span class="e-badge e-badge-secondary e-badge-pill">{{ item.count }} ใบ ({{ item.pct }}%)</span>
-                      </div>
-                    }
-                  </div>
-                </div>
+                  }
+                </app-section-card>
 
-                <div class="e-card">
-                  <div class="e-card-content flex flex-col gap-2.5 p-4">
-                    <div class="kpi-card-top">
-                      <strong class="text-base">สัดส่วนสาเหตุ Bug (Bug Cause Analysis)</strong>
-                      <span class="e-badge e-badge-warning e-badge-pill">Root Cause</span>
+                <app-section-card
+                  variant="nested"
+                  title="สัดส่วนสาเหตุ Bug (Bug Cause Analysis)"
+                  badge="Root Cause"
+                  badgeTone="warning"
+                >
+                  @for (item of report().bottlenecks.bugCauseBreakdown; track item.cause) {
+                    <div class="flex items-center justify-between gap-2 text-sm">
+                      <span>สาเหตุ <strong>{{ item.cause }}</strong></span>
+                      <span class="e-badge e-badge-secondary e-badge-pill">{{ item.count }} ใบ ({{ item.pct }}%)</span>
                     </div>
-                    @for (item of report().bottlenecks.bugCauseBreakdown; track item.cause) {
-                      <div class="flex items-center justify-between gap-2 text-sm">
-                        <span>สาเหตุ <strong>{{ item.cause }}</strong></span>
-                        <span class="e-badge e-badge-secondary e-badge-pill">{{ item.count }} ใบ ({{ item.pct }}%)</span>
-                      </div>
-                    }
-                  </div>
-                </div>
+                  }
+                </app-section-card>
               </div>
 
               <div class="chart-frame m-0">
@@ -291,5 +284,5 @@
         </e-tabitem>
       </e-tabitems>
     </ejs-tab>
-  </div>
+  </app-section-card>
 </section>

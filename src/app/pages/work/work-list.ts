@@ -17,6 +17,7 @@ import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { ScorecardService } from '../../core/scorecard.service';
 import { workListRows } from '../../core/work-views';
 import {
+  SectionCardComponent,
   StatusBadgeComponent,
   planToneMap,
   toneForWeekLabel,
@@ -28,7 +29,7 @@ import { WorkHubFilter } from './work-hub-filter';
 @Component({
   selector: 'app-work-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, DialogModule, ButtonModule, StatusBadgeComponent],
+  imports: [GridModule, DialogModule, ButtonModule, StatusBadgeComponent, SectionCardComponent],
   providers: [
     PageService,
     SortService,

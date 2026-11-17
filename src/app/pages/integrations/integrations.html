@@ -1,10 +1,9 @@
 <section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>Integrations</h2>
-      <p>เชื่อมระบบภายนอก: OpenProject (myProject), GitLab (mygit MR) และ Microsoft Teams Webhook</p>
-    </div>
-    <div class="flex flex-wrap gap-2">
+  <app-page-head
+    title="Integrations"
+    description="เชื่อมระบบภายนอก: OpenProject (myProject), GitLab (mygit MR) และ Microsoft Teams Webhook"
+  >
+    <div actions class="flex flex-wrap gap-2">
       <button ejs-button cssClass="e-outline" type="button" [disabled]="loading() || saving()" (click)="reload()">
         รีเฟรช
       </button>
@@ -12,7 +11,7 @@
         Sync OpenProject
       </button>
     </div>
-  </div>
+  </app-page-head>
 
   @if (message()) {
     <ejs-message [content]="message()" severity="Info" variant="Outlined"></ejs-message>
@@ -21,7 +20,7 @@
     <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
   }
 
-  <div class="section-card">
+  <app-section-card [showHead]="false">
     <ejs-tab id="integrations-tabs">
       <e-tabitems>
         <e-tabitem>
@@ -30,16 +29,16 @@
           </ng-template>
           <ng-template #content>
             <div class="flex flex-col gap-4 pt-4">
-              <div class="e-card p-4 flex flex-col gap-3">
-                <div class="section-card-head">
-                  <div class="section-card-copy">
-                    <h3>การเชื่อมต่อ OpenProject</h3>
-                    <p class="fine">กำหนด URL, API Token และจำนวนชั่วโมงโฟกัสต่อ 1 Man-day</p>
-                  </div>
-                  @if (canEdit()) {
-                    <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="save()">บันทึกการตั้งค่า OpenProject</button>
-                  }
-                </div>
+              <app-section-card
+                variant="nested"
+                title="การเชื่อมต่อ OpenProject"
+                subtitle="กำหนด URL, API Token และจำนวนชั่วโมงโฟกัสต่อ 1 Man-day"
+              >
+                @if (canEdit()) {
+                  <button actions ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="save()">
+                    บันทึกการตั้งค่า OpenProject
+                  </button>
+                }
                 <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label class="field">
                     <span>OpenProject URL</span>
@@ -63,16 +62,14 @@
                     ></ejs-checkbox>
                   </div>
                 </div>
-              </div>
+              </app-section-card>
 
               <div class="card-grid-2">
-                <div class="e-card p-4 flex flex-col gap-3">
-                  <div class="section-card-head">
-                    <div class="section-card-copy">
-                      <h3>Status → workflow</h3>
-                      <p class="fine">เพิ่ม/ลบคู่สถานะ หรือแก้ JSON โดยตรง · ค่าที่ใช้ได้: {{ workflowHint }}</p>
-                    </div>
-                  </div>
+                <app-section-card
+                  variant="nested"
+                  title="Status → workflow"
+                  subtitle="เพิ่ม/ลบคู่สถานะ หรือแก้ JSON โดยตรง · ค่าที่ใช้ได้: {{ workflowHint }}"
+                >
                   <div class="flex flex-wrap gap-2 items-center">
                     @for (item of statusMapEntries(); track item.key) {
                       <span class="e-badge e-badge-info flex items-center gap-1">
@@ -104,15 +101,13 @@
                     cssClass="map-textarea"
                     width="100%"
                   ></ejs-textarea>
-                </div>
+                </app-section-card>
 
-                <div class="e-card p-4 flex flex-col gap-3">
-                  <div class="section-card-head">
-                    <div class="section-card-copy">
-                      <h3>Type map &amp; User mapping</h3>
-                      <p class="fine">แมปชนิด Work Package และจับคู่ผู้ใช้ OpenProject กับคนในระบบ</p>
-                    </div>
-                  </div>
+                <app-section-card
+                  variant="nested"
+                  title="Type map &amp; User mapping"
+                  subtitle="แมปชนิด Work Package และจับคู่ผู้ใช้ OpenProject กับคนในระบบ"
+                >
                   <ejs-textarea
                     [value]="typeMapText()"
                     (change)="onTypeMapText($event)"
@@ -133,16 +128,14 @@
                     </label>
                     <button ejs-button cssClass="e-primary" type="button" [disabled]="!canEdit() || saving()" (click)="mapUser()">จับคู่</button>
                   </div>
-                </div>
+                </app-section-card>
               </div>
 
-              <div class="e-card p-4 flex flex-col gap-3">
-                <div class="section-card-head">
-                  <div class="section-card-copy">
-                    <h3>Custom fields</h3>
-                    <p class="fine">ใส่ชื่อ property เช่น customField12 · ว่าง = ไม่ใช้ · แมปจากฟิลด์ myProject ที่แนะนำในคู่มือ</p>
-                  </div>
-                </div>
+              <app-section-card
+                variant="nested"
+                title="Custom fields"
+                subtitle="ใส่ชื่อ property เช่น customField12 · ว่าง = ไม่ใช้ · แมปจากฟิลด์ myProject ที่แนะนำในคู่มือ"
+              >
                 <div class="form-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                   @for (row of customFieldRows; track row.key) {
                     <label class="field">
@@ -156,15 +149,13 @@
                     </label>
                   }
                 </div>
-              </div>
+              </app-section-card>
 
-              <div class="e-card p-4 flex flex-col gap-3">
-                <div class="section-card-head">
-                  <div class="section-card-copy">
-                    <h3>ประวัติ sync OpenProject</h3>
-                    <p class="fine">บันทึกการซิงก์ข้อมูลจาก OpenProject ล่าสุด</p>
-                  </div>
-                </div>
+              <app-section-card
+                variant="nested"
+                title="ประวัติ sync OpenProject"
+                subtitle="บันทึกการซิงก์ข้อมูลจาก OpenProject ล่าสุด"
+              >
                 <ejs-grid [dataSource]="data()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
                   <e-columns>
                     <e-column field="id" headerText="ID" width="80"></e-column>
@@ -175,7 +166,7 @@
                     <e-column field="unchanged" headerText="ไม่เปลี่ยน" width="100"></e-column>
                   </e-columns>
                 </ejs-grid>
-              </div>
+              </app-section-card>
             </div>
           </ng-template>
         </e-tabitem>
@@ -186,18 +177,16 @@
           </ng-template>
           <ng-template #content>
             <div class="flex flex-col gap-4 pt-4">
-              <div class="e-card p-4 flex flex-col gap-3">
-                <div class="section-card-head">
-                  <div class="section-card-copy">
-                    <h3>ตั้งค่าเชื่อมต่อ GitLab API v4</h3>
-                    <p class="fine">ดึง Merge Requests ที่ merged แล้ว เพื่อจับคู่รหัสใบงาน (เช่น IMP-100, OP-42) จากชื่อ MR / branch / description</p>
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    @if (canEdit()) {
-                      <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveGitLabConfig()">บันทึก GitLab</button>
-                    }
-                    <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="syncGitLabNow()">ซิงก์ MR ตอนนี้</button>
-                  </div>
+              <app-section-card
+                variant="nested"
+                title="ตั้งค่าเชื่อมต่อ GitLab API v4"
+                subtitle="ดึง Merge Requests ที่ merged แล้ว เพื่อจับคู่รหัสใบงาน (เช่น IMP-100, OP-42) จากชื่อ MR / branch / description"
+              >
+                <div actions class="flex flex-wrap gap-2">
+                  @if (canEdit()) {
+                    <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveGitLabConfig()">บันทึก GitLab</button>
+                  }
+                  <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="syncGitLabNow()">ซิงก์ MR ตอนนี้</button>
                 </div>
                 <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label class="field">
@@ -222,15 +211,13 @@
                     ></ejs-checkbox>
                   </div>
                 </div>
-              </div>
+              </app-section-card>
 
-              <div class="e-card p-4 flex flex-col gap-3">
-                <div class="section-card-head">
-                  <div class="section-card-copy">
-                    <h3>ประวัติซิงก์ GitLab</h3>
-                    <p class="fine">ประวัติการจับคู่ Merge Request กับใบงานในระบบ</p>
-                  </div>
-                </div>
+              <app-section-card
+                variant="nested"
+                title="ประวัติซิงก์ GitLab"
+                subtitle="ประวัติการจับคู่ Merge Request กับใบงานในระบบ"
+              >
                 <ejs-grid [dataSource]="gitlabData()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
                   <e-columns>
                     <e-column field="id" headerText="ID" width="80"></e-column>
@@ -240,7 +227,7 @@
                     <e-column field="unchanged" headerText="ไม่ตรงรหัส" width="110"></e-column>
                   </e-columns>
                 </ejs-grid>
-              </div>
+              </app-section-card>
             </div>
           </ng-template>
         </e-tabitem>
@@ -251,18 +238,16 @@
           </ng-template>
           <ng-template #content>
             <div class="flex flex-col gap-4 pt-4">
-              <div class="e-card p-4 flex flex-col gap-3">
-                <div class="section-card-head">
-                  <div class="section-card-copy">
-                    <h3>ตั้งค่า Microsoft Teams Incoming Webhook</h3>
-                    <p class="fine">ส่งข้อความแจ้งเตือนใบงานใกล้ครบกำหนดและใบที่ actual เกิน estimate เข้าช่อง Teams (ไม่ส่งลำดับคะแนนคน)</p>
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    @if (canEdit()) {
-                      <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveTeamsConfig()">บันทึก Teams Webhook</button>
-                    }
-                    <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="sendTeamsNow()">ยิงแจ้งเตือนเข้า Teams ตอนนี้</button>
-                  </div>
+              <app-section-card
+                variant="nested"
+                title="ตั้งค่า Microsoft Teams Incoming Webhook"
+                subtitle="ส่งข้อความแจ้งเตือนใบงานใกล้ครบกำหนดและใบที่ actual เกิน estimate เข้าช่อง Teams (ไม่ส่งลำดับคะแนนคน)"
+              >
+                <div actions class="flex flex-wrap gap-2">
+                  @if (canEdit()) {
+                    <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveTeamsConfig()">บันทึก Teams Webhook</button>
+                  }
+                  <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="sendTeamsNow()">ยิงแจ้งเตือนเข้า Teams ตอนนี้</button>
                 </div>
                 <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label class="field">
@@ -283,15 +268,13 @@
                     ></ejs-checkbox>
                   </div>
                 </div>
-              </div>
+              </app-section-card>
 
-              <div class="e-card p-4 flex flex-col gap-3">
-                <div class="section-card-head">
-                  <div class="section-card-copy">
-                    <h3>ประวัติส่งแจ้งเตือน Teams</h3>
-                    <p class="fine">บันทึกการส่งแจ้งเตือนเข้า Microsoft Teams</p>
-                  </div>
-                </div>
+              <app-section-card
+                variant="nested"
+                title="ประวัติส่งแจ้งเตือน Teams"
+                subtitle="บันทึกการส่งแจ้งเตือนเข้า Microsoft Teams"
+              >
                 <ejs-grid [dataSource]="teamsData()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
                   <e-columns>
                     <e-column field="id" headerText="ID" width="80"></e-column>
@@ -300,11 +283,11 @@
                     <e-column field="added" headerText="จำนวนข้อความ" width="130"></e-column>
                   </e-columns>
                 </ejs-grid>
-              </div>
+              </app-section-card>
             </div>
           </ng-template>
         </e-tabitem>
       </e-tabitems>
     </ejs-tab>
-  </div>
+  </app-section-card>
 </section>

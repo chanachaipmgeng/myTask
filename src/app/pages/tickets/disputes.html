@@ -90,12 +90,9 @@
     >
       @if (selectedDispute(); as sel) {
         <div class="flex flex-col gap-3 text-sm">
-          <div class="e-card">
-            <div class="e-card-content p-3.5">
-              <span class="kpi-note m-0 block mb-1">เหตุผลที่ยื่นขอ</span>
+          <app-section-card variant="nested" title="เหตุผลที่ยื่นขอ">
               <p class="m-0 text-xs leading-relaxed">{{ sel.reason }}</p>
-            </div>
-          </div>
+          </app-section-card>
 
           @if (sel.evidenceUrl) {
             <div>

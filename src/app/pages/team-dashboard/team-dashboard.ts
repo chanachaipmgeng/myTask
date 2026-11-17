@@ -45,6 +45,8 @@ import { ShellNotice } from '../../core/shell-notice';
 import { todayInBangkok } from '../../core/workflow';
 import { TEAM_CONTEXT_2568 } from '../../data/team-context';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
 type TrackFilter = Track | 'All';
 
@@ -63,6 +65,8 @@ const LIVE_MODE = 'live';
     TextBoxModule,
     MessageModule,
     KpiStatCardComponent,
+    PageHeadComponent,
+    SectionCardComponent,
   ],
   providers: [
     PieSeriesService,

@@ -20,6 +20,7 @@ import { ShellNotice } from './core/shell-notice';
 import { ScorecardService } from './core/scorecard.service';
 import { currentSession } from './core/session';
 import { ThemeService } from './core/theme.service';
+import { SectionCardComponent } from './shared/ui';
 
 type NavLeaf = {
   id: string;
@@ -34,7 +35,18 @@ type NavGroup = { id: string; text: string; expanded: boolean; children: NavLeaf
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, SidebarModule, AppBarModule, TreeViewModule, ToastModule, ButtonModule, MessageModule, DialogModule, TextBoxModule],
+  imports: [
+    RouterOutlet,
+    SidebarModule,
+    AppBarModule,
+    TreeViewModule,
+    ToastModule,
+    ButtonModule,
+    MessageModule,
+    DialogModule,
+    TextBoxModule,
+    SectionCardComponent,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

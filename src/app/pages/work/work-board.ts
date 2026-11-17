@@ -14,6 +14,7 @@ import { ThemeService } from '../../core/theme.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import {
   BUG_CAUSES,
   BugCause,
@@ -61,6 +62,7 @@ type SwimlaneMode = 'none' | 'assignee' | 'track';
     KpiStatCardComponent,
     ConfirmDialogComponent,
     FormFieldComponent,
+    SectionCardComponent,
   ],
   templateUrl: './work-board.html',
 })

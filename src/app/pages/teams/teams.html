@@ -1,33 +1,40 @@
 <section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>แจ้งเตือน Teams</h2>
-      <p>
-        ตั้งชื่อช่องและชนิดเหตุ เลือกจำลองร่างข้อความในหน้านี้ หรือส่งเข้า Microsoft Teams จริงผ่าน Incoming Webhook
-        (แสดงเฉพาะเหตุและรหัสใบงาน ไม่ใส่ลำดับคะแนนพนักงาน)
-      </p>
-    </div>
+  <app-page-head
+    title="แจ้งเตือน Teams"
+    description="ตั้งชื่อช่องและชนิดเหตุ เลือกจำลองร่างข้อความในหน้านี้ หรือส่งเข้า Microsoft Teams จริงผ่าน Incoming Webhook (แสดงเฉพาะเหตุและรหัสใบงาน ไม่ใส่ลำดับคะแนนพนักงาน)"
+  >
     @if (teamsInfo(); as info) {
-      <span class="e-badge" [class.e-badge-success]="info.configured && info.enabled" [class.e-badge-secondary]="!info.configured || !info.enabled">
+      <span
+        actions
+        class="e-badge"
+        [class.e-badge-success]="info.configured && info.enabled"
+        [class.e-badge-secondary]="!info.configured || !info.enabled"
+      >
         {{ info.configured && info.enabled ? 'Webhook พร้อมส่ง' : 'ยังไม่ได้เปิด Webhook' }}
       </span>
     }
-  </div>
+  </app-page-head>
 
-  <form class="section-card" (submit)="$event.preventDefault(); testSend()">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>ตั้งค่าเงื่อนไขและช่องทางแจ้งเตือน</h3>
-        <p class="fine">เลือกประเภทเหตุการณ์ที่ต้องการส่งแจ้งเตือนไปยังช่อง Microsoft Teams</p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <button ejs-button [isPrimary]="true" type="submit" id="teams-test">จำลองร่างข้อความ (ไม่ส่งจริง)</button>
-        @if (canSend()) {
-          <button ejs-button cssClass="e-success" type="button" id="teams-send-webhook" [disabled]="sending()" (click)="sendWebhook()">
-            ส่งเข้า Teams จริง (Webhook)
-          </button>
-        }
-      </div>
+  <app-section-card
+    title="ตั้งค่าเงื่อนไขและช่องทางแจ้งเตือน"
+    subtitle="เลือกประเภทเหตุการณ์ที่ต้องการส่งแจ้งเตือนไปยังช่อง Microsoft Teams"
+  >
+    <div actions class="flex flex-wrap gap-2">
+      <button ejs-button [isPrimary]="true" type="button" id="teams-test" (click)="testSend()">
+        จำลองร่างข้อความ (ไม่ส่งจริง)
+      </button>
+      @if (canSend()) {
+        <button
+          ejs-button
+          cssClass="e-success"
+          type="button"
+          id="teams-send-webhook"
+          [disabled]="sending()"
+          (click)="sendWebhook()"
+        >
+          ส่งเข้า Teams จริง (Webhook)
+        </button>
+      }
     </div>
 
     <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 items-end">
@@ -35,8 +42,18 @@
         <span>ช่อง Teams</span>
         <ejs-textbox id="teams-channel" [value]="channel()" (change)="onChannel($event)" width="100%"></ejs-textbox>
       </label>
-      <ejs-checkbox id="teams-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="deadline()" (change)="onDeadline($event)"></ejs-checkbox>
-      <ejs-checkbox id="teams-overrun" label="actual มีแนวโน้มเกิน estimate มากกว่า 50%" [checked]="overrun()" (change)="onOverrun($event)"></ejs-checkbox>
+      <ejs-checkbox
+        id="teams-deadline"
+        label="สัปดาห์ที่ commit ใกล้หมด"
+        [checked]="deadline()"
+        (change)="onDeadline($event)"
+      ></ejs-checkbox>
+      <ejs-checkbox
+        id="teams-overrun"
+        label="actual มีแนวโน้มเกิน estimate มากกว่า 50%"
+        [checked]="overrun()"
+        (change)="onOverrun($event)"
+      ></ejs-checkbox>
     </div>
     @if (message()) {
       <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
@@ -44,18 +61,20 @@
     @if (error()) {
       <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
     }
-  </form>
+  </app-section-card>
 
-  <div class="section-card">
-    <div class="section-card-head">
-      <div class="section-card-copy">
-        <h3>บันทึกข้อความที่จะส่ง</h3>
-        <p class="fine">ตัวอย่างข้อความแจ้งเตือนที่สร้างจากใบงานเสี่ยงปัจจุบัน</p>
-      </div>
-      <span class="e-badge e-badge-info e-badge-pill">{{ logRows().length }} ข้อความ</span>
-    </div>
+  <app-section-card
+    title="บันทึกข้อความที่จะส่ง"
+    subtitle="ตัวอย่างข้อความแจ้งเตือนที่สร้างจากใบงานเสี่ยงปัจจุบัน"
+    [badge]="logRows().length + ' ข้อความ'"
+    badgeTone="info"
+  >
     @if (logRows().length === 0) {
-      <ejs-message content="ยังไม่มีการทดสอบ ข้อความจะถูกเก็บในหน้านี้ ไม่ได้ส่งออกไป" severity="Info" variant="Outlined"></ejs-message>
+      <ejs-message
+        content="ยังไม่มีการทดสอบ ข้อความจะถูกเก็บในหน้านี้ ไม่ได้ส่งออกไป"
+        severity="Info"
+        variant="Outlined"
+      ></ejs-message>
     } @else {
       <ejs-grid [dataSource]="logRows()" [allowResizing]="true" height="240">
         <e-columns>
@@ -65,5 +84,5 @@
         </e-columns>
       </ejs-grid>
     }
-  </div>
+  </app-section-card>
 </section>

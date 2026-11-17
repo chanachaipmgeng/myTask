@@ -303,12 +303,13 @@ p {
   padding: 14px 14px 6px;
 }
 
-/* Structured Section Cards & Responsive Card Grids */
-.section-card {
+/* Structured Section Cards — Syncfusion e-card + .section-card (scoped) */
+.section-card,
+.e-card.section-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 20px;
+  gap: 0;
+  padding: 0 !important;
   border-radius: 18px !important;
   border: 1px solid var(--line) !important;
   background: var(--card) !important;
@@ -318,31 +319,107 @@ p {
     inset 0 1px 0 0 rgba(255, 255, 255, 0.06) !important;
   animation: cardReveal 0.4s var(--ease-out-expo) both;
   min-width: 0;
+  overflow: hidden;
+  position: relative;
+  transition:
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    background-color 0.28s ease;
 }
 
-.section-card-head {
-  display: flex;
+.e-card.section-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 18px 0 0 18px;
+  background: linear-gradient(180deg, #4c68e5, #2e4fc8);
+  opacity: 0.9;
+  z-index: 1;
+  pointer-events: none;
+}
+
+app-section-card:hover > .e-card.section-card,
+.e-card.section-card:hover {
+  border-color: var(--line-bright) !important;
+  box-shadow:
+    0 14px 30px -12px rgba(46, 79, 200, 0.38),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.e-card.section-card[data-variant='nested'] {
+  border-radius: 14px !important;
+  box-shadow:
+    0 4px 14px -8px rgba(2, 6, 23, 0.4),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.e-card.section-card[data-variant='nested']::before {
+  width: 2px;
+  opacity: 0.7;
+}
+
+.section-card-head,
+.e-card.section-card > .e-card-header.section-card-head {
+  display: flex !important;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 16px 18px 12px 20px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12) !important;
+  background: transparent !important;
 }
 
-.section-card-head h3 {
-  margin: 0;
+.section-card-head h3,
+.e-card.section-card .e-card-header-title {
+  margin: 0 !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  color: inherit;
 }
 
-.section-card-copy {
+.section-card-copy,
+.e-card.section-card .section-card-copy {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  flex: 1;
 }
 
-.section-card-copy .fine {
+.section-card-copy .fine,
+.section-card-subtitle {
   margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.section-card-body,
+.e-card.section-card > .e-card-content.section-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px 18px 20px !important;
+  min-width: 0;
+}
+
+.e-card.section-card[data-variant='nested'] > .e-card-header.section-card-head {
+  padding: 12px 14px 10px 16px !important;
+}
+
+.e-card.section-card[data-variant='nested'] > .e-card-content.section-card-body {
+  padding: 12px 14px 14px 16px !important;
+  gap: 10px;
+}
+
+/* รองรับ markup เก่าที่ยังใส่ padding บน .section-card ตรงๆ */
+.section-card:not(.e-card) {
+  padding: 20px !important;
+  gap: 14px;
 }
 
 .kpi-grid-4 {
@@ -636,8 +713,16 @@ p {
     font-size: 32px;
   }
 
-  .section-card {
-    padding: 14px;
+  .section-card:not(.e-card) {
+    padding: 14px !important;
+  }
+
+  .e-card.section-card > .e-card-header.section-card-head {
+    padding: 14px 14px 10px 16px !important;
+  }
+
+  .e-card.section-card > .e-card-content.section-card-body {
+    padding: 12px 14px 14px 16px !important;
   }
 
   .e-dialog {
@@ -721,6 +806,7 @@ body.e-light-mode {
   .ticket-form,
   .chart-frame,
   .section-card,
+  .e-card.section-card,
   .e-dashboardlayout .e-panel {
     background: #ffffff !important;
     border: 1px solid #e5ecf5 !important;
@@ -731,15 +817,22 @@ body.e-light-mode {
   }
 
   .e-dashboardlayout .e-panel:hover,
-  .chart-frame:hover {
+  .chart-frame:hover,
+  app-section-card:hover > .e-card.section-card,
+  .e-card.section-card:hover {
     border-color: rgba(46, 79, 200, 0.35) !important;
     box-shadow:
       0 12px 28px -6px rgba(46, 79, 200, 0.16),
       inset 0 1px 0 0 #ffffff !important;
   }
 
-  .section-card-head {
-    border-bottom: 1px solid #e5ecf5;
+  .section-card-head,
+  .e-card.section-card > .e-card-header.section-card-head {
+    border-bottom-color: #e5ecf5 !important;
+  }
+
+  .e-card.section-card .e-card-header-title {
+    color: #142b50 !important;
   }
 
   /* Shell Light Mode — MyHR Royal Blue sidebar (template) */

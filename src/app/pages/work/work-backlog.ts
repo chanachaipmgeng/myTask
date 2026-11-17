@@ -15,12 +15,13 @@ import {
 } from '@syncfusion/ej2-angular-grids';
 import { ScorecardService } from '../../core/scorecard.service';
 import { workBacklogRows } from '../../core/work-views';
+import { SectionCardComponent } from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-backlog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, ButtonModule, RouterLink],
+  imports: [GridModule, ButtonModule, RouterLink, SectionCardComponent],
   providers: [
     PageService,
     SortService,

@@ -121,8 +121,11 @@
       } @else {
         <div class="schedule-day-agenda">
           @for (item of dayAgenda(); track item.Id) {
-            <div class="e-card" [class.schedule-day-agenda__slipped]="item.Slipped">
-              <div class="e-card-content flex flex-col gap-2 p-3.5">
+            <app-section-card
+              variant="nested"
+              [showHead]="false"
+              [class.schedule-day-agenda__slipped]="item.Slipped"
+            >
                 <div class="flex flex-wrap items-start justify-between gap-2">
                   <div class="min-w-0">
                     <p class="m-0 font-semibold text-sm leading-snug">{{ item.Subject }}</p>
@@ -138,8 +141,7 @@
                   <a ejs-button cssClass="e-outline e-small" routerLink="/work/board">เปิดบอร์ด</a>
                   <a ejs-button cssClass="e-flat e-small" routerLink="/tickets">ดูตารางคะแนน</a>
                 </div>
-              </div>
-            </div>
+            </app-section-card>
           }
         </div>
       }

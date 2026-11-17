@@ -1,11 +1,9 @@
-<div class="section-card">
-  <div class="section-card-head">
-    <div class="section-card-copy">
-      <h3>รายการใบงานปฏิบัติการ (Work List)</h3>
-      <p class="fine">รายการใบงานแนวปฏิบัติงาน (ไม่ใช่ตารางคะแนน) &middot; คลิกแถวหรือปุ่มดูสรุป</p>
-    </div>
-    <span class="e-badge e-badge-info e-badge-pill">{{ rows().length }} ใบ</span>
-  </div>
+<app-section-card
+  title="รายการใบงานปฏิบัติการ (Work List)"
+  subtitle="รายการใบงานแนวปฏิบัติงาน (ไม่ใช่ตารางคะแนน) · คลิกแถวหรือปุ่มดูสรุป"
+  [badge]="rows().length + ' ใบ'"
+  badgeTone="info"
+>
   <ejs-grid
     #listGrid
     id="work-operational-list-grid-v2"
@@ -53,7 +51,7 @@
       </e-column>
     </e-columns>
   </ejs-grid>
-</div>
+</app-section-card>
 
 <ejs-dialog
   #detailDialog

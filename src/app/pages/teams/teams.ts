@@ -8,11 +8,20 @@ import { ApiClient, TeamsIntegration } from '../../core/api-client';
 import { ShellNotice } from '../../core/shell-notice';
 import { TeamsLogEntry, TeamsNotifyService } from '../../core/teams-notify';
 import { ScorecardService } from '../../core/scorecard.service';
+import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
 
 @Component({
   selector: 'app-teams',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, CheckBoxModule, TextBoxModule, GridModule, MessageModule],
+  imports: [
+    ButtonModule,
+    CheckBoxModule,
+    TextBoxModule,
+    GridModule,
+    MessageModule,
+    PageHeadComponent,
+    SectionCardComponent,
+  ],
   templateUrl: './teams.html',
 })
 export class TeamsPage {

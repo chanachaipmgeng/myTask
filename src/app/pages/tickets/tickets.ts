@@ -38,6 +38,7 @@ import {
   weekToneMap,
   type BadgeTone,
 } from '../../shared/ui';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
 type TrackFilter = Track | 'All';
 type TypeFilter = TicketType | 'All';
@@ -59,6 +60,7 @@ type TypeFilter = TicketType | 'All';
     ChipListModule,
     MessageModule,
     StatusBadgeComponent,
+    SectionCardComponent,
   ],
   providers: [
     PageService,
