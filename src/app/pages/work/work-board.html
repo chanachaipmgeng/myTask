@@ -118,7 +118,8 @@
   #editDialog
   id="board-edit-dialog"
   header="แก้ไขรายละเอียดใบงานบนกระดาน"
-  width="640px"
+  cssClass="app-modal"
+  width="680px"
   [visible]="false"
   [isModal]="true"
   [showCloseIcon]="true"
@@ -126,12 +127,10 @@
 >
   <ng-template #content>
     @if (selected(); as ticket) {
-      <form class="grid grid-cols-1 gap-3 md:grid-cols-2" (submit)="$event.preventDefault(); saveFields()">
-        <div class="md:col-span-2">
-          <p class="m-0 font-bold text-cyan">
-            {{ ticket.id }} · {{ ticket.title || ticket.module }}
-          </p>
-          <p class="fine m-0">
+      <form id="board-edit-form" class="grid grid-cols-1 gap-3 md:grid-cols-2" (submit)="$event.preventDefault(); saveFields()">
+        <div class="app-modal__intro md:col-span-2">
+          <p class="app-modal__intro-title">{{ ticket.id }} · {{ ticket.title || ticket.module }}</p>
+          <p class="app-modal__intro-meta">
             สถานะ: {{ ticket.workflowStatus }} · เริ่ม: {{ ticket.actualStartOn || '—' }} · Reopen: {{ ticket.reopenCount }}
           </p>
         </div>
@@ -173,8 +172,7 @@
           }
           </div>
         </app-section-card>
-        <label class="grid gap-1">
-          <span class="fine">สายงาน (Discipline)</span>
+        <app-form-field label="สายงาน (Discipline)">
           <ejs-dropdownlist
             [dataSource]="disciplineOptions"
             [fields]="fields"
@@ -182,9 +180,8 @@
             [enabled]="canEditPlanning()"
             (change)="setDiscipline($event)"
           ></ejs-dropdownlist>
-        </label>
-        <label class="grid gap-1">
-          <span class="fine">หมวด (Work Category)</span>
+        </app-form-field>
+        <app-form-field label="หมวด (Work Category)">
           <ejs-dropdownlist
             [dataSource]="categoryOptions"
             [fields]="fields"
@@ -192,9 +189,8 @@
             [enabled]="canEditPlanning()"
             (change)="setCategory($event)"
           ></ejs-dropdownlist>
-        </label>
-        <label class="grid gap-1">
-          <span class="fine">Story points (เฉพาะ lead/admin)</span>
+        </app-form-field>
+        <app-form-field label="Story points" hint="แก้ได้เฉพาะ lead/admin">
           <ejs-dropdownlist
             [dataSource]="storyOptions"
             [fields]="fields"
@@ -202,16 +198,15 @@
             [enabled]="canEditPlanning()"
             (change)="setStory($event)"
           ></ejs-dropdownlist>
-        </label>
-        <label class="grid gap-1">
-          <span class="fine">วันส่งครั้งแรก (ล็อกเมื่อบันทึกแล้ว)</span>
+        </app-form-field>
+        <app-form-field label="วันส่งครั้งแรก" hint="ล็อกเมื่อบันทึกแล้ว">
           <ejs-datepicker
             format="dd/MM/yyyy"
             [value]="due()"
             [enabled]="canEditPlanning() && !dueLocked()"
             (change)="setDue($event)"
           ></ejs-datepicker>
-        </label>
+        </app-form-field>
         <app-section-card variant="nested" [showHead]="false" class="md:col-span-2">
           <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between gap-2">
@@ -226,55 +221,55 @@
 
           @if (isMdDirect() && assigneeWipOptions().length > 0) {
             <div class="mt-1 flex flex-col gap-1 border-t border-[color:var(--line)] pt-2">
-              <span class="text-xs font-semibold">
-                เลือกงาน In Progress ที่ต้องการสั่ง Auto-Shift Due Date ในคลิกเดียว (ขยับ +{{ Math.max(1, Math.ceil(ticket.estimateMd || 1)) }} วันทำงาน):
-              </span>
-              <ejs-multiselect
-                id="md-shift-multiselect"
-                [dataSource]="assigneeWipOptions()"
-                [fields]="{ text: 'text', value: 'id' }"
-                [value]="selectedShiftTargetIds()"
-                placeholder="เลือกใบงานที่ต้องการพักเวลา..."
-                mode="Box"
-                (change)="selectedShiftTargetIds.set($event.value ?? [])"
-              ></ejs-multiselect>
-              <span class="fine">ระบบจะขยับ firstDueOn ของงานที่เลือกออกไปอัตโนมัติเมื่อกดบันทึกฟิลด์</span>
+              <app-form-field
+                label="งาน In Progress ที่จะ Auto-Shift"
+                [hint]="'ขยับ +' + Math.max(1, Math.ceil(ticket.estimateMd || 1)) + ' วันทำงานเมื่อบันทึก'"
+              >
+                <ejs-multiselect
+                  id="md-shift-multiselect"
+                  [dataSource]="assigneeWipOptions()"
+                  [fields]="{ text: 'text', value: 'id' }"
+                  [value]="selectedShiftTargetIds()"
+                  placeholder="เลือกใบงานที่ต้องการพักเวลา..."
+                  mode="Box"
+                  (change)="selectedShiftTargetIds.set($event.value ?? [])"
+                ></ejs-multiselect>
+              </app-form-field>
             </div>
           }
           </div>
         </app-section-card>
-        <label class="grid gap-1 md:col-span-2">
-          <span class="fine">ลิงก์ MR (จำเป็นก่อนเข้า Code Review)</span>
+        <app-form-field class="md:col-span-2" label="ลิงก์ MR" hint="จำเป็นก่อนเข้า Code Review">
           <ejs-textbox [value]="mrLink()" (change)="setMr($event)" placeholder="https://git.local/mr/..."></ejs-textbox>
-        </label>
+        </app-form-field>
         @if (workCategory() === 'R&D-PoC') {
-          <label class="grid gap-1">
-            <span class="fine">ผล PoC</span>
+          <app-form-field label="ผล PoC">
             <ejs-dropdownlist
               [dataSource]="pocOptions"
               [fields]="fields"
               [value]="pocResult()"
               (change)="setPoc($event)"
             ></ejs-dropdownlist>
-          </label>
+          </app-form-field>
         }
         @if (bugCategory()) {
-          <label class="grid gap-1">
-            <span class="fine">สาเหตุ Bug (จำเป็นก่อนปิด Done)</span>
+          <app-form-field label="สาเหตุ Bug" hint="จำเป็นก่อนปิด Done">
             <ejs-dropdownlist
               [dataSource]="causeOptions"
               [fields]="fields"
               [value]="bugCause()"
               (change)="setCause($event)"
             ></ejs-dropdownlist>
-          </label>
+          </app-form-field>
         }
-        <div class="flex justify-end gap-2 md:col-span-2 mt-2">
-          <button ejs-button cssClass="e-flat" type="button" (click)="closeEditDialog()">ยกเลิก</button>
-          <button ejs-button cssClass="e-primary" type="submit">บันทึกฟิลด์</button>
-        </div>
       </form>
     }
+  </ng-template>
+  <ng-template #footerTemplate>
+    <div class="app-modal__footer">
+      <button ejs-button cssClass="e-outline" type="button" (click)="closeEditDialog()">ยกเลิก</button>
+      <button ejs-button cssClass="e-primary" type="submit" form="board-edit-form">บันทึกฟิลด์</button>
+    </div>
   </ng-template>
 </ejs-dialog>
 
@@ -292,13 +287,14 @@
   #mdShiftDialog
   id="board-md-shift-dialog"
   header="งานสั่งตรงจาก MD: ตรวจพบงานที่ค้างอยู่ในมือ (Active WIP)"
-  width="540px"
+  cssClass="app-modal"
+  width="560px"
   [visible]="false"
   [isModal]="true"
   [showCloseIcon]="false"
 >
   <ng-template #content>
-    <div class="flex flex-col gap-3 py-1">
+    <div class="flex flex-col gap-3">
       <ejs-message
         severity="Warning"
         variant="Outlined"
@@ -325,15 +321,16 @@
         variant="Outlined"
         content="งานเดิมไม่โดนตัดคะแนน On-time · เวลาพักไม่คิดเป็น Actual MD · บันทึก Audit Log อัตโนมัติ"
       ></ejs-message>
-
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700/60">
-        <button ejs-button cssClass="e-flat" type="button" (click)="skipMdShift()">
-          ทำคู่ขนาน (ไม่พักงานเดิม)
-        </button>
-        <button ejs-button cssClass="e-primary" type="button" (click)="confirmMdShift()">
-          ยืนยันพักงานและเลื่อนวันส่ง (+{{ mdShiftDays() }} วัน)
-        </button>
-      </div>
+    </div>
+  </ng-template>
+  <ng-template #footerTemplate>
+    <div class="app-modal__footer">
+      <button ejs-button cssClass="e-outline" type="button" (click)="skipMdShift()">
+        ทำคู่ขนาน (ไม่พักงานเดิม)
+      </button>
+      <button ejs-button cssClass="e-primary" type="button" (click)="confirmMdShift()">
+        ยืนยันพักงานและเลื่อนวันส่ง (+{{ mdShiftDays() }} วัน)
+      </button>
     </div>
   </ng-template>
 </ejs-dialog>

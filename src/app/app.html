@@ -141,6 +141,7 @@
   #alertDialog
   id="shell-alert-dialog"
   header="รายการแจ้งเตือนใบงานที่ต้องเฝ้าระวัง"
+  cssClass="app-modal"
   width="560px"
   [visible]="false"
   [isModal]="true"
@@ -180,7 +181,7 @@
     }
   </ng-template>
   <ng-template #footerTemplate>
-    <div class="flex flex-wrap justify-end gap-2">
+    <div class="app-modal__footer">
       <button ejs-button cssClass="e-outline" type="button" (click)="goToTicketScores()">ดูตารางคะแนน</button>
       <button ejs-button cssClass="e-primary" type="button" (click)="goToTicketBoard()">เปิดกระดานงาน (Board)</button>
     </div>

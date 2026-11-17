@@ -196,6 +196,81 @@ body.e-light-mode .e-dlg-overlay {
   background: rgba(15, 23, 42, 0.35);
 }
 
+/* Modal polish (แนว UI Kit จุดๆ) — อย่าใส่ transform บน .e-dialog */
+.e-dialog.app-modal,
+.e-dialog.app-modal-confirm {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+}
+
+.e-dialog.app-modal .e-dlg-header-content,
+.e-dialog.app-modal-confirm .e-dlg-header-content {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+
+.e-dialog.app-modal .e-dlg-header,
+.e-dialog.app-modal-confirm .e-dlg-header {
+  font-family: 'IBM Plex Sans Thai', 'Montserrat', 'Sarabun', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.e-dialog.app-modal .e-dlg-content,
+.e-dialog.app-modal-confirm .e-dlg-content {
+  padding: 16px 18px;
+}
+
+.e-dialog.app-modal .e-footer-content,
+.e-dialog.app-modal-confirm .e-footer-content {
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--line);
+  background: transparent;
+}
+
+.app-modal__footer,
+.app-modal-confirm .confirm-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.app-modal__intro {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.app-modal__intro-title {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.app-modal__intro-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.e-dialog.app-modal .field > .e-input-group,
+.e-dialog.app-modal .field > .e-control-wrapper,
+.e-dialog.app-modal .field .e-multiselect {
+  width: 100%;
+}
+
+body.e-dark-mode .e-dialog.app-modal,
+body.e-dark-mode .e-dialog.app-modal-confirm {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
 // -----------------------------------------------------------------------------
 // 7) Charts — กินความกว้างของกรอบแอปเท่านั้น
 // -----------------------------------------------------------------------------

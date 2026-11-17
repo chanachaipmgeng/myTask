@@ -56,6 +56,7 @@
 <ejs-dialog
   #detailDialog
   header="สรุปใบงาน"
+  cssClass="app-modal"
   width="480px"
   [visible]="false"
   [isModal]="true"
@@ -63,13 +64,14 @@
 >
   <ng-template #content>
     @if (detail(); as row) {
+      <div class="app-modal__intro">
+        <p class="app-modal__intro-title">{{ row.workLabel }}</p>
+        <p class="app-modal__intro-meta">ผู้รับ: {{ row.assignee }} · ขนาด {{ row.size }}</p>
+      </div>
       <div class="grid gap-2 text-sm">
-        <p class="m-0 font-bold">{{ row.workLabel }}</p>
-        <p class="m-0">ผู้รับ: {{ row.assignee }}</p>
         <p class="m-0 flex flex-wrap items-center gap-2">
           สถานะ:
           <app-status-badge [value]="row.status" [toneMap]="workflowStatusToneMap"></app-status-badge>
-          · ขนาด {{ row.size }}
         </p>
         <p class="m-0">Due: {{ row.dueOnLabel }} · Closed: {{ row.closedOnLabel }}</p>
         <p class="m-0 flex flex-wrap items-center gap-2">
@@ -80,6 +82,8 @@
     }
   </ng-template>
   <ng-template #footerTemplate>
-    <button ejs-button cssClass="e-primary" type="button" (click)="goToBoard()">เปิดในกระดานงาน (Board)</button>
+    <div class="app-modal__footer">
+      <button ejs-button cssClass="e-primary" type="button" (click)="goToBoard()">เปิดในกระดานงาน (Board)</button>
+    </div>
   </ng-template>
 </ejs-dialog>

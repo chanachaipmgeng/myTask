@@ -116,7 +116,7 @@
           @if (sel.status === 'PENDING') {
             @if (role() === 'admin' || role() === 'lead') {
               <div class="flex flex-col gap-2">
-                <app-form-field label="หมายเหตุผู้อนุมัติ" variant="filter">
+                <app-form-field label="หมายเหตุผู้อนุมัติ">
                   <ejs-textbox
                     placeholder="ระบุเหตุผลหรือเงื่อนไขในการพิจารณา..."
                     [value]="reviewerComment()"
@@ -171,15 +171,17 @@
   @if (showCreateDialog()) {
     <ejs-dialog
       header="ยื่นขอทบทวนคะแนนใบงาน"
+      cssClass="app-modal"
       [visible]="true"
       [isModal]="true"
       [showCloseIcon]="true"
-      width="480px"
+      width="520px"
       (close)="closeCreateDialog()"
     >
       <ng-template #content>
-        <div class="flex flex-col gap-4 py-2">
-          <app-form-field label="เลือกใบงานที่ต้องการขอทบทวน" variant="filter">
+        <div class="flex flex-col gap-4">
+          <p class="fine m-0">กรอกใบงานและเหตุผลให้ครบ แล้วกดส่งคำขอ — หัวหน้าจะจำลองคะแนนก่อนอนุมัติ</p>
+          <app-form-field label="เลือกใบงานที่ต้องการขอทบทวน">
             <ejs-dropdownlist
               [dataSource]="ticketOptions()"
               [fields]="{ text: 'text', value: 'value' }"
@@ -188,7 +190,7 @@
             ></ejs-dropdownlist>
           </app-form-field>
 
-          <app-form-field label="ประเภทการยกเว้นที่ขอ" variant="filter">
+          <app-form-field label="ประเภทการยกเว้นที่ขอ">
             <ejs-dropdownlist
               [dataSource]="varianceOptions"
               [fields]="{ text: 'text', value: 'value' }"
@@ -197,7 +199,7 @@
             ></ejs-dropdownlist>
           </app-form-field>
 
-          <app-form-field label="เหตุผลประกอบการยื่นขอ" variant="filter">
+          <app-form-field label="เหตุผลประกอบการยื่นขอ">
             <ejs-textbox
               [multiline]="true"
               [htmlAttributes]="{ rows: '3' }"
@@ -208,18 +210,19 @@
             ></ejs-textbox>
           </app-form-field>
 
-          <app-form-field label="ลิงก์หลักฐานแนบ (เช่น แชท Teams หรือ Ticket อ้างอิง)" variant="filter">
+          <app-form-field label="ลิงก์หลักฐานแนบ (เช่น แชท Teams หรือ Ticket อ้างอิง)" hint="ไม่บังคับ แต่ช่วยให้ผู้อนุมัติตรวจเร็วขึ้น">
             <ejs-textbox
               placeholder="https://teams.microsoft.com/..."
               [value]="newEvidenceUrl()"
               (change)="newEvidenceUrl.set($event.value ?? '')"
             ></ejs-textbox>
           </app-form-field>
-
-          <div class="flex justify-end gap-2 pt-2">
-            <button ejs-button cssClass="e-flat" (click)="closeCreateDialog()">ยกเลิก</button>
-            <button ejs-button cssClass="e-primary" (click)="submitNewDispute()">ส่งคำขอ</button>
-          </div>
+        </div>
+      </ng-template>
+      <ng-template #footerTemplate>
+        <div class="app-modal__footer">
+          <button ejs-button cssClass="e-outline" type="button" (click)="closeCreateDialog()">ยกเลิก</button>
+          <button ejs-button cssClass="e-primary" type="button" (click)="submitNewDispute()">ส่งคำขอ</button>
         </div>
       </ng-template>
     </ejs-dialog>
