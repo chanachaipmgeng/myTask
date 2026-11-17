@@ -32,6 +32,9 @@ export class ConfirmDialogComponent {
   @Output() readonly confirmed = new EventEmitter<void>();
   @Output() readonly cancelled = new EventEmitter<void>();
 
+  /** Fade เท่านั้น — ไม่ใช้ Zoom/Slide ที่พึ่ง transform บน .e-dialog */
+  protected readonly animationSettings = { effect: 'Fade' as const, duration: 300, delay: 0 };
+
   private closingByConfirm = false;
 
   open(): void {
