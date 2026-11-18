@@ -462,24 +462,24 @@
 
   <div class="img-container">
     <img src="manual_assets/01_login.png" alt="Login & Role Switcher Screen">
-    <div class="img-caption">ภาพที่ 1: หน้าจอ Login พร้อมปุ่ม Single Sign-On (GitLab OAuth) และแผงสลับบัญชีผู้ใช้งานทั้ง 15 คน แยกตามบทบาท</div>
+    <div class="img-caption">ภาพที่ 1: หน้าเข้าสู่ระบบแบบ split hero (MyHR Intelligence) · แท็บเลือกบัญชีพนักงานพร้อมค้นหา/กรองสิทธิ์ และการ์ดโปรไฟล์ · แท็บระบบเชื่อมต่อภายนอกสำหรับซิงค์ MyProject และ GitLab OAuth SSO</div>
   </div>
 
   <div class="info-grid">
     <div class="info-card">
       <h4>🎯 ฟังก์ชันการเข้าสู่ระบบ</h4>
       <ul>
-        <li><strong>GitLab OAuth SSO:</strong> เข้าสู่ระบบด้วยบัญชี GitLab องค์กร ปลอดภัยและตรงตามมาตรฐาน Identity Provider</li>
-        <li><strong>Persona Switcher:</strong> เครื่องมือจำลองบัญชีพนักงานทั้ง 15 คน สำหรับการทดสอบและบริหารงานจริง</li>
-        <li><strong>สิทธิ์ 3 ระดับ:</strong> แยกสีชัดเจนระหว่าง <code>admin</code> (สีแดง), <code>lead</code> (สีน้ำเงิน), และ <code>member</code> (สีเขียว)</li>
+        <li><strong>แท็บเลือกบัญชีพนักงาน:</strong> ค้นหา/กรองตามสิทธิ์ แล้วคลิกการ์ด (avatar หรือตัวย่อ 2 ตัวอักษร) เพื่อเข้าใช้งานทันที — จำนวนคนตาม roster ที่ active จริง ไม่ผูกตัวเลขคงที่</li>
+        <li><strong>แท็บระบบเชื่อมต่อภายนอก (SSO):</strong> ปุ่มซิงค์รายชื่อพนักงานจาก MyProject (OpenProject) และเข้าสู่ระบบด้วย GitLab OAuth SSO</li>
+        <li><strong>สิทธิ์ 3 ระดับ:</strong> แยกสีบนการ์ดระหว่าง <code>admin</code>, <code>lead</code>, และ <code>member</code> · รากเว็บ (<code>/</code>) เปลี่ยนเส้นทางไป <code>/login</code> โดยอัตโนมัติ</li>
       </ul>
     </div>
     <div class="info-card">
       <h4>💡 ผลกระทบต่อระบบเมื่อสลับบัญชี</h4>
       <ul>
-        <li>เมนูในแถบด้านข้าง (Sidebar) จะถูกกรองตามสิทธิ์ของผู้ใช้งานคนนั้นโดยอัตโนมัติ</li>
-        <li>ระบบจะโหลดข้อมูลโปรไฟล์ คะแนนโควตาส่วนบุคคล และงานที่ได้รับมอบหมายขึ้นมาทันที</li>
-        <li>หน้าจอที่ต้องการสิทธิ์ระดับสูง เช่น <code>/admin</code> หรือ <code>/integrations</code> จะถูกซ่อนและป้องกัน</li>
+        <li>หลังเข้าแล้วจะเข้าสู่ shell ปกติ (Sidebar + AppBar) พร้อมโปรไฟล์ผู้ใช้และปุ่มออกจากระบบ</li>
+        <li>เมนูด้านข้างถูกกรองตามสิทธิ์ · หน้าเช่น <code>/admin</code> / <code>/integrations</code> ถูกซ่อนและกันด้วย route guard</li>
+        <li>รูปโปรไฟล์จาก MyProject มี fallback เป็นตัวย่อบน gradient หากโหลด avatar ไม่สำเร็จ</li>
       </ul>
     </div>
   </div>
@@ -984,7 +984,7 @@
     <div class="info-card">
       <h4>🎯 การเชื่อมต่อทั้ง 3 ระบบ</h4>
       <ul>
-        <li><strong>1. OpenProject:</strong> ซิงก์ Work Packages, ชั่วโมงทำงาน (Time Entries) พร้อมกติกา FirstDueOn Lock ป้องกันการเขียนทับวันส่งแรก</li>
+        <li><strong>1. OpenProject:</strong> ซิงก์ Work Packages, ชั่วโมงทำงาน (Time Entries) พร้อมกติกา FirstDueOn Lock ป้องกันการเขียนทับวันส่งแรก · มีปุ่มซิงค์พนักงาน (sync-users) เก็บ avatar/แผนก/ตำแหน่ง (ใช้จาก `/integrations` หรือแท็บ SSO บน `/login`)</li>
         <li><strong>2. GitLab API v4:</strong> ดึง Merge Requests พร้อมดึงรายชื่อ Reviewers &amp; Approvals จาก <code>/merge_requests/:iid/approvals</code> เพื่อคำนวณ Peer Review Quota</li>
         <li><strong>3. Microsoft Teams Webhook:</strong> ยิงแจ้งเตือนใบงานที่หลุดกำหนดส่ง หรืองานค้าง SLA ข้ามทีมเข้าแชลแนลทีมโดยตรง</li>
       </ul>

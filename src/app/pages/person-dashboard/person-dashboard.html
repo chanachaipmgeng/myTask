@@ -1,11 +1,13 @@
 <section class="page flex flex-col gap-4">
   @if (!view().found) {
     <app-section-card title="ไม่พบพนักงานนี้">
-      <button ejs-button cssClass="e-outline" type="button" (click)="back()">กลับรายชื่อพนักงาน</button>
+      <button ejs-button cssClass="e-outline" type="button" (click)="back()">
+        {{ isMine ? 'กลับหน้าผลงานของฉัน' : 'กลับรายชื่อพนักงาน' }}
+      </button>
     </app-section-card>
   } @else {
     <app-page-head
-      [title]="view().name + ' · ' + view().role"
+      [title]="(isMine ? 'วิเคราะห์ผลงานเชิงลึกของฉัน · ' : '') + view().name + ' · ' + view().role"
       [description]="
         view().trackLabel +
         ' · ' +
@@ -19,6 +21,14 @@
       "
     >
       <div actions class="flex flex-wrap items-center gap-2">
+        @if (isMine) {
+          <a ejs-button cssClass="e-primary" iconCss="e-icons e-table-1" routerLink="/me/tickets">
+            ตารางคะแนนใบงานของฉัน
+          </a>
+          <a ejs-button cssClass="e-outline" iconCss="e-icons e-clock" routerLink="/me/time-audit">
+            เช็กเวลา 3 ทาง
+          </a>
+        }
         @if (prevPerson(); as prev) {
           <button
             ejs-button
@@ -45,7 +55,7 @@
           </button>
         }
         <button ejs-button cssClass="e-outline" iconCss="e-icons e-arrow-left" type="button" (click)="back()">
-          กลับรายชื่อพนักงาน
+          {{ isMine ? 'กลับหน้าผลงานวันนี้' : 'กลับรายชื่อพนักงาน' }}
         </button>
       </div>
     </app-page-head>

@@ -96,14 +96,18 @@ export class WorkBoard {
   );
 
   protected readonly fields = { text: 'text', value: 'value' };
-  protected readonly swimlaneOptions = [
-    { text: 'ไม่จัดกลุ่ม Swimlane', value: 'none' },
-    { text: 'แยกตามผู้รับผิดชอบ', value: 'assignee' },
-    { text: 'แยกตามสายงาน (Track)', value: 'track' },
-  ];
+  protected readonly isMine = computed(() => this.hub.scope() === 'mine');
+  protected readonly swimlaneOptions = computed(() => {
+    const options = [
+      { text: 'ไม่จัดกลุ่ม Swimlane', value: 'none' },
+      { text: 'แยกตามผู้รับผิดชอบ', value: 'assignee' },
+      { text: 'แยกตามสายงาน (Track)', value: 'track' },
+    ];
+    return this.isMine() ? options.filter((option) => option.value !== 'assignee') : options;
+  });
   protected readonly swimlaneMode = signal<SwimlaneMode>('none');
   protected readonly swimlaneSettings = computed<SwimlaneSettingsModel>(() => {
-    const mode = this.swimlaneMode();
+    const mode = this.isMine() && this.swimlaneMode() === 'assignee' ? 'none' : this.swimlaneMode();
     if (mode === 'assignee') {
       return { keyField: 'assigneeKey', textField: 'assigneeLabel', showItemCount: true };
     }
@@ -154,9 +158,14 @@ export class WorkBoard {
   protected readonly bugCause = signal<BugCause | ''>('');
 
   protected readonly visibleTickets = computed(() => {
-    const track = this.hub.track();
-    const query = this.hub.query().trim().toLowerCase();
+    const options = this.hub.filterOptions();
+    const track = options.track ?? 'All';
+    const query = (options.query ?? '').trim().toLowerCase();
+    const assigneeId = options.assigneeId?.trim() ?? '';
     return this.scorecard.tickets().filter((ticket) => {
+      if (assigneeId && ticket.assigneeId !== assigneeId) {
+        return false;
+      }
       if (track !== 'All' && ticket.track !== track) {
         return false;
       }
@@ -240,6 +249,10 @@ export class WorkBoard {
 
   protected setSwimlane(event: { value?: string | null }): void {
     const val = event.value;
+    if (val === 'assignee' && this.isMine()) {
+      this.swimlaneMode.set('none');
+      return;
+    }
     if (val === 'none' || val === 'assignee' || val === 'track') {
       this.swimlaneMode.set(val);
     }

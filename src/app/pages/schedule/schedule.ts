@@ -9,7 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { CalendarModule } from '@syncfusion/ej2-angular-calendars';
 import {
@@ -37,7 +37,9 @@ import {
   ToolbarActionArgs,
 } from '@syncfusion/ej2-angular-schedule';
 import { ItemModel } from '@syncfusion/ej2-navigations';
+import { currentViewer } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
+import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { Person, Ticket, Track, WorkflowStatus } from '../../core/models';
 import { workflowStatusOf } from '../../core/workflow';
@@ -143,9 +145,11 @@ const COLORS = [
   styleUrl: './schedule.scss',
 })
 export class SchedulePage {
+  private readonly route = inject(ActivatedRoute);
   private readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
   private readonly board = viewChild<ScheduleComponent>('board');
   private readonly boardHost = viewChild<ElementRef<HTMLElement>>('boardHost');
   private readonly loadChartDialog = viewChild<DialogComponent>('loadChartDialog');
@@ -179,7 +183,9 @@ export class SchedulePage {
   ];
   protected readonly track = signal<TrackFilter>('All');
   /** All = ทุกคนในสายที่กรอง · หรือ person.id รายคน */
-  protected readonly personId = signal<string>('All');
+  protected readonly personId = signal<string>(
+    this.isMine ? (currentSession()?.person.id ?? currentViewer().id) : 'All',
+  );
   protected readonly dayFilter = signal<DayFilter>('ALL');
   protected readonly scheduleHeight = signal('640px');
   protected readonly selectedDay = signal<Date>(

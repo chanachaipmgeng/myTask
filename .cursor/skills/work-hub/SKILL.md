@@ -10,21 +10,22 @@ description: >-
 
 ## โครง
 
-- Shell: `src/app/pages/work/work-shell.*` + `WorkHubFilter` (สาย + ค้นหา)
-- Children routes: `summary` | `timeline` | `backlog` | `board` | `list`
-- โดเมน: `shared/domain/work-views.ts` → re-export `src/app/core/work-views.ts`
+- Shell: `src/app/pages/work/work-shell.*` + `WorkHubFilter` (สาย + ค้นหา + `scope` mine|team + `assigneeId`)
+- Routes: `/work` (ทีม · `admin`/`lead` · `data.scope = 'team'`) และ `/me/work` (ของฉัน · ทุกสิทธิ์ · `data.scope = 'mine'`)
+- Children: `summary` | `timeline` | `backlog` | `board` | `list` · แท็บ `handoff` มีเฉพาะฮับทีม
+- โดเมน: `shared/domain/work-views.ts` → re-export `src/app/core/work-views.ts` · `filterWorkTickets` รองรับ `assigneeId`
 
 ## มุมมอง
 
 | แท็บ | UI | โดเมน / บริการ |
 |---|---|---|
-| Summary | `app-kpi-stat` + Chart / DashboardLayout + `ejs-message` (MD Mandate) | `workSummaryStats` |
-| Timeline | `ejs-gantt` (`parentID: 'ParentID'`, Toolbar, `EditService` เฉพาะ `admin`/`lead`) · สวิตช์ `viewMode` project\|resource → `viewType` ProjectView\|ResourceView · remount `#workGantt` เมื่อสลับ · sanitize `ResourceInfo` ให้มี `resourceId` · **ไม่**เปิด FixedWork / work-unit recalc | `workGanttTasks`, `applyGanttDateEdit`, `updateTicketDates` |
-| Backlog | Grid ใน `section-card` | `workBacklogRows` |
-| Board | `app-kpi-stat` + Kanban + Swimlane + Rich Card (`e-badge` MD-DIRECT/PAUSED) + `#editDialog` + `ejs-timeline` Delivery events | `workflow` + `ScorecardService` + `delivery-timeline` |
-| List | Grid งาน (`ColumnChooser`, `ExcelExport`, `CsvExport`, `ResizeService`, ปุ่มไป Board) | `workListRows` |
-| Handoff | `app-page-head` + `app-section-card` + `app-kpi-stat` + `app-status-badge` (chart / blocker / SLA grid) | `multi-team` / Scorecard handoff report |
-| Board block | `app-confirm-dialog` (รับทราบ) · edit dialog ยังเป็น `#editDialog` เต็ม | workflow guards |
+| Summary | `app-kpi-stat` + Chart / DashboardLayout + `ejs-message` (MD Mandate) | `workSummaryStats` (+ `assigneeId` เมื่อ mine) |
+| Timeline | `ejs-gantt` · ทีม: สวิตช์ ProjectView/ResourceView + แก้วันถ้า `canAssignWork` · ของฉัน: ProjectView อ่านอย่างเดียว | `workGanttTasks`, `applyGanttDateEdit` |
+| Backlog | Grid ใน `section-card` · ทีม = Backlog หรือยังไม่มีผู้รับ · ของฉัน = Backlog ที่ assign ให้ฉัน · grid id คนละชุด | `workBacklogRows` |
+| Board | Kanban + Swimlane (ของฉันไม่มี swimlane ตามคน) + Dialog + Delivery Timeline | `workflow` + filter ตาม `assigneeId` |
+| List | Grid งาน · grid id คนละชุดระหว่างทีม/ของฉัน · ปุ่มไป Board ตาม scope | `workListRows` |
+| Handoff | เฉพาะ `/work/handoff` | `multi-team` / Scorecard handoff report |
+| Board block | `app-confirm-dialog` · edit dialog `#editDialog` | workflow guards |
 
 ## Shared UI (`src/app/shared/ui/`)
 

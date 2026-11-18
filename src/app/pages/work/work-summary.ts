@@ -89,10 +89,7 @@ export class WorkSummary implements AfterViewInit {
   protected readonly palette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6', '#94a3b8'];
 
   protected readonly view = computed(() =>
-    workSummaryStats(this.scorecard.tickets(), this.scorecard.people(), {
-      track: this.hub.track(),
-      query: this.hub.query(),
-    }),
+    workSummaryStats(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
   );
 
   protected readonly statusCenter = computed(() => {

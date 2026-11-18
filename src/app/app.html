@@ -23,22 +23,48 @@
             <p class="eyebrow">Central Sync &amp; Scorecard</p>
             <p class="brand-title">คะแนนใบงาน</p>
             <p class="brand-sub">
-              {{ role() === 'member' ? 'พอร์ทัลพนักงาน · 1 MD = 6 ชม.' : 'ฮับบริหาร & วิเคราะห์ · 1 MD = 6 ชม.' }}
+              @if (role() === 'admin') {
+                โหมดผู้ดูแลระบบ · 1 MD = 6 ชม.
+              } @else if (role() === 'lead') {
+                โหมดบริหารทีม · 1 MD = 6 ชม.
+              } @else {
+                โหมดงานของฉัน · 1 MD = 6 ชม.
+              }
             </p>
           </div>
         </div>
 
-        <ejs-treeview
-          id="app-nav-tree"
-          cssClass="side-nav-tree"
-          [fields]="navFields()"
-          [expandedNodes]="expandedNodes"
-          [selectedNodes]="selectedNodes()"
-          [fullRowSelect]="true"
-          (nodeSelecting)="onNavSelecting($event)"
-          (nodeClicked)="onNavClick($event)"
-          (nodeSelected)="onNavSelect($event)"
-        ></ejs-treeview>
+        @if (canSwitchMode()) {
+          <div class="sidebar-mode-switcher" role="tablist" aria-label="สลับโหมดการทำงาน">
+            @for (mode of availableModes(); track mode.id) {
+              <button
+                type="button"
+                class="mode-switch-btn"
+                [attr.data-mode]="mode.id"
+                [class.is-active]="role() === mode.id"
+                [title]="'สลับเป็นโหมด ' + mode.label"
+                (click)="switchWorkspaceMode(mode.id)"
+              >
+                <span [class]="mode.icon"></span>
+                <span class="mode-switch-label">{{ mode.shortLabel }}</span>
+              </button>
+            }
+          </div>
+        }
+
+        @for (navKey of [role()]; track navKey) {
+          <ejs-treeview
+            [id]="'app-nav-tree-' + navKey"
+            cssClass="side-nav-tree"
+            [fields]="navFields()"
+            [expandedNodes]="expandedNodes"
+            [selectedNodes]="selectedNodes()"
+            [fullRowSelect]="true"
+            (nodeSelecting)="onNavSelecting($event)"
+            (nodeClicked)="onNavClick($event)"
+            (nodeSelected)="onNavSelect($event)"
+          ></ejs-treeview>
+        }
       </div>
 
       <div class="sidebar-profile" [attr.data-role]="role()">
@@ -84,7 +110,13 @@
       <div class="appbar-copy">
         <span class="appbar-title">{{ title() }}</span>
         <span class="appbar-note">
-          {{ role() === 'member' ? 'มุมมองพนักงานทั่วไป (My Workspace)' : 'มุมมองบริหาร ซิงก์ และวิเคราะห์ข้อมูล' }}
+          @if (role() === 'admin') {
+            มุมมองตั้งค่าระบบและธรรมาภิบาลคะแนน (Admin Console)
+          } @else if (role() === 'lead') {
+            มุมมองบริหารแผนงาน ตรวจรับคุณภาพ และโค้ชชิ่งทีม (Lead Command Center)
+          } @else {
+            มุมมองจัดการใบงานและวิเคราะห์ผลงานส่วนตัว (Member Workspace)
+          }
         </span>
       </div>
 
@@ -96,13 +128,13 @@
         </div>
 
         @if (role() === 'admin') {
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/admin" title="จัดการสิทธิ์ & Audit Log">
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/integrations" title="เชื่อมต่อระบบภายนอก">
             <span class="e-icons e-settings"></span>
-            <span class="shortcut-text">ผู้ดูแล</span>
+            <span class="shortcut-text">Integrations</span>
           </a>
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/analytics" title="ศูนย์วิเคราะห์ Python">
-            <span class="e-icons e-chart"></span>
-            <span class="shortcut-text">วิเคราะห์ AI</span>
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/admin/snapshot-check" title="ตรวจสอบก่อนแช่แข็งคะแนน">
+            <span class="e-icons e-lock"></span>
+            <span class="shortcut-text">เช็ก Snapshot</span>
           </a>
         } @else if (role() === 'lead') {
           <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/team" title="แดชบอร์ดทีม">
@@ -114,13 +146,13 @@
             <span class="shortcut-text">คิวงาน</span>
           </a>
         } @else {
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/me" title="พื้นที่ของฉัน">
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/me" title="ผลงานของฉัน">
             <span class="e-icons e-user"></span>
-            <span class="shortcut-text">งานของฉัน</span>
+            <span class="shortcut-text">งานวันนี้</span>
           </a>
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/schedule" title="ปฏิทินส่งมอบ">
-            <span class="e-icons e-day"></span>
-            <span class="shortcut-text">ปฏิทิน</span>
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/me/analytics" title="วิเคราะห์ผลงานของฉัน">
+            <span class="e-icons e-chart"></span>
+            <span class="shortcut-text">วิเคราะห์ตัวเอง</span>
           </a>
         }
 
@@ -132,18 +164,22 @@
           <span class="e-badge e-badge-info e-badge-pill">ออฟไลน์ (Seed)</span>
         }
 
-        @if (trueRole() !== 'member') {
-          <button
-            ejs-button
-            id="appbar-persona-toggle"
-            [cssClass]="previewingMember() ? 'e-info e-small appbar-chip-btn' : 'e-flat e-small appbar-chip-btn'"
-            iconCss="e-icons e-eye"
-            type="button"
-            title="สลับดูหน้าจอและเมนูแบบพนักงานทั่วไป"
-            (click)="togglePersonaPreview()"
-          >
-            {{ previewingMember() ? 'กำลังดูมุมมองพนักงาน (กดเพื่อกลับ)' : 'ดูมุมมองพนักงาน' }}
-          </button>
+        @if (canSwitchMode()) {
+          <div id="appbar-persona-toggle" class="appbar-mode-pills" role="group" aria-label="สลับโหมดการทำงาน">
+            @for (mode of availableModes(); track mode.id) {
+              <button
+                type="button"
+                class="appbar-mode-pill"
+                [attr.data-mode]="mode.id"
+                [class.is-active]="role() === mode.id"
+                [title]="'สลับเป็นโหมด ' + mode.label"
+                (click)="switchWorkspaceMode(mode.id)"
+              >
+                <span [class]="mode.icon"></span>
+                <span>{{ mode.label }}</span>
+              </button>
+            }
+          </div>
         }
 
         <button

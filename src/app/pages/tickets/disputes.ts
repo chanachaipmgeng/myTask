@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import {
@@ -25,9 +26,10 @@ import {
 import { SplitterModule } from '@syncfusion/ej2-angular-layouts';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { DialogModule } from '@syncfusion/ej2-angular-popups';
-import { effectiveRole } from '../../core/admin-settings';
+import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { TicketDispute, VarianceCode } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
+import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import {
@@ -71,9 +73,12 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
   styleUrl: './disputes.scss',
 })
 export class DisputesPage implements OnInit {
+  private readonly route = inject(ActivatedRoute);
   protected readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
   private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
 
   /** กว้าง: ซ้าย–ขวา · แคบ: บน–ล่าง */
   protected readonly splitterOrientation = signal<'Horizontal' | 'Vertical'>('Horizontal');
@@ -83,9 +88,23 @@ export class DisputesPage implements OnInit {
   protected readonly statusFilter = signal<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
   protected readonly disputes = this.scorecard.disputes;
 
+  private readonly activePersonId = computed(
+    () => currentSession()?.person.id ?? currentViewer().id,
+  );
+
+  /** Member or /me/disputes sees only their own requests; lead/admin on /tickets/disputes see the full queue. */
+  private readonly scopedDisputes = computed(() => {
+    const all = this.disputes();
+    if (!this.isMine && this.role() !== 'member') {
+      return all;
+    }
+    const personId = this.activePersonId();
+    return all.filter((d) => d.requesterId === personId);
+  });
+
   protected readonly filteredDisputes = computed(() => {
     const status = this.statusFilter();
-    return this.disputes().filter((d) => d.status === status);
+    return this.scopedDisputes().filter((d) => d.status === status);
   });
 
   protected readonly selectedDispute = signal<TicketDispute | null>(null);
@@ -112,12 +131,18 @@ export class DisputesPage implements OnInit {
     { text: 'ขอติดป้าย REQ (Requirement ไม่เคลียร์/มีการแก้สเปก)', value: 'REQ' },
   ];
 
-  protected readonly ticketOptions = computed(() =>
-    this.scorecard.tickets().map((t) => ({
-      text: `${t.id} - ${t.title || t.module} (คะแนน: ${t.actualMd} MD)`,
-      value: t.id,
-    })),
-  );
+  protected readonly ticketOptions = computed(() => {
+    const personId = this.activePersonId();
+    const role = this.role();
+    const mineOnly = this.isMine || role === 'member';
+    return this.scorecard
+      .tickets()
+      .filter((t) => (mineOnly ? t.assigneeId === personId : true))
+      .map((t) => ({
+        text: `${t.id} - ${t.title || t.module} (คะแนน: ${t.actualMd} MD)`,
+        value: t.id,
+      }));
+  });
 
   protected readonly statusToneMap: Record<string, BadgeTone> = {
     PENDING: 'warning',
@@ -126,7 +151,7 @@ export class DisputesPage implements OnInit {
   };
 
   protected readonly statusChipOptions = computed<FilterChipOption[]>(() => {
-    const all = this.disputes();
+    const all = this.scopedDisputes();
     return [
       { id: 'PENDING', label: 'รออนุมัติ', count: all.filter((d) => d.status === 'PENDING').length },
       { id: 'APPROVED', label: 'อนุมัติแล้ว', count: all.filter((d) => d.status === 'APPROVED').length },
@@ -135,6 +160,12 @@ export class DisputesPage implements OnInit {
   });
 
   ngOnInit(): void {
+    const presetTicketId = this.route.snapshot.queryParamMap.get('ticketId');
+    if (presetTicketId) {
+      this.newTicketId.set(presetTicketId);
+      this.showCreateDialog.set(true);
+    }
+
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       return;
     }

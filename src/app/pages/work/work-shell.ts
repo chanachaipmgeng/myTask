@@ -1,14 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { filter, map, startWith } from 'rxjs';
+import { currentViewer } from '../../core/admin-settings';
+import { currentSession } from '../../core/session';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { WorkHubFilter } from './work-hub-filter';
+import { WorkHubFilter, WorkHubScope } from './work-hub-filter';
 
-const TABS = [
+const TEAM_TABS = [
   { text: 'Summary', path: 'summary', icon: 'e-icons e-chart' },
   { text: 'Timeline', path: 'timeline', icon: 'e-icons e-timeline-work-week' },
   { text: 'Backlog', path: 'backlog', icon: 'e-icons e-list-unordered' },
@@ -16,6 +18,8 @@ const TABS = [
   { text: 'List', path: 'list', icon: 'e-icons e-table' },
   { text: 'Handoff & SLA', path: 'handoff', icon: 'e-icons e-clock' },
 ] as const;
+
+const MINE_TABS = TEAM_TABS.filter((tab) => tab.path !== 'handoff');
 
 @Component({
   selector: 'app-work-shell',
@@ -34,6 +38,7 @@ const TABS = [
 })
 export class WorkShell {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   protected readonly filter = inject(WorkHubFilter);
 
   protected readonly trackChipOptions: FilterChipOption[] = [
@@ -41,7 +46,29 @@ export class WorkShell {
     { id: 'Implement', label: 'Implement' },
     { id: 'RD', label: 'R&D' },
   ];
-  protected readonly tabs = TABS;
+
+  constructor() {
+    const scope: WorkHubScope = this.route.snapshot.data['scope'] === 'mine' ? 'mine' : 'team';
+    this.filter.scope.set(scope);
+    if (scope === 'mine') {
+      const personId = currentSession()?.person.id ?? currentViewer().id;
+      this.filter.assigneeId.set(personId);
+    } else {
+      this.filter.assigneeId.set('');
+    }
+  }
+
+  protected readonly isMine = computed(() => this.filter.scope() === 'mine');
+  protected readonly basePath = computed(() => (this.isMine() ? '/me/work' : '/work'));
+  protected readonly tabs = computed(() => (this.isMine() ? MINE_TABS : TEAM_TABS));
+  protected readonly heading = computed(() =>
+    this.isMine() ? 'ฮับงานของฉัน' : 'ฮับบริหารงาน (Work Hub)',
+  );
+  protected readonly subheading = computed(() =>
+    this.isMine()
+      ? 'สรุป · ไทม์ไลน์ · แบ็กล็อก · บอร์ด · รายการ — แสดงเฉพาะใบที่รับผิดชอบ'
+      : 'สลับมุมมอง Summary · Timeline · Backlog · Board · List จากใบงานในระบบ — ไม่เปลี่ยนสูตรคะแนน',
+  );
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -54,7 +81,10 @@ export class WorkShell {
 
   protected readonly activePath = computed(() => {
     const path = this.url().split('?')[0] ?? '';
-    const found = TABS.find((tab) => path.endsWith(`/work/${tab.path}`) || path.includes(`/work/${tab.path}`));
+    const base = this.basePath();
+    const found = this.tabs().find(
+      (tab) => path.endsWith(`${base}/${tab.path}`) || path.includes(`${base}/${tab.path}`),
+    );
     return found?.path ?? 'summary';
   });
 

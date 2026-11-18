@@ -12,6 +12,7 @@ import {
   actualRole,
   currentViewer,
   effectiveRole,
+  setWorkspaceMode,
   toggleViewAsMember,
   viewAsRole,
 } from './core/admin-settings';
@@ -31,7 +32,13 @@ type NavLeaf = {
   exact?: boolean;
   roles?: readonly AccessRole[];
 };
-type NavGroup = { id: string; text: string; expanded: boolean; children: NavLeaf[] };
+type NavGroup = {
+  id: string;
+  text: string;
+  expanded: boolean;
+  roles?: readonly AccessRole[];
+  children: NavLeaf[];
+};
 
 @Component({
   selector: 'app-root',
@@ -137,6 +144,7 @@ export class App implements AfterViewInit {
   protected readonly visibleNavGroups = computed<NavGroup[]>(() => {
     const role = this.role();
     return allNavGroups
+      .filter((group) => !group.roles || group.roles.includes(role))
       .map((group) => ({
         ...group,
         children: group.children.filter((leaf) => !leaf.roles || leaf.roles.includes(role)),
@@ -150,8 +158,28 @@ export class App implements AfterViewInit {
     child: 'children',
     iconCss: 'iconCss',
   }));
-  protected readonly expandedNodes = ['personal', 'overview', 'work', 'connect', 'system'];
-  protected readonly selectedNodes = signal<string[]>(['team']);
+  protected readonly expandedNodes = [
+    'mine-daily',
+    'mine-analytics',
+    'lead-plan',
+    'lead-audit',
+    'admin-gov',
+  ];
+  protected readonly selectedNodes = signal<string[]>(['me']);
+  protected readonly availableModes = computed(() => {
+    const actual = this.trueRole();
+    const list: { id: AccessRole; label: string; shortLabel: string; icon: string }[] = [
+      { id: 'member', label: 'งานของฉัน', shortLabel: 'ของฉัน', icon: 'e-icons e-user' },
+    ];
+    if (actual === 'lead' || actual === 'admin') {
+      list.push({ id: 'lead', label: 'บริหารทีม', shortLabel: 'ทีม', icon: 'e-icons e-people' });
+    }
+    if (actual === 'admin') {
+      list.push({ id: 'admin', label: 'แอดมิน', shortLabel: 'แอดมิน', icon: 'e-icons e-lock' });
+    }
+    return list;
+  });
+  protected readonly canSwitchMode = computed(() => this.availableModes().length > 1);
   private readonly url = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -168,9 +196,9 @@ export class App implements AfterViewInit {
   protected readonly roleThemeClass = computed(() => `role-layout--${this.role()}`);
   protected readonly roleDisplayName = computed(() => {
     const role = this.role();
-    if (role === 'admin') return 'ผู้ดูแลระบบ · Admin';
-    if (role === 'lead') return 'หัวหน้าสายงาน · Lead';
-    return 'พนักงานทั่วไป · Member';
+    if (role === 'admin') return 'โหมดแอดมิน · Admin';
+    if (role === 'lead') return 'โหมดบริหารทีม · Lead';
+    return 'โหมดงานของฉัน · Member';
   });
   protected readonly roleBadgeTone = computed<'danger' | 'warning' | 'info'>(() => {
     const role = this.role();
@@ -187,13 +215,47 @@ export class App implements AfterViewInit {
       this.narrow.set(event.matches);
       this.navOpen.set(!event.matches);
     });
-    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+    this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
       if (this.narrow()) {
         this.navOpen.set(false);
       }
+      const path = event.urlAfterRedirects.split('?')[0] || '/';
+      const actual = this.trueRole();
+      if (path === '/me' || path.startsWith('/me/')) {
+        if (this.role() !== 'member') {
+          setWorkspaceMode('member');
+        }
+      } else if (
+        actual === 'admin' &&
+        (path === '/admin' ||
+          path.startsWith('/admin/') ||
+          path.startsWith('/integrations') ||
+          path.startsWith('/teams') ||
+          path.startsWith('/mockup'))
+      ) {
+        if (this.role() !== 'admin') {
+          setWorkspaceMode('admin');
+        }
+      } else if (
+        actual !== 'member' &&
+        (path === '/team' ||
+          path.startsWith('/work') ||
+          path.startsWith('/queue') ||
+          path.startsWith('/people') ||
+          path.startsWith('/quality') ||
+          path.startsWith('/analytics') ||
+          path.startsWith('/tickets') ||
+          path.startsWith('/schedule') ||
+          path.startsWith('/mygit') ||
+          path.startsWith('/ai'))
+      ) {
+        if (this.role() !== 'lead') {
+          setWorkspaceMode('lead');
+        }
+      }
     });
     effect(() => {
-      this.selectedNodes.set([matchNavId(this.url())]);
+      this.selectedNodes.set([matchNavId(this.url(), this.role())]);
     });
   }
 
@@ -260,29 +322,44 @@ export class App implements AfterViewInit {
 
   protected goToTicketBoard(): void {
     this.alertDialog?.hide();
-    void this.router.navigate(['/work/board']);
+    void this.router.navigate([this.role() === 'member' ? '/me/work/board' : '/work/board']);
   }
 
   protected goToTicketScores(): void {
     this.alertDialog?.hide();
-    void this.router.navigate(['/tickets']);
+    void this.router.navigate([this.role() === 'member' ? '/me' : '/tickets']);
   }
 
   protected openMyWorkspace(): void {
-    void this.router.navigate(['/me']);
+    this.switchWorkspaceMode('member');
   }
 
   protected openLogin(): void {
     void this.router.navigate(['/login']);
   }
 
+  protected switchWorkspaceMode(mode: AccessRole): void {
+    const next = setWorkspaceMode(mode);
+    if (next === 'member') {
+      this.notice.info('สลับเข้าสู่โหมด "งานของฉัน" (Member Workspace)');
+      void this.router.navigate(['/me']);
+    } else if (next === 'lead') {
+      this.notice.info('สลับเข้าสู่โหมด "บริหารทีม" (Lead Command Center)');
+      void this.router.navigate(['/team']);
+    } else {
+      this.notice.info('สลับเข้าสู่โหมด "แอดมิน" (Admin & Governance Console)');
+      void this.router.navigate(['/admin']);
+    }
+  }
+
   protected togglePersonaPreview(): void {
     const next = toggleViewAsMember();
     if (next === 'member') {
-      this.notice.info('สลับเป็นมุมมองพนักงานทั่วไป (Member View) — ซ่อนเมนูตั้งค่าระบบ');
+      this.notice.info('สลับเป็นมุมมองพนักงานทั่วไป (Member View)');
       void this.router.navigate(['/me']);
     } else {
-      this.notice.info(`กลับสู่มุมมอง ${next} ตามสิทธิ์จริง`);
+      this.notice.info(`กลับสู่มุมมอง ${next === 'lead' ? 'บริหารทีม' : 'แอดมิน'}`);
+      void this.router.navigate([next === 'lead' ? '/team' : '/admin']);
     }
   }
 
@@ -294,7 +371,7 @@ export class App implements AfterViewInit {
       } else {
         setSessionUser(null, null);
       }
-      viewAsRole.set(null);
+      setWorkspaceMode(null);
       this.notice.info('ออกจากระบบเรียบร้อยแล้ว');
       void this.router.navigate(['/login']);
     } catch {
@@ -315,136 +392,139 @@ export class App implements AfterViewInit {
 }
 
 const allNavGroups: NavGroup[] = [
+  // ==========================================
+  // โหมดที่ 1: งานของฉัน (Member Workspace)
+  // ==========================================
   {
-    id: 'personal',
-    text: 'พื้นที่ของฉัน',
+    id: 'mine-daily',
+    text: 'จัดการใบงานประจำวัน',
     expanded: true,
+    roles: ['member'],
     children: [
-      { id: 'me', text: 'งานและพัฒนาการของฉัน', iconCss: 'e-icons e-user', route: '/me' },
+      { id: 'me', text: 'ผลงาน & งานวันนี้', iconCss: 'e-icons e-user', route: '/me', exact: true },
+      { id: 'my-work', text: 'ฮับงานของฉัน (Board/Gantt)', iconCss: 'e-icons e-timeline-work-week', route: '/me/work' },
+      { id: 'my-schedule', text: 'ปฏิทินงานของฉัน', iconCss: 'e-icons e-date-time', route: '/me/schedule' },
+      { id: 'my-mygit', text: 'ซิงก์ MR ของฉัน', iconCss: 'e-icons e-refresh', route: '/me/mygit' },
+      { id: 'my-ai', text: 'ติดตามงาน AI ของฉัน', iconCss: 'e-icons e-chart', route: '/me/ai' },
     ],
   },
   {
-    id: 'overview',
-    text: 'ภาพรวมและวิเคราะห์',
+    id: 'mine-analytics',
+    text: 'ผลงาน & วิเคราะห์ตัวเอง',
     expanded: true,
+    roles: ['member'],
     children: [
-      { id: 'team', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
-      {
-        id: 'analytics',
-        text: 'ศูนย์วิเคราะห์ Python',
-        iconCss: 'e-icons e-chart',
-        route: '/analytics',
-        roles: ['admin', 'lead'],
-      },
-      {
-        id: 'time-audit',
-        text: 'ตรวจสอบเวลา 3 ทาง',
-        iconCss: 'e-icons e-clock',
-        route: '/analytics/time-audit',
-        roles: ['admin', 'lead'],
-      },
-      { id: 'quality-audit', text: 'ตรวจสอบคุณภาพ QA', iconCss: 'e-icons e-check-box', route: '/quality/audit' },
-      {
-        id: 'people',
-        text: 'รายชื่อพนักงาน',
-        iconCss: 'e-icons e-people',
-        route: '/people',
-        exact: true,
-        roles: ['admin', 'lead'],
-      },
-      { id: 'ai', text: 'ติดตามงาน AI', iconCss: 'e-icons e-chart', route: '/ai' },
+      { id: 'my-analytics', text: 'วิเคราะห์ผลงานเชิงลึก (OLS)', iconCss: 'e-icons e-chart', route: '/me/analytics' },
+      { id: 'my-tickets', text: 'ตารางคะแนนใบงานของฉัน', iconCss: 'e-icons e-table-1', route: '/me/tickets' },
+      { id: 'my-time-audit', text: 'เช็กเวลา 3 ทางของฉัน', iconCss: 'e-icons e-clock', route: '/me/time-audit' },
+      { id: 'my-disputes', text: 'อุทธรณ์คะแนนของฉัน', iconCss: 'e-icons e-edit', route: '/me/disputes' },
     ],
   },
+
+  // ==========================================
+  // โหมดที่ 2: บริหารทีม (Lead Command Center)
+  // ==========================================
   {
-    id: 'work',
-    text: 'งานและการส่งมอบ',
+    id: 'lead-plan',
+    text: 'บริหารแผน & จ่ายงานทีม',
     expanded: true,
+    roles: ['lead'],
     children: [
-      { id: 'work-hub', text: 'ฮับบริหารงาน', iconCss: 'e-icons e-timeline-work-week', route: '/work' },
+      { id: 'team-dash', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
+      { id: 'queue', text: 'คิวงานใหม่ & จ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/queue' },
+      { id: 'work-hub', text: 'ฮับบริหารงานทีม', iconCss: 'e-icons e-timeline-work-week', route: '/work' },
+      { id: 'schedule', text: 'ปฏิทินทีม & วันลา', iconCss: 'e-icons e-date-time', route: '/schedule' },
       { id: 'work-handoff', text: 'ส่งต่อ & SLA ข้ามทีม', iconCss: 'e-icons e-clock', route: '/work/handoff' },
-      { id: 'tickets', text: 'ตารางคะแนนใบงาน', iconCss: 'e-icons e-table-1', route: '/tickets' },
-      { id: 'disputes', text: 'ศูนย์อุทธรณ์คะแนน', iconCss: 'e-icons e-edit', route: '/tickets/disputes' },
-      { id: 'schedule', text: 'ปฏิทินทีม', iconCss: 'e-icons e-date-time', route: '/schedule' },
-      {
-        id: 'queue',
-        text: 'คิวงานใหม่',
-        iconCss: 'e-icons e-list-unordered',
-        route: '/queue',
-        roles: ['admin', 'lead'],
-      },
     ],
   },
   {
-    id: 'connect',
-    text: 'ศูนย์ซิงก์ข้อมูล',
+    id: 'lead-audit',
+    text: 'ตรวจรับ & วิเคราะห์ทีม',
     expanded: true,
+    roles: ['lead'],
     children: [
-      { id: 'mygit', text: 'ซิงก์ mygit (MR)', iconCss: 'e-icons e-refresh', route: '/mygit' },
-      {
-        id: 'teams',
-        text: 'แจ้งเตือน Teams',
-        iconCss: 'e-icons e-comment-show',
-        route: '/teams',
-        roles: ['admin', 'lead'],
-      },
-      {
-        id: 'integrations',
-        text: 'Integrations',
-        iconCss: 'e-icons e-settings',
-        route: '/integrations',
-        roles: ['admin', 'lead'],
-      },
+      { id: 'quality-audit', text: 'ตรวจรับคุณภาพ QA (DoD)', iconCss: 'e-icons e-check-box', route: '/quality/audit' },
+      { id: 'disputes', text: 'ศูนย์อนุมัติอุทธรณ์ทีม', iconCss: 'e-icons e-edit', route: '/tickets/disputes' },
+      { id: 'tickets', text: 'ตารางคะแนนใบงานทีม', iconCss: 'e-icons e-table-1', route: '/tickets' },
+      { id: 'time-audit', text: 'ตรวจสอบเวลา 3 ทางทีม', iconCss: 'e-icons e-clock', route: '/analytics/time-audit' },
+      { id: 'analytics', text: 'ศูนย์วิเคราะห์ & Coaching', iconCss: 'e-icons e-chart', route: '/analytics' },
+      { id: 'people', text: 'รายชื่อและโปรไฟล์ลูกทีม', iconCss: 'e-icons e-people', route: '/people', exact: true },
+      { id: 'mygit', text: 'ซิงก์ mygit (MR) ทีม', iconCss: 'e-icons e-refresh', route: '/mygit' },
+      { id: 'ai', text: 'ติดตามงาน AI ทีม', iconCss: 'e-icons e-chart', route: '/ai' },
     ],
   },
+
+  // ==========================================
+  // โหมดที่ 3: แอดมิน (Admin & Governance Console)
+  // ==========================================
   {
-    id: 'system',
-    text: 'ระบบและสิทธิ์ผู้ใช้',
+    id: 'admin-gov',
+    text: 'การตั้งค่าระบบ & ธรรมาภิบาล',
     expanded: true,
+    roles: ['admin'],
     children: [
-      { id: 'login', text: 'เข้าสู่ระบบ / สลับบัญชี', iconCss: 'e-icons e-user', route: '/login' },
-      { id: 'mockup', text: 'โหมดจำลอง', iconCss: 'e-icons e-play', route: '/mockup' },
+      { id: 'admin-home', text: 'หลังบ้าน & สิทธิ์ผู้ใช้', iconCss: 'e-icons e-lock', route: '/admin', exact: true },
+      { id: 'integrations', text: 'เชื่อมต่อระบบ (Integrations)', iconCss: 'e-icons e-settings', route: '/integrations' },
       {
         id: 'snapshot-check',
-        text: 'ตรวจสอบก่อนแช่แข็ง',
+        text: 'ตรวจสอบก่อนแช่แข็งคะแนน',
         iconCss: 'e-icons e-lock',
         route: '/admin/snapshot-check',
-        roles: ['admin', 'lead'],
       },
-      {
-        id: 'rubrics',
-        text: 'ทะเบียนเกณฑ์ (Rubrics)',
-        iconCss: 'e-icons e-settings',
-        route: '/admin/rubrics',
-        roles: ['admin', 'lead'],
-      },
-      {
-        id: 'admin',
-        text: 'หลังบ้าน & สิทธิ์',
-        iconCss: 'e-icons e-lock',
-        route: '/admin',
-        roles: ['admin', 'lead'],
-      },
+      { id: 'rubrics', text: 'ทะเบียนเกณฑ์ (Rubrics)', iconCss: 'e-icons e-settings', route: '/admin/rubrics' },
+      { id: 'teams', text: 'ตั้งค่าแจ้งเตือน Teams', iconCss: 'e-icons e-comment-show', route: '/teams' },
+      { id: 'mockup', text: 'โหมดจำลองระบบ', iconCss: 'e-icons e-play', route: '/mockup' },
+      { id: 'login', text: 'สลับบัญชีผู้ใช้', iconCss: 'e-icons e-user', route: '/login' },
     ],
   },
 ];
 
 const allNavLeaves = allNavGroups.flatMap((group) => group.children);
 
-function matchNavId(url: string): string {
+function matchNavId(url: string, role: AccessRole = 'member'): string {
   const path = url.split('?')[0] || '/';
+  if (path.startsWith('/me/work')) {
+    return 'my-work';
+  }
+  if (path.startsWith('/me/analytics')) {
+    return 'my-analytics';
+  }
+  if (path.startsWith('/me/tickets')) {
+    return 'my-tickets';
+  }
+  if (path.startsWith('/me/schedule')) {
+    return 'my-schedule';
+  }
+  if (path.startsWith('/me/time-audit')) {
+    return 'my-time-audit';
+  }
+  if (path.startsWith('/me/mygit')) {
+    return 'my-mygit';
+  }
+  if (path.startsWith('/me/ai')) {
+    return 'my-ai';
+  }
+  if (path.startsWith('/me/disputes')) {
+    return 'my-disputes';
+  }
   if (path.startsWith('/people/') && path !== '/people') {
-    return 'people';
+    return role === 'member' ? 'my-analytics' : 'people';
   }
   // Match exact route first
   const exactHit = allNavLeaves.find((item) => path === item.route);
   if (exactHit) {
     return exactHit.id;
   }
-  // Otherwise match longest route prefix first to prevent /tickets capturing /tickets/disputes
+  // Otherwise match longest route prefix first
   const prefixHits = allNavLeaves
     .filter((item) => !item.exact && path.startsWith(`${item.route}/`))
     .sort((a, b) => b.route.length - a.route.length);
-  return prefixHits[0]?.id ?? 'team';
+  if (prefixHits[0]) {
+    return prefixHits[0].id;
+  }
+  if (role === 'admin') return 'admin-home';
+  if (role === 'lead') return 'team-dash';
+  return 'me';
 }
 
 function screenTitle(url: string): string {
@@ -457,59 +537,83 @@ function screenTitle(url: string): string {
   if (url.startsWith('/quality/audit')) {
     return 'ตรวจสอบคุณภาพ QA & Defect Audit';
   }
+  if (url.startsWith('/me/analytics')) {
+    return 'วิเคราะห์ผลงานเชิงลึกของฉัน (Self-Analytics & OLS)';
+  }
+  if (url.startsWith('/me/tickets')) {
+    return 'ตารางคะแนนใบงานของฉัน';
+  }
+  if (url.startsWith('/me/schedule')) {
+    return 'ปฏิทินงานและวันลาของฉัน';
+  }
+  if (url.startsWith('/me/time-audit')) {
+    return 'ตรวจสอบเวลา 3 ทางของฉัน';
+  }
+  if (url.startsWith('/me/mygit')) {
+    return 'ซิงก์ GitLab MR ของฉัน';
+  }
+  if (url.startsWith('/me/ai')) {
+    return 'ติดตามงาน AI & Spike ของฉัน';
+  }
+  if (url.startsWith('/me/disputes')) {
+    return 'ศูนย์ทบทวนและอุทธรณ์คะแนนของฉัน';
+  }
   if (url.startsWith('/analytics/time-audit')) {
     return 'ตรวจสอบเวลา 3 ทาง (3-Way Time Audit)';
   }
   if (url.startsWith('/tickets/disputes')) {
-    return 'ศูนย์ทบทวนและอุทธรณ์คะแนน';
+    return 'ศูนย์อนุมัติคำขออุทธรณ์คะแนนทีม';
   }
   if (url.startsWith('/admin/snapshot-check')) {
     return 'ตรวจสอบความพร้อมก่อนแช่แข็งคะแนน';
   }
+  if (url.startsWith('/me/work')) {
+    return 'ฮับงานของฉัน';
+  }
   if (url.startsWith('/me')) {
-    return 'พื้นที่ของฉัน';
+    return 'ผลงานและงานวันนี้ของฉัน';
   }
   if (url.startsWith('/login')) {
     return 'เข้าสู่ระบบ & สลับบทบาท';
   }
   if (url.startsWith('/analytics')) {
-    return 'ศูนย์วิเคราะห์ข้อมูล Python';
+    return 'ศูนย์วิเคราะห์ข้อมูล & Coaching ทีม';
   }
   if (url.startsWith('/people/')) {
-    return 'โปรไฟล์พนักงาน';
+    return 'โปรไฟล์และวิเคราะห์รายบุคคล';
   }
   if (url.startsWith('/people')) {
-    return 'รายชื่อพนักงาน';
+    return 'รายชื่อและดัชนีพนักงาน';
   }
   if (url.startsWith('/work')) {
-    return 'ฮับบริหารงาน';
+    return 'ฮับบริหารงานทีม';
   }
   if (url.startsWith('/tickets')) {
-    return 'ตารางคะแนนใบงาน';
+    return 'ตารางคะแนนใบงานทีม';
   }
   if (url.startsWith('/schedule')) {
-    return 'ปฏิทินทีม';
+    return 'ปฏิทินทีม & วันลา';
   }
   if (url.startsWith('/queue')) {
-    return 'คิวงานใหม่';
+    return 'คิวงานใหม่ & จ่ายงาน';
   }
   if (url.startsWith('/mygit')) {
-    return 'ซิงก์ mygit';
+    return 'ซิงก์ mygit (MR) ทีม';
   }
   if (url.startsWith('/teams')) {
-    return 'แจ้งเตือน Teams';
+    return 'ตั้งค่าแจ้งเตือน Microsoft Teams';
   }
   if (url.startsWith('/ai')) {
-    return 'ติดตามงาน AI';
+    return 'ติดตามงาน AI ทีม';
   }
   if (url.startsWith('/integrations')) {
-    return 'Integrations';
+    return 'เชื่อมต่อระบบภายนอก (Integrations)';
   }
   if (url.startsWith('/admin')) {
-    return 'หลังบ้าน & สิทธิ์';
+    return 'หลังบ้าน & สิทธิ์ผู้ใช้';
   }
   if (url.startsWith('/mockup')) {
-    return 'โหมดจำลอง';
+    return 'โหมดจำลองระบบ';
   }
   return 'แดชบอร์ดทีม';
 }

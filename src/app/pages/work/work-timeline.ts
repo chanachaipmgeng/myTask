@@ -40,7 +40,9 @@ export class WorkTimeline {
 
   @ViewChild('workGantt') private workGantt?: GanttComponent;
 
-  protected readonly canEdit = canAssignWork;
+  protected readonly isMine = computed(() => this.hub.scope() === 'mine');
+  /** Date edits only on team timeline for admin/lead — personal hub stays read-only. */
+  protected readonly canEdit = computed(() => canAssignWork() && !this.isMine());
   protected readonly statusMessage = signal('');
   protected readonly errorMessage = signal('');
   /** project = โครงสร้างแม่-ลูก · resource = จัดกลุ่มตามผู้รับผิดชอบ (ไม่คำนวณ work unit) */
@@ -106,10 +108,7 @@ export class WorkTimeline {
   protected readonly splitterSettings = { position: '680px' };
 
   protected readonly tasks = computed(() =>
-    workGanttTasks(this.scorecard.tickets(), this.scorecard.people(), {
-      track: this.hub.track(),
-      query: this.hub.query(),
-    }),
+    workGanttTasks(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
   );
 
   /**
@@ -165,6 +164,10 @@ export class WorkTimeline {
   protected readonly resourceFields = { id: 'resourceId', name: 'resourceName' };
 
   protected setViewMode(mode: string): void {
+    if (this.isMine()) {
+      this.viewMode.set('project');
+      return;
+    }
     if (mode === 'resource' || mode === 'project') {
       this.viewMode.set(mode);
     }

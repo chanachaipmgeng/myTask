@@ -1,8 +1,73 @@
 import { Routes } from '@angular/router';
-import { requireRoles } from './core/role.guard';
+import { requireRoles, requireSelfOrManager } from './core/role.guard';
+
+const workChildren = [
+  { path: '', pathMatch: 'full' as const, redirectTo: 'summary' },
+  {
+    path: 'summary',
+    loadComponent: () => import('./pages/work/work-summary').then((m) => m.WorkSummary),
+  },
+  {
+    path: 'timeline',
+    loadComponent: () => import('./pages/work/work-timeline').then((m) => m.WorkTimeline),
+  },
+  {
+    path: 'backlog',
+    loadComponent: () => import('./pages/work/work-backlog').then((m) => m.WorkBacklog),
+  },
+  {
+    path: 'board',
+    loadComponent: () => import('./pages/work/work-board').then((m) => m.WorkBoard),
+  },
+  {
+    path: 'list',
+    loadComponent: () => import('./pages/work/work-list').then((m) => m.WorkList),
+  },
+];
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
+  {
+    path: 'me/work',
+    loadComponent: () => import('./pages/work/work-shell').then((m) => m.WorkShell),
+    data: { scope: 'mine' },
+    children: workChildren,
+  },
+  {
+    path: 'me/analytics',
+    loadComponent: () => import('./pages/person-dashboard/person-dashboard').then((m) => m.PersonDashboard),
+    data: { scope: 'mine' },
+  },
+  {
+    path: 'me/tickets',
+    loadComponent: () => import('./pages/tickets/tickets').then((m) => m.TicketsPage),
+    data: { scope: 'mine' },
+  },
+  {
+    path: 'me/schedule',
+    loadComponent: () => import('./pages/schedule/schedule').then((m) => m.SchedulePage),
+    data: { scope: 'mine' },
+  },
+  {
+    path: 'me/time-audit',
+    loadComponent: () => import('./pages/analytics/time-audit').then((m) => m.TimeAuditPage),
+    data: { scope: 'mine' },
+  },
+  {
+    path: 'me/mygit',
+    loadComponent: () => import('./pages/mygit/mygit').then((m) => m.MyGitPage),
+    data: { scope: 'mine' },
+  },
+  {
+    path: 'me/ai',
+    loadComponent: () => import('./pages/ai-tracking/ai-tracking').then((m) => m.AiTrackingPage),
+    data: { scope: 'mine' },
+  },
+  {
+    path: 'me/disputes',
+    loadComponent: () => import('./pages/tickets/disputes').then((m) => m.DisputesPage),
+    data: { scope: 'mine' },
+  },
   {
     path: 'me',
     loadComponent: () => import('./pages/my-workspace/my-workspace').then((m) => m.MyWorkspacePage),
@@ -18,6 +83,7 @@ export const routes: Routes = [
   },
   {
     path: 'team',
+    canActivate: [requireRoles('admin', 'lead')],
     loadComponent: () => import('./pages/team-dashboard/team-dashboard').then((m) => m.TeamDashboard),
   },
   {
@@ -27,33 +93,16 @@ export const routes: Routes = [
   },
   {
     path: 'people/:personId',
+    canActivate: [requireSelfOrManager()],
     loadComponent: () => import('./pages/person-dashboard/person-dashboard').then((m) => m.PersonDashboard),
   },
   {
     path: 'work',
+    canActivate: [requireRoles('admin', 'lead')],
     loadComponent: () => import('./pages/work/work-shell').then((m) => m.WorkShell),
+    data: { scope: 'team' },
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'summary' },
-      {
-        path: 'summary',
-        loadComponent: () => import('./pages/work/work-summary').then((m) => m.WorkSummary),
-      },
-      {
-        path: 'timeline',
-        loadComponent: () => import('./pages/work/work-timeline').then((m) => m.WorkTimeline),
-      },
-      {
-        path: 'backlog',
-        loadComponent: () => import('./pages/work/work-backlog').then((m) => m.WorkBacklog),
-      },
-      {
-        path: 'board',
-        loadComponent: () => import('./pages/work/work-board').then((m) => m.WorkBoard),
-      },
-      {
-        path: 'list',
-        loadComponent: () => import('./pages/work/work-list').then((m) => m.WorkList),
-      },
+      ...workChildren,
       {
         path: 'handoff',
         loadComponent: () => import('./pages/work/work-handoff').then((m) => m.WorkHandoffPage),
@@ -62,29 +111,34 @@ export const routes: Routes = [
   },
   {
     path: 'quality/audit',
+    canActivate: [requireRoles('admin', 'lead')],
     loadComponent: () => import('./pages/quality-audit/quality-audit').then((m) => m.QualityAuditPage),
   },
   {
     path: 'analytics/time-audit',
     canActivate: [requireRoles('admin', 'lead')],
     loadComponent: () => import('./pages/analytics/time-audit').then((m) => m.TimeAuditPage),
+    data: { scope: 'team' },
   },
   {
     path: 'tickets/disputes',
     loadComponent: () => import('./pages/tickets/disputes').then((m) => m.DisputesPage),
+    data: { scope: 'team' },
   },
   {
     path: 'admin/snapshot-check',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin')],
     loadComponent: () => import('./pages/admin/snapshot-check').then((m) => m.SnapshotCheckPage),
   },
   {
     path: 'tickets',
+    canActivate: [requireRoles('admin', 'lead')],
     loadComponent: () => import('./pages/tickets/tickets').then((m) => m.TicketsPage),
   },
   { path: 'pipeline', redirectTo: 'work/board', pathMatch: 'full' },
   {
     path: 'schedule',
+    canActivate: [requireRoles('admin', 'lead')],
     loadComponent: () => import('./pages/schedule/schedule').then((m) => m.SchedulePage),
   },
   {
@@ -94,30 +148,32 @@ export const routes: Routes = [
   },
   {
     path: 'mygit',
+    canActivate: [requireRoles('admin', 'lead')],
     loadComponent: () => import('./pages/mygit/mygit').then((m) => m.MyGitPage),
   },
   {
     path: 'teams',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin')],
     loadComponent: () => import('./pages/teams/teams').then((m) => m.TeamsPage),
   },
   {
     path: 'ai',
+    canActivate: [requireRoles('admin', 'lead')],
     loadComponent: () => import('./pages/ai-tracking/ai-tracking').then((m) => m.AiTrackingPage),
   },
   {
     path: 'integrations',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin')],
     loadComponent: () => import('./pages/integrations/integrations').then((m) => m.IntegrationsPage),
   },
   {
     path: 'admin',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin')],
     loadComponent: () => import('./pages/admin/admin').then((m) => m.AdminPage),
   },
   {
     path: 'admin/rubrics',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin')],
     loadComponent: () => import('./pages/admin/rubrics/admin-rubrics').then((m) => m.AdminRubricsPage),
   },
   {

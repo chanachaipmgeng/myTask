@@ -219,6 +219,96 @@
   font-size: 12px;
 }
 
+.sidebar-mode-switcher {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 6px 10px 8px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+
+  .mode-switch-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 6px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover:not(.is-active) {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    &.is-active {
+      background: #ffffff;
+      color: #1e3a8a;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+
+      &[data-mode='admin'] {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #ffffff;
+      }
+
+      &[data-mode='member'] {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #ffffff;
+      }
+    }
+  }
+}
+
+.appbar-mode-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+
+  .appbar-mode-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover:not(.is-active) {
+      background: rgba(46, 79, 200, 0.1);
+    }
+
+    &.is-active {
+      background: #2e4fc8;
+      color: #ffffff;
+
+      &[data-mode='admin'] {
+        background: #dc2626;
+      }
+
+      &[data-mode='member'] {
+        background: #059669;
+      }
+    }
+  }
+}
+
 .sidebar-inner {
   display: flex;
   flex-direction: column;
@@ -610,6 +700,15 @@
     justify-content: center;
 
     > div:not(.brand-mark) {
+      display: none !important;
+    }
+  }
+
+  .sidebar-mode-switcher {
+    flex-direction: column;
+    margin: 4px 6px 6px;
+
+    .mode-switch-label {
       display: none !important;
     }
   }

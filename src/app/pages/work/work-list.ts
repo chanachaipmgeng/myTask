@@ -55,12 +55,13 @@ export class WorkList {
   protected readonly selectedId = signal<string | null>(null);
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
   protected readonly planToneMap = planToneMap;
+  protected readonly isMine = computed(() => this.hub.scope() === 'mine');
+  protected readonly gridId = computed(() =>
+    this.isMine() ? 'my-work-operational-list-grid' : 'work-operational-list-grid-v2',
+  );
 
   protected readonly rows = computed(() =>
-    workListRows(this.scorecard.tickets(), this.scorecard.people(), {
-      track: this.hub.track(),
-      query: this.hub.query(),
-    }),
+    workListRows(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
   );
 
   protected readonly detail = computed(() => {
@@ -103,6 +104,6 @@ export class WorkList {
 
   protected goToBoard(): void {
     this.detailDialog?.hide();
-    void this.router.navigate(['/work/board']);
+    void this.router.navigate([this.isMine() ? '/me/work/board' : '/work/board']);
   }
 }

@@ -42,11 +42,15 @@ export class WorkBacklog {
 
   protected readonly pageSettings = { pageSize: 12 };
   protected readonly gridToolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
+  protected readonly isMine = computed(() => this.hub.scope() === 'mine');
+  protected readonly gridId = computed(() =>
+    this.isMine() ? 'my-work-backlog-grid' : 'work-backlog-grid',
+  );
+  protected readonly boardLink = computed(() =>
+    this.isMine() ? '/me/work/board' : '/work/board',
+  );
   protected readonly rows = computed(() =>
-    workBacklogRows(this.scorecard.tickets(), this.scorecard.people(), {
-      track: this.hub.track(),
-      query: this.hub.query(),
-    }),
+    workBacklogRows(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
   );
 
   protected onToolbarClick(args: { item?: { id?: string } }): void {

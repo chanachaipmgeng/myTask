@@ -4,14 +4,17 @@
     description="หน้าหลักสำหรับติดตามใบงานที่รับผิดชอบ โควตาคงเหลือในสัปดาห์ และดัชนีพัฒนาของตัวเองเทียบกับตัวเอง (ไม่จัดอันดับเปรียบเทียบกับเพื่อนร่วมงาน)"
   >
     <div actions class="flex flex-wrap gap-2">
-      <a ejs-button cssClass="e-primary" iconCss="e-icons e-kanban" routerLink="/work/board">
-        อัปเดตสถานะ / แนบ MR บนบอร์ด
+      <a ejs-button cssClass="e-primary" iconCss="e-icons e-timeline-work-week" routerLink="/me/work">
+        เปิดฮับงานของฉัน
       </a>
-      <a ejs-button cssClass="e-outline" iconCss="e-icons e-refresh" routerLink="/mygit">
-        ซิงก์ GitLab MR
+      <a ejs-button cssClass="e-outline" iconCss="e-icons e-chart" routerLink="/me/analytics">
+        วิเคราะห์ผลงานเชิงลึก (OLS)
       </a>
-      <a ejs-button cssClass="e-outline" iconCss="e-icons e-user" routerLink="/login">
-        สลับบัญชีผู้ใช้
+      <a ejs-button cssClass="e-outline" iconCss="e-icons e-table-1" routerLink="/me/tickets">
+        ตารางคะแนน & จัดการใบงาน
+      </a>
+      <a ejs-button cssClass="e-outline" iconCss="e-icons e-clock" routerLink="/me/time-audit">
+        เช็กเวลา 3 ทาง
       </a>
     </div>
   </app-page-head>
@@ -95,7 +98,7 @@
     [badge]="dueAgenda().length + ' ใบ'"
     badgeTone="info"
   >
-    <a actions ejs-button cssClass="e-outline e-small" routerLink="/schedule">เปิดปฏิทินทีม</a>
+    <a actions ejs-button cssClass="e-outline e-small" routerLink="/me/work/timeline">เปิดไทม์ไลน์ของฉัน</a>
 
     @if (dueAgenda().length === 0) {
       <ejs-message content="ตอนนี้ไม่มีใบงานเปิด — สบายใจได้ชั่วคราว" severity="Success" variant="Outlined"></ejs-message>
@@ -131,7 +134,7 @@
                   >
                     ดู checklist
                   </button>
-                  <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-kanban" routerLink="/work/board">
+                  <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-kanban" routerLink="/me/work/board">
                     เปิดบนบอร์ด
                   </a>
                 </div>
@@ -176,10 +179,10 @@
               </ul>
 
               <div class="agenda-reveal__actions flex flex-wrap gap-2">
-                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-kanban" routerLink="/work/board">
+                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-kanban" routerLink="/me/work/board">
                   เปิดบนบอร์ด
                 </a>
-                <a ejs-button cssClass="e-outline e-small" routerLink="/mygit">ซิงก์ MR</a>
+                <a ejs-button cssClass="e-outline e-small" routerLink="/me/work/list">ดูรายการงานของฉัน</a>
               </div>
             </div>
           </div>
@@ -193,7 +196,7 @@
       [title]="'ใบงานที่กำลังทำและสถานะความเสี่ยง (' + myRisks().length + ')'"
       subtitle="ใบงานเปิดของคุณพร้อมระดับความเสี่ยง เพื่อวางแผนส่งมอบและแนบลิงก์ MR ล่วงหน้า"
     >
-      <a actions ejs-button cssClass="e-outline e-small" routerLink="/work/board">ไปที่กระดานงาน</a>
+      <a actions ejs-button cssClass="e-outline e-small" routerLink="/me/work/board">ไปที่กระดานงาน</a>
       <div class="card-grid-2">
         @for (risk of myRisks(); track risk.ticketId) {
           <app-section-card
@@ -206,10 +209,10 @@
               <p class="fine m-0">สถานะ: {{ risk.status }} · Est {{ risk.estimateMd }} MD / ใช้จริง {{ risk.actualMd }} MD</p>
               <p class="m-0 text-sm">{{ risk.reasons.join(' · ') }}</p>
               <div class="mt-2 flex flex-wrap gap-2">
-                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-kanban" routerLink="/work/board">
+                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-kanban" routerLink="/me/work/board">
                   เปิดบนกระดานงาน
                 </a>
-                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-warning" routerLink="/work/board">
+                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-warning" routerLink="/me/work/board">
                   แจ้งติดปัญหา / แก้ไขการ์ด
                 </a>
               </div>
@@ -248,6 +251,14 @@
             <e-column field="estimateMd" headerText="Est MD" width="90" textAlign="Right" format="N2"></e-column>
             <e-column field="dueOnLabel" headerText="กำหนดส่ง" width="115"></e-column>
             <e-column field="unplannedLabel" headerText="แผน" width="95"></e-column>
+            <e-column headerText="จัดการ" width="180" [allowSorting]="false">
+              <ng-template #template let-data>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <a ejs-button cssClass="e-primary e-small" routerLink="/me/tickets">อัปเดต</a>
+                  <a ejs-button cssClass="e-outline e-small" [routerLink]="['/me/disputes']" [queryParams]="{ ticketId: data.id }">อุทธรณ์</a>
+                </div>
+              </ng-template>
+            </e-column>
           </e-columns>
         </ejs-grid>
       }

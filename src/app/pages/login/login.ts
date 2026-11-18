@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { currentViewer, effectiveRole, setViewer, viewAsRole } from '../../core/admin-settings';
+import { currentViewer, effectiveRole, setViewer, setWorkspaceMode } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
 import { AccessRole, Person } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -141,7 +141,7 @@ export class LoginPage {
     this.busy.set(true);
     this.error.set('');
     this.message.set('');
-    viewAsRole.set(null);
+    setWorkspaceMode(null);
 
     if (this.usingApi()) {
       if (!this.scorecard.devLoginEnabled()) {
@@ -168,6 +168,8 @@ export class LoginPage {
     }
 
     const access = person.access ?? 'member';
+    const initialMode: AccessRole = access === 'member' ? 'member' : 'lead';
+    setWorkspaceMode(initialMode);
     const targetRoute = access === 'member' ? '/me' : '/team';
     const text = `เข้าสู่ระบบเป็น ${person.nickname} (${access}) เรียบร้อยแล้ว`;
     this.message.set(text);
@@ -185,7 +187,7 @@ export class LoginPage {
       } else {
         setSessionUser(null, null);
       }
-      viewAsRole.set(null);
+      setWorkspaceMode(null);
       this.message.set('ออกจากระบบเซสชันแล้ว');
       this.notice.info('ออกจากระบบแล้ว');
     } catch {

@@ -1,27 +1,59 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { GridModule, PageService } from '@syncfusion/ej2-angular-grids';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { canAssignWork } from '../../core/admin-settings';
+import { canAssignWork, currentViewer } from '../../core/admin-settings';
 import { ApiClient, GitLabIntegration } from '../../core/api-client';
+import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { MyGitMatch, MyGitSyncAdapter, MyGitUnmatched } from '../../core/mygit-sync';
 import { ScorecardService } from '../../core/scorecard.service';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
 
 @Component({
   selector: 'app-mygit',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, ButtonModule, MessageModule, PageHeadComponent, SectionCardComponent],
+  imports: [
+    RouterLink,
+    GridModule,
+    ButtonModule,
+    MessageModule,
+    PageHeadComponent,
+    SectionCardComponent,
+    StatusBadgeComponent,
+  ],
   providers: [PageService],
   templateUrl: './mygit.html',
 })
 export class MyGitPage {
+  private readonly route = inject(ActivatedRoute);
   private readonly mygit = inject(MyGitSyncAdapter);
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
   private readonly api = inject(ApiClient, { optional: true });
+
+  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  protected readonly activePersonId = computed(
+    () => currentSession()?.person.id ?? currentViewer().id,
+  );
+  protected readonly myTicketsWithMr = computed(() => {
+    const selfId = this.activePersonId();
+    return this.scorecard
+      .tickets()
+      .filter((t) => (!this.isMine ? true : t.assigneeId === selfId))
+      .map((t) => ({
+        id: t.id,
+        title: t.title || t.module,
+        status: t.workflowStatus ?? (t.closed ? 'Done' : 'In Progress'),
+        mrLink: t.mrLink?.trim() || 'ยังไม่แนบลิงก์ MR',
+        hasMr: !!t.mrLink?.trim(),
+        reviewRounds: t.reviewRounds,
+        reopenCount: t.reopenCount,
+      }));
+  });
 
   protected readonly canSyncApi = canAssignWork;
   protected readonly pageSettings = { pageSize: 8 };

@@ -3,6 +3,14 @@ import { todayInBangkok, workflowStatusOf } from './workflow';
 
 export type WorkTrackFilter = Track | 'All';
 
+export type WorkFilterOptions = {
+  track?: WorkTrackFilter;
+  query?: string;
+  /** When set, keep only tickets assigned to this person. */
+  assigneeId?: string;
+  today?: string;
+};
+
 export interface WorkSummaryCard {
   id: string;
   label: string;
@@ -101,17 +109,26 @@ function matchesQuery(ticket: Ticket, query: string): boolean {
 
 export function filterWorkTickets(
   tickets: readonly Ticket[],
-  options?: { track?: WorkTrackFilter; query?: string },
+  options?: WorkFilterOptions,
 ): Ticket[] {
   const track = options?.track ?? 'All';
   const query = options?.query ?? '';
-  return tickets.filter((ticket) => matchesTrack(ticket, track) && matchesQuery(ticket, query));
+  const assigneeId = options?.assigneeId?.trim() ?? '';
+  return tickets.filter((ticket) => {
+    if (!matchesTrack(ticket, track) || !matchesQuery(ticket, query)) {
+      return false;
+    }
+    if (assigneeId && ticket.assigneeId !== assigneeId) {
+      return false;
+    }
+    return true;
+  });
 }
 
 export function workSummaryStats(
   tickets: readonly Ticket[],
   people: readonly Person[],
-  options?: { track?: WorkTrackFilter; query?: string; today?: string },
+  options?: WorkFilterOptions,
 ): WorkSummaryView {
   const filtered = filterWorkTickets(tickets, options);
   const today = options?.today ?? todayInBangkok();
@@ -181,7 +198,7 @@ export function workSummaryStats(
 export function workGanttTasks(
   tickets: readonly Ticket[],
   people: readonly Person[],
-  options?: { track?: WorkTrackFilter; query?: string },
+  options?: WorkFilterOptions,
 ): WorkGanttTask[] {
   const names = new Map(people.map((person) => [person.id, person.nickname]));
   const visible = filterWorkTickets(tickets, options).filter(
@@ -266,15 +283,20 @@ export function applyGanttDateEdit(
 export function workBacklogRows(
   tickets: readonly Ticket[],
   people: readonly Person[],
-  options?: { track?: WorkTrackFilter; query?: string },
+  options?: WorkFilterOptions,
 ): WorkBacklogRow[] {
   const names = new Map(people.map((person) => [person.id, person.nickname]));
+  const personalAssignee = options?.assigneeId?.trim() ?? '';
   return filterWorkTickets(tickets, options)
     .filter((ticket) => {
       if (ticket.closed) {
         return false;
       }
       const status = workflowStatusOf(ticket);
+      if (personalAssignee) {
+        // Personal hub: only my assigned Backlog cards (never team unassigned queue).
+        return status === 'Backlog';
+      }
       return status === 'Backlog' || ticket.assigneeId === '';
     })
     .map((ticket) => ({
@@ -292,7 +314,7 @@ export function workBacklogRows(
 export function workListRows(
   tickets: readonly Ticket[],
   people: readonly Person[],
-  options?: { track?: WorkTrackFilter; query?: string },
+  options?: WorkFilterOptions,
 ): WorkListRow[] {
   const names = new Map(people.map((person) => [person.id, person.nickname]));
   return filterWorkTickets(tickets, options).map((ticket) => {

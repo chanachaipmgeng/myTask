@@ -1,11 +1,15 @@
 <section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
-      <h2>ฮับบริหารงาน (Work Hub)</h2>
-      <p>สลับมุมมอง Summary · Timeline · Backlog · Board · List จากใบงานในระบบ — ไม่เปลี่ยนสูตรคะแนน</p>
+      <h2>{{ heading() }}</h2>
+      <p>{{ subheading() }}</p>
     </div>
     <div class="flex flex-wrap gap-3 items-end">
-      <a ejs-button cssClass="e-outline" routerLink="/tickets">ตารางคะแนนใบงาน (/tickets)</a>
+      @if (!isMine()) {
+        <a ejs-button cssClass="e-outline" routerLink="/tickets">ตารางคะแนนใบงาน (/tickets)</a>
+      } @else {
+        <a ejs-button cssClass="e-outline" routerLink="/me">ผลงานของฉัน (/me)</a>
+      }
       <app-filter-chips
         [options]="trackChipOptions"
         [value]="filter.track()"
@@ -17,14 +21,14 @@
     </div>
   </div>
 
-  <nav class="work-hub-tabs flex flex-wrap gap-2" role="tablist" aria-label="มุมมองฮับบริหารงาน">
-    @for (tab of tabs; track tab.path) {
+  <nav class="work-hub-tabs flex flex-wrap gap-2" role="tablist" [attr.aria-label]="heading()">
+    @for (tab of tabs(); track tab.path) {
       <a
         ejs-button
         role="tab"
         [id]="'work-tab-' + tab.path"
         [iconCss]="tab.icon"
-        [routerLink]="['/work', tab.path]"
+        [routerLink]="[basePath(), tab.path]"
         routerLinkActive="e-primary"
         [attr.aria-selected]="activePath() === tab.path"
         [cssClass]="activePath() === tab.path ? 'e-primary' : 'e-flat'"

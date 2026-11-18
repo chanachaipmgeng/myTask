@@ -1,17 +1,80 @@
 <section class="page flex flex-col gap-4">
   <div class="page-head">
     <div>
-      <h2>ตารางคะแนนใบงาน</h2>
+      <h2>
+        {{ isMine ? 'ตารางคะแนนและจัดการใบงานของฉัน' : 'ตารางคะแนนใบงานทีม' }}
+        @if (isMine && activePerson(); as me) {
+          <span> · {{ me.nickname }}</span>
+        }
+      </h2>
       <p>
-        คะแนนเต็ม 100 ตอนปิดใบ: สัปดาห์ 40/20/0, ความแม่น 20/10/0, รีวิว 20/10/0, reopen 20/10/0.
-        REQ, BLK, ENV ให้คะแนนสัปดาห์และความแม่นเต็ม. ใบอ้างอิง {{ referenceBug }} ต้องได้ 100 และ
-        {{ referenceSpike }} ได้คะแนน Spike 100.
+        @if (isMine) {
+          ตรวจสอบที่มาของคะแนนรายใบงานของตัวเอง (On-time 40 · Accuracy 20 · Review 20 · DoD 20) พร้อมอัปเดตสถานะ เวลาใช้จริง แนบ MR หรือยื่นอุทธรณ์ได้ทันที
+        } @else {
+          คะแนนเต็ม 100 ตอนปิดใบ: สัปดาห์ 40/20/0, ความแม่น 20/10/0, รีวิว 20/10/0, reopen 20/10/0.
+          REQ, BLK, ENV ให้คะแนนสัปดาห์และความแม่นเต็ม. ใบอ้างอิง {{ referenceBug }} ต้องได้ 100 และ
+          {{ referenceSpike }} ได้คะแนน Spike 100.
+        }
       </p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <a ejs-button cssClass="e-outline" routerLink="/work">เปิดฮับบริหารงาน (/work)</a>
+      @if (isMine) {
+        <a ejs-button cssClass="e-primary" iconCss="e-icons e-chart" routerLink="/me/analytics">
+          วิเคราะห์ผลงานเชิงลึก (OLS)
+        </a>
+        <a ejs-button cssClass="e-outline" iconCss="e-icons e-kanban" routerLink="/me/work/board">
+          เปิดบอร์ดงานของฉัน
+        </a>
+        <a ejs-button cssClass="e-outline" iconCss="e-icons e-edit" routerLink="/me/disputes">
+          อุทธรณ์คะแนนของฉัน
+        </a>
+      } @else {
+        <a ejs-button cssClass="e-outline" routerLink="/work">เปิดฮับบริหารงาน (/work)</a>
+      }
     </div>
   </div>
+
+  @if (isMine) {
+    <div class="kpi-grid-4">
+      <app-kpi-stat
+        title="ใบงานของฉันทั้งหมด"
+        [value]="myTicketStats().total + ' ใบ'"
+        [badge]="'เปิด ' + myTicketStats().openCount + ' · ปิด ' + myTicketStats().closedCount"
+        badgeTone="info"
+        accent="info"
+        layout="icon-start"
+        iconCss="e-table-1"
+      ></app-kpi-stat>
+      <app-kpi-stat
+        title="คะแนนเฉลี่ยใบที่ปิดแล้ว"
+        [value]="myTicketStats().avgScore + ' / 100'"
+        badge="เป้า ≥ 75"
+        [badgeTone]="myTicketStats().avgScore >= 75 ? 'success' : 'warning'"
+        [accent]="myTicketStats().avgScore >= 75 ? 'success' : 'warning'"
+        layout="icon-start"
+        iconCss="e-chart"
+        [progress]="myTicketStats().avgScore"
+      ></app-kpi-stat>
+      <app-kpi-stat
+        title="เวลาใช้จริงสะสม (Actual MD)"
+        [value]="myTicketStats().totalActualMd + ' MD'"
+        badge="1 MD = 6 ชม."
+        badgeTone="primary"
+        accent="info"
+        layout="icon-start"
+        iconCss="e-clock"
+      ></app-kpi-stat>
+      <app-kpi-stat
+        title="งานที่กำลังดำเนินการ"
+        [value]="myTicketStats().openCount + ' ใบ'"
+        badge="อัปเดตได้จากตาราง"
+        [badgeTone]="myTicketStats().openCount <= 2 ? 'success' : 'warning'"
+        [accent]="myTicketStats().openCount <= 2 ? 'success' : 'warning'"
+        layout="icon-start"
+        iconCss="e-folder-open"
+      ></app-kpi-stat>
+    </div>
+  }
 
   @if (error()) {
     <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
@@ -22,6 +85,7 @@
 
   <ejs-accordion id="tickets-accordion" expandMode="Multiple">
     <e-accordionitems>
+      @if (!isMine) {
       <e-accordionitem [expanded]="false">
         <ng-template #header>
           <div>นำเข้าไฟล์ CSV/JSON และซิงก์ myProject</div>
@@ -146,6 +210,7 @@
           </form>
         </ng-template>
       </e-accordionitem>
+      }
 
       <e-accordionitem [expanded]="false">
         <ng-template #header>
@@ -199,7 +264,7 @@
 
     <ejs-grid
       #ticketGrid
-      id="tickets-score-grid"
+      [id]="isMine ? 'my-tickets-score-grid-v2' : 'tickets-score-grid-v2'"
       [dataSource]="rows()"
       [enablePersistence]="true"
       [allowPaging]="true"
@@ -219,6 +284,35 @@
     >
       <e-columns>
         <e-column field="id" headerText="รหัส" width="120"></e-column>
+        <e-column field="workflowStatus" headerText="สถานะงาน" width="140">
+          <ng-template #template let-data>
+            <app-status-badge [value]="data.workflowStatus" [toneMap]="workflowStatusToneMap"></app-status-badge>
+          </ng-template>
+        </e-column>
+        <e-column headerText="จัดการใบงาน" width="215" [allowFiltering]="false" [allowSorting]="false">
+          <ng-template #template let-data>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button
+                ejs-button
+                cssClass="e-primary e-small"
+                iconCss="e-icons e-edit"
+                type="button"
+                (click)="openSelfUpdate(data.id)"
+              >
+                อัปเดตงาน
+              </button>
+              <button
+                ejs-button
+                cssClass="e-outline e-small"
+                iconCss="e-icons e-warning"
+                type="button"
+                (click)="goToDispute(data.id)"
+              >
+                อุทธรณ์
+              </button>
+            </div>
+          </ng-template>
+        </e-column>
         <e-column field="trackLabel" headerText="สาย" width="110">
           <ng-template #template let-data>
             <app-status-badge [value]="data.trackLabel" [toneMap]="trackToneMap"></app-status-badge>
@@ -302,4 +396,140 @@
       </e-aggregates>
     </ejs-grid>
   </app-section-card>
+
+  <ejs-dialog
+    #selfUpdateDialog
+    [header]="'อัปเดตใบงาน · ' + (editingTicketId() || '')"
+    [visible]="false"
+    [isModal]="true"
+    [showCloseIcon]="true"
+    width="560px"
+    (close)="closeSelfUpdate()"
+  >
+    <ng-template #content>
+      <div class="flex flex-col gap-3 p-1">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <label class="field">
+            <span>สถานะการทำงาน (Workflow Status)</span>
+            <ejs-dropdownlist
+              [dataSource]="workflowStatusOptions()"
+              [fields]="fields"
+              [value]="editWorkflowStatus()"
+              (change)="onEditStatusChange($event)"
+              width="100%"
+            ></ejs-dropdownlist>
+          </label>
+          <label class="field">
+            <span>เวลาใช้จริงสะสม (Actual MD)</span>
+            <ejs-numerictextbox
+              [value]="editActualMd()"
+              (change)="editActualMd.set($event.value ?? 0)"
+              [min]="0"
+              [step]="0.25"
+              format="n2"
+              [decimals]="2"
+              width="100%"
+            ></ejs-numerictextbox>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>ลิงก์ Merge Request (GitLab MR URL)</span>
+          <ejs-textbox
+            [value]="editMrLink()"
+            (change)="editMrLink.set($event.value ?? '')"
+            placeholder="https://gitlab.example.com/.../-/merge_requests/..."
+            width="100%"
+          ></ejs-textbox>
+        </label>
+
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <label class="field">
+            <span>ผลลัพธ์ POC (สำหรับงาน Spike/R&D)</span>
+            <ejs-dropdownlist
+              [dataSource]="pocResultOptions"
+              [fields]="fields"
+              [value]="editPocResult()"
+              (change)="onEditPocResultChange($event)"
+              width="100%"
+            ></ejs-dropdownlist>
+          </label>
+          <label class="field">
+            <span>สาเหตุบั๊ก (สำหรับงาน Bug-Fix)</span>
+            <ejs-dropdownlist
+              [dataSource]="bugCauseOptions"
+              [fields]="fields"
+              [value]="editBugCause()"
+              (change)="onEditBugCauseChange($event)"
+              width="100%"
+            ></ejs-dropdownlist>
+          </label>
+        </div>
+
+        <app-section-card variant="nested" title="แจ้งพักงาน & Self-DoD Pre-check">
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div class="flex flex-col gap-2">
+              <ejs-checkbox
+                label="พักงานชั่วคราว / ติดบล็อก (Paused / Blocked)"
+                [checked]="editIsPaused()"
+                (change)="editIsPaused.set(!!$event.checked)"
+              ></ejs-checkbox>
+              <ejs-checkbox
+                label="เขียนและรัน Unit Test ผ่านแล้ว"
+                [checked]="editUnitTestDone()"
+                (change)="editUnitTestDone.set(!!$event.checked)"
+              ></ejs-checkbox>
+              <ejs-checkbox
+                label="แนบ MR พร้อมส่งรีวิวแล้ว"
+                [checked]="editMrAttached()"
+                (change)="editMrAttached.set(!!$event.checked)"
+              ></ejs-checkbox>
+            </div>
+            <label class="field">
+              <span>จำนวนวันที่พักงาน / รอทีมอื่น (Paused Days)</span>
+              <ejs-numerictextbox
+                [value]="editPausedDays()"
+                (change)="editPausedDays.set($event.value ?? 0)"
+                [min]="0"
+                [step]="0.5"
+                format="n1"
+                [decimals]="1"
+                width="100%"
+              ></ejs-numerictextbox>
+            </label>
+          </div>
+        </app-section-card>
+
+        <label class="field">
+          <span>หมายเหตุการส่งมอบ (Note)</span>
+          <ejs-textbox
+            [value]="editNote()"
+            (change)="editNote.set($event.value ?? '')"
+            placeholder="บันทึกรายละเอียดเพิ่มเติมสำหรับหัวหน้าทีมหรือ QA..."
+            width="100%"
+          ></ejs-textbox>
+        </label>
+
+        <div class="mt-2 flex flex-wrap justify-between gap-2">
+          @if (editingTicketId(); as tid) {
+            <button
+              ejs-button
+              cssClass="e-outline"
+              iconCss="e-icons e-warning"
+              type="button"
+              (click)="closeSelfUpdate(); goToDispute(tid)"
+            >
+              ยื่นอุทธรณ์ / ขอพักเวลาใบนี้
+            </button>
+          }
+          <div class="flex gap-2">
+            <button ejs-button cssClass="e-flat" type="button" (click)="closeSelfUpdate()">ยกเลิก</button>
+            <button ejs-button cssClass="e-primary" iconCss="e-icons e-check" type="button" (click)="saveSelfUpdate()">
+              บันทึกการอัปเดต
+            </button>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </ejs-dialog>
 </section>

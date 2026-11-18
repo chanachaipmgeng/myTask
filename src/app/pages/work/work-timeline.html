@@ -20,11 +20,13 @@
         <span>สิทธิ์ member ดูได้อย่างเดียว (แก้ไขวันได้เฉพาะ admin/lead)</span>
       }
     </p>
-    <app-filter-chips
-      [options]="viewModeOptions"
-      [value]="viewMode()"
-      (valueChange)="setViewMode($event)"
-    ></app-filter-chips>
+    @if (!isMine()) {
+      <app-filter-chips
+        [options]="viewModeOptions"
+        [value]="viewMode()"
+        (valueChange)="setViewMode($event)"
+      ></app-filter-chips>
+    }
   </div>
 
   @if (statusMessage()) {

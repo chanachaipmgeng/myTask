@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import {
   AccumulationChartModule,
@@ -26,10 +26,11 @@ import {
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { map } from 'rxjs';
 import { ApiClient } from '../../core/api-client';
-import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
+import { currentViewer, trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { mdCompositionTrend } from '../../core/dashboard-charts';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
+import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
@@ -62,6 +63,7 @@ interface OlsSummaryInfo {
     KpiStatCardComponent,
     TextBoxModule,
     SpeechToTextModule,
+    RouterLink,
     PageHeadComponent,
     SectionCardComponent,
   ],
@@ -90,8 +92,15 @@ export class PersonDashboard {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
   protected readonly theme = inject(ThemeService);
-  private readonly personId = toSignal(this.route.paramMap.pipe(map((params) => params.get('personId') ?? '')), {
+  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  private readonly routePersonId = toSignal(this.route.paramMap.pipe(map((params) => params.get('personId') ?? '')), {
     initialValue: this.route.snapshot.paramMap.get('personId') ?? '',
+  });
+  protected readonly personId = computed(() => {
+    if (this.isMine) {
+      return currentSession()?.person.id ?? currentViewer().id;
+    }
+    return this.routePersonId();
   });
 
   protected readonly pageSettings = { pageSize: 8 };
@@ -200,6 +209,7 @@ export class PersonDashboard {
   });
 
   protected readonly prevPerson = computed(() => {
+    if (this.isMine) return null;
     const list = this.scorecard.people();
     const currId = this.personId();
     const idx = list.findIndex((p) => p.id === currId);
@@ -210,6 +220,7 @@ export class PersonDashboard {
   });
 
   protected readonly nextPerson = computed(() => {
+    if (this.isMine) return null;
     const list = this.scorecard.people();
     const currId = this.personId();
     const idx = list.findIndex((p) => p.id === currId);
@@ -339,6 +350,6 @@ export class PersonDashboard {
   }
 
   protected back(): void {
-    void this.router.navigate(['/people']);
+    void this.router.navigate([this.isMine ? '/me' : '/people']);
   }
 }

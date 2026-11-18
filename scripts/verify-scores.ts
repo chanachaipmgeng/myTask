@@ -426,6 +426,27 @@ const workList = workListRows(SEED_TICKETS, SEED_PEOPLE);
 assert.equal(workList.length, SEED_TICKETS.length);
 const workBacklog = workBacklogRows(SEED_TICKETS, SEED_PEOPLE);
 assert.ok(workBacklog.every((row) => row.status === 'Backlog' || row.assignee === 'ยังไม่มีผู้รับ'));
+const personalBacklogPerson = 'itsara';
+const personalBacklog = workBacklogRows(SEED_TICKETS, SEED_PEOPLE, { assigneeId: personalBacklogPerson });
+assert.ok(
+  personalBacklog.every((row) => row.status === 'Backlog'),
+  'personal backlog rows must be Backlog status',
+);
+for (const row of personalBacklog) {
+  assert.equal(seeded(row.id).assigneeId, personalBacklogPerson, 'personal backlog is assignee-scoped');
+}
+const unassignedTeamIds = new Set(
+  SEED_TICKETS.filter((ticket) => !ticket.closed && ticket.assigneeId === '').map((ticket) => ticket.id),
+);
+assert.ok(
+  personalBacklog.every((row) => !unassignedTeamIds.has(row.id)),
+  'personal backlog must not include unassigned team queue',
+);
+const scopedSummary = workSummaryStats(SEED_TICKETS, SEED_PEOPLE, { assigneeId: personalBacklogPerson });
+assert.ok(
+  scopedSummary.wipBars.every((bar) => bar.personId === personalBacklogPerson),
+  'summary with assigneeId only shows that person in WIP bars',
+);
 const workGantt = workGanttTasks(SEED_TICKETS, SEED_PEOPLE);
 assert.ok(workGantt.length >= 1);
 assert.ok(workGantt.every((task) => task.TaskID && task.TaskName));

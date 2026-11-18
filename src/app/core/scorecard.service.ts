@@ -70,7 +70,9 @@ export interface TicketRow {
   module: string;
   size: Ticket['size'];
   points: number;
+  assigneeId: string;
   assignee: string;
+  workflowStatus: string;
   estimateMd: number;
   actualMd: number;
   ratioLabel: string;
@@ -557,7 +559,9 @@ export class ScorecardService {
         module: ticket.module,
         size: ticket.size,
         points: score.points,
+        assigneeId: ticket.assigneeId,
         assignee: person ? `${person.nickname} · ${person.role}` : ticket.assigneeId ? ticket.assigneeId : 'ยังไม่มีผู้รับ',
+        workflowStatus: ticket.workflowStatus ?? (ticket.closed ? 'Done' : 'In Progress'),
         estimateMd: ticket.estimateMd,
         actualMd: ticket.actualMd,
         ratioLabel: score.ratio === null ? '—' : formatPercent(score.ratio, 2),

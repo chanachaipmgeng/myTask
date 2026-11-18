@@ -43,10 +43,27 @@ const DEFAULT_CONNECTIONS: ConnectionSetting[] = [
   },
 ];
 
+const WORKSPACE_MODE_STORAGE_KEY = 'md-workspace-mode';
+
+function readStoredWorkspaceMode(): AccessRole | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const raw = window.localStorage.getItem(WORKSPACE_MODE_STORAGE_KEY);
+    if (raw === 'admin' || raw === 'lead' || raw === 'member') {
+      return raw;
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return null;
+}
+
 export const weeklyQuotas = signal<Record<Level, number>>({ ...WEEKLY_QUOTA });
 export const levelOverrides = signal<Record<string, Level>>({});
 export const accessOverrides = signal<Record<string, AccessRole>>({});
-export const viewAsRole = signal<AccessRole | null>(null);
+export const viewAsRole = signal<AccessRole | null>(readStoredWorkspaceMode());
 export const trackWeights = signal<TrackWeights>(cloneWeights(DEFAULT_TRACK_WEIGHTS));
 export const alertRules = signal<AlertRules>({ deadline: true, overrun: true, overrunLimit: 1.5 });
 export const connections = signal<ConnectionSetting[]>(DEFAULT_CONNECTIONS.map((item) => ({ ...item })));
@@ -81,12 +98,40 @@ export const actualRole = computed<AccessRole>(() => {
 });
 
 export const effectiveRole = computed<AccessRole>(() => {
-  return viewAsRole() ?? actualRole();
+  const actual = actualRole();
+  const explicit = viewAsRole();
+  if (!explicit) {
+    return actual;
+  }
+  if (actual === 'member') {
+    return 'member';
+  }
+  if (actual === 'lead') {
+    return explicit === 'member' ? 'member' : 'lead';
+  }
+  return explicit;
 });
+
+export function setWorkspaceMode(mode: AccessRole | null): AccessRole {
+  viewAsRole.set(mode);
+  if (typeof window !== 'undefined') {
+    try {
+      if (mode) {
+        window.localStorage.setItem(WORKSPACE_MODE_STORAGE_KEY, mode);
+      } else {
+        window.localStorage.removeItem(WORKSPACE_MODE_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }
+  return effectiveRole();
+}
 
 export const canEditAdmin = computed(() => {
   const role = effectiveRole();
-  return role === 'admin' || (!currentSession() && role === 'lead');
+  const actual = actualRole();
+  return role === 'admin' || actual === 'admin' || (!currentSession() && role === 'lead');
 });
 
 /** Assign / accept queue proposals: admin or lead (API rejects member). */
@@ -101,17 +146,15 @@ export const canCaptureKpi = canAssignWork;
 export function toggleViewAsMember(): AccessRole {
   const current = viewAsRole();
   if (current === 'member') {
-    viewAsRole.set(null);
-  } else {
-    viewAsRole.set('member');
+    return setWorkspaceMode(null);
   }
-  return effectiveRole();
+  return setWorkspaceMode('member');
 }
 
 export function setViewer(id: string): SampleViewer {
   if (SAMPLE_VIEWERS.some((viewer) => viewer.id === id)) {
     viewerId.set(id);
-    viewAsRole.set(null);
+    setWorkspaceMode(null);
   }
   return currentViewer();
 }

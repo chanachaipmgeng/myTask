@@ -1,17 +1,25 @@
 <app-section-card
-  title="รายการงานรอจัดสรร (Backlog)"
-  subtitle="ใบใน Backlog หรือยังไม่มีผู้รับ · สำหรับจัดคิวเต็มรูปแบบไปที่คิวงานใหม่"
+  [title]="isMine() ? 'แบ็กล็อกของฉัน' : 'รายการงานรอจัดสรร (Backlog)'"
+  [subtitle]="
+    isMine()
+      ? 'ใบที่รับผิดชอบแล้วยังอยู่ในสถานะ Backlog · เปิดบอร์ดเพื่อเริ่มงาน'
+      : 'ใบใน Backlog หรือยังไม่มีผู้รับ · สำหรับจัดคิวเต็มรูปแบบไปที่คิวงานใหม่'
+  "
   [badge]="rows().length + ' ใบ'"
   badgeTone="info"
 >
-  <a actions ejs-button cssClass="e-outline e-small" routerLink="/queue">เปิดคิวงานใหม่</a>
+  @if (isMine()) {
+    <a actions ejs-button cssClass="e-outline e-small" [routerLink]="boardLink()">เปิดบอร์ดของฉัน</a>
+  } @else {
+    <a actions ejs-button cssClass="e-outline e-small" routerLink="/queue">เปิดคิวงานใหม่</a>
+  }
 
   @if (rows().length === 0) {
-    <p class="fine">ไม่มีใบใน Backlog ตามตัวกรองปัจจุบัน</p>
+    <p class="fine">{{ isMine() ? 'ยังไม่มีใบ Backlog ที่มอบหมายให้คุณ' : 'ไม่มีใบใน Backlog ตามตัวกรองปัจจุบัน' }}</p>
   } @else {
     <ejs-grid
       #backlogGrid
-      id="work-backlog-grid"
+      [id]="gridId()"
       [dataSource]="rows()"
       [allowPaging]="true"
       [allowSorting]="true"
@@ -30,7 +38,7 @@
         <e-column field="type" headerText="ประเภท" width="130"></e-column>
         <e-column field="size" headerText="ขนาด" width="80"></e-column>
         <e-column field="estimateMd" headerText="Estimate MD" width="120" textAlign="Right" format="N2"></e-column>
-        <e-column field="assignee" headerText="ผู้รับ" width="140"></e-column>
+        <e-column field="assignee" headerText="ผู้รับ" width="140" [visible]="!isMine()"></e-column>
         <e-column field="status" headerText="สถานะ" width="120"></e-column>
       </e-columns>
       <e-aggregates>

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import {
   ExcelExportService,
@@ -9,7 +10,9 @@ import {
   SortService,
 } from '@syncfusion/ej2-angular-grids';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { currentViewer } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
+import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { BadgeTone } from '../../shared/ui/badge';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
@@ -21,6 +24,7 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
   selector: 'app-time-audit',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    RouterLink,
     ButtonModule,
     GridModule,
     MessageModule,
@@ -38,11 +42,35 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
   templateUrl: './time-audit.html',
 })
 export class TimeAuditPage {
+  private readonly route = inject(ActivatedRoute);
   protected readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
 
+  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  protected readonly activePersonId = computed(
+    () => currentSession()?.person.id ?? currentViewer().id,
+  );
+  protected readonly myTicketIds = computed(() => {
+    const selfId = this.activePersonId();
+    return new Set(
+      this.scorecard
+        .tickets()
+        .filter((t) => t.assigneeId === selfId)
+        .map((t) => t.id),
+    );
+  });
+
   protected readonly filterType = signal<string>('ALL');
   protected readonly report = this.scorecard.threeWayTimeReport;
+
+  protected readonly scopedRows = computed(() => {
+    const rows = this.report().rows;
+    if (!this.isMine) {
+      return rows;
+    }
+    const mine = this.myTicketIds();
+    return rows.filter((r) => mine.has(r.ticketId));
+  });
 
   protected readonly anomalyToneMap: Record<string, BadgeTone> = {
     OK: 'secondary',
@@ -53,18 +81,30 @@ export class TimeAuditPage {
   };
 
   protected readonly filterOptions = computed<FilterChipOption[]>(() => {
-    const r = this.report();
+    const rows = this.scopedRows();
     return [
-      { id: 'ALL', label: 'ทั้งหมด', count: r.totalTickets },
-      { id: 'MISSING', label: 'ลืมลงเวลา Actual', count: r.missingTimeCount },
-      { id: 'GHOST', label: 'ไม่มี Git Commit', count: r.ghostProgressCount },
-      { id: 'OVERRUN', label: 'เกิน 1.5x / เวลาคลาดเคลื่อน', count: r.overrunCount },
+      { id: 'ALL', label: 'ทั้งหมด', count: rows.length },
+      {
+        id: 'MISSING',
+        label: 'ลืมลงเวลา Actual',
+        count: rows.filter((r) => r.anomalyType === 'MISSING_TIME').length,
+      },
+      {
+        id: 'GHOST',
+        label: 'ไม่มี Git Commit',
+        count: rows.filter((r) => r.anomalyType === 'GHOST_PROGRESS').length,
+      },
+      {
+        id: 'OVERRUN',
+        label: 'เกิน 1.5x / เวลาคลาดเคลื่อน',
+        count: rows.filter((r) => r.anomalyType === 'OUTLIER' || r.anomalyType === 'TIME_MISMATCH').length,
+      },
     ];
   });
 
   protected readonly filteredRows = computed(() => {
     const ft = this.filterType();
-    const rows = this.report().rows;
+    const rows = this.scopedRows();
     if (ft === 'MISSING') {
       return rows.filter((r) => r.anomalyType === 'MISSING_TIME');
     }

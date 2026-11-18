@@ -9,7 +9,7 @@
     <app-form-field label="จัดกลุ่มบอร์ด (Swimlane)" variant="filter">
       <ejs-dropdownlist
         id="board-swimlane-select"
-        [dataSource]="swimlaneOptions"
+        [dataSource]="swimlaneOptions()"
         [fields]="fields"
         [value]="swimlaneMode()"
         (change)="setSwimlane($event)"

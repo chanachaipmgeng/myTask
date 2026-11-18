@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
-import { ButtonModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
+import { ButtonModule, CheckBoxModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import {
   AggregateService,
@@ -19,14 +19,18 @@ import {
 import { NumericTextBoxModule, TextBoxModule, UploaderModule } from '@syncfusion/ej2-angular-inputs';
 import { AccordionModule, ToolbarModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
+import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { scorePartNotes } from '../../core/kpi-meaning';
 import { MyProjectSyncAdapter } from '../../core/myproject-sync';
 import { ScorecardService } from '../../core/scorecard.service';
-import { Size, Ticket, TicketType, Track, VarianceCode } from '../../core/models';
+import { currentSession } from '../../core/session';
+import { BugCause, PocResult, Size, Ticket, TicketType, Track, VarianceCode, WorkflowStatus } from '../../core/models';
 import { SIZE_POINTS, SIZE_STANDARD_MD, scoreTicket } from '../../core/scoring';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../../core/ticket-file';
 import { ShellNotice } from '../../core/shell-notice';
 import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID } from '../../data/seed';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import {
   StatusBadgeComponent,
   blockerToneMap,
@@ -36,6 +40,7 @@ import {
   trackToneMap,
   unplannedYesNoToneMap,
   weekToneMap,
+  workflowStatusToneMap,
   type BadgeTone,
 } from '../../shared/ui';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
@@ -57,8 +62,11 @@ type TypeFilter = TicketType | 'All';
     AccordionModule,
     ToolbarModule,
     ButtonModule,
+    CheckBoxModule,
     ChipListModule,
     MessageModule,
+    DialogModule,
+    KpiStatCardComponent,
     StatusBadgeComponent,
     SectionCardComponent,
   ],
@@ -76,11 +84,23 @@ type TypeFilter = TicketType | 'All';
   templateUrl: './tickets.html',
 })
 export class TicketsPage {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly scorecard = inject(ScorecardService);
   private readonly myProject = inject(MyProjectSyncAdapter);
   private readonly notice = inject(ShellNotice);
 
   @ViewChild('ticketGrid') private ticketGrid?: GridComponent;
+  @ViewChild('selfUpdateDialog') private selfUpdateDialog?: DialogComponent;
+
+  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  protected readonly role = effectiveRole;
+  protected readonly activePersonId = computed(
+    () => currentSession()?.person.id ?? currentViewer().id,
+  );
+  protected readonly activePerson = computed(
+    () => this.scorecard.roster().find((p) => p.id === this.activePersonId()) ?? null,
+  );
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly pageSettings = { pageSize: 10 };
@@ -93,6 +113,7 @@ export class TicketsPage {
   protected readonly dodToneMap = dodToneMap;
   protected readonly unplannedYesNoToneMap = unplannedYesNoToneMap;
   protected readonly weekToneMap = weekToneMap;
+  protected readonly workflowStatusToneMap = workflowStatusToneMap;
   protected readonly sizes = (['XS', 'S', 'M', 'L', 'XL'] as const).map((size) => ({
     size,
     points: SIZE_POINTS[size],
@@ -176,15 +197,157 @@ export class TicketsPage {
 
   protected readonly alerts = this.scorecard.alerts;
 
+  // Self-Service Ticket Update Dialog state
+  protected readonly editingTicketId = signal<string | null>(null);
+  protected readonly editWorkflowStatus = signal<WorkflowStatus>('In Progress');
+  protected readonly editActualMd = signal<number | null>(0);
+  protected readonly editMrLink = signal('');
+  protected readonly editPocResult = signal<PocResult | ''>('');
+  protected readonly editBugCause = signal<BugCause | ''>('');
+  protected readonly editIsPaused = signal(false);
+  protected readonly editPausedDays = signal<number | null>(0);
+  protected readonly editUnitTestDone = signal(false);
+  protected readonly editMrAttached = signal(false);
+  protected readonly editNote = signal('');
+
+  protected readonly pocResultOptions: { text: string; value: PocResult | '' }[] = [
+    { text: '— ไม่ระบุ —', value: '' },
+    { text: 'Adopted (นำไปใช้จริง)', value: 'Adopted' },
+    { text: 'Alternative Chosen (ใช้ทางเลือกอื่น)', value: 'Alternative Chosen' },
+    { text: 'Dropped (ยุติแนวทางนี้)', value: 'Dropped' },
+  ];
+
+  protected readonly bugCauseOptions: { text: string; value: BugCause | '' }[] = [
+    { text: '— ไม่ระบุ —', value: '' },
+    { text: 'Logic (ตรรกะโค้ด)', value: 'Logic' },
+    { text: 'UI (หน้าจอ/การแสดงผล)', value: 'UI' },
+    { text: 'API (การเชื่อมต่อ/ข้อมูล)', value: 'API' },
+    { text: 'Requirement (โจทย์/สเปกเปลี่ยน)', value: 'Requirement' },
+    { text: 'Environment (เซิร์ฟเวอร์/ตั้งค่า)', value: 'Environment' },
+  ];
+
+  protected readonly workflowStatusOptions = computed(() => {
+    const base: { text: string; value: WorkflowStatus }[] = [
+      { text: 'Backlog (รอเริ่ม)', value: 'Backlog' },
+      { text: 'In Progress (กำลังทำ)', value: 'In Progress' },
+      { text: 'Code Review (กำลังรีวิวโค้ด)', value: 'Code Review' },
+      { text: 'Ready for QA (พร้อมส่งตรวจ)', value: 'Ready for QA' },
+      { text: 'In QA (กำลังตรวจ)', value: 'In QA' },
+      { text: 'Reopened (เปิดแก้ไขซ้ำ)', value: 'Reopened' },
+    ];
+    if (!this.isMine && (this.role() === 'admin' || this.role() === 'lead')) {
+      base.push({ text: 'Done (เสร็จสมบูรณ์)', value: 'Done' });
+    }
+    return base;
+  });
+
   protected readonly rows = computed(() => {
     const track = this.trackFilter();
     const type = this.typeFilter();
     const query = this.query();
+    const selfId = this.activePersonId();
     return this.scorecard
       .ticketRows()
+      .filter((row) => (!this.isMine ? true : row.assigneeId === selfId))
       .filter((row) => (track === 'All' || row.track === track) && (type === 'All' || row.type === type))
       .filter((row) => query === '' || `${row.id} ${row.module} ${row.assignee}`.toLowerCase().includes(query));
   });
+
+  protected readonly myTicketStats = computed(() => {
+    const list = this.rows();
+    const closedRows = list.filter((r) => r.score !== null);
+    const openCount = list.length - closedRows.length;
+    const avgScore =
+      closedRows.length > 0
+        ? Math.round(
+            (closedRows.reduce((sum, r) => sum + (r.score ?? 0), 0) / closedRows.length) * 10,
+          ) / 10
+        : 0;
+    const totalActualMd =
+      Math.round(list.reduce((sum, r) => sum + r.actualMd, 0) * 100) / 100;
+    return {
+      total: list.length,
+      openCount,
+      closedCount: closedRows.length,
+      avgScore,
+      totalActualMd,
+    };
+  });
+
+  protected openSelfUpdate(ticketId: string): void {
+    const ticket = this.scorecard.tickets().find((t) => t.id === ticketId);
+    if (!ticket) return;
+    this.editingTicketId.set(ticket.id);
+    this.editWorkflowStatus.set(ticket.workflowStatus ?? (ticket.closed ? 'Done' : 'In Progress'));
+    this.editActualMd.set(ticket.actualMd);
+    this.editMrLink.set(ticket.mrLink ?? '');
+    this.editPocResult.set(ticket.pocResult ?? '');
+    this.editBugCause.set(ticket.bugCause ?? '');
+    this.editIsPaused.set(!!ticket.isPaused);
+    this.editPausedDays.set(ticket.pausedDays ?? 0);
+    this.editUnitTestDone.set(!!ticket.dodChecklist?.unitTest);
+    this.editMrAttached.set(!!ticket.dodChecklist?.mrLinked || !!ticket.mrLink?.trim());
+    this.editNote.set(ticket.note ?? '');
+    this.selfUpdateDialog?.show();
+  }
+
+  protected closeSelfUpdate(): void {
+    this.selfUpdateDialog?.hide();
+    this.editingTicketId.set(null);
+  }
+
+  protected onEditStatusChange(event: { value?: string | null }): void {
+    const v = event.value as WorkflowStatus | undefined;
+    if (v) {
+      this.editWorkflowStatus.set(v);
+    }
+  }
+
+  protected onEditPocResultChange(event: { value?: string | null }): void {
+    this.editPocResult.set((event.value ?? '') as PocResult | '');
+  }
+
+  protected onEditBugCauseChange(event: { value?: string | null }): void {
+    this.editBugCause.set((event.value ?? '') as BugCause | '');
+  }
+
+  protected saveSelfUpdate(): void {
+    const id = this.editingTicketId();
+    if (!id) return;
+    const existing = this.scorecard.tickets().find((t) => t.id === id);
+    if (!existing) return;
+
+    const nextStatus = this.editWorkflowStatus();
+    const isClosed = nextStatus === 'Done' ? true : existing.closed && this.isMine ? true : false;
+    const mrLink = this.editMrLink().trim();
+    const next: Ticket = {
+      ...existing,
+      workflowStatus: nextStatus,
+      closed: isClosed,
+      actualMd: Math.max(0, Number(this.editActualMd() ?? existing.actualMd)),
+      mrLink: mrLink || existing.mrLink,
+      pocResult: this.editPocResult() || existing.pocResult,
+      bugCause: this.editBugCause() || existing.bugCause,
+      isPaused: this.editIsPaused(),
+      blocker: this.editIsPaused() ? true : existing.blocker,
+      pausedDays: Math.max(0, Number(this.editPausedDays() ?? 0)),
+      dodChecklist: {
+        mrLinked: this.editMrAttached() || !!mrLink,
+        unitTest: this.editUnitTestDone(),
+        stagingVerified: existing.dodChecklist?.stagingVerified ?? false,
+      },
+      note: this.editNote().trim(),
+    };
+
+    this.scorecard.replaceTicket(next);
+    this.notice.success(`บันทึกการอัปเดตใบงาน ${id} เรียบร้อยแล้ว`);
+    this.closeSelfUpdate();
+  }
+
+  protected goToDispute(ticketId: string): void {
+    const target = this.isMine ? '/me/disputes' : '/tickets/disputes';
+    void this.router.navigate([target], { queryParams: { ticketId } });
+  }
 
   protected preview() {
     return scoreTicket(this.draft('PREVIEW'));

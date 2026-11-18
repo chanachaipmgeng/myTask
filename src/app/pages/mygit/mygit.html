@@ -1,19 +1,58 @@
 <section class="page flex flex-col gap-4">
   <app-page-head
-    title="ซิงก์ mygit (GitLab MR)"
+    [title]="isMine ? 'ซิงก์และตรวจสอบ GitLab MR ของฉัน' : 'ซิงก์ mygit (GitLab MR ทีม)'"
     description="ดึงข้อมูล Merge Request / รอบรีวิว / reopen และลิงก์ MR จากไฟล์ตัวอย่างในเครื่อง หรือจาก GitLab API v4 เพื่อเติมลงใบงานที่จับคู่รหัสได้ (ไม่นับจำนวนไฟล์หรือจำนวน commit เป็นคะแนน)"
   >
-    @if (gitlabInfo(); as info) {
-      <span
-        actions
-        class="e-badge"
-        [class.e-badge-success]="info.configured && info.enabled"
-        [class.e-badge-secondary]="!info.configured || !info.enabled"
-      >
-        {{ info.configured && info.enabled ? 'GitLab API พร้อมซิงก์' : 'โหมดไฟล์ตัวอย่าง' }}
-      </span>
-    }
+    <div actions class="flex flex-wrap items-center gap-2">
+      @if (isMine) {
+        <a ejs-button cssClass="e-outline" iconCss="e-icons e-table-1" routerLink="/me/tickets">
+          แนบลิงก์ MR ในตารางใบงานของฉัน
+        </a>
+      }
+      @if (gitlabInfo(); as info) {
+        <span
+          class="e-badge"
+          [class.e-badge-success]="info.configured && info.enabled"
+          [class.e-badge-secondary]="!info.configured || !info.enabled"
+        >
+          {{ info.configured && info.enabled ? 'GitLab API พร้อมซิงก์' : 'โหมดไฟล์ตัวอย่าง' }}
+        </span>
+      }
+    </div>
   </app-page-head>
+
+  @if (isMine) {
+    <app-section-card
+      title="สถานะลิงก์ Merge Request ในใบงานของฉัน"
+      subtitle="ตรวจสอบว่าใบงานที่รับผิดชอบแนบลิงก์ MR ครบถ้วนก่อนส่งตรวจ DoD Gate"
+      [badge]="myTicketsWithMr().length + ' ใบ'"
+      badgeTone="info"
+    >
+      <ejs-grid
+        [dataSource]="myTicketsWithMr()"
+        [allowPaging]="true"
+        [allowResizing]="true"
+        [pageSettings]="pageSettings"
+        height="240"
+      >
+        <e-columns>
+          <e-column field="id" headerText="รหัสใบงาน" width="120"></e-column>
+          <e-column field="title" headerText="ชื่องาน / โมดูล" width="220"></e-column>
+          <e-column field="status" headerText="สถานะงาน" width="140"></e-column>
+          <e-column field="mrLink" headerText="ลิงก์ Merge Request" width="260">
+            <ng-template #template let-data>
+              <app-status-badge
+                [label]="data.mrLink"
+                [tone]="data.hasMr ? 'success' : 'warning'"
+              ></app-status-badge>
+            </ng-template>
+          </e-column>
+          <e-column field="reviewRounds" headerText="รอบรีวิว" width="105" textAlign="Right"></e-column>
+          <e-column field="reopenCount" headerText="Reopen" width="105" textAlign="Right"></e-column>
+        </e-columns>
+      </ejs-grid>
+    </app-section-card>
+  }
 
   <app-section-card
     title="สั่งซิงก์ข้อมูล Merge Request"
