@@ -141,16 +141,98 @@ export class App implements AfterViewInit {
     return roleOrLevel;
   });
   protected readonly toastPosition = { X: 'Right', Y: 'Top' };
+  protected readonly menuSearch = signal('');
+  protected onMenuSearch(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.menuSearch.set(target?.value ?? '');
+  }
+  protected clearMenuSearch(): void {
+    this.menuSearch.set('');
+  }
+
   protected readonly visibleNavGroups = computed<NavGroup[]>(() => {
     const role = this.role();
+    const query = this.menuSearch().trim().toLowerCase();
     return allNavGroups
       .filter((group) => !group.roles || group.roles.includes(role))
       .map((group) => ({
         ...group,
-        children: group.children.filter((leaf) => !leaf.roles || leaf.roles.includes(role)),
+        children: group.children.filter(
+          (leaf) =>
+            (!leaf.roles || leaf.roles.includes(role)) &&
+            (!query || leaf.text.toLowerCase().includes(query) || group.text.toLowerCase().includes(query)),
+        ),
       }))
       .filter((group) => group.children.length > 0);
   });
+
+  protected readonly activeNavCategory = computed<'cockpit' | 'work' | 'quality' | 'analytics' | 'admin'>(() => {
+    const path = this.url().split('?')[0] || '/';
+    if (path === '/cockpit' || path === '/team' || path === '/me/cockpit') {
+      return 'cockpit';
+    }
+    if (
+      path.startsWith('/work') ||
+      path.startsWith('/me/work') ||
+      path.startsWith('/queue') ||
+      path.startsWith('/tickets') ||
+      path.startsWith('/schedule') ||
+      path.startsWith('/me/tickets') ||
+      path.startsWith('/me/schedule') ||
+      path === '/me'
+    ) {
+      return 'work';
+    }
+    if (
+      path.startsWith('/quality') ||
+      path.startsWith('/analytics/time-audit') ||
+      path.startsWith('/tickets/disputes') ||
+      path.startsWith('/me/time-audit') ||
+      path.startsWith('/me/disputes')
+    ) {
+      return 'quality';
+    }
+    if (
+      path.startsWith('/analytics') ||
+      path.startsWith('/ai') ||
+      path.startsWith('/people') ||
+      path.startsWith('/mygit') ||
+      path.startsWith('/me/analytics') ||
+      path.startsWith('/me/ai') ||
+      path.startsWith('/me/mygit')
+    ) {
+      return 'analytics';
+    }
+    return 'admin';
+  });
+
+  protected selectRailCategory(cat: 'cockpit' | 'work' | 'quality' | 'analytics' | 'admin'): void {
+    if (this.collapsed()) {
+      this.collapsed.set(false);
+    }
+    const isMember = this.role() === 'member';
+    switch (cat) {
+      case 'cockpit':
+        void this.router.navigate([isMember ? '/me/cockpit' : '/cockpit']);
+        break;
+      case 'work':
+        void this.router.navigate([isMember ? '/me/work' : '/work']);
+        break;
+      case 'quality':
+        void this.router.navigate([isMember ? '/me/disputes' : '/quality/audit']);
+        break;
+      case 'analytics':
+        void this.router.navigate([isMember ? '/me/analytics' : '/analytics']);
+        break;
+      case 'admin':
+        if (this.role() === 'admin') {
+          void this.router.navigate(['/admin']);
+        } else {
+          void this.router.navigate(['/login']);
+        }
+        break;
+    }
+  }
   protected readonly navFields = computed(() => ({
     dataSource: this.visibleNavGroups() as object[],
     id: 'id',

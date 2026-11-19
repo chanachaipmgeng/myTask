@@ -7,7 +7,7 @@
     <ejs-sidebar
     id="app-nav"
     [type]="narrow() ? 'Over' : 'Push'"
-    [width]="!narrow() && collapsed() ? '68px' : '260px'"
+    [width]="!narrow() && collapsed() ? '68px' : '300px'"
     [isOpen]="navOpen()"
     [showBackdrop]="false"
     [closeOnDocumentClick]="narrow()"
@@ -15,88 +15,205 @@
     [animate]="false"
     (close)="onNavClose()"
   >
-    <div class="sidebar-inner">
-      <div class="sidebar-top">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">MD</div>
-          <div>
-            <p class="eyebrow">Central Sync &amp; Scorecard</p>
-            <p class="brand-title">คะแนนใบงาน</p>
-            <p class="brand-sub">
-              @if (role() === 'admin') {
-                โหมดผู้ดูแลระบบ · 1 MD = 6 ชม.
-              } @else if (role() === 'lead') {
-                โหมดบริหารทีม · 1 MD = 6 ชม.
-              } @else {
-                โหมดงานของฉัน · 1 MD = 6 ชม.
-              }
-            </p>
+    <div class="two-col-sidebar" [class.is-collapsed]="!narrow() && collapsed()">
+      <!-- Column 1: Primary Mini Icon Rail (68px) -->
+      <aside class="sidebar-rail">
+        <div class="rail-top">
+          <div class="rail-brand-btn" (click)="selectRailCategory('cockpit')" title="Man-day Scorecard (กลับหน้าหลัก)">
+            <span class="rail-logo">MD</span>
           </div>
+
+          <nav class="rail-nav" aria-label="หมวดหมู่งาน">
+            <button
+              type="button"
+              class="rail-item"
+              [class.is-active]="activeNavCategory() === 'cockpit'"
+              (click)="selectRailCategory('cockpit')"
+              title="ห้องบัญชาการ Bento (Cockpit)"
+            >
+              <span class="e-icons e-dashboard rail-icon"></span>
+              <span class="rail-label">Cockpit</span>
+            </button>
+
+            <button
+              type="button"
+              class="rail-item"
+              [class.is-active]="activeNavCategory() === 'work'"
+              (click)="selectRailCategory('work')"
+              title="ฮับบริหารงาน & คิวงาน (Work Hub)"
+            >
+              <span class="e-icons e-timeline-work-week rail-icon"></span>
+              <span class="rail-label">งาน</span>
+            </button>
+
+            <button
+              type="button"
+              class="rail-item"
+              [class.is-active]="activeNavCategory() === 'quality'"
+              (click)="selectRailCategory('quality')"
+              title="ตรวจสอบคุณภาพ & DoD Gate (Quality)"
+            >
+              <span class="e-icons e-check-box rail-icon"></span>
+              <span class="rail-label">คุณภาพ</span>
+            </button>
+
+            <button
+              type="button"
+              class="rail-item"
+              [class.is-active]="activeNavCategory() === 'analytics'"
+              (click)="selectRailCategory('analytics')"
+              title="วิเคราะห์สถิติ & AI Coach (AI Hub)"
+            >
+              <span class="e-icons e-ai-chat rail-icon"></span>
+              <span class="rail-label">AI วิเคราะห์</span>
+            </button>
+
+            <button
+              type="button"
+              class="rail-item"
+              [class.is-active]="activeNavCategory() === 'admin'"
+              (click)="selectRailCategory('admin')"
+              title="ตั้งค่าระบบ & สิทธิ์ (Admin & Config)"
+            >
+              <span class="e-icons e-settings rail-icon"></span>
+              <span class="rail-label">จัดการ</span>
+            </button>
+          </nav>
         </div>
 
-        @if (canSwitchMode()) {
-          <div class="sidebar-mode-switcher" role="tablist" aria-label="สลับโหมดการทำงาน">
-            @for (mode of availableModes(); track mode.id) {
-              <button
-                type="button"
-                class="mode-switch-btn"
-                [attr.data-mode]="mode.id"
-                [class.is-active]="role() === mode.id"
-                [title]="'สลับเป็นโหมด ' + mode.label"
-                (click)="switchWorkspaceMode(mode.id)"
-              >
-                <span [class]="mode.icon"></span>
-                <span class="mode-switch-label">{{ mode.shortLabel }}</span>
-              </button>
+        <div class="rail-bottom">
+          <button
+            type="button"
+            class="rail-action-btn rail-theme-toggle"
+            id="rail-theme-toggle"
+            (click)="theme.toggleTheme()"
+            [title]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
+            [attr.aria-label]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
+          >
+            <span class="e-icons" [class.e-day]="theme.isDark()" [class.e-night]="!theme.isDark()"></span>
+          </button>
+
+          <button
+            type="button"
+            class="rail-avatar-btn"
+            (click)="openMyWorkspace()"
+            [title]="userFullName() + ' (' + role() + ')'"
+          >
+            <div class="rail-avatar">
+              @if (userAvatarUrl() && !avatarError()) {
+                <img [src]="userAvatarUrl()" [alt]="userFullName()" class="avatar-img" (error)="onAvatarError()" />
+              } @else {
+                <span>{{ userAvatarInitials() }}</span>
+              }
+              <span class="rail-online-dot"></span>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Column 2: Secondary Content Panel (Sub-Sidebar 232px) -->
+      @if (narrow() || !collapsed()) {
+        <section class="sidebar-subpanel">
+          <div class="subpanel-header">
+            <div class="subpanel-brand">
+              <span class="subpanel-eyebrow">MYHR INTELLIGENCE</span>
+              <h2 class="subpanel-title">คะแนนใบงาน</h2>
+              <span class="subpanel-sub">1 MD = 6 ชม. มาตรฐาน</span>
+            </div>
+            <button
+              type="button"
+              class="subpanel-collapse-btn"
+              (click)="toggleNav()"
+              title="พับเก็บเมนูย่อย"
+            >
+              <span class="e-icons e-chevron-left"></span>
+            </button>
+          </div>
+
+          <!-- Quick Search Filter -->
+          <div class="subpanel-search">
+            <span class="e-icons e-search subpanel-search-icon"></span>
+            <input
+              type="text"
+              class="subpanel-search-input"
+              placeholder="ค้นหาเมนู..."
+              [value]="menuSearch()"
+              (input)="onMenuSearch($event)"
+            />
+            @if (menuSearch()) {
+              <button type="button" class="subpanel-search-clear" (click)="clearMenuSearch()">×</button>
             }
           </div>
-        }
 
-        @for (navKey of [role()]; track navKey) {
-          <ejs-treeview
-            [id]="'app-nav-tree-' + navKey"
-            cssClass="side-nav-tree"
-            [fields]="navFields()"
-            [expandedNodes]="expandedNodes"
-            [selectedNodes]="selectedNodes()"
-            [fullRowSelect]="true"
-            (nodeSelecting)="onNavSelecting($event)"
-            (nodeClicked)="onNavClick($event)"
-            (nodeSelected)="onNavSelect($event)"
-          ></ejs-treeview>
-        }
-      </div>
-
-      <div class="sidebar-profile" [attr.data-role]="role()">
-        <div class="sidebar-profile__info" (click)="openMyWorkspace()" title="เปิดพื้นที่ของฉัน (/me)">
-          <div class="sidebar-profile__avatar">
-            @if (userAvatarUrl() && !avatarError()) {
-              <img [src]="userAvatarUrl()" [alt]="userFullName()" loading="lazy" referrerpolicy="no-referrer" (error)="onAvatarError()" class="avatar-img" />
-            } @else {
-              <span>{{ userAvatarInitials() }}</span>
-            }
-          </div>
-          <div class="sidebar-profile__details">
-            <span class="sidebar-profile__name">{{ userFullName() }}</span>
-            <div class="sidebar-profile__meta">
-              <span class="sidebar-profile__role" [attr.data-role]="role()">{{ role() }}</span>
-              @if (userTrackLevel()) {
-                <span class="sidebar-profile__track">{{ userTrackLevel() }}</span>
+          <!-- Mode Switcher Tabs -->
+          @if (canSwitchMode()) {
+            <div class="subpanel-mode-tabs" role="tablist" aria-label="สลับโหมดการทำงาน">
+              @for (mode of availableModes(); track mode.id) {
+                <button
+                  type="button"
+                  class="subpanel-mode-tab"
+                  [attr.data-mode]="mode.id"
+                  [class.is-active]="role() === mode.id"
+                  [title]="'สลับเป็นโหมด ' + mode.label"
+                  (click)="switchWorkspaceMode(mode.id)"
+                >
+                  <span [class]="mode.icon"></span>
+                  <span>{{ mode.shortLabel }}</span>
+                </button>
               }
             </div>
+          }
+
+          <!-- Navigation Tree -->
+          <div class="subpanel-tree-wrap">
+            @for (navKey of [role()]; track navKey) {
+              <ejs-treeview
+                [id]="'app-nav-tree-' + navKey"
+                cssClass="side-nav-tree"
+                [fields]="navFields()"
+                [expandedNodes]="expandedNodes"
+                [selectedNodes]="selectedNodes()"
+                [fullRowSelect]="true"
+                (nodeSelecting)="onNavSelecting($event)"
+                (nodeClicked)="onNavClick($event)"
+                (nodeSelected)="onNavSelect($event)"
+              ></ejs-treeview>
+            }
           </div>
-        </div>
-        <button
-          ejs-button
-          cssClass="sidebar-profile__logout e-flat e-small"
-          iconCss="e-icons e-circle-remove"
-          type="button"
-          title="ออกจากระบบ"
-          (click)="logout()"
-        >
-          <span class="sidebar-profile__logout-text">ออก</span>
-        </button>
-      </div>
+
+          <!-- Profile Card -->
+          <div class="subpanel-profile" [attr.data-role]="role()">
+            <div class="subpanel-profile__info" (click)="openMyWorkspace()" title="เปิดพื้นที่ของฉัน (/me)">
+              <div class="subpanel-profile__avatar">
+                @if (userAvatarUrl() && !avatarError()) {
+                  <img [src]="userAvatarUrl()" [alt]="userFullName()" loading="lazy" referrerpolicy="no-referrer" (error)="onAvatarError()" class="avatar-img" />
+                } @else {
+                  <span>{{ userAvatarInitials() }}</span>
+                }
+              </div>
+              <div class="subpanel-profile__details">
+                <span class="subpanel-profile__name">{{ userFullName() }}</span>
+                <div class="subpanel-profile__meta">
+                  <span class="subpanel-profile__role" [attr.data-role]="role()">{{ role() }}</span>
+                  @if (userTrackLevel()) {
+                    <span class="subpanel-profile__track">{{ userTrackLevel() }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+            <button
+              ejs-button
+              cssClass="subpanel-profile__logout e-flat e-small"
+              iconCss="e-icons e-circle-remove"
+              type="button"
+              title="ออกจากระบบ"
+              (click)="logout()"
+            >
+              <span class="logout-text">ออก</span>
+            </button>
+          </div>
+        </section>
+      }
     </div>
   </ejs-sidebar>
 

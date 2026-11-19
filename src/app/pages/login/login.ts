@@ -1,28 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { currentViewer, effectiveRole, setViewer, setWorkspaceMode } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
 import { AccessRole, Person } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
-import { currentSession, setSessionUser } from '../../core/session';
+import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
-import { BadgeTone } from '../../shared/ui/badge';
 import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
-
-export interface RoleChipOption {
-  id: 'All' | AccessRole;
-  label: string;
-  count: number;
-}
 
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
+    CheckBoxModule,
     TextBoxModule,
     MessageModule,
     FlashMessagesComponent,
@@ -36,105 +30,81 @@ export class LoginPage {
   private readonly router = inject(Router);
   private readonly notice = inject(ShellNotice);
 
-  protected readonly authMode = signal<'persona' | 'external'>('persona');
   protected readonly session = currentSession;
   protected readonly viewer = currentViewer;
   protected readonly role = effectiveRole;
   protected readonly usingApi = this.scorecard.usingApi;
   protected readonly roster = this.scorecard.roster;
-  protected readonly query = signal('');
-  protected readonly roleFilter = signal<'All' | AccessRole>('All');
+
+  protected readonly username = signal('paweena');
+  protected readonly password = signal('');
+  protected readonly showPassword = signal(false);
+  protected readonly rememberMe = signal(true);
+
   protected readonly message = signal('');
   protected readonly error = signal('');
   protected readonly busy = signal(false);
-  protected readonly failedAvatars = signal<Record<string, boolean>>({});
 
-  protected avatarFailed(personId: string): boolean {
-    return !!this.failedAvatars()[personId];
-  }
-
-  protected onAvatarError(personId: string): void {
-    this.failedAvatars.update((prev) => ({ ...prev, [personId]: true }));
-  }
-
-  protected readonly activePerson = computed(() => {
-    const sess = this.session();
-    if (sess) {
-      return sess.person;
-    }
-    const id = this.viewer().id;
-    return this.roster().find((p) => p.id === id) ?? this.roster()[0];
-  });
-
-  protected readonly filteredPeople = computed(() => {
-    const q = this.query().trim().toLowerCase();
-    const rf = this.roleFilter();
-    return this.roster().filter((person) => {
-      const access = person.access ?? 'member';
-      if (rf !== 'All' && access !== rf) {
-        return false;
-      }
-      if (!q) {
-        return true;
-      }
-      return (
-        person.nickname.toLowerCase().includes(q) ||
-        person.fullName.toLowerCase().includes(q) ||
-        person.id.toLowerCase().includes(q) ||
-        person.role.toLowerCase().includes(q)
-      );
-    });
-  });
-
-  protected readonly roleCounts = computed(() => {
-    const all = this.roster();
-    return {
-      total: all.length,
-      admin: all.filter((p) => p.access === 'admin').length,
-      lead: all.filter((p) => p.access === 'lead').length,
-      member: all.filter((p) => (p.access ?? 'member') === 'member').length,
-    };
-  });
-
-  protected readonly roleToneMap: Record<string, BadgeTone> = {
-    admin: 'danger',
-    lead: 'warning',
-    member: 'info',
-  };
-
-  protected readonly roleChipOptions = computed<RoleChipOption[]>(() => {
-    const counts = this.roleCounts();
-    return [
-      { id: 'All', label: 'ทั้งหมด', count: counts.total },
-      { id: 'admin', label: 'ผู้ดูแลระบบ · Admin', count: counts.admin },
-      { id: 'lead', label: 'หัวหน้าสายงาน · Lead', count: counts.lead },
-      { id: 'member', label: 'พนักงานทั่วไป · Member', count: counts.member },
-    ];
-  });
-
-  protected readonly canUsePersonaSwitch = computed(
+  protected readonly canUseDevLogin = computed(
     () => !this.usingApi() || this.scorecard.devLoginEnabled(),
   );
 
-  protected setAuthMode(mode: 'persona' | 'external'): void {
-    this.authMode.set(mode);
-  }
-
-  protected onSearchInput(event: Event): void {
+  protected onUsernameInput(event: Event): void {
     const target = event.target as HTMLInputElement | null;
-    this.query.set(target?.value ?? '');
+    this.username.set(target?.value ?? '');
   }
 
-  protected clearSearch(): void {
-    this.query.set('');
+  protected onPasswordInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.password.set(target?.value ?? '');
   }
 
-  protected setRoleFilter(value: string): void {
-    if (value === 'admin' || value === 'lead' || value === 'member') {
-      this.roleFilter.set(value);
+  protected togglePassword(): void {
+    this.showPassword.update((v) => !v);
+  }
+
+  protected onRememberMeChange(event: { checked?: boolean }): void {
+    this.rememberMe.set(!!event.checked);
+  }
+
+  protected onForgotPassword(): void {
+    this.notice.info('การรีเซ็ตรหัสผ่านโปรดติดต่อผู้ดูแลระบบเครือข่าย MyHR หรือเข้าสู่ระบบด้วย GitLab SSO');
+  }
+
+  protected async submitLogin(event?: Event): Promise<void> {
+    if (event) {
+      event.preventDefault();
+    }
+    const rawInput = this.username().trim();
+    if (!rawInput) {
+      this.error.set('กรุณาระบุอีเมลองค์กรหรือชื่อผู้ใช้งาน');
       return;
     }
-    this.roleFilter.set('All');
+
+    const cleanInput = rawInput.toLowerCase().replace(/@myhr\.co\.th$/, '');
+    const person =
+      this.roster().find((p) => p.id.toLowerCase() === cleanInput) ||
+      this.roster().find((p) => p.nickname.toLowerCase() === cleanInput) ||
+      this.roster().find((p) => p.email?.toLowerCase() === rawInput.toLowerCase()) ||
+      this.roster().find((p) => p.fullName.toLowerCase().includes(rawInput.toLowerCase()));
+
+    if (!person) {
+      this.error.set(`ไม่พบบัญชีผู้ใช้งาน "${rawInput}" ในระบบองค์กร (ตัวอย่างบัญชี: paweena, nakarin, chanachai)`);
+      return;
+    }
+
+    await this.loginAs(person);
+  }
+
+  protected async quickLogin(personId: string): Promise<void> {
+    const person = this.roster().find((p) => p.id === personId);
+    if (!person) {
+      this.error.set(`ไม่พบบัญชี ${personId} ในระบบ`);
+      return;
+    }
+    this.username.set(person.id);
+    this.password.set('••••••••••••');
+    await this.loginAs(person);
   }
 
   protected async loginAs(person: Person): Promise<void> {
@@ -145,21 +115,21 @@ export class LoginPage {
 
     if (this.usingApi()) {
       if (!this.scorecard.devLoginEnabled()) {
-        this.error.set('โหมดสลับบัญชีปิดอยู่ — ใช้ GitLab OAuth SSO');
+        this.error.set('โหมดล็อกอินโดยตรงปิดอยู่ — กรุณาใช้ GitLab OAuth SSO');
         this.busy.set(false);
         return;
       }
       try {
         const result = await this.api.devLogin(person.id);
         if (!result.ok || !result.person) {
-          this.error.set(result.message ?? 'เข้าสู่ระบบแบบพัฒนาไม่สำเร็จ');
+          this.error.set(result.message ?? 'เข้าสู่ระบบไม่สำเร็จ');
           this.busy.set(false);
           return;
         }
         setViewer(person.id);
         await this.scorecard.reloadFromApi();
       } catch (err) {
-        this.error.set(err instanceof Error ? err.message : 'เข้าสู่ระบบแบบพัฒนาไม่สำเร็จ');
+        this.error.set(err instanceof Error ? err.message : 'เข้าสู่ระบบไม่สำเร็จ');
         this.busy.set(false);
         return;
       }
@@ -176,26 +146,6 @@ export class LoginPage {
     this.notice.success(text);
     this.busy.set(false);
     void this.router.navigate([targetRoute]);
-  }
-
-  protected async logout(): Promise<void> {
-    this.busy.set(true);
-    try {
-      if (this.usingApi()) {
-        await this.api.logout();
-        await this.scorecard.reloadFromApi();
-      } else {
-        setSessionUser(null, null);
-      }
-      setWorkspaceMode(null);
-      this.message.set('ออกจากระบบเซสชันแล้ว');
-      this.notice.info('ออกจากระบบแล้ว');
-    } catch {
-      this.error.set('ออกจากระบบไม่สำเร็จ');
-      this.notice.error('ออกจากระบบไม่สำเร็จ');
-    } finally {
-      this.busy.set(false);
-    }
   }
 
   protected startGitLabSso(): void {
