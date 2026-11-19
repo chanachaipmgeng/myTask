@@ -20,7 +20,9 @@ export class ThemeService {
     if (typeof window === 'undefined') {
       return;
     }
-    const saved = localStorage.getItem('md-theme') as AppTheme | null;
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const qTheme = urlParams?.get('theme') as AppTheme | null;
+    const saved = (qTheme === 'light' || qTheme === 'dark') ? qTheme : (localStorage.getItem('md-theme') as AppTheme | null);
     if (saved === 'light' || saved === 'dark') {
       this.applyTheme(saved);
     } else {

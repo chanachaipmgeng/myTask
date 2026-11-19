@@ -219,14 +219,13 @@
         <button
           ejs-button
           id="appbar-logout-btn"
-          cssClass="e-flat e-small appbar-chip-btn appbar-logout-chip"
+          cssClass="e-flat e-small e-icon-btn appbar-chip-btn appbar-logout-chip"
           iconCss="e-icons e-circle-remove"
           type="button"
           title="ออกจากระบบ"
+          [attr.aria-label]="'ออกจากระบบ'"
           (click)="logout()"
-        >
-          ออกจากระบบ
-        </button>
+        ></button>
 
         <span class="appbar-alert-wrap" [class.has-alerts]="alerts().length > 0">
           <button

@@ -323,11 +323,12 @@
           </div>
         }
       </app-section-card>
+    </div>
 
+    <div class="card-grid-2">
       <app-section-card
-        class="md:col-span-2"
-        title="สัดส่วนภาระงาน (Planned MD vs Unplanned vs งานสั่งตรงจาก MD)"
-        subtitle="กราฟพื้นที่ซ้อน (Stacked Area) แสดงแนวโน้ม Man-day รวมของพนักงาน เพื่อดูว่าแต่ละเดือนโดนงานแทรกจาก MD กินเวลาไปเท่าไหร่"
+        title="สัดส่วนภาระงาน (Planned vs Unplanned vs งานสั่งตรงจาก MD)"
+        subtitle="กราฟพื้นที่ซ้อน (Stacked Area) แสดงแนวโน้ม Man-day รวมของพนักงาน"
       >
         @if (mdComposition().length === 0) {
           <ejs-message content="ยังไม่มีประวัติใบงานปิดสำหรับแสดงสัดส่วนภาระงาน" severity="Info" variant="Outlined"></ejs-message>
@@ -335,7 +336,7 @@
           <div class="chart-frame m-0">
             <ejs-chart
               id="person-md-composition-chart"
-              style="display: block; height: 280px; width: 100%"
+              style="display: block; height: 300px; width: 100%"
               [theme]="theme.sfTheme()"
               [primaryXAxis]="categoryAxis"
               [primaryYAxis]="mdAxis"
@@ -382,14 +383,13 @@
       </app-section-card>
 
       <app-section-card
-        class="md:col-span-1"
         title="เรดาร์สมรรถนะ 6 มิติ (Competency Radar)"
         subtitle="เปรียบเทียบผลงาน 6 ด้านของพนักงานกับค่าเฉลี่ยทีม"
       >
         <div class="chart-frame m-0">
           <ejs-chart
             id="competency-radar-chart"
-            style="display: block; height: 280px; width: 100%"
+            style="display: block; height: 300px; width: 100%"
             [theme]="theme.sfTheme()"
             [primaryXAxis]="radarXAxis"
             [primaryYAxis]="radarYAxis"

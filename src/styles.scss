@@ -428,10 +428,18 @@ app-section-card:hover > .e-card.section-card,
 /* ห่อตามความกว้างจริง (sidebar / หน้าต่างแคบ) — ไม่ซ้อนแบบ DashboardLayout 4 ช่องตายตัว */
 .kpi-grid-4 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   align-items: stretch;
   width: 100%;
+
+  @media (max-width: 1023px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 639px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .kpi-grid-4 > .e-card,

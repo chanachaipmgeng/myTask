@@ -7,17 +7,42 @@
    Bento Cockpit Container — 100vh Viewport Fit
    =================================================== */
 .bento-cockpit {
+  --bento-card-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 16, 32, 0.94) 100%);
+  --bento-card-border: rgba(148, 163, 184, 0.14);
+  --bento-card-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.5);
+  --bento-bar-bg: rgba(15, 23, 42, 0.6);
+  --bento-bar-border: rgba(148, 163, 184, 0.12);
+  --bento-item-bg: rgba(255, 255, 255, 0.03);
+  --bento-item-border: rgba(148, 163, 184, 0.1);
+  --bento-chip-color: #94a3b8;
+  --bento-chip-border: rgba(148, 163, 184, 0.2);
+  --bento-chip-hover: rgba(255, 255, 255, 0.08);
+
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   box-sizing: border-box;
 
   @media (min-width: 1200px) {
-    height: calc(100vh - 90px);
-    max-height: calc(100vh - 90px);
+    height: calc(100vh - 78px);
+    max-height: calc(100vh - 78px);
     overflow: hidden;
   }
+}
+
+:host-context(.e-light-mode) .bento-cockpit,
+:host-context(body:not(.e-dark-mode)) .bento-cockpit {
+  --bento-card-bg: #ffffff;
+  --bento-card-border: #e2e8f0;
+  --bento-card-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --bento-bar-bg: #f8fafc;
+  --bento-bar-border: #e2e8f0;
+  --bento-item-bg: #f8fafc;
+  --bento-item-border: #e2e8f0;
+  --bento-chip-color: #475569;
+  --bento-chip-border: #cbd5e1;
+  --bento-chip-hover: #f1f5f9;
 }
 
 /* ===================================================
@@ -124,16 +149,50 @@
   }
 }
 
+:host-context(.e-light-mode),
+:host-context(body:not(.e-dark-mode)) {
+  .bento-btn--tv {
+    background: #7c3aed !important;
+    border-color: #6d28d9 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25) !important;
+
+    &:hover {
+      background: #6d28d9 !important;
+    }
+  }
+
+  .bento-btn--fullscreen {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+
+    &:hover {
+      background: #e2e8f0 !important;
+    }
+  }
+
+  .bento-btn--link {
+    background: #f0f4fd !important;
+    border-color: rgba(46, 79, 200, 0.3) !important;
+    color: #1e3690 !important;
+
+    &:hover {
+      background: #e0e9fe !important;
+    }
+  }
+}
+
 /* ===================================================
    Bento Cards Base Styles
    =================================================== */
 .bento-card {
   position: relative;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(10, 16, 32, 0.92) 100%);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-card-border);
   backdrop-filter: blur(16px);
-  box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--bento-card-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -308,9 +367,8 @@
   .hero-subtext {
     font-size: 11px;
     color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    line-height: 1.25;
   }
 
   .hero-target-pill,
@@ -367,8 +425,8 @@
   justify-content: space-between;
   padding: 4px 12px;
   border-radius: 12px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: var(--bento-bar-bg);
+  border: 1px solid var(--bento-bar-border);
   gap: 12px;
   flex-wrap: wrap;
 
@@ -390,14 +448,14 @@
     font-size: 11px;
     font-weight: 600;
     border-radius: 14px;
-    border: 1px solid rgba(148, 163, 184, 0.2);
+    border: 1px solid var(--bento-chip-border);
     background: transparent;
-    color: var(--muted);
+    color: var(--bento-chip-color);
     cursor: pointer;
     transition: all 0.15s ease;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: var(--bento-chip-hover);
       color: var(--fg);
     }
 
@@ -460,8 +518,8 @@
 .bottleneck-item {
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: var(--bento-item-bg);
+  border: 1px solid var(--bento-item-border);
 
   &[data-tone='danger'] {
     border-left: 3px solid #ef4444;

@@ -563,11 +563,12 @@
 .shell-appbar {
   position: sticky !important;
   top: 0 !important;
-  height: auto !important;
-  min-height: 60px;
-  padding: 10px 24px !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+  padding: 8px 20px !important;
   gap: 10px 14px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   background: rgba(15, 23, 42, 0.78) !important;
   backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(148, 163, 184, 0.14) !important;
@@ -608,9 +609,14 @@
 .appbar-actions {
   margin-left: auto;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .appbar-chip-btn {
@@ -789,7 +795,11 @@
   }
 
   .shell-appbar {
+    height: auto !important;
+    min-height: 54px !important;
+    max-height: none !important;
     padding: 8px 12px !important;
+    flex-wrap: wrap !important;
   }
 
   .appbar-note {

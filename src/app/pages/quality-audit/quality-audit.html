@@ -38,7 +38,7 @@
     <app-kpi-stat
       title="DOD EVIDENCE ครบถ้วน"
       [value]="kpis().dodEvidencePct + '%'"
-      iconCss="e-file-protect"
+      iconCss="e-circle-check"
       layout="icon-start"
       accent="info"
       [hint]="'ขาดหลักฐาน ' + kpis().dodMissingCount + ' ใบ'"
@@ -59,21 +59,21 @@
                 content="DoD Gate Verifier: ตรวจอัตโนมัติว่ามีลิงก์ MR, Unit Test ผ่าน และผล Staging Verified ครบหรือไม่ — หากไม่ครบ QA สามารถกดตีกลับ Dev ได้ทันที"
               ></ejs-message>
 
-              <ejs-grid [dataSource]="dodChecklist()" [allowSorting]="true">
+              <ejs-grid [dataSource]="dodChecklist()" [allowSorting]="true" [allowResizing]="true">
                 <e-columns>
-                  <e-column field="ticketId" headerText="รหัสใบงาน" width="120" textAlign="Left">
+                  <e-column field="ticketId" headerText="รหัสใบงาน" width="110" textAlign="Left">
                     <ng-template #template let-data>
                       <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
                     </ng-template>
                   </e-column>
-                  <e-column field="devName" headerText="ผู้พัฒนา (Dev)" width="150"></e-column>
-                  <e-column field="qaName" headerText="ผู้ตรวจ QA" width="150"></e-column>
-                  <e-column field="mrLink" headerText="ลิงก์ MR" width="130">
+                  <e-column field="devName" headerText="ผู้พัฒนา (Dev)" width="130"></e-column>
+                  <e-column field="qaName" headerText="ผู้ตรวจ QA" width="130"></e-column>
+                  <e-column field="mrLink" headerText="ลิงก์ MR" width="110">
                     <ng-template #template let-data>
                       <span class="font-mono text-xs text-blue-600 dark:text-blue-400 underline">{{ data.mrLink }}</span>
                     </ng-template>
                   </e-column>
-                  <e-column field="unitTestLabel" headerText="Unit Test" width="130">
+                  <e-column field="unitTestLabel" headerText="Unit Test" width="110">
                     <ng-template #template let-data>
                       <app-status-badge
                         [label]="data.unitTestLabel"
@@ -81,7 +81,7 @@
                       ></app-status-badge>
                     </ng-template>
                   </e-column>
-                  <e-column field="stagingVerified" headerText="ผล Staging" width="130">
+                  <e-column field="stagingVerified" headerText="ผล Staging" width="110">
                     <ng-template #template let-data>
                       <app-status-badge
                         [label]="data.stagingVerified ? 'แนบรูปแล้ว' : 'ยังไม่แนบ'"
@@ -89,7 +89,7 @@
                       ></app-status-badge>
                     </ng-template>
                   </e-column>
-                  <e-column field="dodStatus" headerText="สถานะหลักฐาน DoD" width="160">
+                  <e-column field="dodStatus" headerText="สถานะหลักฐาน DoD" width="130">
                     <ng-template #template let-data>
                       <app-status-badge
                         [label]="data.dodStatus"
@@ -97,7 +97,7 @@
                       ></app-status-badge>
                     </ng-template>
                   </e-column>
-                  <e-column headerText="การจัดการ" width="140" textAlign="Center">
+                  <e-column headerText="การจัดการ" width="110" textAlign="Center">
                     <ng-template #template let-data>
                       @if (!data.isComplete && (role() === 'admin' || role() === 'lead')) {
                         <button
@@ -181,22 +181,22 @@
               </div>
 
               <!-- Reopen & Bug Escape Breakdown Grid -->
-              <ejs-grid [dataSource]="reopenEscapes()" [allowSorting]="true" [allowFiltering]="true">
+              <ejs-grid [dataSource]="reopenEscapes()" [allowSorting]="true" [allowFiltering]="true" [allowResizing]="true">
                 <e-columns>
-                  <e-column field="ticketId" headerText="รหัสใบงาน" width="130"></e-column>
-                  <e-column field="title" headerText="ชื่องาน" width="220"></e-column>
-                  <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="150"></e-column>
-                  <e-column field="reopenCount" headerText="จำนวน Reopen" width="130" textAlign="Right">
+                  <e-column field="ticketId" headerText="รหัสใบงาน" width="110"></e-column>
+                  <e-column field="title" headerText="ชื่องาน" width="180"></e-column>
+                  <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="130"></e-column>
+                  <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right">
                     <ng-template #template let-data>
                       <span class="font-bold text-rose-600">{{ data.reopenCount }} ครั้ง</span>
                     </ng-template>
                   </e-column>
-                  <e-column field="bugCause" headerText="สาเหตุของบั๊ก" width="160">
+                  <e-column field="bugCause" headerText="สาเหตุของบั๊ก" width="150">
                     <ng-template #template let-data>
                       <app-status-badge [label]="data.bugCause" tone="secondary"></app-status-badge>
                     </ng-template>
                   </e-column>
-                  <e-column field="isBugEscape" headerText="หลุด Prod หรือไม่" width="140" textAlign="Center">
+                  <e-column field="isBugEscape" headerText="หลุด Prod" width="120" textAlign="Center">
                     <ng-template #template let-data>
                       <app-status-badge
                         [label]="data.isBugEscape ? 'หลุด Prod' : 'ตรวจพบใน QA'"
@@ -204,7 +204,7 @@
                       ></app-status-badge>
                     </ng-template>
                   </e-column>
-                  <e-column field="notes" headerText="บันทึกเพิ่มเติม" width="220"></e-column>
+                  <e-column field="notes" headerText="บันทึกเพิ่มเติม" width="160"></e-column>
                 </e-columns>
               </ejs-grid>
             </div>

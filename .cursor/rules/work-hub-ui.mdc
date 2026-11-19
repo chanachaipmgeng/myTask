@@ -35,9 +35,13 @@ alwaysApply: false
 - มาตรฐานธีม (`Tailwind 3 Dynamic Theming`): ทุกกราฟและ ProgressBar (`ejs-chart`, `ejs-accumulationchart`, `ejs-progressbar`) ต้องผูก `[theme]="theme.sfTheme()"` เพื่อรองรับการสลับระหว่าง `'Tailwind3Dark'` และ `'Tailwind3'` ผ่าน `ThemeService` และจดจำสถานะใน `localStorage` โดยไม่มี FOUC
 - แต่ง Syncfusion เพิ่ม: ใส่หมวดใหม่ใน `src/styles/sf/_components.scss` หลังธีมมาตรฐานเท่านั้น — ห้าม `transform` บน `.e-btn` / `.e-dialog` / `.e-panel:hover`
 - **Modern Bento Grid Cockpit (P16)**:
-  - **100vh Viewport Fit**: บนจอเดสก์ท็อป ($\ge 1200$px) แดชบอร์ด Cockpit ต้องใช้ความสูง `calc(100vh - 90px)` พร้อม `overflow: hidden` เพื่อให้ข้อมูลพอดีหน้าจอ 100% โดยไม่มี Body Scrollbar แนวตั้ง
-  - **3-Tier Grid Hierarchy**: Tier 1 = 4 Hero KPI Cards (`repeat(4, 1fr)`), Tier 2 = กราฟหลัก 60%:40% (`1.5fr 1fr` หรือ Workload vs OLS Trendline), Tier 3 = 3 การ์ดปฏิบัติการ (`repeat(3, 1fr)` สำหรับ DoD Donut, Stage Aging Stacked Bar, และ AI Risk Radar)
+  - **100vh Viewport Fit & AppBar Lock**: บนจอเดสก์ท็อป ($\ge 1200$px) แดชบอร์ด Cockpit ต้องใช้ความสูง `calc(100vh - 78px)` พร้อม `overflow: hidden` และ `.shell-appbar` / `.appbar-actions` ต้องมี `flex-wrap: nowrap !important;` ล็อกความสูง 56px เพื่อให้พอดีหน้าจอ 100% โดยไม่มี Vertical Scrollbar
+  - **3-Tier Grid Hierarchy**: Tier 1 = 4 Hero KPI Cards (`repeat(4, 1fr)`), Tier 2 = กราฟหลัก Dual-Axis Combo Chart หรือสัดส่วน 60%:40% (`1.5fr 1fr`), Tier 3 = 3 การ์ดปฏิบัติการ (`repeat(3, 1fr)` สำหรับ DoD Donut, Stage Aging Stacked Bar, และ AI Risk Radar)
   - **Interactive Features**: รองรับ TV Presentation Mode (`isTvMode` ปิด AppBar/Sidebar แสดงผล 100vw/100vh) และ Maximize Dialog (`[ ⛶ ]` ขยายกราฟพร้อมตาราง Breakdown Data Table)
+- **Advanced Syncfusion Charts & Visual Standards**:
+  - **Dual-Axis & Stripline**: ใช้ `primaryYAxis` ควบคู่ `axes: [{ name: 'yAxis2', opposedPosition: true }]` และใส่ `stripLines` แสดงเส้นเป้าหมายเสมอ (90% On-time, 80% Pareto cutoff)
+  - **Polar / Radar Chart Sizing**: ชาร์ตเรดาร์ 6 มิติต้องมีพื้นที่กว้าง $\ge 400$px (ใช้ `.card-grid-2`) ห้ามวางในคอลัมน์แคบ $< 300$px เพื่อป้องกันป้ายมิติถูกตัดทอน
+  - **Light Mode Scoped CSS**: ใช้ `:host-context(.e-light-mode)` สำหรับ CSS ในคอมโพเนนต์ แทนการอ้างอิง `body.e-light-mode`
 - **Domain Method & Model Contracts**:
   - ดึงดัชนีคะแนนรายคน: ต้องใช้ `scorecard.personRows()` (มีฟิลด์ `.index`) ห้ามใช้ `scorecard.roster()` ซึ่งคืนค่า `Person[]` ดิบที่ไม่มีคะแนน
   - สรุป QA Gate: `computeQualityAuditSummary(tickets, people)` เก็บ KPI ไว้ใต้ `.kpis.firstTimeRightPct` และ `.kpis.bugEscapeCount`

@@ -42,10 +42,15 @@ npm --prefix server run build
   - `/tickets/disputes`: `ejs-splitter` รายการคำขอด้านซ้าย และแผงคำนวณคะแนนจำลอง (Projected Score Diff) ด้านขวา พร้อม `ejs-dialog` ยื่นอุทธรณ์
   - `/admin/snapshot-check`: `ejs-progressbar` แสดง Readiness % + เช็คลิสต์ 4 ด่าน + ตาราง Snapshot Preview Diff เปรียบเทียบดัชนีรายบุคคลก่อน Freeze
 - **Modern Bento Grid Cockpit (P16 - `/cockpit` & `/me/cockpit`)**:
-  - **100vh Viewport Fit**: บนจอเดสก์ท็อป ($\ge 1200$px) คอนเทนเนอร์ `.bento-cockpit` ใช้ `height: calc(100vh - 90px)` จัดสัดส่วน 3 Tiers พอดีหน้าจอโดยไม่มี Vertical Scrollbar
-  - **3-Tier Grid Layout**: Tier 1 (4 Hero KPI Cards), Tier 2 (สัดส่วน 60%:40% Workload Stacking Area vs OLS Trendline), Tier 3 (3 คอลัมน์ DoD Donut, Stage Aging Stacked Bar, AI Risk Radar)
+  - **100vh Viewport Lock & AppBar No-Wrap**: บนจอเดสก์ท็อป ($\ge 1200$px) คอนเทนเนอร์ `.bento-cockpit` ใช้ `height: calc(100vh - 78px)` โดยที่ `.shell-appbar` และ `.appbar-actions` ต้องกำหนด `flex-wrap: nowrap !important;` ล็อกความสูงคงที่ 56px เสมอ เพื่อป้องกันไม่ให้ AppBar ขยายเป็น 2 แถว ซึ่งจะดันจนเกิด Vertical Scrollbar
+  - **3-Tier Grid Layout**: Tier 1 (4 Hero KPI Cards `repeat(4, 1fr)`), Tier 2 (Dual-Axis Overview Combo Chart หรือสัดส่วน 60%:40% Workload Stacking Area vs OLS Trendline), Tier 3 (3 คอลัมน์ DoD Donut, Stage Aging Stacked Bar, AI Risk Radar)
   - **TV Presentation Mode**: สลับฉายขึ้นจอทีวี/ห้องประชุมแบบ 100vw/100vh ซ่อน AppBar/Sidebar
   - **Maximize Deep-Dive Dialog**: ปุ่ม `[ ⛶ ]` ขยายกราฟขึ้นโมดอล `ejs-dialog` พร้อมตารางแจกแจงตัวเลข (Breakdown Data Table)
+- **Advanced Syncfusion Charts & Scoped Styling Standards**:
+  - **Angular Light Mode Scoped Styling**: ใน Angular Scoped SCSS ห้ามเขียน `body.e-light-mode .card` ตรงๆ เพราะ `body` อยู่นอก scope ให้ใช้ `:host-context(.e-light-mode)` และ `:host-context(body:not(.e-dark-mode))` ร่วมกับ CSS Custom Properties เพื่อให้สลับธีมแบบ zero-reload ได้อย่างสมบูรณ์
+  - **Dual-Axis Overview Combo & Stripline**: เมื่อแสดงผลภาระงานควบคู่กับตัวชี้วัดคุณภาพ ให้ผูกแกนที่ 2 ด้วย `axes: [{ name: 'yAxis2', opposedPosition: true }]` และใส่เส้นประ `stripLines` สำหรับระบุ Target Benchmark เสมอ (เช่น 90% On-time หรือ 80% Pareto Vital Few)
+  - **Polar / Radar 6D Minimum Width**: ชาร์ตใยแมงมุม 6 มิติขึ้นไป ต้องมีพื้นที่คอนเทนเนอร์กว้างอย่างน้อย 400–500px (เช่น จัดใน `.card-grid-2` หรือเต็มแถว) ห้ามใส่ในคอลัมน์กว้างต่ำกว่า 300px เพื่อป้องกันป้ายกำกับมิติถูกตัดขอบ (Label Truncation)
+  - **Explicit KPI 4-Card Grid**: หลีกเลี่ยง `repeat(auto-fit, minmax(280px, 1fr))` สำหรับแถว 4 KPI เพราะทำให้เกิด 3+1 wrap บนจอขนาดกลาง ให้ใช้ explicit media query: `repeat(4, 1fr)` บนเดสก์ท็อป ($\ge 1024$px), `repeat(2, 1fr)` บนแท็บเล็ต, และ `1fr` บนมือถือ
 - **Light & Dark Theme Architecture (MyHR Plus Design Tokens)**:
   - สีหลักระดับแบรนด์อิงตามเทมเพลต `myhrplus-backoffice-v5`: สีหลัก **MyHR Royal Blue** (`#2e4fc8` / `rgb(46, 79, 200)`), สีรอง/สว่าง (`#4c68e5`, `#5f7ce3`), และแถบเน้น AI/Spike (`#7465e8`)
   - ฟอนต์หลักผสมผสานระหว่าง `'IBM Plex Sans Thai'`, `'Montserrat'`, และ `'Sarabun'` ตามมาตรฐาน MyHR v5

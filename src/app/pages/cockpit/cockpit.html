@@ -85,9 +85,15 @@
           <span class="hero-value">{{ heroKpis().mainScore }}</span>
           <span class="hero-target-pill">เป้า 80.0</span>
         </div>
-        <span class="hero-subtext text-emerald-400">
-          ✓ สูงกว่าเกณฑ์เป้าหมาย +{{ (heroKpis().mainScore - 80).toFixed(1) }} จุด
-        </span>
+        @if (heroKpis().mainScore >= 80) {
+          <span class="hero-subtext text-emerald-400">
+            ✓ ผ่านเป้า (+{{ (heroKpis().mainScore - 80).toFixed(1) }} จุด)
+          </span>
+        } @else {
+          <span class="hero-subtext text-rose-400">
+            ต่ำกว่าเป้า ({{ (heroKpis().mainScore - 80).toFixed(1) }} จุด)
+          </span>
+        }
       </div>
     </div>
 
@@ -98,10 +104,10 @@
         <span class="hero-label">ภาระงานในมือ (Active WIP)</span>
         <div class="hero-value-row">
           <span class="hero-value">{{ heroKpis().activeWipMd }} <span class="hero-unit">MD</span></span>
-          <span class="hero-count-pill">{{ heroKpis().activeCount }} ใบงาน</span>
+          <span class="hero-count-pill">{{ heroKpis().activeCount }} ใบ</span>
         </div>
         <span class="hero-subtext">
-          ปิดสะสมแล้ว {{ heroKpis().closedTotalMd }} MD ({{ heroKpis().closedCount }} ใบ)
+          ปิดแล้ว {{ heroKpis().closedTotalMd }} MD ({{ heroKpis().closedCount }} ใบ)
         </span>
       </div>
     </div>
@@ -110,13 +116,13 @@
     <div class="bento-card bento-card--hero bento-card--accent-amber">
       <div class="hero-card-icon"><span class="e-icons e-clock"></span></div>
       <div class="hero-card-content">
-        <span class="hero-label">อัตราส่งมอบตรงสัปดาห์ (On-Time)</span>
+        <span class="hero-label">ส่งมอบตรงเวลา (On-Time)</span>
         <div class="hero-value-row">
           <span class="hero-value">{{ heroKpis().onTimeRate }}%</span>
           <span class="hero-tag-pill">เกณฑ์ 90%</span>
         </div>
         <span class="hero-subtext text-amber-300">
-          วัดจากวันเข้า Ready for QA ครั้งแรก
+          เทียบกำหนดส่งแรก (Ready for QA)
         </span>
       </div>
     </div>
@@ -131,7 +137,7 @@
           <span class="hero-status-pill">FTR Pass</span>
         </div>
         <span class="hero-subtext text-slate-300">
-          หลุดบัก Prod: {{ heroKpis().defectEscapeCount }} รายการ (ระบบสุขภาพดี)
+          หลุด Prod: {{ heroKpis().defectEscapeCount }} ใบ (สุขภาพดี)
         </span>
       </div>
     </div>

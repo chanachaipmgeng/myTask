@@ -182,9 +182,9 @@ export class PersonDashboard {
   protected readonly columnCorner = { topLeft: 4, topRight: 4 };
   protected readonly pieLegend = {
     visible: true,
-    position: 'Right',
-    alignment: 'Center',
-    shape: 'Circle',
+    position: 'Bottom' as const,
+    alignment: 'Center' as const,
+    shape: 'Circle' as const,
     textStyle: this.axisFont,
   };
   protected readonly pieTooltip = {
@@ -263,12 +263,12 @@ export class PersonDashboard {
     const teamSpike = 78;
 
     return [
-      { dimension: 'ส่งมอบตรงเวลา (On-Time)', personScore: myOnTime, teamAvg: teamOnTime },
-      { dimension: 'ความแม่นยำ (Accuracy)', personScore: myAccuracy, teamAvg: teamAccuracy },
-      { dimension: 'คุณภาพ (DoD First-Time)', personScore: myQuality, teamAvg: teamQuality },
-      { dimension: 'เป้าหมายโควตา (Quota)', personScore: myQuotaPct, teamAvg: teamQuotaPct },
-      { dimension: 'การรีวิวโค้ด (Peer Review)', personScore: myPeer, teamAvg: teamPeer },
-      { dimension: 'นวัตกรรม & AI (Spike)', personScore: mySpike, teamAvg: teamSpike },
+      { dimension: 'ส่งตรง (On-Time)', personScore: myOnTime, teamAvg: teamOnTime },
+      { dimension: 'แม่นยำ (Accuracy)', personScore: myAccuracy, teamAvg: teamAccuracy },
+      { dimension: 'DoD Gate (คุณภาพ)', personScore: myQuality, teamAvg: teamQuality },
+      { dimension: 'โควตา (Quota)', personScore: myQuotaPct, teamAvg: teamQuotaPct },
+      { dimension: 'รีวิวโค้ด (Peer)', personScore: myPeer, teamAvg: teamPeer },
+      { dimension: 'AI & นวัตกรรม', personScore: mySpike, teamAvg: teamSpike },
     ];
   });
 

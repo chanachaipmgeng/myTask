@@ -420,7 +420,13 @@ export function computeQualityAuditSummary(
       assignee: personMap.get(t.assigneeId)?.nickname ?? 'ไม่ระบุ',
       type: t.type,
       reopenCount: t.reopenCount,
-      bugCause: t.bugCause || (t.varianceCode === 'REQ' ? 'Requirement' : 'Logic'),
+      bugCause: t.bugCause || (
+        t.varianceCode === 'REQ' ? 'Requirement คลุมเครือ' :
+        t.varianceCode === 'ENV' ? 'Environment & Config' :
+        t.varianceCode === 'BLK' ? 'External Blocker' :
+        t.isBugEscape ? 'Regression หลุด Prod' :
+        (t.reopenCount > 1 ? 'Logic & Edge Case Bug' : 'Missing Test / DoD')
+      ),
       isBugEscape: Boolean(t.isBugEscape),
       notes: t.note || 'ตรวจพบบั๊กหลุด/ตีกลับระหว่างรอบการทดสอบ',
     }));

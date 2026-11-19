@@ -6,7 +6,7 @@ const htmlContent = `<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>คู่มือการใช้งานระบบ Man-day Scorecard ฉบับสมบูรณ์ (26 หน้าจอ)</title>
+  <title>คู่มือการใช้งานระบบ Man-day Scorecard ฉบับสมบูรณ์ (31 หน้าจอ)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -21,7 +21,7 @@ const htmlContent = `<!DOCTYPE html>
         color: #64748b;
       }
       @bottom-left {
-        content: "Man-day Scorecard — คู่มือการใช้งานระบบฉบับสมบูรณ์ (v2026.4)";
+        content: "Man-day Scorecard — คู่มือการใช้งานระบบฉบับสมบูรณ์ (v2026.5)";
         font-family: 'Sarabun', Tahoma, sans-serif;
         font-size: 8pt;
         color: #94a3b8;
@@ -358,10 +358,10 @@ const htmlContent = `<!DOCTYPE html>
     <div class="cover-top">
       <div class="brand-badge">
         <span class="brand-mark-logo">MD</span>
-        <span>CENTRAL SYNC &amp; SCORECARD v2026.4</span>
+        <span>CENTRAL SYNC &amp; SCORECARD v2026.5</span>
       </div>
       <div style="font-size: 10pt; color: #94a3b8; font-weight: 600;">
-        ฉบับสมบูรณ์ · 26 หน้าจอครอบคลุม Enterprise
+        ฉบับสมบูรณ์ · 31 หน้าจอครอบคลุม Enterprise
       </div>
     </div>
 
@@ -369,15 +369,21 @@ const htmlContent = `<!DOCTYPE html>
       <div class="cover-eyebrow">Enterprise Operational Manual</div>
       <h1 class="cover-title">คู่มือการใช้งานระบบ<br>Man-day Scorecard</h1>
       <p class="cover-subtitle">
-        คู่มือภาพประกอบทุกหน้าจอฉบับสมบูรณ์ (26 หน้าจอ) ครอบคลุมการคำนวณคะแนน Man-day,
+        คู่มือภาพประกอบทุกหน้าจอฉบับสมบูรณ์ (31 หน้าจอ) ครอบคลุมการคำนวณคะแนน Man-day,
+        ห้องบัญชาการ Bento Grid Cockpit (Dual-Axis Overview &amp; Benchmark Striplines),
         โฟลว์รับมืองานสั่งตรงจาก MD (MD Mandate &amp; Auto-Shift), กรอบความแม่นยำตามขนาดงาน (Tiered Tolerance),
         ฮับบริหารงานกลาง, กระดานคัมบัง, ไทม์ไลน์ Gantt, ตรวจสอบการส่งต่อข้ามทีม (SLA Handoff),
-        ตรวจสอบคุณภาพ QA (DoD Gates), ตรวจสอบเวลา 3 ทาง (3-Way Time Audit), ศูนย์ยื่นอุทธรณ์คะแนน,
+        ตรวจสอบคุณภาพ QA และการวิเคราะห์ Pareto 80/20, ตรวจสอบเวลา 3 ทาง (3-Way Time Audit), ศูนย์ยื่นอุทธรณ์คะแนน,
         การแช่แข็งคะแนน Snapshot ก่อนปิดงวด, ระบบเกณฑ์ประเมินไดนามิก (Rubric Registry),
-        เส้นแนวโน้มสถิติ OLS Regression, และที่ปรึกษาการโค้ชรายบุคคล (AI Coach 1-on-1 Dialogue)
+        กราฟใยแมงมุมสมรรถนะ 6 มิติ (6D Competency Radar), เส้นแนวโน้มสถิติ OLS Regression,
+        และที่ปรึกษาการโค้ชรายบุคคล (AI Coach 1-on-1 Dialogue)
       </p>
       <div class="cover-tags">
-        <span class="cover-tag">26 หน้าจอครบวงจร (v2026.4)</span>
+        <span class="cover-tag">31 หน้าจอครบวงจร (v2026.5)</span>
+        <span class="cover-tag">Bento Grid Cockpit (100vh Viewport)</span>
+        <span class="cover-tag">Dual-Axis Overview &amp; Striplines</span>
+        <span class="cover-tag">Pareto 80/20 Root-Cause Analysis</span>
+        <span class="cover-tag">6D Competency Radar Chart</span>
         <span class="cover-tag">โฟลว์งานสั่งตรงจาก MD (MD-DIRECT)</span>
         <span class="cover-tag">Tiered Tolerance (XS/S/M/L/XL)</span>
         <span class="cover-tag">Dynamic Rubric Registry</span>
@@ -400,12 +406,12 @@ const htmlContent = `<!DOCTYPE html>
   <!-- ==================== TABLE OF CONTENTS ==================== -->
   <div class="page-break"></div>
   <div class="section-header">
-    <h2>สารบัญคู่มือการใช้งาน (Table of Contents — 26 หน้าจอ)</h2>
-    <span class="section-meta">Man-day Scorecard v2026.4 Architecture</span>
+    <h2>สารบัญคู่มือการใช้งาน (Table of Contents — 31 หน้าจอ)</h2>
+    <span class="section-meta">Man-day Scorecard v2026.5 Architecture</span>
   </div>
 
   <p style="font-size: 8.5pt; color: #64748b; margin-bottom: 10px;">
-    ระบบแบ่งออกเป็น 4 หมวดหมู่หลัก ครอบคลุมมุมมองผู้บริหาร, การบริหารงานและคิวงานด่วน MD, การวิเคราะห์คะแนนและความคลาดเคลื่อน, และการกำกับดูแลคุณภาพระดับองค์กร:
+    ระบบแบ่งออกเป็น 5 หมวดหมู่หลัก ครอบคลุมห้องบัญชาการ Bento, แดชบอร์ดผู้บริหาร, การบริหารงานและคิวงานด่วน MD, การวิเคราะห์คะแนนและความคลาดเคลื่อน, และการกำกับดูแลคุณภาพระดับองค์กร:
   </p>
 
   <div class="toc-grid">
@@ -437,7 +443,7 @@ const htmlContent = `<!DOCTYPE html>
       <div class="toc-item"><span class="toc-title">18. แถบเครื่องมือ หน้าต่างแจ้งเตือน &amp; Mini-Sidebar</span><span class="toc-url">Shell Controls</span></div>
       <div class="toc-item"><span class="toc-title">19. การสลับโหมดสว่างและโหมดมืด</span><span class="toc-url">Theme Toggle</span></div>
 
-      <h3 style="font-size: 9.5pt; color: #2e4fc8; margin: 12px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 4: การกำกับดูแลคุณภาพระดับองค์กร (v2026.4)</h3>
+      <h3 style="font-size: 9.5pt; color: #2e4fc8; margin: 12px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 4: การกำกับดูแลคุณภาพระดับองค์กร</h3>
       <div class="toc-item"><span class="toc-title">20. คิวงานใหม่ &amp; จ่ายงานด่วน MD</span><span class="toc-url">/queue</span></div>
       <div class="toc-item"><span class="toc-title">21. ศูนย์ตรวจสอบการส่งต่อข้ามทีม &amp; SLA</span><span class="toc-url">/work/handoff</span></div>
       <div class="toc-item"><span class="toc-title">22. ศูนย์ตรวจสอบคุณภาพ QA &amp; หลุด Prod</span><span class="toc-url">/quality/audit</span></div>
@@ -445,6 +451,13 @@ const htmlContent = `<!DOCTYPE html>
       <div class="toc-item"><span class="toc-title">24. ระบบยื่นอุทธรณ์ &amp; ปรับปรุงคะแนน</span><span class="toc-url">/tickets/disputes</span></div>
       <div class="toc-item"><span class="toc-title">25. ห้องตรวจสอบความพร้อมก่อนปิดงวด</span><span class="toc-url">/admin/snapshot-check</span></div>
       <div class="toc-item"><span class="toc-title">26. ระบบเกณฑ์ประเมินไดนามิก (Rubric Registry)</span><span class="toc-url">/admin/rubrics</span></div>
+
+      <h3 style="font-size: 9.5pt; color: #2e4fc8; margin: 12px 0 3px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px;">หมวดที่ 5: Bento Cockpit &amp; กราฟวิเคราะห์ขั้นสูง (v2026.5)</h3>
+      <div class="toc-item"><span class="toc-title">27. ห้องบัญชาการ Bento Cockpit</span><span class="toc-url">/cockpit</span></div>
+      <div class="toc-item"><span class="toc-title">28. ค็อกพิทผลงานส่วนตัวของสมาชิก</span><span class="toc-url">/me/cockpit</span></div>
+      <div class="toc-item"><span class="toc-title">29. ศูนย์ตรวจ GitLab MR &amp; Peer Review</span><span class="toc-url">/mygit</span></div>
+      <div class="toc-item"><span class="toc-title">30. ศูนย์ปฏิบัติการข้ามทีม (Multi-Team Hub)</span><span class="toc-url">/teams</span></div>
+      <div class="toc-item"><span class="toc-title">31. โหมดสว่างความคมชัดสูง MyHR Plus</span><span class="toc-url">Light Mode Theme</span></div>
     </div>
   </div>
 
@@ -1400,8 +1413,182 @@ const htmlContent = `<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- ==================== 27. BENTO COCKPIT ==================== -->
+  <div class="page-break"></div>
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <span class="section-num">27</span>
+      <h2>ห้องบัญชาการ Bento Cockpit (Modern Bento Grid Command Center)</h2>
+    </div>
+    <div class="section-meta">
+      <span class="role-badge">Admin &amp; Lead</span> · <code>/cockpit</code>
+    </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/27_cockpit.png" alt="Bento Cockpit Screen">
+    <div class="img-caption">ภาพที่ 27: ห้องบัญชาการ Bento Cockpit สไตล์โมเดิร์น ล็อก 100vh Viewport พร้อม Dual-Axis Combo Chart, 4 Hero KPIs, DoD Donut, Stage Aging Bar, AI Radar และปุ่มฉายจอทีวี (TV Mode)</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h4>📊 Dual-Axis Overview Combo Chart &amp; Benchmark Striplines</h4>
+      <ul>
+        <li><strong>Dual-Axis Visualization:</strong> แกนซ้ายแสดงภาระงานจำแนกประเภท (Planned, Unplanned, MD Mandate) ด้วยกราฟแท่งซ้อน (Stacked Column) ควบคู่กับแกนขวาแสดง On-Time Delivery % และ OLS Score Trendline (Line Chart)</li>
+        <li><strong>Target Benchmark Striplines:</strong> เส้นประแนวนอนสีเขียวที่ 90% ระบุเกณฑ์เป้าหมาย On-Time ส่งมอบตรงเวลาอย่างชัดเจน</li>
+        <li><strong>Interactive Controls:</strong> แถบเลือกช่วงเวลาแบบชิป (1W, 2W, 1M, ทั้งหมด) และสวิตช์สลับมุมมองรวม/แยก 2 แผง</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>🖥️ 3-Tier Bento Layout, TV Mode &amp; Maximize Dialog</h4>
+      <ul>
+        <li><strong>3-Tier Viewport Lock:</strong> จัดวางความสูง 100vh พอดีหน้าจอเดสก์ท็อปโดยไม่มี Vertical Scrollbar แบ่งเป็น Tier 1 (4 Hero KPIs), Tier 2 (Overview Chart), และ Tier 3 (3 การ์ดปฏิบัติการ DoD, SLA, AI Radar)</li>
+        <li><strong>TV Presentation Mode:</strong> กดปุ่ม 📺 เพื่อฉายขึ้นจอห้องประชุมแบบ 100vw/100vh ซ่อน Sidebar และ AppBar</li>
+        <li><strong>Maximize Deep-Dive:</strong> กดปุ่ม ⛶ ขยายกราฟเต็มจอโมดอลพร้อมตารางแจกแจงตัวเลข (Breakdown Data Table)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 28. PERSONAL BENTO COCKPIT ==================== -->
+  <div class="page-break"></div>
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <span class="section-num">28</span>
+      <h2>ค็อกพิทผลงานส่วนตัวของสมาชิก (Member Personal Bento Cockpit)</h2>
+    </div>
+    <div class="section-meta">
+      <span class="role-badge member">Member</span> · <code>/me/cockpit</code>
+    </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/28_me_cockpit.png" alt="Member Personal Bento Cockpit Screen">
+    <div class="img-caption">ภาพที่ 28: ค็อกพิทผลงานส่วนตัวของสมาชิก นำเสนอข้อมูลผลงานรายบุคคลในเลย์เอาต์ Bento Grid พร้อมสรุปงานในมือ คะแนน On-time และความแม่นยำ</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h4>🎯 สรุปผลงานและโฟกัสประจำวัน (Personal KPIs &amp; Velocity)</h4>
+      <ul>
+        <li><strong>Hero KPIs รายบุคคล:</strong> สรุปคะแนนรวมดัชนีผลงาน, อัตราส่งมอบตรงเวลา (On-Time %), อัตราความแม่นยำ (Accuracy %), และสัดส่วนผ่านเกณฑ์คุณภาพ (DoD First-Time Right %)</li>
+        <li><strong>Personal Workload Stream:</strong> วิเคราะห์ภาระงานส่วนตัวทั้งงานตามแผนและงานวิจัย Spike เพื่อการจัดสรรเวลาทำงานที่สมดุล</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>🛡️ การปกป้องคะแนนและสถิติส่วนบุคคล</h4>
+      <ul>
+        <li><strong>Fair Evaluation:</strong> แสดงสถานะงานที่ได้รับการยกเว้นหรือชดเชยจากคำสั่ง MD Mandate และคำร้องอุทธรณ์ที่ผ่านการอนุมัติ</li>
+        <li><strong>ปุ่มสลับมุมมองลึก:</strong> คลิกเปิดดูกราฟเรดาร์สมรรถนะ 6 มิติ และ AI Coaching Assistant ในหน้า /me/analytics ได้ในคลิกเดียว</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 29. GITLAB MR & APPROVALS ==================== -->
+  <div class="page-break"></div>
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <span class="section-num">29</span>
+      <h2>ศูนย์ตรวจสอบ GitLab Merge Request &amp; เครดิต Peer Review</h2>
+    </div>
+    <div class="section-meta">
+      <span class="role-badge">Admin &amp; Lead</span> · <code>/mygit</code>
+    </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/29_mygit.png" alt="GitLab MR & Approvals Audit Screen">
+    <div class="img-caption">ภาพที่ 29: ศูนย์ตรวจสอบ GitLab MR เชื่อมต่อ API ซิงก์ Merge Request จริง, ผู้อนุมัติ (Approvers), และคำนวณเครดิตเวลา Peer Review</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h4>🦊 GitLab MR Integration &amp; Approvals Audit</h4>
+      <ul>
+        <li><strong>Automatic MR Linking:</strong> ตรวจจับรหัสใบงานจาก branch หรือ commit message เพื่อเชื่อมต่อลิงก์ MR บน GitLab โดยตรง</li>
+        <li><strong>Reviewers &amp; Approvers:</strong> ดึงข้อมูลผู้ตรวจโค้ดและผู้อนุมัติ MR เพื่อตรวจสอบความรัดกุมก่อนส่งต่อเข้าสู่กระบวนการทดสอบ QA</li>
+        <li><strong>รอบการแก้ไข (Review Rounds):</strong> นับจำนวนรอบการตรวจและแก้โค้ดเพื่อนำมาเป็นเกณฑ์วัดคุณภาพความพร้อมของงาน</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>👥 Peer Review Quota Credit</h4>
+      <ul>
+        <li><strong>Senior Coaching Credit:</strong> ปันเครดิตเวลา 10–15% ของ Estimate MD ให้แก่ผู้ตรวจรีวิวโค้ด เพื่อความเป็นธรรมแก่รุ่นพี่ที่สละเวลาให้คำแนะนำน้องในทีม</li>
+        <li><strong>คุณภาพโค้ดระดับทีม:</strong> ลดโอกาสเกิด Defect Escape สู่ Production ด้วยการรีวิวเชิงลึกที่มีระบบบันทึกชัดเจน</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 30. MULTI-TEAM OPERATIONS HUB ==================== -->
+  <div class="page-break"></div>
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <span class="section-num">30</span>
+      <h2>ศูนย์ปฏิบัติการข้ามทีม (Enterprise Multi-Team Operations Hub)</h2>
+    </div>
+    <div class="section-meta">
+      <span class="role-badge admin">Admin</span> · <code>/teams</code>
+    </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/30_teams.png" alt="Multi-Team Operations Hub Screen">
+    <div class="img-caption">ภาพที่ 30: ศูนย์ปฏิบัติการข้ามทีม ควบคุมดูแลสถานะการส่งมอบและการผสานงานระหว่าง 6 สายงานหลักทั่วทั้งองค์กร</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h4>🏢 6 Functional Tracks Operations</h4>
+      <ul>
+        <li><strong>การจำแนก 6 สายงาน:</strong> รองรับสายงาน R&amp;D (นวัตกรรม), Implement (ขึ้นระบบ), QA (ทดสอบ), UX/BA (ออกแบบ/วิเคราะห์), Support (แก้ปัญหาหน้างาน), และ Infra (โครงสร้างพื้นฐาน)</li>
+        <li><strong>Cross-Team SLA Tracking:</strong> ตรวจสอบเวลาที่งานค้างอยู่ในแต่ละทีมเพื่อตรวจจับคอขวดระหว่างแผนก</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>⚡ Real-time Teams Webhook Dispatch</h4>
+      <ul>
+        <li><strong>ยิงแจ้งเตือนข้ามทีม:</strong> ส่งการแจ้งเตือนงานใกล้กำหนดส่งหรืองานที่มี Blocker เข้าแชนเนล Microsoft Teams ของแต่ละสายงานโดยอัตโนมัติ</li>
+        <li><strong>บูรณาการข้อมูลรวม:</strong> รวมสถิติการส่งมอบของทุกทีมไว้ในหน้าจอเดียวสำหรับผู้บริหารระดับสูง</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 31. LIGHT THEME MODE ==================== -->
+  <div class="page-break"></div>
+  <div class="section-header">
+    <div class="section-title-wrap">
+      <span class="section-num">31</span>
+      <h2>โหมดสว่างความคมชัดสูง (MyHR Plus Design Tokens Light Mode)</h2>
+    </div>
+    <div class="section-meta">
+      <span class="role-badge">ทุกคนเข้าถึงได้</span> · <code>Theme Toggle (Zero-Reload)</code>
+    </div>
+  </div>
+
+  <div class="img-container">
+    <img src="manual_assets/31_cockpit_light.png" alt="MyHR Plus Light Mode Screen">
+    <div class="img-caption">ภาพที่ 31: เลย์เอาต์ Bento Cockpit ในโหมดสว่าง (Light Theme) การ์ดขาวนวล กรอบเส้นคมชัด Contrast ชัดเจน ไร้ปัญหา Dark-on-Dark พร้อมแถบเมนู MyHR Royal Blue Gradient</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h4>☀️ MyHR Plus Design Tokens &amp; Zero-Reload Switching</h4>
+      <ul>
+        <li><strong>Zero-Reload Switching:</strong> สลับโหมดสว่าง/มืดได้ทันทีผ่านปุ่มบน AppBar โดยไม่ต้องรีเฟรชหน้าจอ พร้อมจดจำค่าไว้ใน LocalStorage ป้องกัน FOUC</li>
+        <li><strong>สีหลัก MyHR Royal Blue:</strong> โทนสีมาตรฐานองค์กร (#2e4fc8 / #4c68e5) ให้ความสว่าง คมชัด และเป็นมืออาชีพ</li>
+        <li><strong>Syncfusion Adaptive Themes:</strong> คอมโพเนนต์กราฟและแถบความคืบหน้าสลับระหว่าง Tailwind3Dark และ Tailwind3 โดยอัตโนมัติ</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>👁️ การออกแบบตามหลักการยศาสตร์ (Ergonomics &amp; Readability)</h4>
+      <ul>
+        <li><strong>High Contrast &amp; Scoped CSS:</strong> ปรับแต่งแผง Bento Card และชิปควบคุมด้วย :host-context(.e-light-mode) ตัวอักษรสีหมึกเข้ม (#0f172a) บนพื้นขาวนวล (#ffffff) อ่านสบายตาแม้ใช้งานในห้องที่มีแสงสว่างสูง</li>
+        <li><strong>Frozen Grid Contrast:</strong> คอลัมน์ที่ถูกตรึงมีพื้นหลังสีขาวทึบ 100% ป้องกันข้อความซ้อนทับขณะเลื่อนดูตาราง</li>
+      </ul>
+    </div>
+  </div>
+
   <div class="callout tip" style="margin-top: 14px;">
-    <strong>สรุปภาพรวมระบบ Enterprise (v2026.4):</strong> ระบบ Man-day Scorecard เวอร์ชัน v2026.4 รองรับการทำงานแบบครบวงจร 26 หน้าจอ ครอบคลุม 6 สายงานหลัก พร้อมเกณฑ์ประเมินไดนามิก (Rubric Registry), การวิเคราะห์เชิงสถิติ OLS Regression, ที่ปรึกษาการโค้ชด้วย AI (Gemini 2.5 Flash), การตรวจวัด SLA ข้ามทีม, การอุทธรณ์คะแนนที่โปร่งใส, การชดเชยคะแนนงานสั่งตรงจาก MD (MD Mandate), และการแช่แข็งคะแนนที่เชื่อถือได้ตามมาตรฐานวิศวกรรมซอฟต์แวร์ระดับองค์กร
+    <strong>สรุปภาพรวมระบบ Enterprise (v2026.5):</strong> ระบบ Man-day Scorecard เวอร์ชัน v2026.5 รองรับการทำงานแบบครบวงจร 31 หน้าจอ ครอบคลุมห้องบัญชาการ Bento Cockpit, 6 สายงานหลัก พร้อมเกณฑ์ประเมินไดนามิก (Rubric Registry), การวิเคราะห์เชิงสถิติ OLS Regression, ที่ปรึกษาการโค้ชด้วย AI (Gemini 2.5 Flash), กราฟใยแมงมุมสมรรถนะ 6 มิติ (6D Radar), การตรวจวัด SLA ข้ามทีม, การอุทธรณ์คะแนนที่โปร่งใส, การชดเชยคะแนนงานสั่งตรงจาก MD (MD Mandate), และการแช่แข็งคะแนนที่เชื่อถือได้ตามมาตรฐานวิศวกรรมซอฟต์แวร์ระดับองค์กร
   </div>
 
 </body>
@@ -1412,7 +1599,7 @@ async function main() {
   const htmlPath = resolve(process.cwd(), 'docs/user-manual.html');
   const pdfPathEn = resolve(process.cwd(), 'docs/user-manual.pdf');
   const pdfPathTh = resolve(process.cwd(), 'docs/คู่มือการใช้งานระบบ.pdf');
-  const currentArtifactDir = resolve('C:/Users/Ooh-Ao/.gemini/antigravity/brain/9d098c0d-93d5-4d41-b629-1bd6cf853cdd');
+  const currentArtifactDir = resolve('C:/Users/Ooh-Ao/.gemini/antigravity/brain/3af32277-a0d9-46d6-97f1-1ca7e9554213');
   const artifactPdfPath = resolve(currentArtifactDir, 'คู่มือการใช้งานระบบ.pdf');
 
   console.log('Writing HTML manual to:', htmlPath);

@@ -27,13 +27,19 @@ const screens = [
   { name: '15_integrations.png', url: 'http://127.0.0.1:4200/integrations', wait: 5000 },
   { name: '16_admin.png', url: 'http://127.0.0.1:4200/admin', wait: 5000 },
   { name: '17_mockup.png', url: 'http://127.0.0.1:4200/mockup', wait: 5000 },
+  { name: '19_light_mode_team.png', url: 'http://127.0.0.1:4200/team?theme=light', wait: 6000 },
   { name: '20_queue.png', url: 'http://127.0.0.1:4200/queue', wait: 5000 },
   { name: '21_work_handoff.png', url: 'http://127.0.0.1:4200/work/handoff', wait: 6000 },
-  { name: '22_quality_audit.png', url: 'http://127.0.0.1:4200/quality/audit', wait: 5000 },
+  { name: '22_quality_audit.png', url: 'http://127.0.0.1:4200/quality/audit', wait: 6000 },
   { name: '23_time_audit.png', url: 'http://127.0.0.1:4200/analytics/time-audit', wait: 5000 },
   { name: '24_tickets_disputes.png', url: 'http://127.0.0.1:4200/tickets/disputes', wait: 5000 },
   { name: '25_snapshot_check.png', url: 'http://127.0.0.1:4200/admin/snapshot-check', wait: 5000 },
   { name: '26_admin_rubrics.png', url: 'http://127.0.0.1:4200/admin/rubrics', wait: 5000 },
+  { name: '27_cockpit.png', url: 'http://127.0.0.1:4200/cockpit', wait: 6000 },
+  { name: '28_me_cockpit.png', url: 'http://127.0.0.1:4200/me/cockpit', wait: 6000 },
+  { name: '29_mygit.png', url: 'http://127.0.0.1:4200/mygit', wait: 5000 },
+  { name: '30_teams.png', url: 'http://127.0.0.1:4200/teams', wait: 5000 },
+  { name: '31_cockpit_light.png', url: 'http://127.0.0.1:4200/cockpit?theme=light', wait: 6000 },
 ];
 
 function capture(screen) {
