@@ -1,13 +1,17 @@
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   DestroyRef,
   ElementRef,
+  NgZone,
   QueryList,
+  ViewChild,
   ViewChildren,
   computed,
   inject,
+  signal,
 } from '@angular/core';
 import {
   AccumulationChartComponent,
@@ -23,7 +27,7 @@ import {
   PieSeriesService,
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
-import { DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
+import { DashboardLayoutComponent, DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
@@ -52,12 +56,18 @@ export class WorkSummary implements AfterViewInit {
   private readonly hub = inject(WorkHubFilter);
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly zone = inject(NgZone);
+  private readonly cdr = inject(ChangeDetectorRef);
   protected readonly theme = inject(ThemeService);
+
+  @ViewChild(DashboardLayoutComponent) private dashboard?: DashboardLayoutComponent;
 
   @ViewChildren(AccumulationChartComponent) private readonly accCharts!: QueryList<AccumulationChartComponent>;
   @ViewChildren(ChartComponent) private readonly charts!: QueryList<ChartComponent>;
 
   protected readonly cellSpacing = [12, 12];
+  /** จอกว้าง: ช่องเกือบจัตุรัส · จอแคบที่เรียงแผงทีละใบ: ช่องแบนลงให้พอดีกราฟ 260px */
+  protected readonly cellAspectRatio = signal(1.25);
   protected readonly legend = {
     visible: true,
     position: 'Right' as const,
@@ -142,10 +152,14 @@ export class WorkSummary implements AfterViewInit {
   protected readonly mdMandate = this.scorecard.mdMandateReport;
 
   ngAfterViewInit(): void {
+    this.fitCellAspect();
     this.scheduleChartRefresh();
     if (typeof ResizeObserver !== 'undefined') {
       const observer = new ResizeObserver(() => {
-        this.scheduleChartRefresh();
+        this.zone.run(() => {
+          this.fitCellAspect();
+          this.scheduleChartRefresh();
+        });
       });
       observer.observe(this.el.nativeElement);
       this.destroyRef.onDestroy(() => observer.disconnect());
@@ -153,7 +167,22 @@ export class WorkSummary implements AfterViewInit {
   }
 
   protected onDashboardCreated(): void {
+    this.fitCellAspect();
     this.scheduleChartRefresh();
+  }
+
+  /** บนจอแคบ DashboardLayout เรียงทีละแผงเต็มความกว้าง แต่ sizeY ยังเป็น 2 ทำให้แผงสูงกว่ากราฟหลายเท่า */
+  private fitCellAspect(): void {
+    const narrow = window.matchMedia('(max-width: 800px)').matches;
+    const width = this.el.nativeElement.clientWidth || window.innerWidth;
+    const next = narrow ? Math.max(2.4, width / 170) : 1.25;
+    const rounded = Math.round(next * 100) / 100;
+    if (Math.abs(this.cellAspectRatio() - rounded) < 0.08) {
+      return;
+    }
+    this.cellAspectRatio.set(rounded);
+    this.cdr.markForCheck();
+    setTimeout(() => this.dashboard?.refresh(), 0);
   }
 
   private scheduleChartRefresh(): void {
