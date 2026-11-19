@@ -28,13 +28,13 @@ import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { workSummaryStats } from '../../core/work-views';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { HeroBandComponent, HeroBandMetric } from '../../shared/ui/hero-band/hero-band';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-summary',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DashboardLayoutModule, AccumulationChartModule, ChartModule, KpiStatCardComponent, MessageModule],
+  imports: [DashboardLayoutModule, AccumulationChartModule, ChartModule, HeroBandComponent, MessageModule],
   providers: [
     PieSeriesService,
     AccumulationLegendService,
@@ -90,6 +90,15 @@ export class WorkSummary implements AfterViewInit {
 
   protected readonly view = computed(() =>
     workSummaryStats(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
+  );
+
+  protected readonly summaryMetrics = computed((): HeroBandMetric[] =>
+    this.view().cards.map((card) => ({
+      label: card.label,
+      value: card.value,
+      hint: card.hint,
+      tone: card.id === 'overdue' && card.value !== '0' ? 'bad' : 'neutral',
+    })),
   );
 
   protected readonly statusCenter = computed(() => {

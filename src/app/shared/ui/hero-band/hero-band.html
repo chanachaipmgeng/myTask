@@ -1,0 +1,59 @@
+<header
+  class="hero-band"
+  [class.has-metrics]="metrics.length > 0"
+  [class.metrics-only]="!title && !subtitle && !badge && !crumb"
+  [attr.aria-label]="ariaLabel"
+>
+  @if (title || subtitle || badge || crumb || note) {
+    <div class="hero-band__identity">
+      @if (badge) {
+        <div class="hero-band__badge" [class.is-live]="live">
+          @if (live) {
+            <span class="hero-band__dot"></span>
+          }
+          <span>{{ badge }}</span>
+        </div>
+      } @else if (crumb) {
+        <div class="hero-band__crumb">{{ crumb }}</div>
+      }
+      @if (title) {
+        <h2 class="hero-band__title">{{ title }}</h2>
+      }
+      @if (subtitle) {
+        <p class="hero-band__subtitle">{{ subtitle }}</p>
+      }
+      @if (note) {
+        <span class="hero-band__note">{{ note }}</span>
+      }
+    </div>
+  }
+
+  @if (metrics.length) {
+    <div class="hero-band__metrics">
+      @for (metric of metrics; track $index) {
+        <div class="hero-band__metric">
+          <span class="hero-band__label">{{ metric.label }}</span>
+          <span class="hero-band__value">
+            {{ metric.value }}
+            @if (metric.unit) {
+              <span class="hero-band__unit">{{ metric.unit }}</span>
+            }
+          </span>
+          @if (metric.hint) {
+            <span
+              class="hero-band__hint"
+              [class.is-good]="metric.tone === 'good'"
+              [class.is-bad]="metric.tone === 'bad'"
+            >
+              {{ metric.hint }}
+            </span>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <div class="hero-band__actions" [class.is-stack]="actionsLayout === 'stack'">
+    <ng-content></ng-content>
+  </div>
+</header>

@@ -4,48 +4,13 @@
     title="ศูนย์ตรวจสอบคุณภาพ QA และช่องโหว่บั๊ก (QA &amp; Defect Leakage Audit)"
     description="ตรวจสอบ First-Time Right %, อัตราการตีกลับ (Reopen Rate), อัตราหลุดไป Production และหลักฐาน DoD ก่อนส่งทดสอบ"
     periodBadge="งวดปัจจุบัน: 2026-11"
+    [metrics]="[
+      { label: 'First-time right', value: kpis().firstTimeRightPct, unit: '%', hint: 'เป้าหมาย ≥ 85%', tone: kpis().firstTimeRightPct >= 85 ? 'good' : 'bad' },
+      { label: 'Reopen rate', value: kpis().reopenRatePct, unit: '%', hint: 'ตีกลับ ' + kpis().reopenCount + ' จาก ' + kpis().totalClosed + ' ใบ' },
+      { label: 'Bug escape', value: kpis().bugEscapePct, unit: '%', hint: 'หลุด Prod ' + kpis().bugEscapeCount + ' ใบ · เกณฑ์ ≤ 5%', tone: kpis().bugEscapePct <= 5 ? 'good' : 'bad' },
+      { label: 'DoD evidence', value: kpis().dodEvidencePct, unit: '%', hint: 'ขาดหลักฐาน ' + kpis().dodMissingCount + ' ใบ' }
+    ]"
   ></app-page-head>
-
-  <div class="kpi-grid-4">
-    <app-kpi-stat
-      title="FIRST-TIME RIGHT %"
-      [value]="kpis().firstTimeRightPct + '%'"
-      iconCss="e-check-box"
-      layout="icon-start"
-      accent="success"
-      hint="เป้าหมาย ≥ 85.0% (ผ่านเกณฑ์)"
-      [progress]="kpis().firstTimeRightPct"
-      [trendValue]="kpis().firstTimeRightPct >= 85 ? '+ผ่านเป้า' : 'ต่ำกว่าเป้า'"
-      [trendDirection]="kpis().firstTimeRightPct >= 85 ? 'up' : 'down'"
-      progressColor="#22c55e"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="REOPEN RATE (QA ตีกลับ)"
-      [value]="kpis().reopenRatePct + '%'"
-      iconCss="e-repeat"
-      layout="icon-start"
-      accent="warning"
-      [hint]="'ตีกลับ ' + kpis().reopenCount + ' จาก ' + kpis().totalClosed + ' ใบ'"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="BUG ESCAPE (หลุด PROD)"
-      [value]="kpis().bugEscapePct + '%'"
-      iconCss="e-warning"
-      layout="icon-start"
-      accent="danger"
-      [hint]="'ตรวจพบ ' + kpis().bugEscapeCount + ' ใบ (เกณฑ์ ≤ 5.0%)'"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="DOD EVIDENCE ครบถ้วน"
-      [value]="kpis().dodEvidencePct + '%'"
-      iconCss="e-circle-check"
-      layout="icon-start"
-      accent="info"
-      [hint]="'ขาดหลักฐาน ' + kpis().dodMissingCount + ' ใบ'"
-      [progress]="kpis().dodEvidencePct"
-      progressColor="#3b82f6"
-    ></app-kpi-stat>
-  </div>
 
   <app-section-card [showHead]="false">
     <ejs-tab id="qualityTab" animation="none">

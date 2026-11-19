@@ -4,27 +4,10 @@
     title="ห้องตรวจสอบความพร้อมก่อนปิดงวดคะแนน (Pre-Snapshot Freeze Gate)"
     description="รันเช็คลิสต์อัตโนมัติ 4 ด่านเพื่อยืนยันความถูกต้องของข้อมูลก่อนทำการบันทึกและแช่แข็งคะแนนประจำงวด"
     [periodBadge]="'งวดที่กำลังปิด: ' + periodKey()"
+    [metrics]="[
+      { label: 'ความพร้อมรวม', value: readinessScore(), unit: '%', hint: 'ต้อง ≥ 75% และไม่มี Blocker ร้ายแรง', tone: readinessScore() >= 75 ? 'good' : 'bad' }
+    ]"
   ></app-page-head>
-
-  <app-section-card
-    title="คะแนนความพร้อมรวม (Overall Readiness Score)"
-    subtitle="ต้องผ่านเกณฑ์อย่างน้อย 75% และไม่มี Blocker ที่ร้ายแรง"
-  >
-    <div actions class="snapshot-readiness-kpi">
-      <app-kpi-stat
-        title="ความพร้อมรวม"
-        [value]="readinessScore() + '%'"
-        [badge]="readinessScore() >= 75 ? 'พร้อมแช่แข็ง' : 'ยังไม่พร้อม'"
-        [badgeTone]="readinessScore() >= 75 ? 'success' : 'warning'"
-        [accent]="readinessScore() >= 75 ? 'success' : 'warning'"
-        [progress]="readinessScore()"
-        progressColor="#10b981"
-        hint="ต้อง ≥ 75% และไม่มี Blocker ร้ายแรง"
-        layout="icon-end"
-        iconCss="e-chart"
-      ></app-kpi-stat>
-    </div>
-  </app-section-card>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     @for (item of checks(); track item.stage) {

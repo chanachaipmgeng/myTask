@@ -16,9 +16,8 @@ import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ApiClient } from '../../../core/api-client';
 import { DEFAULT_RUBRICS, RubricDefinition } from '../../../core/rubrics';
 import { ThemeService } from '../../../core/theme.service';
-import { KpiStatCardComponent } from '../../../shared/kpi-stat-card/kpi-stat-card';
-import { FlashMessagesComponent } from '../../../shared/ui/flash-messages/flash-messages';
 import { PageHeadComponent } from '../../../shared/ui/page-head/page-head';
+import { FlashMessagesComponent } from '../../../shared/ui/flash-messages/flash-messages';
 import { SectionCardComponent } from '../../../shared/ui/section-card/section-card';
 
 interface RubricGridRow {
@@ -38,10 +37,9 @@ interface RubricGridRow {
   imports: [
     ButtonModule,
     GridModule,
-    KpiStatCardComponent,
+    PageHeadComponent,
     MessageModule,
     RouterLink,
-    PageHeadComponent,
     SectionCardComponent,
     FlashMessagesComponent,
   ],

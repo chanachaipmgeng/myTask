@@ -11,18 +11,7 @@
     </div>
   }
 
-  <div class="kpi-grid-4">
-    @for (card of view().cards; track card.id) {
-      <app-kpi-stat
-        [title]="card.label"
-        [value]="card.value"
-        [hint]="card.hint"
-        [accent]="cardAccent(card.id)"
-        layout="icon-start"
-        [iconCss]="cardIcon(card.id)"
-      ></app-kpi-stat>
-    }
-  </div>
+  <app-hero-band ariaLabel="สรุปงาน" [metrics]="summaryMetrics()"></app-hero-band>
 
   <ejs-dashboardlayout
     [columns]="4"

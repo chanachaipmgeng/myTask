@@ -34,7 +34,6 @@ import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
 import {
   defaultThaiSpeechButtonSettings,
@@ -62,11 +61,10 @@ interface OlsSummaryInfo {
     ButtonModule,
     MessageModule,
     GridModule,
-    KpiStatCardComponent,
+    PageHeadComponent,
     TextBoxModule,
     SpeechToTextModule,
     RouterLink,
-    PageHeadComponent,
     SectionCardComponent,
   ],
   providers: [

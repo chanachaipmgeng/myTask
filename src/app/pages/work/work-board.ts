@@ -13,7 +13,7 @@ import { buildDeliveryTimeline } from '../../core/delivery-timeline';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { HeroBandComponent } from '../../shared/ui/hero-band/hero-band';
 import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
@@ -63,7 +63,7 @@ type SwimlaneMode = 'none' | 'assignee' | 'track';
     MessageModule,
     TimelineModule,
     TimelineAllModule,
-    KpiStatCardComponent,
+    HeroBandComponent,
     ConfirmDialogComponent,
     FormFieldComponent,
     SectionCardComponent,

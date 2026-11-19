@@ -2,6 +2,12 @@
   <app-page-head
     title="แดชบอร์ดทีม"
     description="ตัวเลขปี {{ context.yearLabel }} เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง เส้นรายเดือน และแท่งโควตา เป้า {{ target }} อยู่บนเส้นรายเดือน · เลือก snapshot เพื่อดูดัชนีที่แช่แข็งตามเดือน/ไตรมาส"
+    [metrics]="[
+      { label: 'งานทั้งปี', value: tasksLabel, hint: 'งานในรายงาน ' + context.yearLabel },
+      { label: 'ส่งตรงเวลา', value: context.onTimePct, unit: '%', hint: 'ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว', tone: context.onTimePct >= 75 ? 'good' : 'bad' },
+      { label: 'ผ่าน QA รอบแรก', value: context.firstPassQaPct, unit: '%', hint: 'งานที่ส่งตรวจแล้วยังไม่พังเรื่อง security หรือ boundary' },
+      { label: 'มาทำงาน', value: context.attendancePct, unit: '%', hint: 'attendance' }
+    ]"
   >
     <div actions class="flex flex-wrap items-end gap-3">
       <app-form-field label="มุมมองคะแนน" variant="filter">
@@ -92,61 +98,6 @@
       }
     </app-section-card>
   }
-
-  <div class="kpi-grid-4">
-    <app-kpi-stat
-      title="งานทั้งปี"
-      [value]="tasksLabel"
-      iconCss="e-list-unordered"
-      layout="icon-start"
-      accent="info"
-      [hint]="'งานในรายงาน ' + context.yearLabel"
-      [sparklineData]="sparkPlan()"
-      sparklineType="Area"
-      sparklineId="team-spark-tasks"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="ส่งตรงเวลา"
-      [value]="context.onTimePct + '%'"
-      iconCss="e-circle-check"
-      layout="icon-start"
-      accent="success"
-      [progress]="context.onTimePct"
-      progressColor="#34d399"
-      hint="ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว"
-      [sparklineData]="sparkPlan()"
-      sparklineType="Line"
-      sparklineId="team-spark-ontime"
-      [trendValue]="context.onTimePct >= 75 ? '+แผนดี' : 'ต้องเร่ง'"
-      [trendDirection]="context.onTimePct >= 75 ? 'up' : 'down'"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="ผ่าน QA รอบแรก"
-      [value]="context.firstPassQaPct + '%'"
-      iconCss="e-check-box"
-      layout="icon-start"
-      accent="info"
-      [progress]="context.firstPassQaPct"
-      progressColor="#38bdf8"
-      hint="งานที่ส่งตรวจแล้วยังไม่พังเรื่อง security หรือ boundary"
-      [sparklineData]="sparkAccuracy()"
-      sparklineType="Area"
-      sparklineId="team-spark-qa"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="มาทำงาน"
-      [value]="context.attendancePct + '%'"
-      iconCss="e-people"
-      layout="icon-start"
-      accent="warning"
-      [progress]="context.attendancePct"
-      progressColor="#fbbf24"
-      hint="attendance"
-      [sparklineData]="sparkTarget()"
-      sparklineType="Area"
-      sparklineId="team-spark-attend"
-    ></app-kpi-stat>
-  </div>
 
   <ejs-dashboardlayout
     [columns]="4"

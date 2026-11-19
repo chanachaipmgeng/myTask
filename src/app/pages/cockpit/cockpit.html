@@ -4,112 +4,46 @@
   [class.is-tv-mode]="isTvMode()"
   [class.is-fullscreen]="isFullscreen()"
 >
-  <!-- ========================================== -->
-  <!-- Tier 1: title + four figures in one band   -->
-  <!-- ========================================== -->
-  <header class="bento-band" aria-label="ดัชนีภาพรวมสำคัญ">
-    <div class="bento-band__identity">
-      <div class="bento-badge-live">
-        <span class="live-dot"></span>
-        <span>LIVE COCKPIT</span>
-      </div>
-      <h1 class="bento-title">
-        @if (isMine()) {
-          ค็อกพิทของฉัน
-        } @else {
-          ห้องบัญชาการ
-        }
-      </h1>
-      <p class="bento-subtitle">
-        @if (isMine()) {
-          ดัชนี ภาระงาน และแนวโน้มส่วนบุคคล
-        } @else {
-          ทีม R&D / IMP · ภาพรวมองค์กร
-        }
-      </p>
-    </div>
-
-    <div class="bento-band__metrics">
-      <div class="band-metric">
-        <span class="band-metric__label">
-          {{ isMine() ? 'ดัชนีผลงานของฉัน' : 'ดัชนีคะแนนเฉลี่ยทีม' }}
-        </span>
-        <span class="band-metric__value">{{ heroKpis().mainScore }}</span>
-        @if (heroKpis().mainScore >= 80) {
-          <span class="band-metric__hint is-good">
-            ผ่านเป้า +{{ (heroKpis().mainScore - 80).toFixed(1) }} · เป้า 80
-          </span>
-        } @else {
-          <span class="band-metric__hint is-bad">
-            ต่ำกว่าเป้า {{ (heroKpis().mainScore - 80).toFixed(1) }} · เป้า 80
-          </span>
-        }
-      </div>
-
-      <div class="band-metric">
-        <span class="band-metric__label">ภาระงานในมือ</span>
-        <span class="band-metric__value">
-          {{ heroKpis().activeWipMd }}<span class="band-metric__unit">MD</span>
-        </span>
-        <span class="band-metric__hint">
-          {{ heroKpis().activeCount }} ใบ · ปิดแล้ว {{ heroKpis().closedTotalMd }} MD
-        </span>
-      </div>
-
-      <div class="band-metric">
-        <span class="band-metric__label">ส่งมอบตรงเวลา</span>
-        <span class="band-metric__value">
-          {{ heroKpis().onTimeRate }}<span class="band-metric__unit">%</span>
-        </span>
-        <span class="band-metric__hint">เป้า 90% · เทียบกำหนดส่งแรก</span>
-      </div>
-
-      <div class="band-metric">
-        <span class="band-metric__label">คุณภาพส่งมอบ DoD</span>
-        <span class="band-metric__value">
-          {{ heroKpis().firstTimeRightRate }}<span class="band-metric__unit">%</span>
-        </span>
-        <span class="band-metric__hint">
-          FTR · หลุด Prod {{ heroKpis().defectEscapeCount }} ใบ
-        </span>
-      </div>
-    </div>
-
-    <div class="bento-band__actions">
-      <button
-        ejs-button
-        cssClass="bento-btn bento-btn--tv"
-        [class.is-active]="isTvMode()"
-        type="button"
-        title="สลับโหมดฉายจอทีวีในห้องประชุม (ซ่อนแถบเมนูและขยายตัวอักษร)"
-        (click)="toggleTvMode()"
-      >
-        <span class="e-icons e-video"></span>
-        <span>{{ isTvMode() ? 'ออกจากทีวี' : 'ทีวี' }}</span>
-      </button>
-      <button
-        ejs-button
-        cssClass="bento-btn bento-btn--fullscreen"
-        type="button"
-        title="ขยายเต็มหน้าจอเบราว์เซอร์"
-        (click)="toggleFullscreen()"
-      >
-        <span class="e-icons e-expand"></span>
-        <span>{{ isFullscreen() ? 'ย่อ' : 'เต็มจอ' }}</span>
-      </button>
-      @if (isMine()) {
-        <a ejs-button cssClass="bento-btn bento-btn--link" routerLink="/me" title="หน้างานของฉัน">
-          <span class="e-icons e-user"></span>
-          <span>งานฉัน</span>
-        </a>
-      } @else {
-        <a ejs-button cssClass="bento-btn bento-btn--link" routerLink="/team" title="แดชบอร์ดทีม">
-          <span class="e-icons e-people"></span>
-          <span>ทีม</span>
-        </a>
-      }
-    </div>
-  </header>
+  <app-hero-band
+    badge="LIVE COCKPIT"
+    [live]="true"
+    [title]="isMine() ? 'ค็อกพิทของฉัน' : 'ห้องบัญชาการ'"
+    [subtitle]="isMine() ? 'ดัชนี ภาระงาน และแนวโน้มส่วนบุคคล' : 'ทีม R&D / IMP · ภาพรวมองค์กร'"
+    [metrics]="bandMetrics()"
+    actionsLayout="stack"
+    ariaLabel="ดัชนีภาพรวมสำคัญ"
+  >
+    <button
+      ejs-button
+      [class.is-active]="isTvMode()"
+      type="button"
+      title="สลับโหมดฉายจอทีวีในห้องประชุม (ซ่อนแถบเมนูและขยายตัวอักษร)"
+      (click)="toggleTvMode()"
+    >
+      <span class="e-icons e-video"></span>
+      <span>{{ isTvMode() ? 'ออกจากทีวี' : 'ทีวี' }}</span>
+    </button>
+    <button
+      ejs-button
+      type="button"
+      title="ขยายเต็มหน้าจอเบราว์เซอร์"
+      (click)="toggleFullscreen()"
+    >
+      <span class="e-icons e-expand"></span>
+      <span>{{ isFullscreen() ? 'ย่อ' : 'เต็มจอ' }}</span>
+    </button>
+    @if (isMine()) {
+      <a ejs-button routerLink="/me" title="หน้างานของฉัน">
+        <span class="e-icons e-user"></span>
+        <span>งานฉัน</span>
+      </a>
+    } @else {
+      <a ejs-button routerLink="/team" title="แดชบอร์ดทีม">
+        <span class="e-icons e-people"></span>
+        <span>ทีม</span>
+      </a>
+    }
+  </app-hero-band>
 
   <!-- ========================================== -->
   <!-- Bento Tier 2: Mid-Level Core Charts (Row 2)-->

@@ -1,14 +1,10 @@
 <section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>รายชื่อพนักงาน</h2>
-      <p>
-        คลิกชื่อเพื่อดูงานของคนนั้นและกราฟวิเคราะห์หลายมุม ดัชนี Implement = คะแนนถ่วง 50% + ปิดตามแผน 20% +
-        ความแม่น 15% + คุณภาพจาก rework 15%. ดัชนี R&amp;D = DoD 40% + Spike 25% + MD ที่รับเข้า 20% + รีวิว/reopen 15%.
-        เป้าดัชนีคือ {{ target }}.
-      </p>
-    </div>
-    <div class="flex flex-wrap gap-3 items-end">
+  <app-page-head
+    title="รายชื่อพนักงาน"
+    [description]="'คลิกชื่อเพื่อดูงานของคนนั้นและกราฟวิเคราะห์หลายมุม เป้าดัชนีคือ ' + target + '.'"
+    [metrics]="quotaMetrics()"
+  >
+    <div actions class="flex flex-wrap gap-3 items-end">
       <app-filter-chips
         [options]="trackChipOptions()"
         [value]="track()"
@@ -18,22 +14,7 @@
         <ejs-textbox placeholder="ชื่อหรือบทบาท" (change)="setQuery($event)" width="200px"></ejs-textbox>
       </app-form-field>
     </div>
-  </div>
-
-  <div class="kpi-grid-4">
-    @for (item of quotas(); track item.label) {
-      <app-kpi-stat
-        [title]="item.label"
-        [value]="item.quota + ' MD'"
-        badge="โควตา/สัปดาห์"
-        badgeTone="info"
-        accent="info"
-        layout="icon-start"
-        iconCss="e-people"
-        hint="ใช้จัดกำลังคน ไม่เข้าสูตรดัชนี"
-      ></app-kpi-stat>
-    }
-  </div>
+  </app-page-head>
 
   <app-section-card
     [title]="'กราฟดัชนีพัฒนาการเทียบเกณฑ์มาตรฐาน (' + target + ')'"

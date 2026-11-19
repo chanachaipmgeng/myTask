@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { StatusBadgeComponent } from '../status-badge/status-badge';
+import { HeroBandComponent, HeroBandMetric } from '../hero-band/hero-band';
 
 @Component({
   selector: 'app-page-head',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatusBadgeComponent],
+  imports: [HeroBandComponent],
   templateUrl: './page-head.html',
   styleUrl: './page-head.scss',
 })
@@ -13,4 +13,7 @@ export class PageHeadComponent {
   @Input() description = '';
   @Input() breadcrumb = '';
   @Input() periodBadge = '';
+  @Input() badge = '';
+  @Input() live = false;
+  @Input() metrics: readonly HeroBandMetric[] = [];
 }

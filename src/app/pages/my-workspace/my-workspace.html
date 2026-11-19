@@ -2,6 +2,12 @@
   <app-page-head
     [title]="'พื้นที่ของฉัน · ' + view().name + ' (' + view().role + ')'"
     description="หน้าหลักสำหรับติดตามใบงานที่รับผิดชอบ โควตาคงเหลือในสัปดาห์ และดัชนีพัฒนาของตัวเองเทียบกับตัวเอง (ไม่จัดอันดับเปรียบเทียบกับเพื่อนร่วมงาน)"
+    [metrics]="[
+      { label: 'ดัชนีพัฒนาของฉัน', value: view().indexLabel, hint: 'เป้า ' + view().target, tone: view().index >= view().target ? 'good' : 'bad' },
+      { label: 'งานที่กำลังถืออยู่', value: view().openCount, unit: 'ใบ', hint: 'เพดาน WIP ไม่เกิน 2 ใบ', tone: view().openCount <= 2 ? 'good' : 'bad' },
+      { label: 'โควตาสัปดาห์คงเหลือ', value: freeMdLabel(), unit: 'MD', hint: 'โควตาระดับ ' + view().level + ': ' + view().quota + ' MD/สัปดาห์' },
+      { label: 'ใบงานที่ปิดแล้ว', value: view().closedCount, unit: 'ใบ', hint: view().trackLabel }
+    ]"
   >
     <div actions class="flex flex-wrap gap-2">
       <a ejs-button cssClass="e-primary" iconCss="e-icons e-timeline-work-week" routerLink="/me/work">
@@ -18,51 +24,6 @@
       </a>
     </div>
   </app-page-head>
-
-  <div class="kpi-grid-4">
-    <app-kpi-stat
-      title="ดัชนีพัฒนาของฉัน"
-      [value]="view().indexLabel"
-      [badge]="'เป้า ' + view().target"
-      badgeTone="info"
-      accent="info"
-      layout="icon-start"
-      iconCss="e-chart"
-      [progress]="view().index"
-      [trendValue]="view().index >= view().target ? '+ถึงเป้า' : 'ต่ำกว่าเป้า'"
-      [trendDirection]="view().index >= view().target ? 'up' : 'down'"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="งานที่กำลังถืออยู่ (WIP)"
-      [value]="view().openCount + ' ใบ'"
-      badge="เพดาน ≤ 2 ใบ"
-      [badgeTone]="view().openCount <= 2 ? 'success' : 'warning'"
-      [accent]="view().openCount <= 2 ? 'success' : 'warning'"
-      layout="icon-start"
-      iconCss="e-folder-open"
-      hint="เพดาน WIP มาตรฐานไม่เกิน 2 ใบพร้อมกัน"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="โควตาสัปดาห์คงเหลือ"
-      [value]="freeMdLabel() + ' MD'"
-      badge="กันนอกแผน 1 MD"
-      badgeTone="secondary"
-      accent="warning"
-      layout="icon-start"
-      iconCss="e-circle-info"
-      [hint]="'โควตาระดับ ' + view().level + ': ' + view().quota + ' MD/สัปดาห์'"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="ใบงานที่ปิดแล้วสะสม"
-      [value]="view().closedCount + ' ใบ'"
-      [badge]="view().trackLabel"
-      badgeTone="primary"
-      accent="info"
-      layout="icon-start"
-      iconCss="e-circle-check"
-      hint="คำนวณดัชนีจากใบงานที่ปิดแล้วทั้งหมดของฉัน"
-    ></app-kpi-stat>
-  </div>
 
   @if (myCoaching(); as coach) {
     <app-section-card

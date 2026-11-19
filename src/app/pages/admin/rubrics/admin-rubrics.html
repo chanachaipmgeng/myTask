@@ -4,6 +4,12 @@
     title="ทะเบียนเกณฑ์มาตรฐาน (Rubric Registry)"
     description="ปรับแต่งเกณฑ์ประเมินขนาดงาน (Sizing), น้ำหนักคะแนนใบงาน (Ticket Score), และสูตรดัชนีชี้วัด (Person Index) แบบไดนามิกโดยไม่ต้องแก้ไขโค้ด"
     periodBadge="v2026.4"
+    [metrics]="[
+      { label: 'เกณฑ์ทั้งหมด', value: '7', unit: 'เกณฑ์', hint: 'Active ทั้งหมด' },
+      { label: 'กรอบขนาดงาน', value: '5', unit: 'ระดับ', hint: 'XS, S, M, L, XL' },
+      { label: 'คะแนนใบงานเต็ม', value: '100', unit: 'คะแนน', hint: 'On-time, Accuracy, Review, Reopen' },
+      { label: 'เป้าดัชนี R&D', value: '≥ 75.0', hint: 'DoD 40% · Spike 25% · Quota 20%' }
+    ]"
   >
     <div actions class="flex flex-wrap items-center gap-2">
       <a routerLink="/admin" ejs-button cssClass="e-outline e-small" iconCss="e-icons e-home">
@@ -19,49 +25,6 @@
   </app-page-head>
 
   <app-flash-messages [success]="saveNotice()"></app-flash-messages>
-
-  <div class="kpi-grid-4">
-    <app-kpi-stat
-      title="เกณฑ์ทั้งหมดในระบบ"
-      value="7 เกณฑ์"
-      badge="Active ทั้งหมด"
-      badgeTone="info"
-      accent="info"
-      layout="icon-start"
-      iconCss="e-settings"
-      hint="Rubric Registry"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="กรอบขนาดงาน (Sizing)"
-      value="5 ระดับ"
-      badge="Tiered"
-      badgeTone="success"
-      accent="success"
-      layout="icon-start"
-      iconCss="e-scale"
-      hint="XS, S, M, L, XL"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="คะแนนใบงานเต็ม"
-      value="100 คะแนน"
-      badge="4 แกน"
-      badgeTone="warning"
-      accent="warning"
-      layout="icon-start"
-      iconCss="e-chart"
-      hint="OnTime, Acc, Rev, Reopen"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="เป้าหมายดัชนี R&D"
-      value="≥ 75.0"
-      badge="Index Target"
-      badgeTone="primary"
-      accent="info"
-      layout="icon-start"
-      iconCss="e-circle-check"
-      hint="DoD 40%, Spike 25%, Quota 20%"
-    ></app-kpi-stat>
-  </div>
 
   <app-section-card
     title="ตารางพารามิเตอร์เกณฑ์มาตรฐาน"

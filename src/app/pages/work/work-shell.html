@@ -1,10 +1,6 @@
 <section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>{{ heading() }}</h2>
-      <p>{{ subheading() }}</p>
-    </div>
-    <div class="flex flex-wrap gap-3 items-end">
+  <app-page-head [title]="heading()" [description]="subheading()">
+    <div actions class="flex flex-wrap gap-3 items-end">
       @if (!isMine()) {
         <a ejs-button cssClass="e-outline" routerLink="/tickets">ตารางคะแนนใบงาน (/tickets)</a>
       } @else {
@@ -19,7 +15,7 @@
         <ejs-textbox placeholder="รหัสหรือชื่อใบ" (change)="setQuery($event)" width="220px"></ejs-textbox>
       </app-form-field>
     </div>
-  </div>
+  </app-page-head>
 
   <nav class="work-hub-tabs flex flex-wrap gap-2" role="tablist" [attr.aria-label]="heading()">
     @for (tab of tabs(); track tab.path) {

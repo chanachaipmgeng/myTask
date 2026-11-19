@@ -24,60 +24,18 @@
           </div>
 
           <nav class="rail-nav" aria-label="หมวดหมู่งาน">
-            <button
-              type="button"
-              class="rail-item"
-              [class.is-active]="activeNavCategory() === 'cockpit'"
-              (click)="selectRailCategory('cockpit')"
-              title="ห้องบัญชาการ Bento (Cockpit)"
-            >
-              <span class="e-icons e-dashboard rail-icon"></span>
-              <span class="rail-label">Cockpit</span>
-            </button>
-
-            <button
-              type="button"
-              class="rail-item"
-              [class.is-active]="activeNavCategory() === 'work'"
-              (click)="selectRailCategory('work')"
-              title="ฮับบริหารงาน & คิวงาน (Work Hub)"
-            >
-              <span class="e-icons e-timeline-work-week rail-icon"></span>
-              <span class="rail-label">งาน</span>
-            </button>
-
-            <button
-              type="button"
-              class="rail-item"
-              [class.is-active]="activeNavCategory() === 'quality'"
-              (click)="selectRailCategory('quality')"
-              title="ตรวจสอบคุณภาพ & DoD Gate (Quality)"
-            >
-              <span class="e-icons e-check-box rail-icon"></span>
-              <span class="rail-label">คุณภาพ</span>
-            </button>
-
-            <button
-              type="button"
-              class="rail-item"
-              [class.is-active]="activeNavCategory() === 'analytics'"
-              (click)="selectRailCategory('analytics')"
-              title="วิเคราะห์สถิติ & AI Coach (AI Hub)"
-            >
-              <span class="e-icons e-ai-chat rail-icon"></span>
-              <span class="rail-label">AI วิเคราะห์</span>
-            </button>
-
-            <button
-              type="button"
-              class="rail-item"
-              [class.is-active]="activeNavCategory() === 'admin'"
-              (click)="selectRailCategory('admin')"
-              title="ตั้งค่าระบบ & สิทธิ์ (Admin & Config)"
-            >
-              <span class="e-icons e-settings rail-icon"></span>
-              <span class="rail-label">จัดการ</span>
-            </button>
+            @for (item of visibleRail(); track item.id) {
+              <button
+                type="button"
+                class="rail-item"
+                [class.is-active]="activeNavCategory() === item.id"
+                (click)="selectRailCategory(item.id)"
+                [title]="item.title"
+              >
+                <span class="rail-icon {{ item.icon }}"></span>
+                <span class="rail-label">{{ item.rail }}</span>
+              </button>
+            }
           </nav>
         </div>
 
@@ -164,22 +122,37 @@
             </div>
           }
 
-          <!-- Navigation Tree -->
-          <div class="subpanel-tree-wrap">
-            @for (navKey of [role()]; track navKey) {
-              <ejs-treeview
-                [id]="'app-nav-tree-' + navKey"
-                cssClass="side-nav-tree"
-                [fields]="navFields()"
-                [expandedNodes]="expandedNodes"
-                [selectedNodes]="selectedNodes()"
-                [fullRowSelect]="true"
-                (nodeSelecting)="onNavSelecting($event)"
-                (nodeClicked)="onNavClick($event)"
-                (nodeSelected)="onNavSelect($event)"
-              ></ejs-treeview>
+          <!-- Navigation: only the active rail category, unless searching -->
+          <div class="subpanel-caption">
+            @if (menuSearch()) {
+              <span class="subpanel-caption__kicker">ค้นหาเมนู</span>
+              <span class="subpanel-caption__label">{{ visibleNavItems().length }} รายการ</span>
+            } @else {
+              <span class="subpanel-caption__kicker">เมนูย่อย</span>
+              <span class="subpanel-caption__label">{{ categoryLabel() }}</span>
+              <span class="subpanel-caption__hint">{{ categoryHint() }}</span>
             }
           </div>
+          <nav class="side-menu" [attr.aria-label]="menuSearch() ? 'ผลการค้นหาเมนู' : categoryLabel()">
+            @for (item of visibleNavItems(); track item.id) {
+              <a
+                class="side-menu__item"
+                [class.is-active]="selectedNodes()[0] === item.id"
+                [routerLink]="item.route"
+                [title]="item.text"
+              >
+                <span class="side-menu__icon"><span [class]="item.iconCss"></span></span>
+                <span class="side-menu__copy">
+                  <span class="side-menu__text">{{ item.text }}</span>
+                  @if (menuSearch()) {
+                    <span class="side-menu__tag">{{ item.categoryLabel }}</span>
+                  }
+                </span>
+              </a>
+            } @empty {
+              <p class="side-menu__empty">ไม่พบเมนูที่ตรงกับคำค้น</p>
+            }
+          </nav>
 
           <!-- Profile Card -->
           <div class="subpanel-profile" [attr.data-role]="role()">

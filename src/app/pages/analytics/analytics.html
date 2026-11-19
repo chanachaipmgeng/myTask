@@ -2,6 +2,12 @@
   <app-page-head
     title="ศูนย์วิเคราะห์ข้อมูลเชิงลึกด้วย Python (Sync &amp; Analytics Hub)"
     description="ศูนย์กลางตรวจสอบคุณภาพข้อมูลที่ซิงก์มาจาก OpenProject + GitLab ตรวจจับค่าผิดปกติทางสถิติ (Z-Score Outlier), พยากรณ์ใบงานเสี่ยงหลุดแผน, วิเคราะห์คอขวดโมดูล และสรุปแนวโน้มพัฒนาการรายบุคคล (OLS Regression) เพื่อการโค้ชและติดตามงานครบวงจร"
+    [metrics]="[
+      { label: 'ความสมบูรณ์ข้อมูลซิงก์', value: report().syncHygiene.readinessScore, unit: '%', hint: 'Sync Readiness', tone: report().syncHygiene.readinessScore >= 80 ? 'good' : 'bad' },
+      { label: 'ข้อมูลไม่สอดคล้อง', value: report().syncHygiene.issueCount, unit: 'รายการ', hint: 'ใบสมบูรณ์ ' + report().syncHygiene.cleanTickets + ' / ' + report().syncHygiene.totalTickets },
+      { label: 'ค่าผิดปกติทางสถิติ', value: report().syncHygiene.outlierCount, unit: 'ใบ', hint: '|Z-Score| ≥ 1.8' },
+      { label: 'ใบเปิดเสี่ยงหลุดแผน', value: highRiskCount(), unit: 'ใบ', hint: 'จากใบที่เปิดอยู่ ' + report().deliveryRisks.length + ' ใบ', tone: highRiskCount() > 0 ? 'bad' : 'good' }
+    ]"
   >
     <div actions class="flex flex-wrap items-center gap-2">
       <span class="e-badge e-badge-info e-badge-pill">
@@ -25,50 +31,6 @@
   @if (message()) {
     <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
   }
-
-  <div class="kpi-grid-4">
-    <app-kpi-stat
-      title="ความสมบูรณ์ข้อมูลซิงก์"
-      [value]="report().syncHygiene.readinessScore + '%'"
-      badge="Sync Readiness"
-      badgeTone="success"
-      accent="success"
-      layout="icon-start"
-      iconCss="e-data-check"
-      [progress]="report().syncHygiene.readinessScore"
-      progressColor="#22c55e"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="ประเด็นข้อมูลไม่สอดคล้อง"
-      [value]="report().syncHygiene.issueCount + ' รายการ'"
-      badge="Data Hygiene"
-      badgeTone="warning"
-      accent="warning"
-      layout="icon-start"
-      iconCss="e-warning"
-      [hint]="'ใบงานสมบูรณ์ ' + report().syncHygiene.cleanTickets + ' / ' + report().syncHygiene.totalTickets + ' ใบ'"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="ค่าผิดปกติทางสถิติ"
-      [value]="report().syncHygiene.outlierCount + ' ใบ'"
-      badge="|Z-Score| ≥ 1.8"
-      badgeTone="info"
-      accent="info"
-      layout="icon-start"
-      iconCss="e-chart"
-      hint="ใบที่ Actual/Estimate สูงผิดปกติเทียบกับขนาดเดียวกัน"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="ใบงานเปิดเสี่ยงหลุดแผนสูง"
-      [value]="highRiskCount() + ' ใบ'"
-      badge="Risk Radar"
-      badgeTone="danger"
-      accent="danger"
-      layout="icon-start"
-      iconCss="e-critical"
-      [hint]="'จากใบงานที่เปิดอยู่ทั้งหมด ' + report().deliveryRisks.length + ' ใบ'"
-    ></app-kpi-stat>
-  </div>
 
   <app-section-card [showHead]="false">
     <ejs-tab id="analytics-tabs" overflowMode="Scroll">

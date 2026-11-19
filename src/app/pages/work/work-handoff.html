@@ -3,6 +3,12 @@
     breadcrumb="ฮับบริหารงาน > ตรวจสอบการส่งต่อ &amp; SLA ข้ามทีม (/work/handoff)"
     title="ศูนย์ตรวจสอบการส่งต่อและคอขวดข้ามทีม (Handoff &amp; SLA Inspector)"
     description="วิเคราะห์ระยะเวลาค้างส่งต่องานระหว่าง Dev, Reviewer, QA และ Infra เพื่อแก้ปัญหาคอขวดก่อนหลุดกำหนดส่ง"
+    [metrics]="[
+      { label: 'ค้างรอ Code Review', value: kpis().waitingReviewCount, unit: 'ใบ', hint: 'เกิน 24 ชม. ' + kpis().waitingReviewOverdue + ' ใบ', tone: kpis().waitingReviewOverdue > 0 ? 'bad' : 'good' },
+      { label: 'ค้างรอเข้า QA', value: kpis().waitingQaCount, unit: 'ใบ', hint: 'เกิน SLA ' + kpis().waitingQaOverdue + ' ใบ' },
+      { label: 'ติด Blocker', value: kpis().blockedCount, unit: 'ใบ', hint: 'รอ Infra ' + kpis().blockedInfraCount + ' ใบ', tone: kpis().blockedCount > 0 ? 'bad' : 'good' },
+      { label: 'เวลาส่งต่อเฉลี่ย', value: kpis().avgHandoffHours, unit: 'ชม.', hint: 'เป้า ≤ 6 ชม.', tone: kpis().avgHandoffHours <= 6 ? 'good' : 'bad' }
+    ]"
   >
     <div actions class="flex flex-wrap gap-3 items-end">
       <app-form-field label="สายงาน" variant="filter">
@@ -25,45 +31,6 @@
     [value]="slaChipValue()"
     (valueChange)="setSlaChip($event)"
   ></app-filter-chips>
-
-  <div class="kpi-grid-4">
-    <app-kpi-stat
-      title="ค้างรอ CODE REVIEW"
-      [value]="kpis().waitingReviewCount + ' ใบ'"
-      iconCss="e-clock"
-      layout="icon-start"
-      accent="warning"
-      [hint]="'> 24 ชม.: ' + kpis().waitingReviewOverdue + ' ใบ (ต้องเร่งตรวจ)'"
-      [trendValue]="kpis().waitingReviewOverdue > 0 ? 'เกิน SLA' : 'ปกติ'"
-      [trendDirection]="kpis().waitingReviewOverdue > 0 ? 'down' : 'up'"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="ค้างรอเข้า QA"
-      [value]="kpis().waitingQaCount + ' ใบ'"
-      iconCss="e-check"
-      layout="icon-start"
-      accent="info"
-      [hint]="'เกิน SLA: ' + kpis().waitingQaOverdue + ' ใบ'"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="ติด BLOCKER (BLK / ENV)"
-      [value]="kpis().blockedCount + ' ใบ'"
-      iconCss="e-warning"
-      layout="icon-start"
-      accent="danger"
-      [hint]="'รอ Infra ปลดล็อก: ' + kpis().blockedInfraCount + ' ใบ'"
-    ></app-kpi-stat>
-    <app-kpi-stat
-      title="เวลาส่งต่อเฉลี่ย"
-      [value]="kpis().avgHandoffHours + ' ชม.'"
-      iconCss="e-timeline-work-week"
-      layout="icon-start"
-      accent="success"
-      hint="เป้าหมาย ≤ 6.0 ชม. (อยู่ในเกณฑ์)"
-      [trendValue]="kpis().avgHandoffHours <= 6 ? '≤ เป้า' : '> เป้า'"
-      [trendDirection]="kpis().avgHandoffHours <= 6 ? 'up' : 'down'"
-    ></app-kpi-stat>
-  </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
     <app-section-card

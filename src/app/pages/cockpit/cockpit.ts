@@ -32,6 +32,7 @@ import {
 import { DialogModule } from '@syncfusion/ej2-angular-popups';
 import { TooltipModule } from '@syncfusion/ej2-angular-popups';
 import { currentViewer, effectiveRole } from '../../core/admin-settings';
+import { HeroBandComponent, HeroBandMetric } from '../../shared/ui/hero-band/hero-band';
 import { mdCompositionTrend, MdCompositionPoint } from '../../core/dashboard-charts';
 import {
   computeHandoffSlaSummary,
@@ -70,6 +71,7 @@ interface QualityPiePoint {
     ButtonModule,
     DialogModule,
     TooltipModule,
+    HeroBandComponent,
     ChartModule,
     AccumulationChartModule,
   ],
@@ -172,6 +174,39 @@ export class CockpitPage implements OnInit {
       firstTimeRightRate: ftRate,
       defectEscapeCount: qualityReport.kpis.bugEscapeCount,
     };
+  });
+
+  protected readonly bandMetrics = computed((): HeroBandMetric[] => {
+    const kpis = this.heroKpis();
+    const onScore = kpis.mainScore >= 80;
+    return [
+      {
+        label: this.isMine() ? 'ดัชนีผลงานของฉัน' : 'ดัชนีคะแนนเฉลี่ยทีม',
+        value: kpis.mainScore,
+        hint: onScore
+          ? `ผ่านเป้า +${(kpis.mainScore - 80).toFixed(1)} · เป้า 80`
+          : `ต่ำกว่าเป้า ${(kpis.mainScore - 80).toFixed(1)} · เป้า 80`,
+        tone: onScore ? 'good' : 'bad',
+      },
+      {
+        label: 'ภาระงานในมือ',
+        value: kpis.activeWipMd,
+        unit: 'MD',
+        hint: `${kpis.activeCount} ใบ · ปิดแล้ว ${kpis.closedTotalMd} MD`,
+      },
+      {
+        label: 'ส่งมอบตรงเวลา',
+        value: kpis.onTimeRate,
+        unit: '%',
+        hint: 'เป้า 90% · เทียบกำหนดส่งแรก',
+      },
+      {
+        label: 'คุณภาพส่งมอบ DoD',
+        value: kpis.firstTimeRightRate,
+        unit: '%',
+        hint: `FTR · หลุด Prod ${kpis.defectEscapeCount} ใบ`,
+      },
+    ];
   });
 
   // ==========================================

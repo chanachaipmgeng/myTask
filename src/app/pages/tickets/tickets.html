@@ -1,23 +1,17 @@
 <section class="page flex flex-col gap-4">
-  <div class="page-head">
-    <div>
-      <h2>
-        {{ isMine ? 'ตารางคะแนนและจัดการใบงานของฉัน' : 'ตารางคะแนนใบงานทีม' }}
-        @if (isMine && activePerson(); as me) {
-          <span> · {{ me.nickname }}</span>
-        }
-      </h2>
-      <p>
-        @if (isMine) {
-          ตรวจสอบที่มาของคะแนนรายใบงานของตัวเอง (On-time 40 · Accuracy 20 · Review 20 · DoD 20) พร้อมอัปเดตสถานะ เวลาใช้จริง แนบ MR หรือยื่นอุทธรณ์ได้ทันที
-        } @else {
-          คะแนนเต็ม 100 ตอนปิดใบ: สัปดาห์ 40/20/0, ความแม่น 20/10/0, รีวิว 20/10/0, reopen 20/10/0.
-          REQ, BLK, ENV ให้คะแนนสัปดาห์และความแม่นเต็ม. ใบอ้างอิง {{ referenceBug }} ต้องได้ 100 และ
-          {{ referenceSpike }} ได้คะแนน Spike 100.
-        }
-      </p>
-    </div>
-    <div class="flex flex-wrap items-center gap-2">
+  <app-page-head
+    [title]="(isMine ? 'ตารางคะแนนและจัดการใบงานของฉัน' : 'ตารางคะแนนใบงานทีม') + (isMine && activePerson() ? ' · ' + activePerson()!.nickname : '')"
+    [description]="isMine
+      ? 'ตรวจสอบที่มาของคะแนนรายใบงานของตัวเอง (On-time 40 · Accuracy 20 · Review 20 · DoD 20) พร้อมอัปเดตสถานะ เวลาใช้จริง แนบ MR หรือยื่นอุทธรณ์ได้ทันที'
+      : 'คะแนนเต็ม 100 ตอนปิดใบ: สัปดาห์ 40/20/0, ความแม่น 20/10/0, รีวิว 20/10/0, reopen 20/10/0. REQ, BLK, ENV ให้คะแนนสัปดาห์และความแม่นเต็ม.'"
+    [metrics]="isMine ? [
+      { label: 'ใบงานทั้งหมด', value: myTicketStats().total, unit: 'ใบ', hint: 'เปิด ' + myTicketStats().openCount + ' · ปิด ' + myTicketStats().closedCount },
+      { label: 'คะแนนเฉลี่ยใบที่ปิด', value: myTicketStats().avgScore, hint: 'เป้า ≥ 75', tone: myTicketStats().avgScore >= 75 ? 'good' : 'bad' },
+      { label: 'เวลาใช้จริงสะสม', value: myTicketStats().totalActualMd, unit: 'MD', hint: '1 MD = 6 ชม.' },
+      { label: 'กำลังดำเนินการ', value: myTicketStats().openCount, unit: 'ใบ', hint: 'อัปเดตได้จากตาราง', tone: myTicketStats().openCount <= 2 ? 'good' : 'bad' }
+    ] : []"
+  >
+    <div actions class="flex flex-wrap items-center gap-2">
       @if (isMine) {
         <a ejs-button cssClass="e-primary" iconCss="e-icons e-chart" routerLink="/me/analytics">
           วิเคราะห์ผลงานเชิงลึก (OLS)
@@ -32,49 +26,7 @@
         <a ejs-button cssClass="e-outline" routerLink="/work">เปิดฮับบริหารงาน (/work)</a>
       }
     </div>
-  </div>
-
-  @if (isMine) {
-    <div class="kpi-grid-4">
-      <app-kpi-stat
-        title="ใบงานของฉันทั้งหมด"
-        [value]="myTicketStats().total + ' ใบ'"
-        [badge]="'เปิด ' + myTicketStats().openCount + ' · ปิด ' + myTicketStats().closedCount"
-        badgeTone="info"
-        accent="info"
-        layout="icon-start"
-        iconCss="e-table-1"
-      ></app-kpi-stat>
-      <app-kpi-stat
-        title="คะแนนเฉลี่ยใบที่ปิดแล้ว"
-        [value]="myTicketStats().avgScore + ' / 100'"
-        badge="เป้า ≥ 75"
-        [badgeTone]="myTicketStats().avgScore >= 75 ? 'success' : 'warning'"
-        [accent]="myTicketStats().avgScore >= 75 ? 'success' : 'warning'"
-        layout="icon-start"
-        iconCss="e-chart"
-        [progress]="myTicketStats().avgScore"
-      ></app-kpi-stat>
-      <app-kpi-stat
-        title="เวลาใช้จริงสะสม (Actual MD)"
-        [value]="myTicketStats().totalActualMd + ' MD'"
-        badge="1 MD = 6 ชม."
-        badgeTone="primary"
-        accent="info"
-        layout="icon-start"
-        iconCss="e-clock"
-      ></app-kpi-stat>
-      <app-kpi-stat
-        title="งานที่กำลังดำเนินการ"
-        [value]="myTicketStats().openCount + ' ใบ'"
-        badge="อัปเดตได้จากตาราง"
-        [badgeTone]="myTicketStats().openCount <= 2 ? 'success' : 'warning'"
-        [accent]="myTicketStats().openCount <= 2 ? 'success' : 'warning'"
-        layout="icon-start"
-        iconCss="e-folder-open"
-      ></app-kpi-stat>
-    </div>
-  }
+  </app-page-head>
 
   @if (error()) {
     <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>

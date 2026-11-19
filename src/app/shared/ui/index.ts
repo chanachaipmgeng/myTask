@@ -15,6 +15,7 @@ export {
   toneForAlertLabel,
 } from './badge';
 export { PageHeadComponent } from './page-head/page-head';
+export { HeroBandComponent, type HeroBandMetric } from './hero-band/hero-band';
 export { SectionCardComponent, type SectionCardVariant } from './section-card/section-card';
 export { StatusBadgeComponent } from './status-badge/status-badge';
 export { FormFieldComponent } from './form-field/form-field';

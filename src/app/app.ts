@@ -3,10 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { AppBarModule, SidebarModule, TreeViewModule } from '@syncfusion/ej2-angular-navigations';
+import { AppBarModule, SidebarModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule, ToastComponent, ToastModule } from '@syncfusion/ej2-angular-notifications';
 import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
-import { NodeClickEventArgs, NodeSelectEventArgs } from '@syncfusion/ej2-navigations';
 import { filter, map, startWith } from 'rxjs';
 import {
   actualRole,
@@ -48,7 +47,6 @@ type NavGroup = {
     RouterLink,
     SidebarModule,
     AppBarModule,
-    TreeViewModule,
     ToastModule,
     ButtonModule,
     MessageModule,
@@ -120,6 +118,7 @@ export class App implements AfterViewInit {
     this.globalSearch.set('');
   }
 
+  private keepNavOpen = false;
   protected readonly narrow = signal(false);
   protected readonly navOpen = signal(true);
   protected readonly collapsed = signal(false);
@@ -201,103 +200,51 @@ export class App implements AfterViewInit {
     this.menuSearch.set('');
   }
 
-  protected readonly visibleNavGroups = computed<NavGroup[]>(() => {
+  protected readonly activeNavCategory = computed<NavCategory>(() => {
+    const id = matchNavId(this.url(), this.role());
+    return leafCategory[id] ?? 'work';
+  });
+
+  protected readonly categoryLabel = computed(() => categoryMeta[this.activeNavCategory()].label);
+  protected readonly categoryHint = computed(() => categoryMeta[this.activeNavCategory()].hint);
+  protected readonly visibleRail = computed(() => {
+    const present = new Set(leavesFor(this.role()).map((leaf) => leafCategory[leaf.id] ?? 'work'));
+    return categoryOrder.filter((id) => present.has(id)).map((id) => ({ id, ...categoryMeta[id] }));
+  });
+
+  protected readonly visibleNavItems = computed<NavMenuItem[]>(() => {
     const role = this.role();
     const query = this.menuSearch().trim().toLowerCase();
+    const category = this.activeNavCategory();
     return allNavGroups
       .filter((group) => !group.roles || group.roles.includes(role))
-      .map((group) => ({
-        ...group,
-        children: group.children.filter(
-          (leaf) =>
-            (!leaf.roles || leaf.roles.includes(role)) &&
-            (!query || leaf.text.toLowerCase().includes(query) || group.text.toLowerCase().includes(query)),
-        ),
-      }))
-      .filter((group) => group.children.length > 0);
+      .flatMap((group) =>
+        group.children
+          .filter((leaf) => !leaf.roles || leaf.roles.includes(role))
+          .filter((leaf) => query || (leafCategory[leaf.id] ?? 'work') === category)
+          .filter(
+            (leaf) =>
+              !query ||
+              leaf.text.toLowerCase().includes(query) ||
+              group.text.toLowerCase().includes(query),
+          )
+          .map((leaf) => ({
+            ...leaf,
+            category: leafCategory[leaf.id] ?? 'work',
+            categoryLabel: categoryMeta[leafCategory[leaf.id] ?? 'work'].label,
+          })),
+      );
   });
 
-  protected readonly activeNavCategory = computed<'cockpit' | 'work' | 'quality' | 'analytics' | 'admin'>(() => {
-    const path = this.url().split('?')[0] || '/';
-    if (path === '/cockpit' || path === '/team' || path === '/me/cockpit') {
-      return 'cockpit';
-    }
-    if (
-      path.startsWith('/work') ||
-      path.startsWith('/me/work') ||
-      path.startsWith('/queue') ||
-      path.startsWith('/tickets') ||
-      path.startsWith('/schedule') ||
-      path.startsWith('/me/tickets') ||
-      path.startsWith('/me/schedule') ||
-      path === '/me'
-    ) {
-      return 'work';
-    }
-    if (
-      path.startsWith('/quality') ||
-      path.startsWith('/analytics/time-audit') ||
-      path.startsWith('/tickets/disputes') ||
-      path.startsWith('/me/time-audit') ||
-      path.startsWith('/me/disputes')
-    ) {
-      return 'quality';
-    }
-    if (
-      path.startsWith('/analytics') ||
-      path.startsWith('/ai') ||
-      path.startsWith('/people') ||
-      path.startsWith('/mygit') ||
-      path.startsWith('/me/analytics') ||
-      path.startsWith('/me/ai') ||
-      path.startsWith('/me/mygit')
-    ) {
-      return 'analytics';
-    }
-    return 'admin';
-  });
-
-  protected selectRailCategory(cat: 'cockpit' | 'work' | 'quality' | 'analytics' | 'admin'): void {
+  protected selectRailCategory(cat: NavCategory): void {
     if (this.collapsed()) {
       this.collapsed.set(false);
     }
-    const isMember = this.role() === 'member';
-    switch (cat) {
-      case 'cockpit':
-        void this.router.navigate([isMember ? '/me/cockpit' : '/cockpit']);
-        break;
-      case 'work':
-        void this.router.navigate([isMember ? '/me/work' : '/work']);
-        break;
-      case 'quality':
-        void this.router.navigate([isMember ? '/me/disputes' : '/quality/audit']);
-        break;
-      case 'analytics':
-        void this.router.navigate([isMember ? '/me/analytics' : '/analytics']);
-        break;
-      case 'admin':
-        if (this.role() === 'admin') {
-          void this.router.navigate(['/admin']);
-        } else {
-          void this.router.navigate(['/login']);
-        }
-        break;
+    const leaf = firstLeaf(this.role(), cat);
+    if (leaf) {
+      void this.router.navigateByUrl(leaf.route);
     }
   }
-  protected readonly navFields = computed(() => ({
-    dataSource: this.visibleNavGroups() as object[],
-    id: 'id',
-    text: 'text',
-    child: 'children',
-    iconCss: 'iconCss',
-  }));
-  protected readonly expandedNodes = [
-    'mine-daily',
-    'mine-analytics',
-    'lead-plan',
-    'lead-audit',
-    'admin-gov',
-  ];
   protected readonly selectedNodes = signal<string[]>(['me']);
   protected readonly availableModes = computed(() => {
     const actual = this.trueRole();
@@ -349,9 +296,10 @@ export class App implements AfterViewInit {
       this.navOpen.set(!event.matches);
     });
     this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe((event) => {
-      if (this.narrow()) {
+      if (this.narrow() && !this.keepNavOpen) {
         this.navOpen.set(false);
       }
+      this.keepNavOpen = false;
       const path = event.urlAfterRedirects.split('?')[0] || '/';
       const actual = this.trueRole();
       if (path === '/me' || path.startsWith('/me/')) {
@@ -423,34 +371,6 @@ export class App implements AfterViewInit {
     }
   }
 
-  protected onNavSelecting(event: NodeSelectEventArgs): void {
-    const id = String(event.nodeData?.['id'] ?? '');
-    if (allNavGroups.some((group) => group.id === id)) {
-      event.cancel = true;
-    }
-  }
-
-  protected onNavClick(event: NodeClickEventArgs): void {
-    const id = String(event.node?.getAttribute('data-uid') ?? '');
-    const leaf = allNavLeaves.find((item) => item.id === id);
-    if (!leaf) {
-      return;
-    }
-    void this.router.navigateByUrl(leaf.route);
-  }
-
-  protected onNavSelect(event: NodeSelectEventArgs): void {
-    if (!event.isInteracted) {
-      return;
-    }
-    const id = String(event.nodeData?.['id'] ?? '');
-    const leaf = allNavLeaves.find((item) => item.id === id);
-    if (!leaf) {
-      return;
-    }
-    void this.router.navigateByUrl(leaf.route);
-  }
-
   protected openAlerts(): void {
     this.alertDialog?.show();
   }
@@ -478,16 +398,20 @@ export class App implements AfterViewInit {
   }
 
   protected switchWorkspaceMode(mode: AccessRole): void {
+    const category = this.activeNavCategory();
     const next = setWorkspaceMode(mode);
+    const target = firstLeaf(next, category) ?? firstLeaf(next);
+    this.menuSearch.set('');
+    this.keepNavOpen = true;
     if (next === 'member') {
       this.notice.info('สลับเข้าสู่โหมด "งานของฉัน" (Member Workspace)');
-      void this.router.navigate(['/me']);
     } else if (next === 'lead') {
       this.notice.info('สลับเข้าสู่โหมด "บริหารทีม" (Lead Command Center)');
-      void this.router.navigate(['/team']);
     } else {
       this.notice.info('สลับเข้าสู่โหมด "แอดมิน" (Admin & Governance Console)');
-      void this.router.navigate(['/admin']);
+    }
+    if (target) {
+      void this.router.navigateByUrl(target.route);
     }
   }
 
@@ -529,6 +453,96 @@ export class App implements AfterViewInit {
     });
   }
 }
+
+type NavCategory = 'cockpit' | 'work' | 'quality' | 'analytics' | 'admin';
+
+type NavMenuItem = NavLeaf & {
+  category: NavCategory;
+  categoryLabel: string;
+};
+
+const categoryMeta: Record<NavCategory, { label: string; hint: string; rail: string; icon: string; title: string }> = {
+  cockpit: {
+    label: 'ห้องบัญชาการ',
+    hint: 'แดชบอร์ดและภาพรวม',
+    rail: 'Cockpit',
+    icon: 'e-icons e-dashboard',
+    title: 'ห้องบัญชาการ Bento (Cockpit)',
+  },
+  work: {
+    label: 'งาน',
+    hint: 'คิว ฮับ ปฏิทิน และส่งต่อ',
+    rail: 'งาน',
+    icon: 'e-icons e-timeline-work-week',
+    title: 'ฮับบริหารงานและคิวงาน',
+  },
+  quality: {
+    label: 'คุณภาพ',
+    hint: 'ตรวจรับ คะแนน และเวลา',
+    rail: 'คุณภาพ',
+    icon: 'e-icons e-check-box',
+    title: 'ตรวจสอบคุณภาพและ DoD',
+  },
+  analytics: {
+    label: 'AI วิเคราะห์',
+    hint: 'สถิติ โปรไฟล์ และ MR',
+    rail: 'AI วิเคราะห์',
+    icon: 'e-icons e-ai-chat',
+    title: 'วิเคราะห์สถิติและ AI Coach',
+  },
+  admin: {
+    label: 'จัดการ',
+    hint: 'สิทธิ์ เกณฑ์ และการเชื่อมต่อ',
+    rail: 'จัดการ',
+    icon: 'e-icons e-settings',
+    title: 'ตั้งค่าระบบและสิทธิ์',
+  },
+};
+
+const categoryOrder: NavCategory[] = ['cockpit', 'work', 'quality', 'analytics', 'admin'];
+
+const categoryLanding: Partial<Record<NavCategory, readonly string[]>> = {
+  cockpit: ['my-cockpit', 'team-cockpit', 'admin-cockpit', 'team-dash'],
+  work: ['me', 'work-hub', 'my-work', 'queue'],
+  quality: ['quality-audit', 'my-tickets', 'my-disputes'],
+  analytics: ['analytics', 'my-analytics', 'people'],
+  admin: ['admin-home'],
+};
+
+const leafCategory: Record<string, NavCategory> = {
+  me: 'work',
+  'my-cockpit': 'cockpit',
+  'my-work': 'work',
+  'my-schedule': 'work',
+  'my-mygit': 'analytics',
+  'my-ai': 'analytics',
+  'my-analytics': 'analytics',
+  'my-tickets': 'quality',
+  'my-time-audit': 'quality',
+  'my-disputes': 'quality',
+  'team-dash': 'cockpit',
+  'team-cockpit': 'cockpit',
+  queue: 'work',
+  'work-hub': 'work',
+  schedule: 'work',
+  'work-handoff': 'work',
+  'quality-audit': 'quality',
+  disputes: 'quality',
+  tickets: 'quality',
+  'time-audit': 'quality',
+  analytics: 'analytics',
+  people: 'analytics',
+  mygit: 'analytics',
+  ai: 'analytics',
+  'admin-home': 'admin',
+  'admin-cockpit': 'cockpit',
+  integrations: 'admin',
+  'snapshot-check': 'admin',
+  rubrics: 'admin',
+  teams: 'admin',
+  mockup: 'admin',
+  login: 'admin',
+};
 
 const allNavGroups: NavGroup[] = [
   // ==========================================
@@ -623,8 +637,27 @@ const allNavGroups: NavGroup[] = [
 
 const allNavLeaves = allNavGroups.flatMap((group) => group.children);
 
+function leavesFor(role: AccessRole): NavLeaf[] {
+  return allNavGroups
+    .filter((group) => !group.roles || group.roles.includes(role))
+    .flatMap((group) => group.children.filter((leaf) => !leaf.roles || leaf.roles.includes(role)));
+}
+
+function firstLeaf(role: AccessRole, category?: NavCategory): NavLeaf | undefined {
+  const leaves = leavesFor(role).filter((leaf) => !category || (leafCategory[leaf.id] ?? 'work') === category);
+  const preferred = category ? categoryLanding[category] ?? [] : [];
+  for (const id of preferred) {
+    const hit = leaves.find((leaf) => leaf.id === id);
+    if (hit) {
+      return hit;
+    }
+  }
+  return leaves[0];
+}
+
 function matchNavId(url: string, role: AccessRole = 'member'): string {
   const path = url.split('?')[0] || '/';
+  const pool = leavesFor(role);
   if (path.startsWith('/me/work')) {
     return 'my-work';
   }
@@ -652,21 +685,17 @@ function matchNavId(url: string, role: AccessRole = 'member'): string {
   if (path.startsWith('/people/') && path !== '/people') {
     return role === 'member' ? 'my-analytics' : 'people';
   }
-  // Match exact route first
-  const exactHit = allNavLeaves.find((item) => path === item.route);
+  const exactHit = pool.find((item) => path === item.route);
   if (exactHit) {
     return exactHit.id;
   }
-  // Otherwise match longest route prefix first
-  const prefixHits = allNavLeaves
+  const prefixHits = pool
     .filter((item) => !item.exact && path.startsWith(`${item.route}/`))
     .sort((a, b) => b.route.length - a.route.length);
   if (prefixHits[0]) {
     return prefixHits[0].id;
   }
-  if (role === 'admin') return 'admin-home';
-  if (role === 'lead') return 'team-dash';
-  return 'me';
+  return pool[0]?.id ?? 'me';
 }
 
 function screenTitle(url: string): string {

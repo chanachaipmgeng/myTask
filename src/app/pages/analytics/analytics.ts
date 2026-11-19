@@ -26,7 +26,6 @@ import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
@@ -37,7 +36,6 @@ import { SectionCardComponent } from '../../shared/ui/section-card/section-card'
     ButtonModule,
     ChartModule,
     GridModule,
-    KpiStatCardComponent,
     PageHeadComponent,
     SectionCardComponent,
     TabModule,

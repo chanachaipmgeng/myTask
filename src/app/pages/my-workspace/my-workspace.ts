@@ -16,7 +16,6 @@ import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
@@ -28,7 +27,6 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
     ButtonModule,
     ChartModule,
     GridModule,
-    KpiStatCardComponent,
     MessageModule,
     RouterLink,
     PageHeadComponent,

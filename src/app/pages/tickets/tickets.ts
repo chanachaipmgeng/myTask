@@ -30,7 +30,7 @@ import { SIZE_POINTS, SIZE_STANDARD_MD, scoreTicket } from '../../core/scoring';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../../core/ticket-file';
 import { ShellNotice } from '../../core/shell-notice';
 import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID } from '../../data/seed';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import {
   StatusBadgeComponent,
   blockerToneMap,
@@ -66,7 +66,7 @@ type TypeFilter = TicketType | 'All';
     ChipListModule,
     MessageModule,
     DialogModule,
-    KpiStatCardComponent,
+    PageHeadComponent,
     StatusBadgeComponent,
     SectionCardComponent,
   ],

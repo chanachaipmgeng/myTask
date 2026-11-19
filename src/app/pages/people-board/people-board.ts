@@ -31,7 +31,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { Track } from '../../core/models';
 import { INDEX_TARGET } from '../../core/scoring';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import {
   FilterChipOption,
   FilterChipsComponent,
@@ -55,7 +55,7 @@ type TrackFilter = Track | 'All';
     DropDownListModule,
     RouterLink,
     TextBoxModule,
-    KpiStatCardComponent,
+    PageHeadComponent,
     ProgressBarModule,
     StatusBadgeComponent,
     SectionCardComponent,
@@ -108,6 +108,14 @@ export class PeopleBoard {
       { label: 'เดือนแรก', quota: quota.FirstMonth },
     ];
   });
+  protected readonly quotaMetrics = computed(() =>
+    this.quotas().map((item) => ({
+      label: item.label,
+      value: item.quota,
+      unit: 'MD',
+      hint: 'โควตาต่อสัปดาห์ · ไม่เข้าสูตรดัชนี',
+    })),
+  );
   protected readonly track = signal<TrackFilter>('All');
   protected readonly query = signal('');
   protected readonly trackChipOptions = computed<FilterChipOption[]>(() => {

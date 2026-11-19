@@ -23,11 +23,10 @@ import { effectiveRole } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { BadgeTone } from '../../shared/ui/badge';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
 
@@ -39,9 +38,8 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
     ChartModule,
     GridModule,
     DropDownListModule,
-    KpiStatCardComponent,
-    MessageModule,
     PageHeadComponent,
+    MessageModule,
     SectionCardComponent,
     StatusBadgeComponent,
     FormFieldComponent,

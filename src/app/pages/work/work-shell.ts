@@ -6,6 +6,7 @@ import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { filter, map, startWith } from 'rxjs';
 import { currentViewer } from '../../core/admin-settings';
 import { currentSession } from '../../core/session';
+import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { WorkHubFilter, WorkHubScope } from './work-hub-filter';
@@ -32,6 +33,7 @@ const MINE_TABS = TEAM_TABS.filter((tab) => tab.path !== 'handoff');
     TextBoxModule,
     FilterChipsComponent,
     FormFieldComponent,
+    PageHeadComponent,
   ],
   providers: [WorkHubFilter],
   templateUrl: './work-shell.html',
