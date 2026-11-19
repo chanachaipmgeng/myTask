@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
@@ -68,6 +68,57 @@ export class App implements AfterViewInit {
 
   @ViewChild('toast') private toast?: ToastComponent;
   @ViewChild('alertDialog') private alertDialog?: DialogComponent;
+  @ViewChild('globalSearchInput') private globalSearchInput?: ElementRef<HTMLInputElement>;
+
+  protected readonly globalSearch = signal('');
+  protected onGlobalSearch(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.globalSearch.set(target?.value ?? '');
+  }
+  protected clearGlobalSearch(event?: Event): void {
+    event?.stopPropagation();
+    this.globalSearch.set('');
+  }
+  protected focusGlobalSearch(): void {
+    this.globalSearchInput?.nativeElement.focus();
+  }
+  protected onGlobalSearchSubmit(): void {
+    const q = this.globalSearch().trim().toLowerCase();
+    if (!q) return;
+
+    // 1. Check person in roster
+    const person = this.scorecard.roster().find(
+      (p) =>
+        p.id.toLowerCase() === q ||
+        p.nickname.toLowerCase() === q ||
+        p.fullName.toLowerCase().includes(q),
+    );
+    if (person) {
+      void this.router.navigate(['/people', person.id]);
+      this.globalSearch.set('');
+      return;
+    }
+
+    // 2. Check ticket ID pattern
+    if (q.startsWith('#') || q.startsWith('op-') || /^\d+$/.test(q)) {
+      const rawId = q.replace(/^#/, '');
+      void this.router.navigate(['/tickets'], { queryParams: { id: rawId } });
+      this.globalSearch.set('');
+      return;
+    }
+
+    // 3. Check matching leaf route
+    const leaf = allNavLeaves.find((l) => l.text.toLowerCase().includes(q));
+    if (leaf) {
+      void this.router.navigateByUrl(leaf.route);
+      this.globalSearch.set('');
+      return;
+    }
+
+    // Fallback: search tickets scorecard
+    void this.router.navigate(['/tickets'], { queryParams: { search: q } });
+    this.globalSearch.set('');
+  }
 
   protected readonly narrow = signal(false);
   protected readonly navOpen = signal(true);
@@ -338,6 +389,12 @@ export class App implements AfterViewInit {
     });
     effect(() => {
       this.selectedNodes.set([matchNavId(this.url(), this.role())]);
+    });
+    window.addEventListener('keydown', (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        this.focusGlobalSearch();
+      }
     });
   }
 

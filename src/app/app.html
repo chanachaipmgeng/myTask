@@ -223,156 +223,182 @@
 
   <div class="workspace">
     <ejs-appbar colorMode="Inherit" cssClass="shell-appbar" [isSticky]="true">
-      <button ejs-button cssClass="nav-toggle e-flat e-inherit" iconCss="e-icons e-menu" type="button" (click)="toggleNav()" aria-label="เปิดหรือพับเมนู"></button>
-      <div class="appbar-copy">
-        <span class="appbar-title">{{ title() }}</span>
-        <span class="appbar-note">
-          @if (role() === 'admin') {
-            มุมมองตั้งค่าระบบและธรรมาภิบาลคะแนน (Admin Console)
-          } @else if (role() === 'lead') {
-            มุมมองบริหารแผนงาน ตรวจรับคุณภาพ และโค้ชชิ่งทีม (Lead Command Center)
-          } @else {
-            มุมมองจัดการใบงานและวิเคราะห์ผลงานส่วนตัว (Member Workspace)
-          }
-        </span>
-      </div>
-
-      <div class="appbar-actions">
-        <!-- Role Layout Badge -->
-        <div class="role-badge-pill" [attr.data-role]="role()">
-          <span class="role-badge-dot"></span>
-          <span class="role-badge-text">{{ roleDisplayName() }}</span>
-        </div>
-
-        @if (role() === 'admin') {
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/cockpit" title="ห้องบัญชาการ Bento (Cockpit)">
-            <span class="e-icons e-dashboard"></span>
-            <span class="shortcut-text">Cockpit</span>
-          </a>
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/integrations" title="เชื่อมต่อระบบภายนอก">
-            <span class="e-icons e-settings"></span>
-            <span class="shortcut-text">Integrations</span>
-          </a>
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/admin/snapshot-check" title="ตรวจสอบก่อนแช่แข็งคะแนน">
-            <span class="e-icons e-lock"></span>
-            <span class="shortcut-text">เช็ก Snapshot</span>
-          </a>
-        } @else if (role() === 'lead') {
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/cockpit" title="ห้องบัญชาการ Bento (Cockpit)">
-            <span class="e-icons e-dashboard"></span>
-            <span class="shortcut-text">Cockpit</span>
-          </a>
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/team" title="แดชบอร์ดทีม">
-            <span class="e-icons e-people"></span>
-            <span class="shortcut-text">ทีม</span>
-          </a>
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/queue" title="คิวงานใหม่">
-            <span class="e-icons e-repeat"></span>
-            <span class="shortcut-text">คิวงาน</span>
-          </a>
-        } @else {
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/me/cockpit" title="ค็อกพิทผลงานของฉัน (Bento)">
-            <span class="e-icons e-dashboard"></span>
-            <span class="shortcut-text">Cockpit</span>
-          </a>
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/me" title="ผลงานของฉัน">
-            <span class="e-icons e-user"></span>
-            <span class="shortcut-text">งานวันนี้</span>
-          </a>
-          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/me/analytics" title="วิเคราะห์ผลงานของฉัน">
-            <span class="e-icons e-chart"></span>
-            <span class="shortcut-text">วิเคราะห์ตัวเอง</span>
-          </a>
-        }
-
-        @if (mockMode()) {
-          <span class="e-badge e-badge-danger e-badge-pill">โหมดจำลอง</span>
-        } @else if (usingApi()) {
-          <span class="e-badge e-badge-success e-badge-pill">ต่อ API</span>
-        } @else {
-          <span class="e-badge e-badge-info e-badge-pill">ออฟไลน์ (Seed)</span>
-        }
-
-        @if (canSwitchMode()) {
-          <div id="appbar-persona-toggle" class="appbar-mode-pills" role="group" aria-label="สลับโหมดการทำงาน">
-            @for (mode of availableModes(); track mode.id) {
-              <button
-                type="button"
-                class="appbar-mode-pill"
-                [attr.data-mode]="mode.id"
-                [class.is-active]="role() === mode.id"
-                [title]="'สลับเป็นโหมด ' + mode.label"
-                (click)="switchWorkspaceMode(mode.id)"
-              >
-                <span [class]="mode.icon"></span>
-                <span>{{ mode.label }}</span>
-              </button>
-            }
-          </div>
-        }
-
+      <!-- 1. Left: Navigation Toggle, Brand Crumbs & Screen Title -->
+      <div class="navbar-left">
         <button
           ejs-button
-          cssClass="e-flat e-small appbar-chip-btn"
-          iconCss="e-icons e-user"
+          cssClass="nav-toggle e-flat e-inherit navbar-toggle-btn"
+          iconCss="e-icons e-menu"
           type="button"
-          title="เปิดพื้นที่ของฉัน (/me)"
-          (click)="openMyWorkspace()"
-        >
-          {{ activeUserLabel() }}
-        </button>
-
-        <button
-          ejs-button
-          cssClass="e-flat e-small appbar-chip-btn"
-          iconCss="e-icons e-lock"
-          type="button"
-          title="เข้าสู่ระบบ / สลับบัญชีตามสิทธิ์ (/login)"
-          (click)="openLogin()"
-        >
-          สลับบัญชี ({{ role() }})
-        </button>
-
-        <button
-          ejs-button
-          id="appbar-logout-btn"
-          cssClass="e-flat e-small e-icon-btn appbar-chip-btn appbar-logout-chip"
-          iconCss="e-icons e-circle-remove"
-          type="button"
-          title="ออกจากระบบ"
-          [attr.aria-label]="'ออกจากระบบ'"
-          (click)="logout()"
+          (click)="toggleNav()"
+          aria-label="เปิดหรือพับเมนู"
+          title="เปิดหรือพับเมนูด้านข้าง"
         ></button>
 
-        <span class="appbar-alert-wrap" [class.has-alerts]="alerts().length > 0">
+        <div class="navbar-brand-crumb">
+          <div class="navbar-crumb-row">
+            <span class="navbar-crumb-brand">MYHR INTELLIGENCE</span>
+            <span class="navbar-crumb-sep">/</span>
+            <span class="navbar-crumb-scope" [attr.data-role]="role()">{{ roleDisplayName() }}</span>
+          </div>
+          <h1 class="navbar-page-title" [title]="title()">{{ title() }}</h1>
+        </div>
+      </div>
+
+      <!-- 2. Center: Essential UI Kit Omnisearch & Quick Station Shortcuts -->
+      <div class="navbar-center">
+        <div class="navbar-search-bar" (click)="focusGlobalSearch()" title="ค้นหาด่วน (Ctrl+K)">
+          <span class="e-icons e-search navbar-search-icon"></span>
+          <input
+            #globalSearchInput
+            type="text"
+            class="navbar-search-input"
+            placeholder="ค้นหาใบงาน, พนักงาน, หรือคำสั่ง..."
+            [value]="globalSearch()"
+            (input)="onGlobalSearch($event)"
+            (keydown.enter)="onGlobalSearchSubmit()"
+          />
+          @if (globalSearch()) {
+            <button type="button" class="navbar-search-clear" (click)="clearGlobalSearch($event)" title="ล้างคำค้น">×</button>
+          }
+          <div class="navbar-kbd-pill" title="คีย์ลัดค้นหาด่วน (Ctrl+K)">
+            <kbd>Ctrl</kbd><kbd>K</kbd>
+          </div>
+        </div>
+
+        <nav class="navbar-station-links" aria-label="ทางลัดสถานีงาน">
+          @if (role() === 'admin') {
+            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/cockpit" routerLinkActive="is-active" title="ห้องบัญชาการ Bento (Cockpit)">
+              <span class="e-icons e-dashboard"></span>
+              <span class="station-text">Cockpit</span>
+            </a>
+            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/integrations" routerLinkActive="is-active" title="เชื่อมต่อระบบภายนอก">
+              <span class="e-icons e-settings"></span>
+              <span class="station-text">เชื่อมต่อ</span>
+            </a>
+            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/admin/snapshot-check" routerLinkActive="is-active" title="ตรวจสอบก่อนแช่แข็งคะแนน">
+              <span class="e-icons e-lock"></span>
+              <span class="station-text">Snapshot</span>
+            </a>
+          } @else if (role() === 'lead') {
+            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/cockpit" routerLinkActive="is-active" title="ห้องบัญชาการ Bento (Cockpit)">
+              <span class="e-icons e-dashboard"></span>
+              <span class="station-text">Cockpit</span>
+            </a>
+            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/team" routerLinkActive="is-active" title="แดชบอร์ดทีม">
+              <span class="e-icons e-people"></span>
+              <span class="station-text">แดชบอร์ด</span>
+            </a>
+            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/queue" routerLinkActive="is-active" title="คิวงานใหม่ & จ่ายงาน">
+              <span class="e-icons e-repeat"></span>
+              <span class="station-text">คิวงาน</span>
+            </a>
+          } @else {
+            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/me/cockpit" routerLinkActive="is-active" title="ค็อกพิทผลงานของฉัน (Bento)">
+              <span class="e-icons e-dashboard"></span>
+              <span class="station-text">Cockpit</span>
+            </a>
+            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/me" routerLinkActive="is-active" title="ผลงานของฉันวันนี้">
+              <span class="e-icons e-user"></span>
+              <span class="station-text">งานวันนี้</span>
+            </a>
+            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/me/analytics" routerLinkActive="is-active" title="วิเคราะห์ผลงาน OLS ของฉัน">
+              <span class="e-icons e-chart"></span>
+              <span class="station-text">วิเคราะห์ OLS</span>
+            </a>
+          }
+        </nav>
+      </div>
+
+      <!-- 3. Right: System Status, Alert Bell, Theme Switcher & Profile Card -->
+      <div class="navbar-right">
+        <!-- Live System Connection Status Pill -->
+        <div class="navbar-status-pill" [class.is-api]="usingApi() && !mockMode()" [class.is-mock]="mockMode()" [class.is-seed]="!usingApi() && !mockMode()" [title]="usingApi() ? 'เชื่อมต่อ API สด' : (mockMode() ? 'กำลังใช้โหมดจำลอง' : 'ออฟไลน์ (Seed Data)')">
+          <span class="status-pulse-dot"></span>
+          <span class="status-label">
+            @if (mockMode()) {
+              จำลอง (Mock)
+            } @else if (usingApi()) {
+              API สด
+            } @else {
+              ออฟไลน์
+            }
+          </span>
+        </div>
+
+        <!-- Notification Bell & Theme Toggle Actions -->
+        <div class="navbar-action-group">
+          <span class="appbar-alert-wrap" [class.has-alerts]="alerts().length > 0">
+            <button
+              ejs-button
+              id="appbar-alerts-btn"
+              cssClass="e-flat e-small e-icon-btn navbar-icon-btn appbar-alert-btn"
+              iconCss="e-icons e-warning"
+              type="button"
+              [title]="alertsTitle()"
+              [attr.aria-label]="alertsTitle()"
+              (click)="openAlerts()"
+            ></button>
+            @if (alerts().length > 0) {
+              <span class="e-badge e-badge-danger e-badge-notification e-badge-overlap">
+                {{ alertsBadge() }}
+              </span>
+            }
+          </span>
+
           <button
             ejs-button
-            id="appbar-alerts-btn"
-            cssClass="e-flat e-small e-icon-btn appbar-alert-btn"
-            iconCss="e-icons e-warning"
+            id="appbar-theme-toggle"
+            cssClass="e-flat e-small e-icon-btn navbar-icon-btn"
+            [iconCss]="theme.isDark() ? 'e-icons e-day' : 'e-icons e-night'"
             type="button"
-            [title]="alertsTitle()"
-            [attr.aria-label]="alertsTitle()"
-            (click)="openAlerts()"
+            [title]="theme.isDark() ? 'กำลังใช้โหมดมืด — คลิกเพื่อสลับเป็นโหมดสว่าง' : 'กำลังใช้โหมดสว่าง — คลิกเพื่อสลับเป็นโหมดมืด'"
+            [attr.aria-label]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
+            (click)="theme.toggleTheme()"
           ></button>
-          @if (alerts().length > 0) {
-            <span class="e-badge e-badge-danger e-badge-notification e-badge-overlap">
-              {{ alertsBadge() }}
-            </span>
-          }
-        </span>
+        </div>
 
-        <button
-          ejs-button
-          id="appbar-theme-toggle"
-          cssClass="e-flat e-small appbar-chip-btn"
-          [iconCss]="theme.isDark() ? 'e-icons e-contrast' : 'e-icons e-day'"
-          type="button"
-          [title]="theme.isDark() ? 'กำลังใช้โหมดมืด — คลิกเพื่อสลับเป็นโหมดสว่าง' : 'กำลังใช้โหมดสว่าง — คลิกเพื่อสลับเป็นโหมดมืด'"
-          (click)="theme.toggleTheme()"
-        >
-          {{ theme.isDark() ? 'โหมดมืด' : 'โหมดสว่าง' }}
-        </button>
+        <div class="navbar-divider" aria-hidden="true"></div>
+
+        <!-- Unified Modern Profile Pill -->
+        <div class="navbar-profile-pill" [attr.data-role]="role()">
+          <div class="navbar-profile-avatar" (click)="openMyWorkspace()" title="เปิดพื้นที่ของฉัน (/me)">
+            @if (userAvatarUrl() && !avatarError()) {
+              <img [src]="userAvatarUrl()" [alt]="userFullName()" class="avatar-img" (error)="onAvatarError()" />
+            } @else {
+              <span>{{ userAvatarInitials() }}</span>
+            }
+            <span class="navbar-online-dot"></span>
+          </div>
+
+          <div class="navbar-profile-info" (click)="openMyWorkspace()" title="เปิดพื้นที่ของฉัน (/me)">
+            <span class="navbar-profile-name">{{ userFullName() }}</span>
+            <span class="navbar-profile-role-badge" [attr.data-role]="role()">{{ role() }}</span>
+          </div>
+
+          <div class="navbar-profile-actions">
+            <button
+              ejs-button
+              cssClass="e-flat e-small e-icon-btn navbar-profile-btn"
+              iconCss="e-icons e-lock"
+              type="button"
+              title="สลับบัญชีผู้ใช้ตามสิทธิ์ (/login)"
+              [attr.aria-label]="'สลับบัญชีผู้ใช้'"
+              (click)="openLogin()"
+            ></button>
+
+            <button
+              ejs-button
+              id="appbar-logout-btn"
+              cssClass="e-flat e-small e-icon-btn navbar-profile-btn is-logout appbar-logout-chip"
+              iconCss="e-icons e-circle-remove"
+              type="button"
+              title="ออกจากระบบ"
+              [attr.aria-label]="'ออกจากระบบ'"
+              (click)="logout()"
+            ></button>
+          </div>
+        </div>
       </div>
     </ejs-appbar>
 
