@@ -36,7 +36,7 @@ alwaysApply: false
 - แต่ง Syncfusion เพิ่ม: ใส่หมวดใหม่ใน `src/styles/sf/_components.scss` หลังธีมมาตรฐานเท่านั้น — ห้าม `transform` บน `.e-btn` / `.e-dialog` / `.e-panel:hover`
 - **Modern Bento Grid Cockpit (P16)**:
   - **100vh Viewport Fit & AppBar Lock**: บนจอเดสก์ท็อป ($\ge 1200$px) แดชบอร์ด Cockpit ต้องใช้ความสูง `calc(100vh - 78px)` พร้อม `overflow: hidden` และ `.shell-appbar` / `.appbar-actions` ต้องมี `flex-wrap: nowrap !important;` ล็อกความสูง 56px เพื่อให้พอดีหน้าจอ 100% โดยไม่มี Vertical Scrollbar
-  - **3-Tier Grid Hierarchy**: Tier 1 = 4 Hero KPI Cards (`repeat(4, 1fr)`), Tier 2 = กราฟหลัก Dual-Axis Combo Chart หรือสัดส่วน 60%:40% (`1.5fr 1fr`), Tier 3 = 3 การ์ดปฏิบัติการ (`repeat(3, 1fr)` สำหรับ DoD Donut, Stage Aging Stacked Bar, และ AI Risk Radar)
+  - **3-Tier Grid Hierarchy**: Tier 1 = แถบ MyHR Blue แถวเดียว (ชื่อหน้า + ดัชนี 4 ค่าแบบตัวเลขใหญ่ ไม่ใช้การ์ดแยก), Tier 2 = กราฟหลัก Dual-Axis Combo Chart หรือสัดส่วน 60%:40% (`1.5fr 1fr`), Tier 3 = 3 การ์ดปฏิบัติการ (`repeat(3, 1fr)` สำหรับ DoD Donut, Stage Aging Stacked Bar, และ AI Risk Radar)
   - **Interactive Features**: รองรับ TV Presentation Mode (`isTvMode` ปิด AppBar/Sidebar แสดงผล 100vw/100vh) และ Maximize Dialog (`[ ⛶ ]` ขยายกราฟพร้อมตาราง Breakdown Data Table)
 - **Advanced Syncfusion Charts & Visual Standards**:
   - **Dual-Axis & Stripline**: ใช้ `primaryYAxis` ควบคู่ `axes: [{ name: 'yAxis2', opposedPosition: true }]` และใส่ `stripLines` แสดงเส้นเป้าหมายเสมอ (90% On-time, 80% Pareto cutoff)

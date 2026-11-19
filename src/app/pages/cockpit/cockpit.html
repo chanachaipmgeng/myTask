@@ -5,32 +5,77 @@
   [class.is-fullscreen]="isFullscreen()"
 >
   <!-- ========================================== -->
-  <!-- Top Cockpit Control Header                 -->
+  <!-- Tier 1: title + four figures in one band   -->
   <!-- ========================================== -->
-  <header class="bento-header">
-    <div class="bento-header__left">
+  <header class="bento-band" aria-label="ดัชนีภาพรวมสำคัญ">
+    <div class="bento-band__identity">
       <div class="bento-badge-live">
         <span class="live-dot"></span>
         <span>LIVE COCKPIT</span>
       </div>
       <h1 class="bento-title">
         @if (isMine()) {
-          ค็อกพิทผลงานของฉัน (Personal Bento)
+          ค็อกพิทของฉัน
         } @else {
-          ห้องบัญชาการ Bento (Executive Team Cockpit)
+          ห้องบัญชาการ
         }
       </h1>
       <p class="bento-subtitle">
         @if (isMine()) {
-          ติดตามดัชนีคะแนน, ภาระงานรายสปรินต์, และแนวโน้ม OLS ส่วนบุคคล
+          ดัชนี ภาระงาน และแนวโน้มส่วนบุคคล
         } @else {
-          ศูนย์ควบคุมและวิเคราะห์สถานการณ์ทีม R&D/IMP ระดับองค์กร (100vh Viewport Fit)
+          ทีม R&D / IMP · ภาพรวมองค์กร
         }
       </p>
     </div>
 
-    <div class="bento-header__actions">
-      <!-- TV Presentation Mode Button -->
+    <div class="bento-band__metrics">
+      <div class="band-metric">
+        <span class="band-metric__label">
+          {{ isMine() ? 'ดัชนีผลงานของฉัน' : 'ดัชนีคะแนนเฉลี่ยทีม' }}
+        </span>
+        <span class="band-metric__value">{{ heroKpis().mainScore }}</span>
+        @if (heroKpis().mainScore >= 80) {
+          <span class="band-metric__hint is-good">
+            ผ่านเป้า +{{ (heroKpis().mainScore - 80).toFixed(1) }} · เป้า 80
+          </span>
+        } @else {
+          <span class="band-metric__hint is-bad">
+            ต่ำกว่าเป้า {{ (heroKpis().mainScore - 80).toFixed(1) }} · เป้า 80
+          </span>
+        }
+      </div>
+
+      <div class="band-metric">
+        <span class="band-metric__label">ภาระงานในมือ</span>
+        <span class="band-metric__value">
+          {{ heroKpis().activeWipMd }}<span class="band-metric__unit">MD</span>
+        </span>
+        <span class="band-metric__hint">
+          {{ heroKpis().activeCount }} ใบ · ปิดแล้ว {{ heroKpis().closedTotalMd }} MD
+        </span>
+      </div>
+
+      <div class="band-metric">
+        <span class="band-metric__label">ส่งมอบตรงเวลา</span>
+        <span class="band-metric__value">
+          {{ heroKpis().onTimeRate }}<span class="band-metric__unit">%</span>
+        </span>
+        <span class="band-metric__hint">เป้า 90% · เทียบกำหนดส่งแรก</span>
+      </div>
+
+      <div class="band-metric">
+        <span class="band-metric__label">คุณภาพส่งมอบ DoD</span>
+        <span class="band-metric__value">
+          {{ heroKpis().firstTimeRightRate }}<span class="band-metric__unit">%</span>
+        </span>
+        <span class="band-metric__hint">
+          FTR · หลุด Prod {{ heroKpis().defectEscapeCount }} ใบ
+        </span>
+      </div>
+    </div>
+
+    <div class="bento-band__actions">
       <button
         ejs-button
         cssClass="bento-btn bento-btn--tv"
@@ -40,108 +85,31 @@
         (click)="toggleTvMode()"
       >
         <span class="e-icons e-video"></span>
-        <span>{{ isTvMode() ? 'ออกจากโหมดทีวี' : 'โหมดฉายจอทีวี (TV)' }}</span>
+        <span>{{ isTvMode() ? 'ออกจากทีวี' : 'ทีวี' }}</span>
       </button>
-
-      <!-- True Fullscreen Button -->
       <button
         ejs-button
         cssClass="bento-btn bento-btn--fullscreen"
         type="button"
-        title="ขยายเต็มหน้าจอเบราว์เซอร์ (F11)"
+        title="ขยายเต็มหน้าจอเบราว์เซอร์"
         (click)="toggleFullscreen()"
       >
         <span class="e-icons e-expand"></span>
-        <span>{{ isFullscreen() ? 'ย่อหน้าต่าง' : 'เต็มจอ (Fullscreen)' }}</span>
+        <span>{{ isFullscreen() ? 'ย่อ' : 'เต็มจอ' }}</span>
       </button>
-
-      <!-- Navigation Link -->
       @if (isMine()) {
-        <a ejs-button cssClass="bento-btn bento-btn--link" routerLink="/me">
+        <a ejs-button cssClass="bento-btn bento-btn--link" routerLink="/me" title="หน้างานของฉัน">
           <span class="e-icons e-user"></span>
-          <span>หน้างานของฉัน</span>
+          <span>งานฉัน</span>
         </a>
       } @else {
-        <a ejs-button cssClass="bento-btn bento-btn--link" routerLink="/team">
+        <a ejs-button cssClass="bento-btn bento-btn--link" routerLink="/team" title="แดชบอร์ดทีม">
           <span class="e-icons e-people"></span>
-          <span>แดชบอร์ดทีม</span>
+          <span>ทีม</span>
         </a>
       }
     </div>
   </header>
-
-  <!-- ========================================== -->
-  <!-- Bento Tier 1: Hero KPI Cards (Row 1)       -->
-  <!-- ========================================== -->
-  <section class="bento-hero-grid" aria-label="ดัชนีภาพรวมสำคัญ">
-    <!-- Stat 1: Overall Index -->
-    <div class="bento-card bento-card--hero bento-card--accent-blue">
-      <div class="hero-card-icon"><span class="e-icons e-chart"></span></div>
-      <div class="hero-card-content">
-        <span class="hero-label">
-          {{ isMine() ? 'ดัชนีผลงานของฉัน' : 'ดัชนีคะแนนเฉลี่ยทีม' }}
-        </span>
-        <div class="hero-value-row">
-          <span class="hero-value">{{ heroKpis().mainScore }}</span>
-          <span class="hero-target-pill">เป้า 80.0</span>
-        </div>
-        @if (heroKpis().mainScore >= 80) {
-          <span class="hero-subtext text-emerald-400">
-            ✓ ผ่านเป้า (+{{ (heroKpis().mainScore - 80).toFixed(1) }} จุด)
-          </span>
-        } @else {
-          <span class="hero-subtext text-rose-400">
-            ต่ำกว่าเป้า ({{ (heroKpis().mainScore - 80).toFixed(1) }} จุด)
-          </span>
-        }
-      </div>
-    </div>
-
-    <!-- Stat 2: Sprint Velocity & Workload -->
-    <div class="bento-card bento-card--hero bento-card--accent-indigo">
-      <div class="hero-card-icon"><span class="e-icons e-timeline-work-week"></span></div>
-      <div class="hero-card-content">
-        <span class="hero-label">ภาระงานในมือ (Active WIP)</span>
-        <div class="hero-value-row">
-          <span class="hero-value">{{ heroKpis().activeWipMd }} <span class="hero-unit">MD</span></span>
-          <span class="hero-count-pill">{{ heroKpis().activeCount }} ใบ</span>
-        </div>
-        <span class="hero-subtext">
-          ปิดแล้ว {{ heroKpis().closedTotalMd }} MD ({{ heroKpis().closedCount }} ใบ)
-        </span>
-      </div>
-    </div>
-
-    <!-- Stat 3: On-Time Reliability -->
-    <div class="bento-card bento-card--hero bento-card--accent-amber">
-      <div class="hero-card-icon"><span class="e-icons e-clock"></span></div>
-      <div class="hero-card-content">
-        <span class="hero-label">ส่งมอบตรงเวลา (On-Time)</span>
-        <div class="hero-value-row">
-          <span class="hero-value">{{ heroKpis().onTimeRate }}%</span>
-          <span class="hero-tag-pill">เกณฑ์ 90%</span>
-        </div>
-        <span class="hero-subtext text-amber-300">
-          เทียบกำหนดส่งแรก (Ready for QA)
-        </span>
-      </div>
-    </div>
-
-    <!-- Stat 4: Quality & AI Health -->
-    <div class="bento-card bento-card--hero bento-card--accent-emerald">
-      <div class="hero-card-icon"><span class="e-icons e-check-box"></span></div>
-      <div class="hero-card-content">
-        <span class="hero-label">คุณภาพส่งมอบ (DoD Gate)</span>
-        <div class="hero-value-row">
-          <span class="hero-value">{{ heroKpis().firstTimeRightRate }}%</span>
-          <span class="hero-status-pill">FTR Pass</span>
-        </div>
-        <span class="hero-subtext text-slate-300">
-          หลุด Prod: {{ heroKpis().defectEscapeCount }} ใบ (สุขภาพดี)
-        </span>
-      </div>
-    </div>
-  </section>
 
   <!-- ========================================== -->
   <!-- Bento Tier 2: Mid-Level Core Charts (Row 2)-->

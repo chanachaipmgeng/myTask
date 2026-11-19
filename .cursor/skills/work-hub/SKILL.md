@@ -33,7 +33,7 @@ description: >-
 - **Team Cockpit (`/cockpit`)**: กรองข้อมูลระดับทีมทั้งหมด รองรับสิทธิ์ `lead` และ `admin`
 - **Personal Cockpit (`/me/cockpit`)**: กรองเฉพาะงานของตนเอง (`scope === 'mine'`) รองรับทุกสิทธิ์
 - **สถาปัตยกรรมเลย์เอาต์ (3 Tiers)**:
-  - Tier 1: 4 Hero KPI Cards (Index, Sprint Pace, On-Time %, DoD Gate %)
+  - Tier 1: แถบ MyHR Blue แถวเดียว (Index, WIP MD, On-Time %, DoD Gate %)
   - Tier 2: กราฟภาระงาน 60% (`StackingArea`: Planned vs Unplanned vs MD) + กราฟแนวโน้ม 40% (OLS Trendline)
   - Tier 3: 3 คอลัมน์ปฏิบัติการ (DoD Gate Donut + Stage Aging SLA Stacked Bar + AI Bottlenecks & Risk Radar)
 - **TV Mode & Maximize Dialog**: รองรับการเปิดฉายจอทีวี (TV Presentation Mode) และการกดปุ่ม `[ ⛶ ]` ขยายกราฟพร้อมแสดงตารางตัวเลขแจกแจงเชิงลึก

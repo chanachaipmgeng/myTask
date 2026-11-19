@@ -43,7 +43,7 @@ npm --prefix server run build
   - `/admin/snapshot-check`: `ejs-progressbar` แสดง Readiness % + เช็คลิสต์ 4 ด่าน + ตาราง Snapshot Preview Diff เปรียบเทียบดัชนีรายบุคคลก่อน Freeze
 - **Modern Bento Grid Cockpit (P16 - `/cockpit` & `/me/cockpit`)**:
   - **100vh Viewport Lock & AppBar No-Wrap**: บนจอเดสก์ท็อป ($\ge 1200$px) คอนเทนเนอร์ `.bento-cockpit` ใช้ `height: calc(100vh - 78px)` โดยที่ `.shell-appbar` และ `.appbar-actions` ต้องกำหนด `flex-wrap: nowrap !important;` ล็อกความสูงคงที่ 56px เสมอ เพื่อป้องกันไม่ให้ AppBar ขยายเป็น 2 แถว ซึ่งจะดันจนเกิด Vertical Scrollbar
-  - **3-Tier Grid Layout**: Tier 1 (4 Hero KPI Cards `repeat(4, 1fr)`), Tier 2 (Dual-Axis Overview Combo Chart หรือสัดส่วน 60%:40% Workload Stacking Area vs OLS Trendline), Tier 3 (3 คอลัมน์ DoD Donut, Stage Aging Stacked Bar, AI Risk Radar)
+  - **3-Tier Grid Layout**: Tier 1 (แถบ MyHR Blue แถวเดียว: ชื่อหน้า + ดัชนี 4 ค่าแบบตัวเลขใหญ่), Tier 2 (Dual-Axis Overview Combo Chart หรือสัดส่วน 60%:40% Workload Stacking Area vs OLS Trendline), Tier 3 (3 คอลัมน์ DoD Donut, Stage Aging Stacked Bar, AI Risk Radar)
   - **TV Presentation Mode**: สลับฉายขึ้นจอทีวี/ห้องประชุมแบบ 100vw/100vh ซ่อน AppBar/Sidebar
   - **Maximize Deep-Dive Dialog**: ปุ่ม `[ ⛶ ]` ขยายกราฟขึ้นโมดอล `ejs-dialog` พร้อมตารางแจกแจงตัวเลข (Breakdown Data Table)
 - **Advanced Syncfusion Charts & Scoped Styling Standards**:

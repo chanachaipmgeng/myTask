@@ -140,7 +140,9 @@ export class CockpitPage implements OnInit {
     let mainScore = 0;
     if (this.isMine()) {
       const myRow = this.scorecard.personRows().find((p) => p.id === this.activePerson().id);
-      mainScore = myRow && myRow.index > 0 ? myRow.index : 88.5;
+      mainScore = myRow && myRow.index > 0
+        ? Math.round(myRow.index * 10) / 10
+        : 88.5;
     } else {
       const scoredRows = this.scorecard.personRows().filter((p) => p.index > 0);
       mainScore = scoredRows.length > 0
