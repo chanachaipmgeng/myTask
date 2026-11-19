@@ -27,6 +27,17 @@ description: >-
 | Handoff | เฉพาะ `/work/handoff` | `multi-team` / Scorecard handoff report |
 | Board block | `app-confirm-dialog` · edit dialog `#editDialog` | workflow guards |
 
+## Bento Grid Cockpit (`/cockpit` & `/me/cockpit`)
+
+แดชบอร์ดสไตล์ Bento แบบ 100vh Viewport Fit สำหรับห้องบัญชาการ:
+- **Team Cockpit (`/cockpit`)**: กรองข้อมูลระดับทีมทั้งหมด รองรับสิทธิ์ `lead` และ `admin`
+- **Personal Cockpit (`/me/cockpit`)**: กรองเฉพาะงานของตนเอง (`scope === 'mine'`) รองรับทุกสิทธิ์
+- **สถาปัตยกรรมเลย์เอาต์ (3 Tiers)**:
+  - Tier 1: 4 Hero KPI Cards (Index, Sprint Pace, On-Time %, DoD Gate %)
+  - Tier 2: กราฟภาระงาน 60% (`StackingArea`: Planned vs Unplanned vs MD) + กราฟแนวโน้ม 40% (OLS Trendline)
+  - Tier 3: 3 คอลัมน์ปฏิบัติการ (DoD Gate Donut + Stage Aging SLA Stacked Bar + AI Bottlenecks & Risk Radar)
+- **TV Mode & Maximize Dialog**: รองรับการเปิดฉายจอทีวี (TV Presentation Mode) และการกดปุ่ม `[ ⛶ ]` ขยายกราฟพร้อมแสดงตารางตัวเลขแจกแจงเชิงลึก
+
 ## Shared UI (`src/app/shared/ui/`)
 
 ใช้ซ้ำข้ามหน้า: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips`, `app-confirm-dialog` (Fade) · KPI: `app-kpi-stat` (layout/trend/progress/sparkline/skeleton) · tone: `badge.ts` · แถวสถิติทุกหน้าต้องเรียก `app-kpi-stat` ห้ามห่อ `kpi-value` ดิบ · Toast ผ่าน `ShellNotice` (typed) · AppBar แจ้งเตือน = ปุ่มไอคอน `e-warning` + `e-badge-notification e-badge-overlap`

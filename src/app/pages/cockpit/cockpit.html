@@ -1,0 +1,868 @@
+<div
+  #cockpitRoot
+  class="bento-cockpit"
+  [class.is-tv-mode]="isTvMode()"
+  [class.is-fullscreen]="isFullscreen()"
+>
+  <!-- ========================================== -->
+  <!-- Top Cockpit Control Header                 -->
+  <!-- ========================================== -->
+  <header class="bento-header">
+    <div class="bento-header__left">
+      <div class="bento-badge-live">
+        <span class="live-dot"></span>
+        <span>LIVE COCKPIT</span>
+      </div>
+      <h1 class="bento-title">
+        @if (isMine()) {
+          ค็อกพิทผลงานของฉัน (Personal Bento)
+        } @else {
+          ห้องบัญชาการ Bento (Executive Team Cockpit)
+        }
+      </h1>
+      <p class="bento-subtitle">
+        @if (isMine()) {
+          ติดตามดัชนีคะแนน, ภาระงานรายสปรินต์, และแนวโน้ม OLS ส่วนบุคคล
+        } @else {
+          ศูนย์ควบคุมและวิเคราะห์สถานการณ์ทีม R&D/IMP ระดับองค์กร (100vh Viewport Fit)
+        }
+      </p>
+    </div>
+
+    <div class="bento-header__actions">
+      <!-- TV Presentation Mode Button -->
+      <button
+        ejs-button
+        cssClass="bento-btn bento-btn--tv"
+        [class.is-active]="isTvMode()"
+        type="button"
+        title="สลับโหมดฉายจอทีวีในห้องประชุม (ซ่อนแถบเมนูและขยายตัวอักษร)"
+        (click)="toggleTvMode()"
+      >
+        <span class="e-icons e-video"></span>
+        <span>{{ isTvMode() ? 'ออกจากโหมดทีวี' : 'โหมดฉายจอทีวี (TV)' }}</span>
+      </button>
+
+      <!-- True Fullscreen Button -->
+      <button
+        ejs-button
+        cssClass="bento-btn bento-btn--fullscreen"
+        type="button"
+        title="ขยายเต็มหน้าจอเบราว์เซอร์ (F11)"
+        (click)="toggleFullscreen()"
+      >
+        <span class="e-icons e-expand"></span>
+        <span>{{ isFullscreen() ? 'ย่อหน้าต่าง' : 'เต็มจอ (Fullscreen)' }}</span>
+      </button>
+
+      <!-- Navigation Link -->
+      @if (isMine()) {
+        <a ejs-button cssClass="bento-btn bento-btn--link" routerLink="/me">
+          <span class="e-icons e-user"></span>
+          <span>หน้างานของฉัน</span>
+        </a>
+      } @else {
+        <a ejs-button cssClass="bento-btn bento-btn--link" routerLink="/team">
+          <span class="e-icons e-people"></span>
+          <span>แดชบอร์ดทีม</span>
+        </a>
+      }
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- Bento Tier 1: Hero KPI Cards (Row 1)       -->
+  <!-- ========================================== -->
+  <section class="bento-hero-grid" aria-label="ดัชนีภาพรวมสำคัญ">
+    <!-- Stat 1: Overall Index -->
+    <div class="bento-card bento-card--hero bento-card--accent-blue">
+      <div class="hero-card-icon"><span class="e-icons e-chart"></span></div>
+      <div class="hero-card-content">
+        <span class="hero-label">
+          {{ isMine() ? 'ดัชนีผลงานของฉัน' : 'ดัชนีคะแนนเฉลี่ยทีม' }}
+        </span>
+        <div class="hero-value-row">
+          <span class="hero-value">{{ heroKpis().mainScore }}</span>
+          <span class="hero-target-pill">เป้า 80.0</span>
+        </div>
+        <span class="hero-subtext text-emerald-400">
+          ✓ สูงกว่าเกณฑ์เป้าหมาย +{{ (heroKpis().mainScore - 80).toFixed(1) }} จุด
+        </span>
+      </div>
+    </div>
+
+    <!-- Stat 2: Sprint Velocity & Workload -->
+    <div class="bento-card bento-card--hero bento-card--accent-indigo">
+      <div class="hero-card-icon"><span class="e-icons e-timeline-work-week"></span></div>
+      <div class="hero-card-content">
+        <span class="hero-label">ภาระงานในมือ (Active WIP)</span>
+        <div class="hero-value-row">
+          <span class="hero-value">{{ heroKpis().activeWipMd }} <span class="hero-unit">MD</span></span>
+          <span class="hero-count-pill">{{ heroKpis().activeCount }} ใบงาน</span>
+        </div>
+        <span class="hero-subtext">
+          ปิดสะสมแล้ว {{ heroKpis().closedTotalMd }} MD ({{ heroKpis().closedCount }} ใบ)
+        </span>
+      </div>
+    </div>
+
+    <!-- Stat 3: On-Time Reliability -->
+    <div class="bento-card bento-card--hero bento-card--accent-amber">
+      <div class="hero-card-icon"><span class="e-icons e-clock"></span></div>
+      <div class="hero-card-content">
+        <span class="hero-label">อัตราส่งมอบตรงสัปดาห์ (On-Time)</span>
+        <div class="hero-value-row">
+          <span class="hero-value">{{ heroKpis().onTimeRate }}%</span>
+          <span class="hero-tag-pill">เกณฑ์ 90%</span>
+        </div>
+        <span class="hero-subtext text-amber-300">
+          วัดจากวันเข้า Ready for QA ครั้งแรก
+        </span>
+      </div>
+    </div>
+
+    <!-- Stat 4: Quality & AI Health -->
+    <div class="bento-card bento-card--hero bento-card--accent-emerald">
+      <div class="hero-card-icon"><span class="e-icons e-check-box"></span></div>
+      <div class="hero-card-content">
+        <span class="hero-label">คุณภาพส่งมอบ (DoD Gate)</span>
+        <div class="hero-value-row">
+          <span class="hero-value">{{ heroKpis().firstTimeRightRate }}%</span>
+          <span class="hero-status-pill">FTR Pass</span>
+        </div>
+        <span class="hero-subtext text-slate-300">
+          หลุดบัก Prod: {{ heroKpis().defectEscapeCount }} รายการ (ระบบสุขภาพดี)
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- Bento Tier 2: Mid-Level Core Charts (Row 2)-->
+  <!-- ========================================== -->
+  <section class="bento-tier2-container" aria-label="การกระจายงานและแนวโน้มการส่งมอบ">
+    <div class="tier2-controls-bar">
+      <div class="tier2-filters">
+        <span class="control-label">ช่วงเวลา:</span>
+        <button
+          type="button"
+          class="pill-chip"
+          [class.is-active]="periodFilter() === 'ALL'"
+          (click)="periodFilter.set('ALL')"
+        >ทั้งหมด</button>
+        <button
+          type="button"
+          class="pill-chip"
+          [class.is-active]="periodFilter() === '1M'"
+          (click)="periodFilter.set('1M')"
+        >1 เดือน</button>
+        <button
+          type="button"
+          class="pill-chip"
+          [class.is-active]="periodFilter() === '2W'"
+          (click)="periodFilter.set('2W')"
+        >2 สัปดาห์</button>
+        <button
+          type="button"
+          class="pill-chip"
+          [class.is-active]="periodFilter() === '1W'"
+          (click)="periodFilter.set('1W')"
+        >1 สัปดาห์</button>
+      </div>
+
+      <div class="tier2-view-toggle">
+        <button
+          ejs-button
+          cssClass="e-small"
+          [class.e-primary]="viewMode() === 'combo'"
+          [class.e-outline]="viewMode() !== 'combo'"
+          (click)="viewMode.set('combo')"
+        >
+          <span class="e-icons e-chart"></span> กราฟรวม Dual-Axis
+        </button>
+        <button
+          ejs-button
+          cssClass="e-small"
+          [class.e-primary]="viewMode() === 'split'"
+          [class.e-outline]="viewMode() !== 'split'"
+          (click)="viewMode.set('split')"
+        >
+          <span class="e-icons e-grid-view"></span> กราฟแยก 2 แผง
+        </button>
+      </div>
+    </div>
+
+    @if (viewMode() === 'combo') {
+      <div class="bento-card bento-card--full bento-card--glow">
+        <div class="bento-card__head">
+          <div class="head-info">
+            <div class="head-title-row">
+              <span class="head-title">ภาพรวมภาระงานและอัตราความสำเร็จ (Dual-Axis Overview Combo)</span>
+              <span class="head-badge head-badge--emerald">Stripline 90% Target</span>
+              <span class="head-badge head-badge--amber">MD Mandate Tracking</span>
+            </div>
+            <span class="head-desc">
+              แกนซ้าย: ภาระงานสะสม (Stacked Column) · แกนขวา: อัตรา On-Time % และดัชนีคะแนน (Line) พร้อมเส้นเกณฑ์มาตรฐาน
+            </span>
+          </div>
+          <div class="head-actions">
+            <button
+              ejs-button
+              cssClass="bento-icon-btn e-flat e-small"
+              iconCss="e-icons e-expand"
+              type="button"
+              title="ขยายกราฟเดี่ยวเต็มจอ"
+              (click)="openMaximize('combo')"
+            ></button>
+          </div>
+        </div>
+        <div class="bento-card__body">
+          <ejs-chart
+            id="bento-combo-chart"
+            style="display: block; width: 100%; height: 100%; min-height: 200px;"
+            [theme]="theme.sfTheme()"
+            [primaryXAxis]="categoryAxis"
+            [primaryYAxis]="mdAxis"
+            [axes]="[rateAxis]"
+            [tooltip]="tooltip"
+            [legendSettings]="legend"
+            [chartArea]="chartArea"
+            [enableAnimation]="true"
+          >
+            <e-series-collection>
+              <e-series
+                type="StackingColumn"
+                [dataSource]="comboOverviewData()"
+                xName="month"
+                yName="plannedMd"
+                name="Planned MD (ในแผน)"
+                fill="#3b82f6"
+              ></e-series>
+              <e-series
+                type="StackingColumn"
+                [dataSource]="comboOverviewData()"
+                xName="month"
+                yName="unplannedGeneralMd"
+                name="Unplanned ทั่วไป"
+                fill="#06b6d4"
+              ></e-series>
+              <e-series
+                type="StackingColumn"
+                [dataSource]="comboOverviewData()"
+                xName="month"
+                yName="mdMandateMd"
+                name="⚡ งานสั่งตรงจาก MD"
+                fill="#f59e0b"
+              ></e-series>
+              <e-series
+                type="Line"
+                yAxisName="rateAxis"
+                [dataSource]="comboOverviewData()"
+                xName="month"
+                yName="onTimeRate"
+                name="ส่งมอบตรงเวลา (%)"
+                width="2.5"
+                fill="#10b981"
+                [marker]="{ visible: true, width: 6, height: 6, fill: '#10b981' }"
+              ></e-series>
+              <e-series
+                type="Line"
+                yAxisName="rateAxis"
+                [dataSource]="comboOverviewData()"
+                xName="month"
+                yName="avgIndex"
+                name="ดัชนีคะแนนจริง"
+                width="2"
+                dashArray="4,4"
+                fill="#a855f7"
+                [marker]="{ visible: true, width: 5, height: 5, fill: '#a855f7' }"
+              ></e-series>
+            </e-series-collection>
+          </ejs-chart>
+        </div>
+      </div>
+    } @else {
+      <div class="bento-mid-grid">
+        <!-- Card A (60%): Workload Composition -->
+        <div class="bento-card bento-card--wide bento-card--glow">
+          <div class="bento-card__head">
+            <div class="head-info">
+              <div class="head-title-row">
+                <span class="head-title">สัดส่วนภาระงาน (Workload Composition)</span>
+                <span class="head-badge head-badge--amber">MD Mandate Tracking</span>
+              </div>
+              <span class="head-desc">
+                กราฟพื้นที่ซ้อน (Stacked Area) วิเคราะห์สัดส่วน Planned vs Unplanned vs งานสั่งตรงจาก MD
+              </span>
+            </div>
+            <div class="head-actions">
+              <button
+                ejs-button
+                cssClass="bento-icon-btn e-flat e-small"
+                iconCss="e-icons e-expand"
+                type="button"
+                title="ขยายกราฟเดี่ยวเต็มจอ"
+                (click)="openMaximize('workload')"
+              ></button>
+            </div>
+          </div>
+          <div class="bento-card__body">
+            <ejs-chart
+              id="bento-workload-chart"
+              style="display: block; width: 100%; height: 100%; min-height: 180px;"
+              [theme]="theme.sfTheme()"
+              [primaryXAxis]="categoryAxis"
+              [primaryYAxis]="mdAxis"
+              [tooltip]="tooltip"
+              [legendSettings]="legend"
+              [chartArea]="chartArea"
+              [enableAnimation]="true"
+            >
+              <e-series-collection>
+                <e-series
+                  type="StackingArea"
+                  [dataSource]="workloadData()"
+                  xName="month"
+                  yName="plannedMd"
+                  name="Planned (ในแผน)"
+                  fill="#3b82f6"
+                  opacity="0.85"
+                  [border]="{ width: 1.5, color: '#1d4ed8' }"
+                ></e-series>
+                <e-series
+                  type="StackingArea"
+                  [dataSource]="workloadData()"
+                  xName="month"
+                  yName="unplannedGeneralMd"
+                  name="Unplanned ทั่วไป"
+                  fill="#06b6d4"
+                  opacity="0.85"
+                  [border]="{ width: 1.5, color: '#0891b2' }"
+                ></e-series>
+                <e-series
+                  type="StackingArea"
+                  [dataSource]="workloadData()"
+                  xName="month"
+                  yName="mdMandateMd"
+                  name="⚡ งานสั่งตรงจาก MD"
+                  fill="#f59e0b"
+                  opacity="0.95"
+                  [border]="{ width: 2, color: '#d97706' }"
+                ></e-series>
+              </e-series-collection>
+            </ejs-chart>
+          </div>
+        </div>
+
+        <!-- Card B (40%): OLS Regression Trendline -->
+        <div class="bento-card bento-card--medium bento-card--glow">
+          <div class="bento-card__head">
+            <div class="head-info">
+              <div class="head-title-row">
+                <span class="head-title">แนวโน้มคะแนน (OLS Trendline)</span>
+                <span
+                  class="head-badge"
+                  [class.head-badge--emerald]="olsTrend().isPositive"
+                  [class.head-badge--rose]="!olsTrend().isPositive"
+                >
+                  Slope: {{ olsTrend().slopeText }}
+                </span>
+              </div>
+              <span class="head-desc">เส้นแนวโน้มทางสถิติ Ordinary Least Squares</span>
+            </div>
+            <div class="head-actions">
+              <button
+                ejs-button
+                cssClass="bento-icon-btn e-flat e-small"
+                iconCss="e-icons e-expand"
+                type="button"
+                title="ขยายกราฟเดี่ยวเต็มจอ"
+                (click)="openMaximize('trend')"
+              ></button>
+            </div>
+          </div>
+          <div class="bento-card__body">
+            <ejs-chart
+              id="bento-trend-chart"
+              style="display: block; width: 100%; height: 100%; min-height: 180px;"
+              [theme]="theme.sfTheme()"
+              [primaryXAxis]="categoryAxis"
+              [primaryYAxis]="indexAxis"
+              [tooltip]="tooltip"
+              [legendSettings]="legend"
+              [chartArea]="chartArea"
+              [enableAnimation]="true"
+            >
+              <e-series-collection>
+                <e-series
+                  type="Line"
+                  [dataSource]="olsTrend().points"
+                  xName="month"
+                  yName="actual"
+                  name="ดัชนีคะแนนจริง"
+                  width="2.5"
+                  fill="#3b82f6"
+                  [marker]="{ visible: true, width: 6, height: 6, fill: '#3b82f6' }"
+                ></e-series>
+                <e-series
+                  type="Line"
+                  [dataSource]="olsTrend().points"
+                  xName="month"
+                  yName="ols"
+                  name="เส้นแนวโน้ม OLS"
+                  width="2.2"
+                  dashArray="4,4"
+                  fill="#a855f7"
+                ></e-series>
+                <e-series
+                  type="Line"
+                  [dataSource]="olsTrend().points"
+                  xName="month"
+                  yName="target"
+                  name="เป้า 80 จุด"
+                  width="1.5"
+                  dashArray="2,2"
+                  fill="#ef4444"
+                ></e-series>
+              </e-series-collection>
+            </ejs-chart>
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- ========================================== -->
+  <!-- Bento Tier 3: Bottom Analytics & Radar (Row 3)-->
+  <!-- ========================================== -->
+  <section class="bento-bottom-grid" aria-label="การตรวจสอบคุณภาพ คอขวด และเหตุการณ์เสี่ยง">
+    <!-- Card C: Quality Gate Donut -->
+    <div class="bento-card bento-card--small bento-card--glow">
+      <div class="bento-card__head">
+        <div class="head-info">
+          <div class="head-title-row">
+            <span class="head-title">เกณฑ์คุณภาพ (DoD Gate)</span>
+            <span class="head-badge head-badge--blue">First-Time Right</span>
+          </div>
+          <span class="head-desc">สัดส่วนส่งมอบผ่านรอบแรก vs รีวิวซ้ำ</span>
+        </div>
+        <button
+          ejs-button
+          cssClass="bento-icon-btn e-flat e-small"
+          iconCss="e-icons e-expand"
+          type="button"
+          title="ขยายเต็มจอ"
+          (click)="openMaximize('quality')"
+        ></button>
+      </div>
+      <div class="bento-card__body flex-center">
+        <ejs-accumulationchart
+          id="bento-quality-chart"
+          style="display: block; width: 100%; height: 100%; min-height: 160px;"
+          [theme]="theme.sfTheme()"
+          [tooltip]="tooltip"
+          [legendSettings]="pieLegend"
+          [enableAnimation]="true"
+        >
+          <e-accumulation-series-collection>
+            <e-accumulation-series
+              type="Pie"
+              [dataSource]="qualityPieData()"
+              xName="label"
+              yName="count"
+              innerRadius="58%"
+              radius="88%"
+              pointColorMapping="color"
+              [dataLabel]="{ visible: true, name: 'label', position: 'Inside', font: { color: '#ffffff', size: '10px' } }"
+            ></e-accumulation-series>
+          </e-accumulation-series-collection>
+        </ejs-accumulationchart>
+      </div>
+    </div>
+
+    <!-- Card D: Stage Aging / Handoff SLA -->
+    <div class="bento-card bento-card--small bento-card--glow">
+      <div class="bento-card__head">
+        <div class="head-info">
+          <div class="head-title-row">
+            <span class="head-title">เวลาค้างแต่ละช่วง (Stage Aging)</span>
+            <span class="head-badge head-badge--indigo">Handoff SLA</span>
+          </div>
+          <span class="head-desc">Dev vs Code Review vs QA Hours</span>
+        </div>
+        <button
+          ejs-button
+          cssClass="bento-icon-btn e-flat e-small"
+          iconCss="e-icons e-expand"
+          type="button"
+          title="ขยายเต็มจอ"
+          (click)="openMaximize('stage')"
+        ></button>
+      </div>
+      <div class="bento-card__body">
+        <ejs-chart
+          id="bento-stage-chart"
+          style="display: block; width: 100%; height: 100%; min-height: 160px;"
+          [theme]="theme.sfTheme()"
+          [primaryXAxis]="horizontalCategoryAxis"
+          [primaryYAxis]="hoursAxis"
+          [tooltip]="tooltip"
+          [legendSettings]="legend"
+          [chartArea]="chartArea"
+          [enableAnimation]="true"
+        >
+          <e-series-collection>
+            <e-series
+              type="StackingBar"
+              [dataSource]="stageAgingData()"
+              xName="track"
+              yName="devHours"
+              name="Dev ทำงาน"
+              fill="#3b82f6"
+            ></e-series>
+            <e-series
+              type="StackingBar"
+              [dataSource]="stageAgingData()"
+              xName="track"
+              yName="reviewHours"
+              name="รอ/ตรวจ MR"
+              fill="#f59e0b"
+            ></e-series>
+            <e-series
+              type="StackingBar"
+              [dataSource]="stageAgingData()"
+              xName="track"
+              yName="qaHours"
+              name="รอ/ตรวจ QA"
+              fill="#10b981"
+            ></e-series>
+          </e-series-collection>
+        </ejs-chart>
+      </div>
+    </div>
+
+    <!-- Card E: AI Intelligence & Bottleneck Radar -->
+    <div class="bento-card bento-card--small bento-card--glow">
+      <div class="bento-card__head">
+        <div class="head-info">
+          <div class="head-title-row">
+            <span class="head-title">เรดาร์คอขวด & ความเสี่ยง</span>
+            <span class="head-badge head-badge--rose">AI Radar</span>
+          </div>
+          <span class="head-desc">งานที่ติดบล็อกหรือใช้เวลาเกินเกณฑ์</span>
+        </div>
+        <button
+          ejs-button
+          cssClass="bento-icon-btn e-flat e-small"
+          iconCss="e-icons e-expand"
+          type="button"
+          title="ขยายเต็มจอ"
+          (click)="openMaximize('bottlenecks')"
+        ></button>
+      </div>
+      <div class="bento-card__body p-3 overflow-y-auto">
+        <div class="bottleneck-list">
+          @for (item of bottleneckItems(); track item.id) {
+            <div class="bottleneck-item" [attr.data-tone]="item.tone">
+              <div class="item-tag-row">
+                <span class="item-tag" [class]="'tag--' + item.tone">{{ item.tag }}</span>
+                <span class="item-id">{{ item.id }}</span>
+              </div>
+              <p class="item-desc">{{ item.desc }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ========================================== -->
+<!-- Modal: Maximize Deep Dive Dialog           -->
+<!-- ========================================== -->
+<ejs-dialog
+  #maximizeDialog
+  id="cockpit-maximize-dialog"
+  [visible]="maximizedCard() !== null"
+  [isModal]="true"
+  width="92%"
+  height="88%"
+  [showCloseIcon]="true"
+  [animationSettings]="{ effect: 'Fade' }"
+  (close)="closeMaximize()"
+>
+  <ng-template #header>
+    <div class="dialog-header-wrap">
+      <span class="e-icons e-expand mr-2 text-indigo-400"></span>
+      <span>
+        @switch (maximizedCard()) {
+          @case ('combo') { เจาะลึก: ภาพรวมภาระงานและอัตราความสำเร็จ (Dual-Axis Overview Combo) }
+          @case ('workload') { เจาะลึก: สัดส่วนภาระงาน (Planned vs Unplanned vs MD Mandate) }
+          @case ('trend') { เจาะลึก: แนวโน้มดัชนีคะแนนและการถดถอยเชิงเส้น (OLS Regression) }
+          @case ('quality') { เจาะลึก: คุณภาพการส่งมอบรอบแรกและสาเหตุ Reopen (DoD Gate) }
+          @case ('stage') { เจาะลึก: เวลาค้างแต่ละขั้นตอนแยกตามสายงาน (Stage Aging SLA) }
+          @case ('bottlenecks') { เจาะลึก: รายการงานที่ติดบล็อกและข้อเสนอแนะ AI Coach }
+          @default { รายละเอียดเจาะลึก }
+        }
+      </span>
+    </div>
+  </ng-template>
+
+  <ng-template #content>
+    <div class="dialog-content-body">
+      @switch (maximizedCard()) {
+        @case ('combo') {
+          <div class="dialog-chart-wrap">
+            <ejs-chart
+              id="max-combo-chart"
+              style="display: block; width: 100%; height: 380px;"
+              [theme]="theme.sfTheme()"
+              [primaryXAxis]="categoryAxis"
+              [primaryYAxis]="mdAxis"
+              [axes]="[rateAxis]"
+              [tooltip]="tooltip"
+              [legendSettings]="{ visible: true, position: 'Top' }"
+              [chartArea]="chartArea"
+            >
+              <e-series-collection>
+                <e-series
+                  type="StackingColumn"
+                  [dataSource]="comboOverviewData()"
+                  xName="month"
+                  yName="plannedMd"
+                  name="Planned MD (ในแผน)"
+                  fill="#3b82f6"
+                ></e-series>
+                <e-series
+                  type="StackingColumn"
+                  [dataSource]="comboOverviewData()"
+                  xName="month"
+                  yName="unplannedGeneralMd"
+                  name="Unplanned ทั่วไป"
+                  fill="#06b6d4"
+                ></e-series>
+                <e-series
+                  type="StackingColumn"
+                  [dataSource]="comboOverviewData()"
+                  xName="month"
+                  yName="mdMandateMd"
+                  name="⚡ งานสั่งตรงจาก MD"
+                  fill="#f59e0b"
+                ></e-series>
+                <e-series
+                  type="Line"
+                  yAxisName="rateAxis"
+                  [dataSource]="comboOverviewData()"
+                  xName="month"
+                  yName="onTimeRate"
+                  name="ส่งมอบตรงเวลา (%)"
+                  width="2.5"
+                  fill="#10b981"
+                  [marker]="{ visible: true, width: 6, height: 6, fill: '#10b981' }"
+                ></e-series>
+                <e-series
+                  type="Line"
+                  yAxisName="rateAxis"
+                  [dataSource]="comboOverviewData()"
+                  xName="month"
+                  yName="avgIndex"
+                  name="ดัชนีคะแนนจริง"
+                  width="2"
+                  dashArray="4,4"
+                  fill="#a855f7"
+                  [marker]="{ visible: true, width: 5, height: 5, fill: '#a855f7' }"
+                ></e-series>
+              </e-series-collection>
+            </ejs-chart>
+            <div class="table-responsive mt-4">
+              <table class="bento-table">
+                <thead>
+                  <tr>
+                    <th>เดือน</th>
+                    <th>Planned MD</th>
+                    <th>Unplanned ทั่วไป</th>
+                    <th>⚡ MD Mandate</th>
+                    <th>รวมสุทธิ</th>
+                    <th>On-Time Rate (%)</th>
+                    <th>ดัชนีคะแนน</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of comboOverviewData(); track row.month) {
+                    <tr>
+                      <td class="font-bold">{{ row.month }}</td>
+                      <td>{{ row.plannedMd }} MD</td>
+                      <td>{{ row.unplannedGeneralMd }} MD</td>
+                      <td class="text-amber-500 font-bold">{{ row.mdMandateMd }} MD</td>
+                      <td class="font-bold">{{ row.totalMd }} MD</td>
+                      <td class="font-bold text-emerald-500">{{ row.onTimeRate }}%</td>
+                      <td class="font-bold text-purple-400">{{ row.avgIndex }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+        @case ('workload') {
+          <div class="dialog-chart-wrap">
+            <ejs-chart
+              id="max-workload-chart"
+              style="display: block; width: 100%; height: 380px;"
+              [theme]="theme.sfTheme()"
+              [primaryXAxis]="categoryAxis"
+              [primaryYAxis]="mdAxis"
+              [tooltip]="tooltip"
+              [legendSettings]="{ visible: true, position: 'Top' }"
+              [chartArea]="chartArea"
+            >
+              <e-series-collection>
+                <e-series
+                  type="StackingArea"
+                  [dataSource]="workloadData()"
+                  xName="month"
+                  yName="plannedMd"
+                  name="Planned MD (ในแผน)"
+                  fill="#3b82f6"
+                  opacity="0.85"
+                ></e-series>
+                <e-series
+                  type="StackingArea"
+                  [dataSource]="workloadData()"
+                  xName="month"
+                  yName="unplannedGeneralMd"
+                  name="Unplanned ทั่วไป"
+                  fill="#06b6d4"
+                  opacity="0.85"
+                ></e-series>
+                <e-series
+                  type="StackingArea"
+                  [dataSource]="workloadData()"
+                  xName="month"
+                  yName="mdMandateMd"
+                  name="⚡ งานสั่งตรงจาก MD"
+                  fill="#f59e0b"
+                  opacity="0.95"
+                ></e-series>
+              </e-series-collection>
+            </ejs-chart>
+            <div class="table-responsive mt-4">
+              <table class="bento-table">
+                <thead>
+                  <tr>
+                    <th>เดือน</th>
+                    <th>Planned MD</th>
+                    <th>Unplanned ทั่วไป</th>
+                    <th>⚡ MD Mandate</th>
+                    <th>รวมสุทธิ</th>
+                    <th>สัดส่วน MD Mandate (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of workloadData(); track row.month) {
+                    <tr>
+                      <td class="font-bold">{{ row.month }}</td>
+                      <td>{{ row.plannedMd }} MD</td>
+                      <td>{{ row.unplannedGeneralMd }} MD</td>
+                      <td class="text-amber-400 font-bold">{{ row.mdMandateMd }} MD</td>
+                      <td>{{ row.totalMd }} MD</td>
+                      <td class="font-bold">
+                        {{ row.totalMd > 0 ? ((row.mdMandateMd / row.totalMd) * 100).toFixed(1) : 0 }}%
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+        @case ('trend') {
+          <div class="dialog-chart-wrap">
+            <ejs-chart
+              id="max-trend-chart"
+              style="display: block; width: 100%; height: 380px;"
+              [theme]="theme.sfTheme()"
+              [primaryXAxis]="categoryAxis"
+              [primaryYAxis]="indexAxis"
+              [tooltip]="tooltip"
+              [legendSettings]="{ visible: true, position: 'Top' }"
+              [chartArea]="chartArea"
+            >
+              <e-series-collection>
+                <e-series
+                  type="Line"
+                  [dataSource]="olsTrend().points"
+                  xName="month"
+                  yName="actual"
+                  name="คะแนนจริง"
+                  width="3"
+                  fill="#3b82f6"
+                  [marker]="{ visible: true, width: 8, height: 8 }"
+                ></e-series>
+                <e-series
+                  type="Line"
+                  [dataSource]="olsTrend().points"
+                  xName="month"
+                  yName="ols"
+                  name="แนวโน้ม OLS Regression"
+                  width="2.5"
+                  dashArray="4,4"
+                  fill="#a855f7"
+                ></e-series>
+              </e-series-collection>
+            </ejs-chart>
+            <div class="bento-callout mt-4">
+              <div class="callout-title">สูตรการวิเคราะห์แนวโน้ม:</div>
+              <p>
+                Ordinary Least Squares (OLS) $y = mx + c$ ใช้คำนวณทิศทางการพัฒนาความเร็วและความแม่นยำย้อนหลัง 5 เดือน
+                โดยอัตราความชันปัจจุบันอยู่ที่ <strong>{{ olsTrend().slopeText }}</strong>
+              </p>
+            </div>
+          </div>
+        }
+        @case ('quality') {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ejs-accumulationchart
+              id="max-quality-chart"
+              style="display: block; width: 100%; height: 340px;"
+              [theme]="theme.sfTheme()"
+              [tooltip]="tooltip"
+              [legendSettings]="{ visible: true, position: 'Bottom' }"
+            >
+              <e-accumulation-series-collection>
+                <e-accumulation-series
+                  type="Pie"
+                  [dataSource]="qualityPieData()"
+                  xName="label"
+                  yName="count"
+                  innerRadius="50%"
+                  pointColorMapping="color"
+                  [dataLabel]="{ visible: true, name: 'label', position: 'Outside' }"
+                ></e-accumulation-series>
+              </e-accumulation-series-collection>
+            </ejs-accumulationchart>
+            <div class="p-4 flex flex-col justify-center">
+              <h4 class="text-lg font-bold mb-3">เกณฑ์การประเมินคุณภาพรอบแรก (DoD Gate)</h4>
+              <ul class="space-y-2 text-sm text-slate-300">
+                <li>• <strong>First-Time Right (FTR):</strong> ใบงานที่ผ่าน Code Review & QA ได้ในรอบเดียว การันตี 20 คะแนนรีวิว</li>
+                <li>• <strong>Rework:</strong> มีการแก้ไขโค้ดซ้ำ 2 รอบขึ้นไป หรือมีข้อเสนอแนะด้านความปลอดภัย</li>
+                <li>• <strong>Escape Defect:</strong> บักที่หลุดเข้าสู่สภาพแวดล้อมจริง (Production) มีผลตัดคะแนน Reopen</li>
+              </ul>
+            </div>
+          </div>
+        }
+        @default {
+          <div class="p-4">
+            <p>กำลังโหลดข้อมูลการวิเคราะห์เจาะลึก...</p>
+          </div>
+        }
+      }
+    </div>
+  </ng-template>
+
+  <ng-template #footerTemplate>
+    <button ejs-button cssClass="e-primary" type="button" (click)="closeMaximize()">
+      ปิดหน้าต่าง
+    </button>
+  </ng-template>
+</ejs-dialog>

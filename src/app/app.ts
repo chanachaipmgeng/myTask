@@ -402,6 +402,7 @@ const allNavGroups: NavGroup[] = [
     roles: ['member'],
     children: [
       { id: 'me', text: 'ผลงาน & งานวันนี้', iconCss: 'e-icons e-user', route: '/me', exact: true },
+      { id: 'my-cockpit', text: 'ค็อกพิทผลงานของฉัน (Bento)', iconCss: 'e-icons e-dashboard', route: '/me/cockpit' },
       { id: 'my-work', text: 'ฮับงานของฉัน (Board/Gantt)', iconCss: 'e-icons e-timeline-work-week', route: '/me/work' },
       { id: 'my-schedule', text: 'ปฏิทินงานของฉัน', iconCss: 'e-icons e-date-time', route: '/me/schedule' },
       { id: 'my-mygit', text: 'ซิงก์ MR ของฉัน', iconCss: 'e-icons e-refresh', route: '/me/mygit' },
@@ -431,6 +432,7 @@ const allNavGroups: NavGroup[] = [
     roles: ['lead'],
     children: [
       { id: 'team-dash', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
+      { id: 'team-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-dashboard', route: '/cockpit' },
       { id: 'queue', text: 'คิวงานใหม่ & จ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/queue' },
       { id: 'work-hub', text: 'ฮับบริหารงานทีม', iconCss: 'e-icons e-timeline-work-week', route: '/work' },
       { id: 'schedule', text: 'ปฏิทินทีม & วันลา', iconCss: 'e-icons e-date-time', route: '/schedule' },
@@ -464,6 +466,7 @@ const allNavGroups: NavGroup[] = [
     roles: ['admin'],
     children: [
       { id: 'admin-home', text: 'หลังบ้าน & สิทธิ์ผู้ใช้', iconCss: 'e-icons e-lock', route: '/admin', exact: true },
+      { id: 'admin-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-dashboard', route: '/cockpit' },
       { id: 'integrations', text: 'เชื่อมต่อระบบ (Integrations)', iconCss: 'e-icons e-settings', route: '/integrations' },
       {
         id: 'snapshot-check',
@@ -528,6 +531,12 @@ function matchNavId(url: string, role: AccessRole = 'member'): string {
 }
 
 function screenTitle(url: string): string {
+  if (url.startsWith('/me/cockpit')) {
+    return 'ค็อกพิทผลงานของฉัน (Personal Bento)';
+  }
+  if (url.startsWith('/cockpit')) {
+    return 'ห้องบัญชาการ Bento (Executive Team Cockpit)';
+  }
   if (url.startsWith('/admin/rubrics')) {
     return 'ทะเบียนเกณฑ์มาตรฐาน (Rubric Registry)';
   }

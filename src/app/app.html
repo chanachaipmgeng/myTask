@@ -128,6 +128,10 @@
         </div>
 
         @if (role() === 'admin') {
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/cockpit" title="ห้องบัญชาการ Bento (Cockpit)">
+            <span class="e-icons e-dashboard"></span>
+            <span class="shortcut-text">Cockpit</span>
+          </a>
           <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/integrations" title="เชื่อมต่อระบบภายนอก">
             <span class="e-icons e-settings"></span>
             <span class="shortcut-text">Integrations</span>
@@ -137,6 +141,10 @@
             <span class="shortcut-text">เช็ก Snapshot</span>
           </a>
         } @else if (role() === 'lead') {
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/cockpit" title="ห้องบัญชาการ Bento (Cockpit)">
+            <span class="e-icons e-dashboard"></span>
+            <span class="shortcut-text">Cockpit</span>
+          </a>
           <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/team" title="แดชบอร์ดทีม">
             <span class="e-icons e-people"></span>
             <span class="shortcut-text">ทีม</span>
@@ -146,6 +154,10 @@
             <span class="shortcut-text">คิวงาน</span>
           </a>
         } @else {
+          <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/me/cockpit" title="ค็อกพิทผลงานของฉัน (Bento)">
+            <span class="e-icons e-dashboard"></span>
+            <span class="shortcut-text">Cockpit</span>
+          </a>
           <a ejs-button cssClass="e-flat e-small appbar-shortcut-btn" routerLink="/me" title="ผลงานของฉัน">
             <span class="e-icons e-user"></span>
             <span class="shortcut-text">งานวันนี้</span>

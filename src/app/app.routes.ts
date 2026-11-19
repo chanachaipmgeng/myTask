@@ -34,6 +34,11 @@ export const routes: Routes = [
     children: workChildren,
   },
   {
+    path: 'me/cockpit',
+    loadComponent: () => import('./pages/cockpit/cockpit').then((m) => m.CockpitPage),
+    data: { scope: 'mine' },
+  },
+  {
     path: 'me/analytics',
     loadComponent: () => import('./pages/person-dashboard/person-dashboard').then((m) => m.PersonDashboard),
     data: { scope: 'mine' },
@@ -85,6 +90,11 @@ export const routes: Routes = [
     path: 'team',
     canActivate: [requireRoles('admin', 'lead')],
     loadComponent: () => import('./pages/team-dashboard/team-dashboard').then((m) => m.TeamDashboard),
+  },
+  {
+    path: 'cockpit',
+    canActivate: [requireRoles('admin', 'lead')],
+    loadComponent: () => import('./pages/cockpit/cockpit').then((m) => m.CockpitPage),
   },
   {
     path: 'people',

@@ -120,7 +120,67 @@
 
         <e-tabitem [header]="{ text: 'วิเคราะห์สาเหตุ Reopen & Bug Escape (' + reopenEscapes().length + ')' }">
           <ng-template #content>
-            <div class="pt-4 flex flex-col gap-4">
+            <div class="pt-4 flex flex-col gap-5">
+              <!-- Pareto 80/20 Root-Cause Analysis Chart -->
+              <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col gap-3">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span class="e-icons e-chart text-indigo-500"></span>
+                      แผนภูมิพาเรโตวิเคราะห์สาเหตุหลักของการตีกลับ (Pareto 80/20 Root-Cause Chart)
+                    </h3>
+                    <p class="text-xs text-muted mt-0.5">
+                      เรียงลำดับความถี่สาเหตุจากมากไปน้อย (แกนซ้าย: แท่ง) ควบคู่กับเปอร์เซ็นต์สะสม (แกนขวา: เส้น) พร้อมเส้นเตือนเกณฑ์วิกฤต 80%
+                    </p>
+                  </div>
+                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                    รวม {{ paretoReport().total }} ครั้ง
+                  </span>
+                </div>
+
+                <ejs-chart
+                  id="pareto-chart"
+                  style="display: block; width: 100%; height: 260px;"
+                  [theme]="theme.sfTheme()"
+                  [primaryXAxis]="paretoXAxis"
+                  [primaryYAxis]="paretoCountAxis"
+                  [axes]="[paretoCumAxis]"
+                  [tooltip]="tooltip"
+                  [legendSettings]="legend"
+                  [chartArea]="chartArea"
+                >
+                  <e-series-collection>
+                    <e-series
+                      type="Column"
+                      [dataSource]="paretoReport().points"
+                      xName="cause"
+                      yName="count"
+                      name="ความถี่ที่เกิด (ครั้ง)"
+                      fill="#6366f1"
+                      [cornerRadius]="{ topLeft: 4, topRight: 4 }"
+                    ></e-series>
+                    <e-series
+                      type="Line"
+                      yAxisName="cumPctAxis"
+                      [dataSource]="paretoReport().points"
+                      xName="cause"
+                      yName="cumPct"
+                      name="เปอร์เซ็นต์สะสม (%)"
+                      width="2.5"
+                      fill="#f97316"
+                      [marker]="{ visible: true, width: 7, height: 7, fill: '#f97316' }"
+                    ></e-series>
+                  </e-series-collection>
+                </ejs-chart>
+
+                <ejs-message
+                  severity="Info"
+                  variant="Outlined"
+                  [content]="paretoReport().insight"
+                ></ejs-message>
+              </div>
+
+              <!-- Reopen & Bug Escape Breakdown Grid -->
               <ejs-grid [dataSource]="reopenEscapes()" [allowSorting]="true" [allowFiltering]="true">
                 <e-columns>
                   <e-column field="ticketId" headerText="รหัสใบงาน" width="130"></e-column>
