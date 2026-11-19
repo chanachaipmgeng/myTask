@@ -301,6 +301,9 @@ p {
 
 .chart-frame {
   padding: 14px 14px 6px;
+  min-width: 200px;
+  min-height: 200px;
+  box-sizing: border-box;
 }
 
 /* Structured Section Cards — Syncfusion e-card + .section-card (scoped) */

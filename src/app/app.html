@@ -71,7 +71,7 @@
         <div class="sidebar-profile__info" (click)="openMyWorkspace()" title="เปิดพื้นที่ของฉัน (/me)">
           <div class="sidebar-profile__avatar">
             @if (userAvatarUrl() && !avatarError()) {
-              <img [src]="userAvatarUrl()" [alt]="userFullName()" (error)="onAvatarError()" class="avatar-img" />
+              <img [src]="userAvatarUrl()" [alt]="userFullName()" loading="lazy" referrerpolicy="no-referrer" (error)="onAvatarError()" class="avatar-img" />
             } @else {
               <span>{{ userAvatarInitials() }}</span>
             }

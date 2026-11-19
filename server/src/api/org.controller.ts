@@ -88,7 +88,7 @@ export class OrgController {
       detail: unknown;
       created_at: Date | string;
     }>(
-      `SELECT a.id, a.actor_id, p.nickname AS actor_name, a.action, a.target, a.detail, a.created_at
+      `SELECT a.id, a.actor_id, p.nickname AS actor_name, a.action, a.target, a.detail, a.at AS created_at
        FROM audit_log a
        LEFT JOIN people p ON p.id = a.actor_id
        ORDER BY a.id DESC

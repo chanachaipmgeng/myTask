@@ -557,9 +557,12 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .shell-appbar {
+  position: sticky !important;
+  top: 0 !important;
   height: auto !important;
   min-height: 60px;
   padding: 10px 24px !important;
@@ -678,7 +681,7 @@
 
 .shell-main {
   flex: 1;
-  padding: 16px 24px 44px;
+  padding: 20px 24px 44px;
 }
 
 .nav-toggle {

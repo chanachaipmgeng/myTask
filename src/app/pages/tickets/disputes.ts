@@ -28,6 +28,7 @@ import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { DialogModule } from '@syncfusion/ej2-angular-popups';
 import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { TicketDispute, VarianceCode } from '../../core/models';
+import { scoreTicket } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
@@ -138,10 +139,14 @@ export class DisputesPage implements OnInit {
     return this.scorecard
       .tickets()
       .filter((t) => (mineOnly ? t.assigneeId === personId : true))
-      .map((t) => ({
-        text: `${t.id} - ${t.title || t.module} (คะแนน: ${t.actualMd} MD)`,
-        value: t.id,
-      }));
+      .map((t) => {
+        const score = t.closed ? scoreTicket(t).total : null;
+        const scoreLabel = score !== null ? `คะแนน: ${score} คะแนน` : `ยังไม่ปิด · ${t.actualMd} MD`;
+        return {
+          text: `${t.id} - ${t.title || t.module} (${scoreLabel})`,
+          value: t.id,
+        };
+      });
   });
 
   protected readonly statusToneMap: Record<string, BadgeTone> = {

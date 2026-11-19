@@ -151,6 +151,8 @@
                           [src]="person.avatarUrl"
                           [alt]="person.nickname"
                           class="avatar-img"
+                          loading="lazy"
+                          referrerpolicy="no-referrer"
                           (error)="onAvatarError(person.id)"
                         />
                       } @else {
