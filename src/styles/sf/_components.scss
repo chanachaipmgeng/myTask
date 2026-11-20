@@ -155,6 +155,11 @@ body.e-light-mode {
   overflow-x: auto;
 }
 
+.e-kanban.pipeline-board .e-kanban-content {
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+}
+
 .e-kanban.pipeline-board .e-kanban-table {
   width: 100% !important;
   min-width: 1300px !important;

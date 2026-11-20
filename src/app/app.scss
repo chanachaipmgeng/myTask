@@ -5,79 +5,89 @@
 // =============================================================================
 
 .app-frame {
-  // Dark Mode (Default) Tokens
-  --shell-sidebar-bg: #0b1120;
-  --shell-sidebar-border: rgba(255, 255, 255, 0.08);
-  --shell-brand-text: #f8fafc;
-  --shell-switcher-bg: rgba(255, 255, 255, 0.05);
-  --shell-switcher-border: rgba(255, 255, 255, 0.1);
-  --shell-switcher-hover: rgba(255, 255, 255, 0.09);
-  --shell-dropdown-bg: #111827;
-  --shell-dropdown-border: rgba(255, 255, 255, 0.12);
-  --shell-search-bg: rgba(255, 255, 255, 0.05);
-  --shell-search-border: rgba(255, 255, 255, 0.1);
-  --shell-search-color: #f8fafc;
-  --shell-search-placeholder: #64748b;
-  --shell-section-label: #64748b;
-  --shell-menu-color: #94a3b8;
-  --shell-menu-hover-bg: rgba(255, 255, 255, 0.06);
-  --shell-menu-hover-color: #f8fafc;
-  --shell-menu-active-bg: #1e293b;
+  // Dark Mode (Default) Tokens — Deep Corporate Royal Navy
+  --shell-sidebar-bg: linear-gradient(180deg, #0b1437 0%, #132158 55%, #1a2d75 100%);
+  --shell-sidebar-border: rgba(148, 179, 255, 0.14);
+  --shell-brand-text: #ffffff;
+  --shell-switcher-bg: rgba(255, 255, 255, 0.08);
+  --shell-switcher-border: rgba(255, 255, 255, 0.14);
+  --shell-switcher-hover: rgba(255, 255, 255, 0.14);
+  --shell-dropdown-bg: #111c44;
+  --shell-dropdown-border: rgba(148, 179, 255, 0.2);
+  --shell-search-bg: rgba(255, 255, 255, 0.08);
+  --shell-search-border: rgba(255, 255, 255, 0.14);
+  --shell-search-color: #ffffff;
+  --shell-search-placeholder: rgba(219, 234, 254, 0.6);
+  --shell-section-label: rgba(191, 219, 254, 0.68);
+  --shell-menu-color: rgba(241, 245, 249, 0.85);
+  --shell-menu-hover-bg: rgba(255, 255, 255, 0.1);
+  --shell-menu-hover-color: #ffffff;
+  --shell-menu-active-bg: rgba(255, 255, 255, 0.18);
   --shell-menu-active-color: #ffffff;
-  --shell-menu-active-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  --shell-menu-active-border: rgba(255, 255, 255, 0.1);
-  --shell-appbar-bg: rgba(11, 17, 32, 0.9);
-  --shell-appbar-border: rgba(255, 255, 255, 0.08);
+  --shell-menu-active-icon: #ffffff;
+  --shell-menu-active-shadow: 0 2px 10px rgba(7, 13, 38, 0.35);
+  --shell-menu-active-border: rgba(255, 255, 255, 0.24);
+  --shell-appbar-bg: rgba(11, 20, 55, 0.92);
+  --shell-appbar-border: rgba(148, 179, 255, 0.12);
   --shell-appbar-title: #f8fafc;
-  --shell-omni-bg: rgba(255, 255, 255, 0.05);
-  --shell-omni-border: rgba(255, 255, 255, 0.1);
+  --shell-omni-bg: rgba(255, 255, 255, 0.07);
+  --shell-omni-border: rgba(148, 179, 255, 0.16);
   --shell-omni-color: #f8fafc;
-  --shell-btn-bg: rgba(255, 255, 255, 0.05);
-  --shell-btn-border: rgba(255, 255, 255, 0.1);
+  --shell-omni-placeholder: #94a3b8;
+  --shell-omni-kbd-bg: rgba(255, 255, 255, 0.08);
+  --shell-omni-kbd-border: rgba(148, 179, 255, 0.22);
+  --shell-omni-kbd-color: #cbd5e1;
+  --shell-btn-bg: rgba(255, 255, 255, 0.06);
+  --shell-btn-border: rgba(148, 179, 255, 0.16);
   --shell-btn-color: #cbd5e1;
-  --shell-btn-hover-bg: rgba(255, 255, 255, 0.1);
+  --shell-btn-hover-bg: rgba(255, 255, 255, 0.14);
   --shell-btn-hover-color: #ffffff;
 
   display: grid;
   grid-template-columns: 244px minmax(0, 1fr);
   min-height: 100vh;
   align-items: start;
-  transition: grid-template-columns 0.18s ease;
+  transition: grid-template-columns 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-// Light Mode (Tasklyn Clean Minimal) Tokens
+// Light Mode — Corporate Company Palette (MyHR Royal Blue Sidebar + Crisp White AppBar)
 :host-context(body.e-light-mode) .app-frame {
-  --shell-sidebar-bg: #f8f9fb;
-  --shell-sidebar-border: #e5e7eb;
-  --shell-brand-text: #0f172a;
-  --shell-switcher-bg: #eef0f4;
-  --shell-switcher-border: #e2e8f0;
-  --shell-switcher-hover: #e5e9f0;
+  --shell-sidebar-bg: linear-gradient(180deg, #2746b3 0%, #3154cc 52%, #3b60dc 100%);
+  --shell-sidebar-border: rgba(255, 255, 255, 0.18);
+  --shell-brand-text: #ffffff;
+  --shell-switcher-bg: rgba(255, 255, 255, 0.14);
+  --shell-switcher-border: rgba(255, 255, 255, 0.24);
+  --shell-switcher-hover: rgba(255, 255, 255, 0.22);
   --shell-dropdown-bg: #ffffff;
-  --shell-dropdown-border: #e2e8f0;
-  --shell-search-bg: #ffffff;
-  --shell-search-border: #e2e8f0;
-  --shell-search-color: #0f172a;
-  --shell-search-placeholder: #94a3b8;
-  --shell-section-label: #94a3b8;
-  --shell-menu-color: #475569;
-  --shell-menu-hover-bg: rgba(15, 23, 42, 0.045);
-  --shell-menu-hover-color: #0f172a;
+  --shell-dropdown-border: #dce5f7;
+  --shell-search-bg: rgba(255, 255, 255, 0.15);
+  --shell-search-border: rgba(255, 255, 255, 0.26);
+  --shell-search-color: #ffffff;
+  --shell-search-placeholder: rgba(255, 255, 255, 0.72);
+  --shell-section-label: rgba(224, 234, 255, 0.75);
+  --shell-menu-color: rgba(255, 255, 255, 0.88);
+  --shell-menu-hover-bg: rgba(255, 255, 255, 0.14);
+  --shell-menu-hover-color: #ffffff;
   --shell-menu-active-bg: #ffffff;
-  --shell-menu-active-color: #0f172a;
-  --shell-menu-active-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shell-menu-active-border: #e5e7eb;
-  --shell-appbar-bg: rgba(255, 255, 255, 0.94);
-  --shell-appbar-border: #e5e7eb;
-  --shell-appbar-title: #0f172a;
-  --shell-omni-bg: #f3f4f6;
-  --shell-omni-border: #e5e7eb;
-  --shell-omni-color: #0f172a;
-  --shell-btn-bg: #ffffff;
-  --shell-btn-border: #e5e7eb;
-  --shell-btn-color: #475569;
-  --shell-btn-hover-bg: #f3f4f6;
-  --shell-btn-hover-color: #0f172a;
+  --shell-menu-active-color: #2746b3;
+  --shell-menu-active-icon: #2746b3;
+  --shell-menu-active-shadow: 0 4px 12px -2px rgba(17, 36, 110, 0.28);
+  --shell-menu-active-border: #ffffff;
+  --shell-appbar-bg: rgba(255, 255, 255, 0.96);
+  --shell-appbar-border: #e6ecf8;
+  --shell-appbar-title: #14213d;
+  --shell-omni-bg: #f1f5fb;
+  --shell-omni-border: #dce6fa;
+  --shell-omni-color: #14213d;
+  --shell-omni-placeholder: #64748b;
+  --shell-omni-kbd-bg: #ffffff;
+  --shell-omni-kbd-border: #cbd5e1;
+  --shell-omni-kbd-color: #475569;
+  --shell-btn-bg: #f4f7fe;
+  --shell-btn-border: #e2eaf8;
+  --shell-btn-color: #3b5380;
+  --shell-btn-hover-bg: #e7effd;
+  --shell-btn-hover-color: #2746b3;
 }
 
 .app-frame.is-collapsed {
@@ -198,13 +208,13 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2e4fc8, #4c68e5);
-  color: #ffffff;
+  background: #ffffff;
+  color: #2746b3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  box-shadow: 0 3px 8px rgba(46, 79, 200, 0.35);
+  box-shadow: 0 3px 10px rgba(11, 20, 55, 0.25);
 }
 
 .sidebar-brand__name {
@@ -292,6 +302,15 @@
 .workspace-switcher__caret {
   color: var(--shell-section-label);
   flex: none;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.workspace-switcher__trigger.is-open .workspace-switcher__caret {
+  transform: rotate(180deg);
+}
+
+.workspace-switcher__trigger:active:not(:disabled) {
+  transform: scale(0.985);
 }
 
 .workspace-switcher__menu {
@@ -308,6 +327,30 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  transform-origin: top center;
+  animation: dropdownPop 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes dropdownPop {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes iconPop {
+  from {
+    opacity: 0.4;
+    transform: scale(0.82) rotate(-18deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
 }
 
 .workspace-switcher__option {
@@ -319,21 +362,35 @@
   border-radius: 8px;
   border: 0;
   background: transparent;
-  color: var(--shell-menu-color);
+  color: #334155;
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   text-align: left;
 
   &:hover {
-    background: var(--shell-menu-hover-bg);
-    color: var(--shell-menu-hover-color);
+    background: #eef3ff;
+    color: #2746b3;
   }
 
   &.is-active {
-    background: rgba(46, 79, 200, 0.12);
-    color: #2e4fc8;
+    background: #eaf0ff;
+    color: #2746b3;
     font-weight: 700;
+  }
+}
+
+:host-context(body.e-dark-mode) .workspace-switcher__option {
+  color: #cbd5e1;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+
+  &.is-active {
+    background: rgba(59, 96, 220, 0.25);
+    color: #93c5fd;
   }
 }
 
@@ -384,8 +441,9 @@
   padding: 0 2px;
 }
 
-// Categorized Flat Navigation
+// Categorized Flat Navigation with Sliding Floating Active Pill
 .saas-nav {
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -393,12 +451,68 @@
   flex-direction: column;
   gap: 14px;
   padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+  }
+}
+
+.saas-nav__active-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 2px;
+  z-index: 0;
+  border-radius: 10px;
+  background: var(--shell-menu-active-bg);
+  border: 1px solid var(--shell-menu-active-border);
+  box-shadow: var(--shell-menu-active-shadow);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, height;
+  transition:
+    transform 0.34s cubic-bezier(0.22, 1.28, 0.36, 1),
+    height 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.18s ease,
+    background-color 0.2s ease;
+
+  &.is-visible {
+    opacity: 1;
+  }
 }
 
 .saas-nav__group {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  animation: navGroupFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  &:nth-of-type(2) { animation-delay: 35ms; }
+  &:nth-of-type(3) { animation-delay: 70ms; }
+  &:nth-of-type(4) { animation-delay: 105ms; }
+  &:nth-of-type(5) { animation-delay: 140ms; }
+}
+
+@keyframes navGroupFade {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .saas-nav__label {
@@ -411,35 +525,76 @@
 }
 
 .saas-nav__item {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 10px;
-  border-radius: 9px;
+  padding: 9px 11px;
+  border-radius: 10px;
   border: 1px solid transparent;
+  background: transparent;
   color: var(--shell-menu-color);
   text-decoration: none;
-  font-size: 13px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.3;
-  transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    color 0.22s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  &:hover {
+  &:hover:not(.is-active) {
     background: var(--shell-menu-hover-bg);
     color: var(--shell-menu-hover-color);
+
+    .saas-nav__icon {
+      transform: translateX(2px) scale(1.08);
+    }
+  }
+
+  &:active {
+    transform: scale(0.97);
   }
 
   &.is-active {
-    background: var(--shell-menu-active-bg);
+    background: transparent;
     color: var(--shell-menu-active-color);
-    border-color: var(--shell-menu-active-border);
-    box-shadow: var(--shell-menu-active-shadow);
+    border-color: transparent;
+    box-shadow: none;
     font-weight: 700;
 
     .saas-nav__icon {
-      color: #2e4fc8;
+      color: var(--shell-menu-active-icon, #2746b3);
+      transform: scale(1.06);
+    }
+
+    .saas-nav__count {
+      background: rgba(39, 70, 179, 0.12);
+      color: var(--shell-menu-active-color);
     }
   }
+}
+
+.saas-nav__count {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 .saas-sidebar.is-collapsed .saas-nav__item {
@@ -456,6 +611,7 @@
   flex: none;
   font-size: 14px;
   opacity: 0.85;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), color 0.16s ease;
 }
 
 .saas-nav__text {
@@ -667,17 +823,21 @@
   border: 1px solid var(--shell-omni-border);
   background: var(--shell-omni-bg);
   cursor: text;
-  transition: border-color 0.15s ease, width 0.2s ease;
+  transition:
+    border-color 0.18s ease,
+    width 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.18s ease;
 
   &:focus-within {
     border-color: #2e4fc8;
-    width: 280px;
+    width: 284px;
+    box-shadow: 0 0 0 3px rgba(46, 79, 200, 0.14);
   }
 }
 
 .navbar-search-icon {
   font-size: 13px;
-  color: var(--shell-search-placeholder);
+  color: var(--shell-omni-placeholder);
 }
 
 .navbar-search-input {
@@ -690,14 +850,15 @@
   outline: none;
 
   &::placeholder {
-    color: var(--shell-search-placeholder);
+    color: var(--shell-omni-placeholder);
+    opacity: 1;
   }
 }
 
 .navbar-search-clear {
   border: 0;
   background: transparent;
-  color: var(--shell-search-placeholder);
+  color: var(--shell-omni-placeholder);
   cursor: pointer;
   font-size: 15px;
   line-height: 1;
@@ -715,9 +876,9 @@
     font-weight: 700;
     padding: 1px 5px;
     border-radius: 5px;
-    background: var(--shell-btn-bg);
-    border: 1px solid var(--shell-btn-border);
-    color: var(--shell-section-label);
+    background: var(--shell-omni-kbd-bg);
+    border: 1px solid var(--shell-omni-kbd-border);
+    color: var(--shell-omni-kbd-color);
   }
 }
 
@@ -768,11 +929,24 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  svg {
+    animation: iconPop 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
 
   &:hover {
     background: var(--shell-btn-hover-bg);
     color: var(--shell-btn-hover-color);
+    transform: scale(1.06);
+  }
+
+  &:active {
+    transform: scale(0.92);
   }
 }
 
@@ -812,6 +986,102 @@
     height: 100%;
     object-fit: cover;
   }
+}
+
+// -----------------------------------------------------------------------------
+// Top Sub-Navigation Tab Bar (Horizontal Sliding Pill)
+// -----------------------------------------------------------------------------
+.subnav-bar {
+  padding: 8px 22px;
+  background: var(--shell-appbar-bg);
+  border-bottom: 1px solid var(--shell-appbar-border);
+  backdrop-filter: blur(10px);
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.subnav-tabs {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--shell-omni-bg);
+  border: 1px solid var(--shell-omni-border);
+}
+
+.subnav-tabs__pill {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  z-index: 0;
+  border-radius: 8px;
+  background: #2746b3;
+  box-shadow: 0 2px 8px -2px rgba(39, 70, 179, 0.4);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, width;
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1.28, 0.36, 1),
+    width 0.28s cubic-bezier(0.22, 1.28, 0.36, 1),
+    opacity 0.16s ease;
+
+  &.is-visible {
+    opacity: 1;
+  }
+}
+
+:host-context(body.e-light-mode) .subnav-tabs__pill {
+  background: #ffffff;
+  border: 1px solid #dce6fa;
+  box-shadow: 0 2px 8px -2px rgba(39, 70, 179, 0.14);
+}
+
+.subnav-tab {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  color: var(--shell-btn-color);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    color 0.2s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  &:hover:not(.is-active) {
+    color: var(--shell-appbar-title);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.is-active {
+    color: #ffffff;
+    font-weight: 700;
+  }
+}
+
+:host-context(body.e-light-mode) .subnav-tab.is-active {
+  color: #2746b3;
+}
+
+.subnav-tab__icon {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .shell-alerts {

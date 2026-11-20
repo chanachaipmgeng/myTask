@@ -75,10 +75,27 @@
 }
 
 :host:hover .e-card.kpi-stat {
-  border-color: color-mix(in srgb, #4c68e5 28%, var(--border, #e2e8f0));
+  border-color: color-mix(in srgb, #2746b3 35%, var(--border, #e2e8f0));
   box-shadow:
     0 2px 4px rgba(15, 23, 42, 0.05),
-    0 16px 28px -14px rgba(46, 79, 200, 0.42);
+    0 12px 28px -10px rgba(39, 70, 179, 0.24);
+}
+
+:host:hover .kpi-stat__value {
+  transform: scale(1.03);
+}
+
+:host:hover .kpi-stat__icon {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+.kpi-stat__value {
+  transform-origin: left center;
+  transition: transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.kpi-stat__icon {
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 :host:hover .kpi-stat__icon-wrap {

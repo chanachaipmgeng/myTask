@@ -107,29 +107,85 @@ body {
   background: #0b1120;
 }
 
+body {
+  transition:
+    background-color 0.22s ease,
+    color 0.22s ease;
+}
+
 body.e-light-mode {
-  color: var(--ink);
-  background: #f8f9fb;
+  color: #14213d;
+  background: #f4f7fe;
 }
 
 /* ==========================================================================
-   Keyframes & Motion
+   Keyframes & Motion — Clean Modern SaaS (Linear / Tasklyn Feel)
    ========================================================================== */
 @keyframes pageFadeUp {
   from {
     opacity: 0;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes cardReveal {
   from {
     opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Subtle stagger for 2-col / bento grid cards (enter only, no hover transform) */
+.grid > app-section-card:nth-child(1) > .e-card.section-card,
+.grid > div:nth-child(1) > app-section-card > .e-card.section-card {
+  animation-delay: 20ms;
+}
+.grid > app-section-card:nth-child(2) > .e-card.section-card,
+.grid > div:nth-child(2) > app-section-card > .e-card.section-card {
+  animation-delay: 65ms;
+}
+.grid > app-section-card:nth-child(3) > .e-card.section-card,
+.grid > div:nth-child(3) > app-section-card > .e-card.section-card {
+  animation-delay: 110ms;
+}
+.grid > app-section-card:nth-child(4) > .e-card.section-card,
+.grid > div:nth-child(4) > app-section-card > .e-card.section-card {
+  animation-delay: 155ms;
+}
+.grid > app-section-card:nth-child(n + 5) > .e-card.section-card,
+.grid > div:nth-child(n + 5) > app-section-card > .e-card.section-card {
+  animation-delay: 190ms;
+}
+
+/* Smooth page enter on router views */
+.shell-main > *:not(router-outlet) {
+  animation: pageFadeUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Subtle spring micro-interaction on status badges */
+.e-badge:not(.e-badge-notification) {
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.16s ease;
+}
+
+.e-badge:not(.e-badge-notification):hover {
+  transform: scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -815,46 +871,47 @@ body.e-light-mode {
   .e-card.section-card,
   .e-dashboardlayout .e-panel {
     background: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    border: 1px solid #e6ecf8 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 20px -6px rgba(39, 70, 179, 0.07) !important;
   }
 
   .e-dashboardlayout .e-panel:hover,
   .chart-frame:hover,
   app-section-card:hover > .e-card.section-card,
   .e-card.section-card:hover {
-    border-color: #cbd5e1 !important;
-    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.07) !important;
+    border-color: #c7d7f8 !important;
+    box-shadow: 0 8px 24px -6px rgba(39, 70, 179, 0.13) !important;
   }
 
   .section-card-head,
   .e-card.section-card > .e-card-header.section-card-head {
-    border-bottom-color: #f1f5f9 !important;
+    border-bottom-color: #eef3fc !important;
   }
 
   .e-card.section-card .e-card-header-title {
-    color: #0f172a !important;
+    color: #14213d !important;
   }
 
-  /* Shell Light Mode — Clean Minimal SaaS Sidebar (#f8f9fb) */
+  /* Shell Light Mode — Corporate MyHR Royal Blue Sidebar */
   #app-nav,
   #app-nav.e-sidebar,
   #app-nav.e-control,
   .e-sidebar.e-left,
   .e-sidebar.e-left.e-control {
-    background: #f8f9fb !important;
-    border-right: 1px solid #e5e7eb !important;
-    color: #0f172a !important;
+    background: linear-gradient(180deg, #2746b3 0%, #3154cc 52%, #3b60dc 100%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
   }
 
   .shell-appbar {
-    background: rgba(255, 255, 255, 0.94) !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    box-shadow: none !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-bottom: 1px solid #e6ecf8 !important;
+    box-shadow: 0 2px 10px -4px rgba(39, 70, 179, 0.06) !important;
   }
 
   .appbar-title {
-    color: #0f172a !important;
+    color: #14213d !important;
   }
 
   .appbar-note {

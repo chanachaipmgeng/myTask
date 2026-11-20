@@ -15,7 +15,7 @@ const TEAM_TABS = [
   { text: 'Summary', path: 'summary', icon: 'e-icons e-chart' },
   { text: 'Timeline', path: 'timeline', icon: 'e-icons e-timeline-work-week' },
   { text: 'Backlog', path: 'backlog', icon: 'e-icons e-list-unordered' },
-  { text: 'Board', path: 'board', icon: 'e-icons e-kanban' },
+  { text: 'Board', path: 'board', icon: 'e-icons e-columns' },
   { text: 'List', path: 'list', icon: 'e-icons e-table' },
   { text: 'Handoff & SLA', path: 'handoff', icon: 'e-icons e-clock' },
 ] as const;

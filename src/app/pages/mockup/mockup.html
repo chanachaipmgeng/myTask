@@ -44,8 +44,8 @@
       [value]="progress()"
       [trackThickness]="10"
       [progressThickness]="10"
-      progressColor="#3ec6e0"
-      trackColor="#1e4566"
+      [progressColor]="theme.progressFill()"
+      [trackColor]="theme.progressTrack()"
     ></ejs-progressbar>
     <p class="fine m-0">
       @if (finished()) {

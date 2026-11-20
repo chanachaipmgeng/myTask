@@ -24,10 +24,11 @@
   >
     <div class="chart-frame m-0">
       <ejs-chart
-        style="display: block; height: 380px; width: 100%"
+        style="display: block; height: 420px; width: 100%"
         [theme]="theme.sfTheme()"
         [primaryXAxis]="primaryXAxis"
         [primaryYAxis]="primaryYAxis"
+        [margin]="{ top: 14, right: 18, bottom: 28, left: 12 }"
         [tooltip]="tooltip"
         [legendSettings]="legend"
         [chartArea]="chartArea"
@@ -41,20 +42,8 @@
             yName="index"
             pointColorMapping="color"
             name="ดัชนีพัฒนา"
-            columnWidth="0.55"
-            [cornerRadius]="{ topLeft: 4, topRight: 4 }"
-          ></e-series>
-          <e-series
-            type="Line"
-            [dataSource]="rows()"
-            xName="nickname"
-            yName="target"
-            name="เป้า 75"
-            width="2"
-            fill="#f0b429"
-            dashArray="6,4"
-            legendShape="Diamond"
-            [marker]="marker"
+            columnWidth="0.52"
+            [cornerRadius]="{ topLeft: 8, topRight: 8 }"
           ></e-series>
         </e-series-collection>
       </ejs-chart>

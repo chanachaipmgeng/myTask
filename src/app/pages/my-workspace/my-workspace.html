@@ -32,7 +32,7 @@
       [badge]="coach.trendLabel + ' (Slope ' + coach.trendSlope + ')'"
       badgeTone="info"
     >
-      <div actions class="flex flex-wrap gap-2 text-xs">
+      <div class="flex flex-wrap gap-2 text-xs mb-1">
         <app-status-badge [label]="'ส่งตรงสัปดาห์ ' + coach.onTimePct + '%'" tone="success"></app-status-badge>
         <app-status-badge [label]="'ความแม่นประเมินขนาด ' + coach.estimationAccuracyPct + '%'" tone="info"></app-status-badge>
         <app-status-badge [label]="'ผ่านรีวิวรอบแรก ' + coach.firstPassPct + '%'" tone="primary"></app-status-badge>
@@ -95,7 +95,7 @@
                   >
                     ดู checklist
                   </button>
-                  <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-kanban" routerLink="/me/work/board">
+                  <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
                     เปิดบนบอร์ด
                   </a>
                 </div>
@@ -140,7 +140,7 @@
               </ul>
 
               <div class="agenda-reveal__actions flex flex-wrap gap-2">
-                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-kanban" routerLink="/me/work/board">
+                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
                   เปิดบนบอร์ด
                 </a>
                 <a ejs-button cssClass="e-outline e-small" routerLink="/me/work/list">ดูรายการงานของฉัน</a>
@@ -170,7 +170,7 @@
               <p class="fine m-0">สถานะ: {{ risk.status }} · Est {{ risk.estimateMd }} MD / ใช้จริง {{ risk.actualMd }} MD</p>
               <p class="m-0 text-sm">{{ risk.reasons.join(' · ') }}</p>
               <div class="mt-2 flex flex-wrap gap-2">
-                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-kanban" routerLink="/me/work/board">
+                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
                   เปิดบนกระดานงาน
                 </a>
                 <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-warning" routerLink="/me/work/board">

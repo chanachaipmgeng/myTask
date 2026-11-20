@@ -44,38 +44,38 @@
       height="380px"
     >
       <e-columns>
-        <e-column field="ticketId" headerText="รหัสใบงาน" width="130" textAlign="Left">
+        <e-column field="ticketId" headerText="รหัสใบงาน" width="110" textAlign="Left">
           <ng-template #template let-data>
             <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
           </ng-template>
         </e-column>
-        <e-column field="title" headerText="ชื่องาน" width="220" textAlign="Left"></e-column>
-        <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="150" textAlign="Left"></e-column>
-        <e-column field="estimateMd" headerText="Est (1) MD" width="120" textAlign="Right">
+        <e-column field="title" headerText="ชื่องาน" width="170" textAlign="Left"></e-column>
+        <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="110" textAlign="Left"></e-column>
+        <e-column field="estimateMd" headerText="Est (1)" width="95" textAlign="Right">
           <ng-template #template let-data>
-            <span>{{ data.size }} ({{ data.estimateMd }} MD)</span>
+            <span>{{ data.size }} ({{ data.estimateMd }})</span>
           </ng-template>
         </e-column>
-        <e-column field="openProjectActualMd" headerText="OP Actual (2)" width="130" textAlign="Right">
+        <e-column field="openProjectActualMd" headerText="OP Act (2)" width="95" textAlign="Right">
           <ng-template #template let-data>
             <span [class.text-rose-600]="data.openProjectActualMd === 0" [class.font-bold]="data.openProjectActualMd === 0">
               {{ data.openProjectActualMd }} MD
             </span>
           </ng-template>
         </e-column>
-        <e-column field="gitlabSpanMd" headerText="GitLab Span (3)" width="140" textAlign="Right">
+        <e-column field="gitlabSpanMd" headerText="GitLab (3)" width="105" textAlign="Right">
           <ng-template #template let-data>
             <span>{{ data.gitlabSpanMd > 0 ? data.gitlabSpanMd + ' MD' : 'ไม่มี Commit!' }}</span>
           </ng-template>
         </e-column>
-        <e-column field="ratio" headerText="อัตราส่วน (2)/(1)" width="140" textAlign="Right">
+        <e-column field="ratio" headerText="สัดส่วน" width="85" textAlign="Right">
           <ng-template #template let-data>
             <span [class.text-rose-600]="data.ratio > 1.5" [class.font-bold]="data.ratio > 1.5">
               {{ data.ratio }}x
             </span>
           </ng-template>
         </e-column>
-        <e-column field="anomalyLabel" headerText="ความผิดปกติที่ตรวจพบ" width="180">
+        <e-column field="anomalyLabel" headerText="ความผิดปกติ" width="150">
           <ng-template #template let-data>
             <app-status-badge
               [label]="data.anomalyLabel"

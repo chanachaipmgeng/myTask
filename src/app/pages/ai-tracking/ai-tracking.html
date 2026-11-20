@@ -21,8 +21,8 @@
         [value]="sharePct()"
         [trackThickness]="10"
         [progressThickness]="10"
-        progressColor="#3ec6e0"
-        trackColor="#1e4566"
+        [progressColor]="theme.progressFill()"
+        [trackColor]="theme.progressTrack()"
       ></ejs-progressbar>
       <p class="fine m-0 pt-1">MD ในมุมนี้ {{ trackedMd() }} &middot; MD ที่ปิดแล้ว {{ acceptedMd() }}</p>
     </div>
@@ -34,7 +34,14 @@
       title="กราฟเปรียบเทียบ MD รายใบงาน AI / Spike"
       subtitle="ปริมาณ Man-day ที่ใช้ในงานวิจัยและ AI"
     >
-      <div class="chart-frame m-0">
+      @if (points().length === 0) {
+        <div class="flex flex-col items-center justify-center py-12 px-4 text-center gap-2">
+          <span class="e-icons e-chart text-3xl opacity-40"></span>
+          <p class="m-0 font-semibold text-sm">ยังไม่มีใบงาน AI หรือ Spike ในมุมมองนี้</p>
+          <p class="fine m-0 text-xs">เมื่อมีใบงานประเภท AI / Spike กราฟเปรียบเทียบ MD จะแสดงขึ้นอัตโนมัติ</p>
+        </div>
+      } @else {
+        <div class="chart-frame m-0">
         <ejs-chart
           id="ai-md-chart"
           style="display: block; height: 320px; width: 100%"
@@ -59,7 +66,8 @@
             ></e-series>
           </e-series-collection>
         </ejs-chart>
-      </div>
+        </div>
+      }
     </app-section-card>
 
     <app-section-card

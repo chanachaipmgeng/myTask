@@ -56,15 +56,12 @@ npm --prefix server run build
   - **Dual-Axis Overview Combo & Stripline**: เมื่อแสดงผลภาระงานควบคู่กับตัวชี้วัดคุณภาพ ให้ผูกแกนที่ 2 ด้วย `axes: [{ name: 'yAxis2', opposedPosition: true }]` และใส่เส้นประ `stripLines` สำหรับระบุ Target Benchmark เสมอ (เช่น 90% On-time หรือ 80% Pareto Vital Few)
   - **Polar / Radar 6D Minimum Width**: ชาร์ตใยแมงมุม 6 มิติขึ้นไป ต้องมีพื้นที่คอนเทนเนอร์กว้างอย่างน้อย 400–500px (เช่น จัดใน `.card-grid-2` หรือเต็มแถว) ห้ามใส่ในคอลัมน์กว้างต่ำกว่า 300px เพื่อป้องกันป้ายกำกับมิติถูกตัดขอบ (Label Truncation)
   - **Explicit KPI 4-Card Grid**: หลีกเลี่ยง `repeat(auto-fit, minmax(280px, 1fr))` สำหรับแถว 4 KPI เพราะทำให้เกิด 3+1 wrap บนจอขนาดกลาง ให้ใช้ explicit media query: `repeat(4, 1fr)` บนเดสก์ท็อป ($\ge 1024$px), `repeat(2, 1fr)` บนแท็บเล็ต, และ `1fr` บนมือถือ
-- **Light & Dark Theme Architecture (MyHR Plus Design Tokens)**:
-  - สีหลักระดับแบรนด์อิงตามเทมเพลต `myhrplus-backoffice-v5`: สีหลัก **MyHR Royal Blue** (`#2e4fc8` / `rgb(46, 79, 200)`), สีรอง/สว่าง (`#4c68e5`, `#5f7ce3`), และแถบเน้น AI/Spike (`#7465e8`)
-  - ฟอนต์หลักผสมผสานระหว่าง `'IBM Plex Sans Thai'`, `'Montserrat'`, และ `'Sarabun'` ตามมาตรฐาน MyHR v5
-  - `tailwind.config.js`: `darkMode: ['selector', '.e-dark-mode']` — คลาส `dark:` ตาม body ไม่ตาม OS
-  - แถบเมนูด้านข้าง (Sidebar): ใน Light Mode ใช้ Gradient MyHR (`#2243ac` → `#4c68e5`) พร้อมป้าย/ไอคอนขาว (บังคับทับ Syncfusion light CSS), ใน Dark Mode ใช้ Deep Navy Gradient (`#0b1120` → `#162b70`)
-  - `ThemeService` (`src/app/core/theme.service.ts`): สลับธีมแบบ zero-reload · `sfTheme()` · `progressTrack()` / `progressFill()` สำหรับ ProgressBar
-  - จดจำค่าธีมใน `localStorage.getItem('md-theme')` พร้อม inline script ใน `src/index.html` เพื่อป้องกัน FOUC
-  - คอมโพเนนต์กราฟฟิก (`ejs-chart`, `ejs-accumulationchart`, `ejs-progressbar`) ผูกธีมผ่าน `[theme]="theme.sfTheme()"` โดยอัตโนมัติ
-  - ปุ่มสลับธีมบน AppBar (`#appbar-theme-toggle`): แสดงไอคอนและป้ายสถานะ "โหมดสว่าง" / "โหมดมืด" ชัดเจน
+- **Light & Dark Theme Architecture (Corporate MyHR Royal Blue + Clean SaaS)**:
+  - สีหลักบริษัท: **Corporate Royal Blue** (`#2746b3` → `#3154cc` → `#3b60dc`) · ฟอนต์ `'IBM Plex Sans Thai'`, `'Montserrat'`, `'Sarabun'` · `tailwind.config.js` ใช้ `darkMode: ['selector', '.e-dark-mode']`
+  - **Light Mode**: Sidebar ไล่เฉด Royal Blue (`#2746b3` → `#3b60dc`) ไอคอน/ข้อความขาว + Active Pill ขาวตัวอักษร `#2746b3` · พื้นหลังฟ้าอ่อน `#f4f7fe` · AppBar ขาว `#ffffff` · การ์ดขาว `#ffffff` ขอบ `#e6ecf8` มุมมน `16px` เงาฟ้านุ่ม (`rgba(39, 70, 179, 0.07)`) · **Dark Mode**: Sidebar Deep Royal Navy (`#0b1437` → `#1a2d75`), การ์ด `#0f1838`
+  - `app-hero-band` / `app-page-head`: แบนเนอร์หัวหน้าไล่เฉดฟ้าลาเวนเดอร์ (`#eff4ff` → `#dce7ff`) มีแถบ `#2746b3` ด้านซ้าย `4px` + **Unified KPI Strip** การ์ดแถวเดียวคั่นเส้นประแนวตั้ง `1px dashed` พร้อมลูกศรแนวโน้ม `▲`/`▼`
+  - `ThemeService`: สลับธีมแบบ zero-reload + `localStorage.getItem('md-theme')` + inline script ป้องกัน FOUC · ชาร์ตผูก `[theme]="theme.sfTheme()"` · ปุ่ม AppBar (`#appbar-theme-toggle`, กระดิ่ง, สลับบัญชี) ใช้ Inline SVG คมชัด
+  - **Toast & Verified Icons**: วาง `ejs-toast` ที่ **Bottom-Right** (`{ X: 'Right', Y: 'Bottom' }`) เสมอเพื่อไม่บัง AppBar · เมนูใช้ Syncfusion glyph ที่ตรวจสอบแล้ว (`e-grid-view`, `e-timeline-today`, `e-table`, `e-columns`, `e-timeline-month`) แทน glyph ที่หาย (`e-dashboard`, `e-date-time`, `e-table-1`)
 - **Syncfusion UI Template Standard (P12)**:
   - แผงเนื้อหาทั่วไป: **`app-section-card`** เรนเดอร์เป็น Syncfusion **`e-card.section-card`** (`e-card-header` / `e-card-content`) · `variant` = `panel` | `nested` · ห้าม `e-card` / `section-card` ดิบนอก Kanban และ `app-kpi-stat`
   - Shared UI (`src/app/shared/ui/` + barrel `index.ts`):
@@ -89,13 +86,13 @@ npm --prefix server run build
   - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion — ความกว้าง input จำกัดที่ `.field` / `.filter` / `.form-grid` ใน `src/styles/sf/`
   - ห้ามใช้คลาส `.e-chart` โดดๆ เพราะจะไปชนกับไอคอน `e-icons.e-chart` ในเมนู ให้ใช้ `ejs-chart, .e-control.e-chart` แทน
   - ห้ามใส่ `transform: translateY(...)` บน `.e-dashboardlayout .e-panel:hover` หรือ `.e-card:hover` เพื่อไม่ให้รบกวนพิกัดคำนวณภายในของ DashboardLayout และ Kanban
-- **Sidebar & Layout Pinning (Desktop & Mobile)**:
-  - `.app-frame` ต้องกำหนด `align-items: start;`
-  - บน Desktop (`@media (min-width: 801px)`): `#app-nav` ต้องใช้ `position: sticky !important; top: 0 !important; height: 100vh !important; max-height: 100vh !important; align-self: start; overflow-y: auto !important; overscroll-behavior: contain;` ห้ามใช้ `position: relative` หรือ `height: auto` ที่ทำให้ Sidebar เลื่อนหลุดออกนอกจอเวลาหน้ายาว
-  - **Desktop Mini-Sidebar**: รองรับการพับเมนูเหลือ 68px (เฉพาะไอคอน) ผ่านปุ่ม `.nav-toggle` โดย `.app-frame.is-collapsed` ปรับเป็น `grid-template-columns: 68px minmax(0, 1fr)` เพื่อเพิ่มพื้นที่ทำงานให้กับ Gantt และตาราง Grid
-  - `<ejs-sidebar>` บน Desktop ต้องใช้ `[type]="narrow() ? 'Over' : 'Push'"` และ `[showBackdrop]="false"`
-  - บน Mobile (`@media (max-width: 800px)`): เมนู Sidebar ต้องเป็น `position: fixed !important; height: 100vh !important; z-index: 1200 !important;` อยู่เหนือ Backdrop (`z-index: 1050`) เสมอ และห้ามใช้ `backdrop-filter: blur` บน Backdrop ที่อาจทำให้ Sidebar มัว
-- **DashboardLayout Chart Timing**: กราฟที่อยู่ใน DashboardLayout ต้องสั่ง `chart.refresh()` หลังเลย์เอาต์เสร็จผ่าน `(created)="onDashboardCreated()"` และ `ngAfterViewInit` พร้อม `ResizeObserver`
+- **4-Pillar Sidebar (`244px` / `64px`) + Top Sub-Nav Tab Bar**:
+  - Sidebar แสดงเฉพาะ **4 หมวดหลัก (`visibleRail()`)** พร้อมป้ายนับจำนวนหน้าย่อย (ไร้ Scrollbar แนวตั้ง; พิมพ์ค้นหาเมนูจะกางหน้าย่อยที่ตรงคำค้น) + **Workspace Switcher Dropdown** ด้านบนซ้าย (สลับ *งานของฉัน / บริหารทีม / แอดมิน*) · หน้าย่อยแสดงอัตโนมัติใน **Top Sub-Navigation Tab Bar** (`.subnav-bar`) ใต้ AppBar
+  - **Width Single Source of Truth**: ทุกครั้งที่ปรับความกว้าง `#app-nav` / `.e-sidebar` ใน `app.scss` ต้องอัปเดต `@media (min-width: 801px)` ใน `src/styles.scss` ให้ตรงกัน (`244px` / `64px`) เสมอเพื่อป้องกัน Sidebar ล้นทับ `<main>`
+  - Desktop (`>= 801px`): `#app-nav` ใช้ `position: sticky !important; top: 0; height: 100vh; overflow-y: auto; overscroll-behavior: contain;` และ `[type]="narrow() ? 'Over' : 'Push'"` `[showBackdrop]="false"` · Mobile (`<= 800px`): `position: fixed !important; z-index: 1200 !important;` อยู่เหนือ Backdrop (`z-index: 1050`)
+- **CSS Grid over `ejs-dashboardlayout` & Refined Spring Motion**:
+  - ใช้ **CSS Grid (`grid-cols-1 lg:grid-cols-2 gap-4`) + `app-section-card`** แทน `<ejs-dashboardlayout>` บนหน้าแดชบอร์ดกราฟ (`/team`, `/work/summary`) เพื่อป้องกันการ์ดบีบ/กราฟพับ · แท่งกราฟใช้ `cornerRadius: { topLeft: 8, topRight: 8 }` + เส้นกริดประ (`dashArray: '4,4'`) + `opposedPosition: true` · Donut `centerLabel` ที่อิงธีมต้องผูก `effect()` รีเฟรชเมื่อ `theme.isDark()` เปลี่ยน
+  - **Refined Spring Motion & Dual Sliding Pills (Syncfusion-Safe)**: แถบ Active Pill บน Sidebar (`.saas-nav__active-pill`) และ Sub-Nav Bar (`.subnav-tabs__pill`) วัดพิกัดจริงด้วย `getBoundingClientRect()` + `ResizeObserver` ไหลด้วย `cubic-bezier(0.22, 1.28, 0.36, 1)` · Micro-interactions ใช้ `cubic-bezier(0.34, 1.56, 0.64, 1)` บน KPI Strip/inner icon-value/chips/badges/shell buttons + Page Cascade + `@media (prefers-reduced-motion: reduce)` · ห้าม `transform` บน `:hover` ของ `.e-card`/`.e-btn`/`.e-dialog`
 - **Date Type-Safety**: ฟิลด์วันที่ (`closedOn`, `dueDate`, `startDate`) ที่มาจากฐานข้อมูลอาจเป็นได้ทั้ง `string` หรือ `Date` object ให้ normalize ด้วย `raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '')` ก่อนใช้ string methods เสมอ  
 
 ## สิทธิ์ / Board / Gantt / Writeback / KPI snapshot / Integrations

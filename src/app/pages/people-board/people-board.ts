@@ -7,6 +7,7 @@ import {
   ColumnSeriesService,
   LegendService,
   LineSeriesService,
+  StripLineService,
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
@@ -77,6 +78,7 @@ type TrackFilter = Track | 'All';
     LineSeriesService,
     CategoryService,
     LegendService,
+    StripLineService,
     TooltipService,
   ],
   templateUrl: './people-board.html',
@@ -144,8 +146,22 @@ export class PeopleBoard {
     title: 'ดัชนีพัฒนา',
     titleStyle: this.axisFont,
     labelStyle: this.axisFont,
+    majorGridLines: { width: 1, dashArray: '4,4' },
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
+    stripLines: [
+      {
+        start: INDEX_TARGET,
+        size: 2,
+        sizeType: 'Pixel' as const,
+        dashArray: '6,4',
+        color: '#f59e0b',
+        text: `เป้า ${INDEX_TARGET}`,
+        horizontalAlignment: 'End' as const,
+        verticalAlignment: 'Start' as const,
+        textStyle: { color: '#f59e0b', fontWeight: '700', size: '11px', fontFamily: 'Sarabun, Tahoma, sans-serif' },
+      },
+    ],
   };
   protected readonly tooltip = {
     enable: true,

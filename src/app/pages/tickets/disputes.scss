@@ -52,4 +52,5 @@
 :host ::ng-deep .disputes-pane > app-section-card,
 :host ::ng-deep .disputes-pane > app-section-card > .e-card.section-card {
   height: 100%;
+  justify-content: flex-start !important;
 }

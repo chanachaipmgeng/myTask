@@ -118,31 +118,65 @@
           </div>
         }
 
-        <!-- 3. Categorized Navigation List -->
-        <nav class="saas-nav" aria-label="เมนูหลัก">
-          @for (section of groupedNavSections(); track section.id) {
-            <div class="saas-nav__group">
+        <!-- 3. Primary 4-Category Navigation (Search expands matching leaf items) -->
+        <nav #saasNav class="saas-nav" aria-label="เมนูหลัก">
+          <div
+            class="saas-nav__active-pill"
+            aria-hidden="true"
+            [class.is-visible]="activePill().visible"
+            [style.transform]="'translateY(' + activePill().top + 'px)'"
+            [style.height.px]="activePill().height"
+          ></div>
+
+          @if (menuSearch()) {
+            @for (section of groupedNavSections(); track section.id) {
+              <div class="saas-nav__group">
+                @if (narrow() || !collapsed()) {
+                  <div class="saas-nav__label">{{ section.label }}</div>
+                }
+                @for (item of section.items; track item.id) {
+                  <a
+                    class="saas-nav__item"
+                    [class.is-active]="selectedNodes()[0] === item.id"
+                    [routerLink]="item.route"
+                    (click)="clearMenuSearch()"
+                    [title]="item.text"
+                  >
+                    <span class="saas-nav__icon"><span [class]="item.iconCss"></span></span>
+                    @if (narrow() || !collapsed()) {
+                      <span class="saas-nav__text">{{ item.text }}</span>
+                    }
+                  </a>
+                }
+              </div>
+            } @empty {
               @if (narrow() || !collapsed()) {
-                <div class="saas-nav__label">{{ section.label }}</div>
+                <p class="saas-nav__empty">ไม่พบเมนูที่ตรงกับคำค้น</p>
               }
-              @for (item of section.items; track item.id) {
-                <a
-                  class="saas-nav__item"
-                  [class.is-active]="selectedNodes()[0] === item.id"
-                  [routerLink]="item.route"
-                  [title]="item.text"
+            }
+          } @else {
+            <div class="saas-nav__group saas-nav__group--primary">
+              @if (narrow() || !collapsed()) {
+                <div class="saas-nav__label">เมนูหลัก</div>
+              }
+              @for (cat of visibleRail(); track cat.id) {
+                <button
+                  type="button"
+                  class="saas-nav__item saas-nav__item--pillar"
+                  [class.is-active]="activeNavCategory() === cat.id"
+                  (click)="selectRailCategory(cat.id)"
+                  [title]="cat.title"
                 >
-                  <span class="saas-nav__icon"><span [class]="item.iconCss"></span></span>
+                  <span class="saas-nav__icon"><span [class]="cat.icon"></span></span>
                   @if (narrow() || !collapsed()) {
-                    <span class="saas-nav__text">{{ item.text }}</span>
+                    <span class="saas-nav__text">{{ cat.label }}</span>
+                    @if (cat.count > 1) {
+                      <span class="saas-nav__count">{{ cat.count }}</span>
+                    }
                   }
-                </a>
+                </button>
               }
             </div>
-          } @empty {
-            @if (narrow() || !collapsed()) {
-              <p class="saas-nav__empty">ไม่พบเมนูที่ตรงกับคำค้น</p>
-            }
           }
         </nav>
 
@@ -332,6 +366,32 @@
           </button>
         </div>
       </ejs-appbar>
+
+      <!-- Top Sub-Navigation Tab Bar (for active sidebar category) -->
+      @if (activeSubTabs().length > 1) {
+        <div class="subnav-bar">
+          <nav #subnavTabs class="subnav-tabs" [attr.aria-label]="'เมนูย่อยหมวด ' + categoryLabel()">
+            <div
+              class="subnav-tabs__pill"
+              aria-hidden="true"
+              [class.is-visible]="subTabPill().visible"
+              [style.transform]="'translateX(' + subTabPill().left + 'px)'"
+              [style.width.px]="subTabPill().width"
+            ></div>
+            @for (tab of activeSubTabs(); track tab.id) {
+              <a
+                class="subnav-tab"
+                [class.is-active]="selectedNodes()[0] === tab.id"
+                [routerLink]="tab.route"
+                [title]="tab.text"
+              >
+                <span class="subnav-tab__icon"><span [class]="tab.iconCss"></span></span>
+                <span class="subnav-tab__text">{{ tab.text }}</span>
+              </a>
+            }
+          </nav>
+        </div>
+      }
 
       @if (mockMode()) {
         <section class="shell-alerts" aria-label="โหมดจำลอง">

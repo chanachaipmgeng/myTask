@@ -67,6 +67,11 @@ export class App implements AfterViewInit {
   @ViewChild('toast') private toast?: ToastComponent;
   @ViewChild('alertDialog') private alertDialog?: DialogComponent;
   @ViewChild('globalSearchInput') private globalSearchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('saasNav') private saasNav?: ElementRef<HTMLElement>;
+  @ViewChild('subnavTabs') private subnavTabs?: ElementRef<HTMLElement>;
+
+  protected readonly activePill = signal({ top: 0, height: 38, visible: false });
+  protected readonly subTabPill = signal({ left: 0, width: 0, visible: false });
 
   protected readonly globalSearch = signal('');
   protected onGlobalSearch(event: Event): void {
@@ -208,8 +213,27 @@ export class App implements AfterViewInit {
   protected readonly categoryLabel = computed(() => categoryMeta[this.activeNavCategory()].label);
   protected readonly categoryHint = computed(() => categoryMeta[this.activeNavCategory()].hint);
   protected readonly visibleRail = computed(() => {
-    const present = new Set(leavesFor(this.role()).map((leaf) => leafCategory[leaf.id] ?? 'work'));
-    return categoryOrder.filter((id) => present.has(id)).map((id) => ({ id, ...categoryMeta[id] }));
+    const leaves = leavesFor(this.role());
+    const counts = new Map<NavCategory, number>();
+    for (const leaf of leaves) {
+      const cat = leafCategory[leaf.id] ?? 'work';
+      counts.set(cat, (counts.get(cat) ?? 0) + 1);
+    }
+    return categoryOrder
+      .filter((id) => (counts.get(id) ?? 0) > 0)
+      .map((id) => ({ id, count: counts.get(id) ?? 0, ...categoryMeta[id] }));
+  });
+
+  protected readonly activeSubTabs = computed<NavMenuItem[]>(() => {
+    const role = this.role();
+    const category = this.activeNavCategory();
+    return leavesFor(role)
+      .filter((leaf) => (leafCategory[leaf.id] ?? 'work') === category)
+      .map((leaf) => ({
+        ...leaf,
+        category,
+        categoryLabel: categoryMeta[category].label,
+      }));
   });
 
   protected readonly visibleNavItems = computed<NavMenuItem[]>(() => {
@@ -398,6 +422,11 @@ export class App implements AfterViewInit {
     });
     effect(() => {
       this.selectedNodes.set([matchNavId(this.url(), this.role())]);
+      // Track layout dependencies so the sliding white pill glides accurately
+      this.role();
+      this.collapsed();
+      this.menuSearch();
+      this.scheduleActivePillSync();
     });
     window.addEventListener('keydown', (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -503,6 +532,49 @@ export class App implements AfterViewInit {
     }
   }
 
+  private scheduleActivePillSync(): void {
+    if (typeof requestAnimationFrame === 'undefined') return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.syncActivePill();
+        this.syncSubTabPill();
+      });
+    });
+  }
+
+  private syncActivePill(): void {
+    const nav = this.saasNav?.nativeElement;
+    if (!nav) return;
+    const active = nav.querySelector<HTMLElement>('.saas-nav__item.is-active');
+    if (!active) {
+      this.activePill.update((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+      return;
+    }
+    const navRect = nav.getBoundingClientRect();
+    const itemRect = active.getBoundingClientRect();
+    const top = Math.round(itemRect.top - navRect.top + nav.scrollTop);
+    const height = Math.round(itemRect.height);
+    this.activePill.set({ top, height, visible: true });
+  }
+
+  private syncSubTabPill(): void {
+    const bar = this.subnavTabs?.nativeElement;
+    if (!bar) {
+      this.subTabPill.update((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+      return;
+    }
+    const active = bar.querySelector<HTMLElement>('.subnav-tab.is-active');
+    if (!active) {
+      this.subTabPill.update((prev) => (prev.visible ? { ...prev, visible: false } : prev));
+      return;
+    }
+    const barRect = bar.getBoundingClientRect();
+    const tabRect = active.getBoundingClientRect();
+    const left = Math.round(tabRect.left - barRect.left + bar.scrollLeft);
+    const width = Math.round(tabRect.width);
+    this.subTabPill.set({ left, width, visible: true });
+  }
+
   ngAfterViewInit(): void {
     this.notice.bind((payload) => {
       const type = payload.type ?? 'info';
@@ -512,6 +584,12 @@ export class App implements AfterViewInit {
         cssClass: shellNoticeCssClass(type),
       });
     });
+    this.scheduleActivePillSync();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => this.scheduleActivePillSync());
+      if (this.saasNav?.nativeElement) ro.observe(this.saasNav.nativeElement);
+      if (this.subnavTabs?.nativeElement) ro.observe(this.subnavTabs.nativeElement);
+    }
   }
 }
 
@@ -527,36 +605,36 @@ const categoryMeta: Record<NavCategory, { label: string; hint: string; rail: str
     label: 'ห้องบัญชาการ',
     hint: 'แดชบอร์ดและภาพรวม',
     rail: 'Cockpit',
-    icon: 'e-icons e-dashboard',
-    title: 'ห้องบัญชาการ Bento (Cockpit)',
+    icon: 'e-icons e-grid-view',
+    title: 'ห้องบัญชาการและภาพรวม',
   },
   work: {
-    label: 'งาน',
+    label: 'งาน & แผน',
     hint: 'คิว ฮับ ปฏิทิน และส่งต่อ',
     rail: 'งาน',
     icon: 'e-icons e-timeline-work-week',
     title: 'ฮับบริหารงานและคิวงาน',
   },
   quality: {
-    label: 'คุณภาพ',
+    label: 'คุณภาพ & คะแนน',
     hint: 'ตรวจรับ คะแนน และเวลา',
     rail: 'คุณภาพ',
     icon: 'e-icons e-check-box',
-    title: 'ตรวจสอบคุณภาพและ DoD',
+    title: 'ตรวจสอบคุณภาพ คะแนน และเวลา',
   },
   analytics: {
     label: 'AI วิเคราะห์',
     hint: 'สถิติ โปรไฟล์ และ MR',
     rail: 'AI วิเคราะห์',
-    icon: 'e-icons e-ai-chat',
+    icon: 'e-icons e-chart',
     title: 'วิเคราะห์สถิติและ AI Coach',
   },
   admin: {
-    label: 'จัดการ',
+    label: 'ตั้งค่าระบบ',
     hint: 'สิทธิ์ เกณฑ์ และการเชื่อมต่อ',
     rail: 'จัดการ',
     icon: 'e-icons e-settings',
-    title: 'ตั้งค่าระบบและสิทธิ์',
+    title: 'ตั้งค่าระบบและธรรมาภิบาล',
   },
 };
 
@@ -571,7 +649,7 @@ const categoryLanding: Partial<Record<NavCategory, readonly string[]>> = {
 };
 
 const leafCategory: Record<string, NavCategory> = {
-  me: 'work',
+  me: 'cockpit',
   'my-cockpit': 'cockpit',
   'my-work': 'work',
   'my-board': 'work',
@@ -693,19 +771,18 @@ const allNavGroups: NavGroup[] = [
     expanded: true,
     roles: ['admin'],
     children: [
-      { id: 'admin-home', text: 'หลังบ้าน & สิทธิ์ผู้ใช้', iconCss: 'e-icons e-lock', route: '/admin', exact: true },
-      { id: 'admin-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-grid-view', route: '/cockpit' },
-      { id: 'integrations', text: 'เชื่อมต่อระบบ (Integrations)', iconCss: 'e-icons e-settings', route: '/integrations' },
+      { id: 'admin-home', text: 'หลังบ้าน & สิทธิ์', iconCss: 'e-icons e-lock', route: '/admin', exact: true },
+      { id: 'admin-cockpit', text: 'ห้องบัญชาการ Bento', iconCss: 'e-icons e-grid-view', route: '/cockpit' },
+      { id: 'integrations', text: 'เชื่อมต่อระบบ', iconCss: 'e-icons e-settings', route: '/integrations' },
       {
         id: 'snapshot-check',
-        text: 'ตรวจสอบก่อนแช่แข็งคะแนน',
+        text: 'ตรวจก่อนแช่แข็ง',
         iconCss: 'e-icons e-lock',
         route: '/admin/snapshot-check',
       },
-      { id: 'rubrics', text: 'ทะเบียนเกณฑ์ (Rubrics)', iconCss: 'e-icons e-settings', route: '/admin/rubrics' },
-      { id: 'teams', text: 'ตั้งค่าแจ้งเตือน Teams', iconCss: 'e-icons e-comment-show', route: '/teams' },
-      { id: 'mockup', text: 'โหมดจำลองระบบ', iconCss: 'e-icons e-play', route: '/mockup' },
-      { id: 'login', text: 'สลับบัญชีผู้ใช้', iconCss: 'e-icons e-user', route: '/login' },
+      { id: 'rubrics', text: 'ทะเบียนเกณฑ์', iconCss: 'e-icons e-settings', route: '/admin/rubrics' },
+      { id: 'teams', text: 'แจ้งเตือน Teams', iconCss: 'e-icons e-comment-show', route: '/teams' },
+      { id: 'mockup', text: 'โหมดจำลอง', iconCss: 'e-icons e-play', route: '/mockup' },
     ],
   },
   {

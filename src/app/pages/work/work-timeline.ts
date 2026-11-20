@@ -105,7 +105,7 @@ export class WorkTimeline {
     bottomTier: { unit: 'Day' as const, count: 1 },
   };
   protected readonly workWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  protected readonly splitterSettings = { position: '680px' };
+  protected readonly splitterSettings = { position: '42%' };
 
   protected readonly tasks = computed(() =>
     workGanttTasks(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
