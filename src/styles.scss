@@ -100,6 +100,13 @@ body {
   overflow-x: hidden;
 }
 
+.auth-viewport {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  background: #0b1120;
+}
+
 body.e-light-mode {
   color: var(--ink);
   background:
@@ -750,6 +757,32 @@ app-section-card:hover > .e-card.section-card,
     justify-content: center;
     width: 100%;
   }
+
+  .e-dialog {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 32px) !important;
+    margin: 8px auto !important;
+  }
+
+  .e-dialog .e-dlg-content {
+    padding: 12px 14px !important;
+    overflow-y: auto !important;
+  }
+
+  .e-dialog .e-footer-content {
+    padding: 10px 14px 12px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    justify-content: flex-end !important;
+  }
+
+  // Touch ergonomics for action buttons on mobile
+  .e-btn.e-small {
+    min-height: 36px;
+    padding: 5px 12px !important;
+  }
 }
 
 /* ==========================================================================
@@ -837,7 +870,7 @@ body.e-light-mode {
     color: #142b50 !important;
   }
 
-  /* Shell Light Mode — MyHR Royal Blue sidebar (template) */
+  /* Shell Light Mode — MyHR Royal Blue sidebar */
   #app-nav,
   #app-nav.e-sidebar,
   #app-nav.e-control,
@@ -846,33 +879,6 @@ body.e-light-mode {
     background: linear-gradient(180deg, #2243ac 0%, #4c68e5 100%) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
     color: #ffffff !important;
-  }
-
-  #app-nav .e-sidebar-content,
-  #app-nav .e-dock,
-  #app-nav .e-treeview,
-  #app-nav .e-ul,
-  #app-nav .e-list-parent,
-  #app-nav .e-list-item,
-  #app-nav .e-text-content,
-  .side-nav-tree,
-  .side-nav-tree.e-treeview,
-  .side-nav-tree .e-ul,
-  .side-nav-tree .e-list-parent,
-  .side-nav-tree .e-list-item,
-  .side-nav-tree .e-text-content {
-    background: transparent !important;
-    background-color: transparent !important;
-    border-color: transparent !important;
-    color: #ffffff !important;
-  }
-
-  /* fullrow โปร่งเฉพาะรายการที่ไม่ active — อย่าทับไฮไลต์ด้วย #id */
-  #app-nav .e-list-item:not(.e-active) > .e-fullrow,
-  .side-nav-tree .e-list-item:not(.e-active) > .e-fullrow {
-    background: transparent !important;
-    background-color: transparent !important;
-    border-color: transparent !important;
   }
 
   .brand {
@@ -901,48 +907,6 @@ body.e-light-mode {
 
   .brand-sub {
     color: rgba(255, 255, 255, 0.85) !important;
-  }
-
-  /* specificity สูงกว่า encapsulation ของ app.scss (_ngcontent + !important) */
-  #app-nav .side-nav-tree .e-list-item.e-level-1 > .e-text-content .e-list-text,
-  #app-nav .side-nav-tree .e-list-item.e-level-1 .e-list-text {
-    color: rgba(255, 255, 255, 0.72) !important;
-  }
-
-  #app-nav .side-nav-tree .e-list-item.e-level-2 > .e-text-content .e-list-text,
-  #app-nav .side-nav-tree .e-list-item.e-level-2 .e-list-text {
-    color: #ffffff !important;
-  }
-
-  #app-nav .side-nav-tree .e-list-item.e-level-2:hover > .e-fullrow {
-    background: rgba(255, 255, 255, 0.16) !important;
-  }
-
-  #app-nav .side-nav-tree .e-list-item.e-level-2:hover > .e-text-content .e-list-text {
-    color: #ffffff !important;
-  }
-
-  #app-nav .side-nav-tree .e-list-item.e-level-2.e-active > .e-fullrow,
-  #app-nav .side-nav-tree .e-list-item.e-level-2.e-hover > .e-fullrow {
-    background: rgba(255, 255, 255, 0.25) !important;
-    border: 1px solid rgba(255, 255, 255, 0.45) !important;
-    box-shadow: inset 3px 0 0 #ffffff, 0 4px 14px rgba(0, 0, 0, 0.15) !important;
-  }
-
-  #app-nav .side-nav-tree .e-list-item.e-level-2.e-active > .e-text-content .e-list-text {
-    color: #ffffff !important;
-    font-weight: 700;
-  }
-
-  #app-nav .side-nav-tree .e-list-item.e-level-2 .e-list-icon,
-  #app-nav .side-nav-tree .e-list-item .e-icons,
-  #app-nav .side-nav-tree .e-list-item .e-icon-collapsible,
-  #app-nav .side-nav-tree .e-list-item .e-icon-expandable {
-    color: #dce4fb !important;
-  }
-
-  #app-nav .side-nav-tree .e-list-item.e-level-2.e-active .e-list-icon {
-    color: #ffffff !important;
   }
 
   .shell-appbar {

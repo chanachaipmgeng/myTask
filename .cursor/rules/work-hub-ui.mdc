@@ -25,7 +25,7 @@ alwaysApply: false
   - `/tickets`: badge สาย/สัปดาห์/blocker/ปิด/DoD/Spike/นอกแผน/แจ้งเตือน — คงช่องค้นหาภายนอก ไม่ซ้ำ Search ใน toolbar
   - tone map ร่วมอยู่ที่ `src/app/shared/ui/badge.ts` — อย่า hardcode สี badge ในหน้า
   - ถ้าเพิ่มคอลัมน์บน grid ที่มี `[enablePersistence]="true"` ให้เปลี่ยน `id` ของ grid หรือล้าง key `grid…` ใน localStorage
-- การตรึงคอลัมน์ (`Frozen Columns`): พื้นหลังทึบ (`#0f172a` Dark / `#ffffff` Light) อยู่ใน `src/styles/sf/_components.scss` — อย่าคัดลอก override กลับไปกระจายใน `styles.scss` หรือ component SCSS
+- การตรึงคอลัมน์แบบ Adaptive: ใช้ `ViewportService` ผูกค่า `[frozenColumns]="viewport.frozenColumns()"` หรือ `[isFrozen]="!viewport.isMobile()"` เสมอ — Desktop ตรึง 2 คอลัมน์, Tablet ตรึง 1 คอลัมน์, และ Mobile ปลดตรึงอัตโนมัติ โดยพื้นหลังทึบ (`#0f172a` Dark / `#ffffff` Light) อยู่ใน `src/styles/sf/_components.scss` — อย่าคัดลอก override กลับไปกระจายใน `styles.scss` หรือ component SCSS
 - การจัด Layout กราฟและแดชบอร์ด: ป้องกันปัญหา SVG Sizing โดยผูก `ResizeObserver` และเรียก `chart.refresh()` เสมอเมื่อ Layout พร้อม (`(created)` / `ngAfterViewInit`)
 - Gantt Timeline (`/work/timeline`): กำหนดตำแหน่ง `splitterSettings` เริ่มต้นให้กว้างพอ (เช่น 620px) เพื่อให้คอลัมน์รหัส, งาน, เริ่ม, และ ครบกำหนด แสดงผลครบถ้วนไม่ถูกตัด · อย่าใส่ `overflow:hidden` บน `.e-gantt` โดยไม่จำเป็น (override ขอบเบาอยู่ที่ `src/styles/sf/`) · Resource View ต้อง clone/กรอง `ResourceInfo` ให้มี `resourceId` และซ่อน `TaskID` primary ในโหมดนั้น
 - `/schedule`: Timeline เต็มความสูงหน้าจอ (flex + `ResizeObserver`) · แผงรายวันเป็นคอลัมน์ขวาในหน้า — ห้ามใช้ `ejs-sidebar` Over drawer ทับ Schedule
@@ -35,7 +35,7 @@ alwaysApply: false
 - มาตรฐานธีม (`Tailwind 3 Dynamic Theming`): ทุกกราฟและ ProgressBar (`ejs-chart`, `ejs-accumulationchart`, `ejs-progressbar`) ต้องผูก `[theme]="theme.sfTheme()"` เพื่อรองรับการสลับระหว่าง `'Tailwind3Dark'` และ `'Tailwind3'` ผ่าน `ThemeService` และจดจำสถานะใน `localStorage` โดยไม่มี FOUC
 - แต่ง Syncfusion เพิ่ม: ใส่หมวดใหม่ใน `src/styles/sf/_components.scss` หลังธีมมาตรฐานเท่านั้น — ห้าม `transform` บน `.e-btn` / `.e-dialog` / `.e-panel:hover`
 - **Modern Bento Grid Cockpit (P16)**:
-  - **100vh Viewport Fit & AppBar Lock**: บนจอเดสก์ท็อป ($\ge 1200$px) แดชบอร์ด Cockpit ต้องใช้ความสูง `calc(100vh - 78px)` พร้อม `overflow: hidden` และ `.shell-appbar` / `.appbar-actions` ต้องมี `flex-wrap: nowrap !important;` ล็อกความสูง 56px เพื่อให้พอดีหน้าจอ 100% โดยไม่มี Vertical Scrollbar
+  - **100vh Viewport Fit & Fluid Scaling**: ล็อกความสูง `calc(100vh - 78px)` เฉพาะจอเดสก์ท็อปขนาดใหญ่ `@media (min-width: 1200px) and (min-height: 850px)` หากความสูง $< 850$px (Scaling 125%/150%) ให้ยืดหยุ่นเป็น `min-height` พร้อม `overflow-y: auto` และผูก `ResizeObserver` ยิง resize event เมื่อพับ/ขยาย Sidebar โดยที่ `.shell-appbar` / `.appbar-actions` ต้องมี `flex-wrap: nowrap !important;` ล็อกความสูง 56px เพื่อไม่ให้ดันเกิด Vertical Scrollbar บนจอเดสก์ท็อปขนาดใหญ่
   - **3-Tier Grid Hierarchy**: Tier 1 = แถบ MyHR Blue แถวเดียว (ชื่อหน้า + ดัชนี 4 ค่าแบบตัวเลขใหญ่ ไม่ใช้การ์ดแยก), Tier 2 = กราฟหลัก Dual-Axis Combo Chart หรือสัดส่วน 60%:40% (`1.5fr 1fr`), Tier 3 = 3 การ์ดปฏิบัติการ (`repeat(3, 1fr)` สำหรับ DoD Donut, Stage Aging Stacked Bar, และ AI Risk Radar)
   - **Interactive Features**: รองรับ TV Presentation Mode (`isTvMode` ปิด AppBar/Sidebar แสดงผล 100vw/100vh) และ Maximize Dialog (`[ ⛶ ]` ขยายกราฟพร้อมตาราง Breakdown Data Table)
 - **Advanced Syncfusion Charts & Visual Standards**:

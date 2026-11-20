@@ -29,6 +29,7 @@ import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { buildPeopleRoster } from '../../core/people-roster';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
+import { ViewportService } from '../../core/viewport.service';
 import { Track } from '../../core/models';
 import { INDEX_TARGET } from '../../core/scoring';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
@@ -84,6 +85,7 @@ export class PeopleBoard {
   private readonly scorecard = inject(ScorecardService);
   private readonly router = inject(Router);
   protected readonly theme = inject(ThemeService);
+  protected readonly viewport = inject(ViewportService);
 
   @ViewChild('peopleGrid') private peopleGrid?: GridComponent;
 

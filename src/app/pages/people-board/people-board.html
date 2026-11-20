@@ -85,7 +85,7 @@
       height="auto"
     >
       <e-columns>
-        <e-column field="personLabel" headerText="พนักงาน" width="190" [isFrozen]="true">
+        <e-column field="personLabel" headerText="พนักงาน" width="190" [isFrozen]="!viewport.isMobile()">
           <ng-template #template let-data>
             <a class="person-link" [routerLink]="['/people', data.id]">{{ data.personLabel }}</a>
           </ng-template>

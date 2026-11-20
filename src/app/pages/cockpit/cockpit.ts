@@ -3,6 +3,8 @@ import {
   Component,
   ElementRef,
   OnInit,
+  AfterViewInit,
+  DestroyRef,
   ViewChild,
   computed,
   inject,
@@ -95,8 +97,9 @@ interface QualityPiePoint {
   templateUrl: './cockpit.html',
   styleUrl: './cockpit.scss',
 })
-export class CockpitPage implements OnInit {
+export class CockpitPage implements OnInit, AfterViewInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
 
@@ -482,6 +485,23 @@ export class CockpitPage implements OnInit {
             this.isTvMode.set(false);
           }
         }
+      });
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (typeof window !== 'undefined' && typeof ResizeObserver !== 'undefined' && this.cockpitRoot?.nativeElement) {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      const ro = new ResizeObserver(() => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+        }, 150);
+      });
+      ro.observe(this.cockpitRoot.nativeElement);
+      this.destroyRef.onDestroy(() => {
+        if (timer) clearTimeout(timer);
+        ro.disconnect();
       });
     }
   }

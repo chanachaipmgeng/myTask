@@ -33,8 +33,8 @@ npm --prefix server run build
 - Syncfusion: ใช้ `[value]="x()"` + `(change)` ไม่ใช้ `[(value)]` กับ class field  
 - AppBar (`app.html`): แสดงชิปสถานะระบบ + ชิปผู้ใช้/สิทธิ์ + ปุ่มแจ้งเตือนแบบไอคอน (`e-warning`) พร้อม `e-badge-notification e-badge-overlap` เปิด `ejs-dialog` (`#alertDialog`) · Toast ผ่าน `ShellNotice` (typed)  
 
-- ตารางหลัก (`/tickets`, `/people`, `/work/list`): ใช้ `FreezeService` (`frozenColumns="2"` บน `/tickets`), `ColumnChooserService`, `ExcelExportService`, `ResizeService`, `AggregateService`  
-- **Syncfusion Frozen Columns**: คอลัมน์ที่ถูกตรึง (`.e-leftfreeze`, `.e-fixedfreeze`, `.e-frozenheader`) ต้องมีพื้นหลังทึบเสมอ (`#0f172a` ใน Dark Theme, `#ffffff` ใน Light Theme) ป้องกันข้อความของคอลัมน์ที่เลื่อนทะลุมาซ้อนทับ
+- ตารางหลัก (`/tickets`, `/people`, `/work/list`): ใช้ `FreezeService` (ผูก `ViewportService` แทนการ hardcode), `ColumnChooserService`, `ExcelExportService`, `ResizeService`, `AggregateService`  
+- **Adaptive Mobile Frozen Columns**: บนจอมือถือและแท็บเล็ต ห้าม hardcode `frozenColumns="2"` หรือ `[isFrozen]="true"` โดดๆ ให้ใช้ `ViewportService` ผูกค่าแบบ reactive: บน Desktop ($\ge 1025$px) ตรึง 2 คอลัมน์, บน Tablet (641–1024px) ตรึง 1 คอลัมน์, และบน Mobile ($\le 640$px) ปลดตรึงอัตโนมัติ (`frozenColumns = 0` / `isFrozen = false`) เพื่อป้องกันปัญหาคอลัมน์ตรึงกินพื้นที่จนหน้าตารางบีบอัดและเลื่อนไม่ได้ และคอลัมน์ที่ถูกตรึง (`.e-leftfreeze`, `.e-fixedfreeze`, `.e-frozenheader`) ต้องมีพื้นหลังทึบเสมอ (`#0f172a` ใน Dark Theme, `#ffffff` ใน Light Theme)
 - **Enterprise Multi-Team UI (หน้าจอ 21–25)**:
   - `/work/handoff`: กราฟ `ejs-chart` แนวนอน `StackingBar` แสดง Stage Aging แยกตามทีม + Cross-Team Blocker Matrix + ตารางตรึง 2 คอลัมน์แรก + ปุ่ม Ping Teams
   - `/quality/audit`: `ejs-tab` (DoD Gate Verifier ตรวจ MR/Unit Test/Staging Verified พร้อมปุ่ม Reject to Dev vs วิเคราะห์ Reopen Root-Causes)
@@ -42,10 +42,15 @@ npm --prefix server run build
   - `/tickets/disputes`: `ejs-splitter` รายการคำขอด้านซ้าย และแผงคำนวณคะแนนจำลอง (Projected Score Diff) ด้านขวา พร้อม `ejs-dialog` ยื่นอุทธรณ์
   - `/admin/snapshot-check`: `ejs-progressbar` แสดง Readiness % + เช็คลิสต์ 4 ด่าน + ตาราง Snapshot Preview Diff เปรียบเทียบดัชนีรายบุคคลก่อน Freeze
 - **Modern Bento Grid Cockpit (P16 - `/cockpit` & `/me/cockpit`)**:
-  - **100vh Viewport Lock & AppBar No-Wrap**: บนจอเดสก์ท็อป ($\ge 1200$px) คอนเทนเนอร์ `.bento-cockpit` ใช้ `height: calc(100vh - 78px)` โดยที่ `.shell-appbar` และ `.appbar-actions` ต้องกำหนด `flex-wrap: nowrap !important;` ล็อกความสูงคงที่ 56px เสมอ เพื่อป้องกันไม่ให้ AppBar ขยายเป็น 2 แถว ซึ่งจะดันจนเกิด Vertical Scrollbar
+  - **100vh Viewport Lock & Fluid Scaling**: ล็อกความสูง `calc(100vh - 78px)` เฉพาะจอเดสก์ท็อปขนาดใหญ่ `@media (min-width: 1200px) and (min-height: 850px)` หากความสูงหน้าจอ $< 850$px (เช่น แล็ปท็อปที่เปิด Windows Scaling 125%/150%) ให้ยืดหยุ่นเป็น `min-height` พร้อม `overflow-y: auto` ป้องกันกราฟ Tier 3 โดนตัดขอบล่าง โดยที่ `.shell-appbar` ต้องกำหนด `flex-wrap: nowrap !important;` ล็อกความสูงคงที่ 56px เสมอ
+  - **ResizeObserver Chart Protection**: ต้องผูก `ResizeObserver` ใน `ngAfterViewInit` พร้อม debounce (150ms) เพื่อยิง event resize ให้ชาร์ต Syncfusion คำนวณขนาดใหม่ทุกครั้งที่พับ/ขยาย Sidebar
   - **3-Tier Grid Layout**: Tier 1 (แถบ MyHR Blue แถวเดียว: ชื่อหน้า + ดัชนี 4 ค่าแบบตัวเลขใหญ่), Tier 2 (Dual-Axis Overview Combo Chart หรือสัดส่วน 60%:40% Workload Stacking Area vs OLS Trendline), Tier 3 (3 คอลัมน์ DoD Donut, Stage Aging Stacked Bar, AI Risk Radar)
   - **TV Presentation Mode**: สลับฉายขึ้นจอทีวี/ห้องประชุมแบบ 100vw/100vh ซ่อน AppBar/Sidebar
   - **Maximize Deep-Dive Dialog**: ปุ่ม `[ ⛶ ]` ขยายกราฟขึ้นโมดอล `ejs-dialog` พร้อมตารางแจกแจงตัวเลข (Breakdown Data Table)
+- **SCSS Component Budget & Token Architecture**:
+  - หลีกเลี่ยงการเขียนสไตล์ซ้ำซ้อนใน SCSS ของคอมโพเนนต์หลักที่เสี่ยงต่อการเกินงบประมาณ Angular CSS Budget (`anyComponentStyle` 28kB/36kB ใน `angular.json`)
+  - จัดการธีม Light/Dark Mode ด้วย CSS Custom Properties (Tokens) บน Root Container แล้ว override เฉพาะค่าตัวแปรใน Light Mode ซึ่งจะช่วยลดขนาดไฟล์ได้มากกว่า 30–40%
+  - หน้าต่าง `ejs-dialog` บนมือถือ ($\le 640$px) ต้องปรับขนาดเป็น `width: calc(100vw - 16px) !important;` และปุ่มขนาดเล็กบนมือถือต้องมีขนาดสัมผัสขั้นต่ำ 36px (Touch Ergonomics)
 - **Advanced Syncfusion Charts & Scoped Styling Standards**:
   - **Angular Light Mode Scoped Styling**: ใน Angular Scoped SCSS ห้ามเขียน `body.e-light-mode .card` ตรงๆ เพราะ `body` อยู่นอก scope ให้ใช้ `:host-context(.e-light-mode)` และ `:host-context(body:not(.e-dark-mode))` ร่วมกับ CSS Custom Properties เพื่อให้สลับธีมแบบ zero-reload ได้อย่างสมบูรณ์
   - **Dual-Axis Overview Combo & Stripline**: เมื่อแสดงผลภาระงานควบคู่กับตัวชี้วัดคุณภาพ ให้ผูกแกนที่ 2 ด้วย `axes: [{ name: 'yAxis2', opposedPosition: true }]` และใส่เส้นประ `stripLines` สำหรับระบุ Target Benchmark เสมอ (เช่น 90% On-time หรือ 80% Pareto Vital Few)

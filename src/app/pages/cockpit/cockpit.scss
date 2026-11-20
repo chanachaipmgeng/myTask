@@ -25,10 +25,16 @@
   width: 100%;
   box-sizing: border-box;
 
-  @media (min-width: 1200px) {
+  @media (min-width: 1200px) and (min-height: 850px) {
     height: calc(100vh - 78px);
     max-height: calc(100vh - 78px);
     overflow: hidden;
+  }
+
+  @media (max-height: 849px) {
+    min-height: 100%;
+    overflow-y: auto;
+    padding-bottom: 24px;
   }
 }
 

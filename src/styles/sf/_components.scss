@@ -48,6 +48,14 @@
 // -----------------------------------------------------------------------------
 .e-grid {
   border: 1px solid var(--line) !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.e-grid .e-gridcontent {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* พื้นหลังทึบของคอลัมน์ตรึง — กันข้อความคอลัมน์เลื่อนทะลุ */
