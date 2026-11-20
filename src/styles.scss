@@ -109,12 +109,7 @@ body {
 
 body.e-light-mode {
   color: var(--ink);
-  background:
-    radial-gradient(circle at 12% 8%, rgba(46, 79, 200, 0.06), transparent 34rem),
-    radial-gradient(circle at 88% 14%, rgba(116, 101, 232, 0.04), transparent 32rem),
-    radial-gradient(circle at 50% 92%, rgba(16, 185, 129, 0.03), transparent 38rem),
-    var(--paper);
-  background-attachment: fixed;
+  background: #f8f9fb;
 }
 
 /* ==========================================================================
@@ -313,60 +308,36 @@ p {
   box-sizing: border-box;
 }
 
-/* Structured Section Cards — Syncfusion e-card + .section-card (scoped) */
+/* Structured Section Cards — Modern Minimal SaaS (Tasklyn-Inspired) */
 .section-card,
 .e-card.section-card {
   display: flex;
   flex-direction: column;
   gap: 0;
   padding: 0 !important;
-  border-radius: 18px !important;
-  border: 1px solid var(--line) !important;
-  background: var(--card) !important;
-  backdrop-filter: blur(12px);
-  box-shadow:
-    0 10px 26px -10px rgba(2, 6, 23, 0.55),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.06) !important;
-  animation: cardReveal 0.4s var(--ease-out-expo) both;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+  animation: cardReveal 0.3s var(--ease-out-expo) both;
   min-width: 0;
   overflow: hidden;
   position: relative;
   transition:
-    border-color 0.28s ease,
-    box-shadow 0.28s ease,
-    background-color 0.28s ease;
-}
-
-.e-card.section-card::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  border-radius: 18px 0 0 18px;
-  background: linear-gradient(180deg, #4c68e5, #2e4fc8);
-  opacity: 0.9;
-  z-index: 1;
-  pointer-events: none;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 app-section-card:hover > .e-card.section-card,
 .e-card.section-card:hover {
-  border-color: var(--line-bright) !important;
-  box-shadow:
-    0 14px 30px -12px rgba(46, 79, 200, 0.38),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+  box-shadow: 0 4px 14px -4px rgba(2, 6, 23, 0.45) !important;
 }
 
 .e-card.section-card[data-variant='nested'] {
-  border-radius: 14px !important;
-  box-shadow:
-    0 4px 14px -8px rgba(2, 6, 23, 0.4),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
-}
-
-.e-card.section-card[data-variant='nested']::before {
-  width: 2px;
-  opacity: 0.7;
+  border-radius: 12px !important;
+  box-shadow: none !important;
 }
 
 .section-card-head,
@@ -651,7 +622,7 @@ app-section-card:hover > .e-card.section-card,
   .e-sidebar.e-left {
     position: sticky !important;
     top: 0 !important;
-    width: 300px !important;
+    width: 244px !important;
     height: 100vh !important;
     max-height: 100vh !important;
     align-self: start;
@@ -669,7 +640,7 @@ app-section-card:hover > .e-card.section-card,
   .app-frame.is-collapsed #app-nav .e-sidebar,
   .app-frame.is-collapsed #app-nav,
   .app-frame.is-collapsed .e-sidebar.e-left {
-    width: 68px !important;
+    width: 64px !important;
   }
 
   .nav-backdrop {
@@ -684,7 +655,7 @@ app-section-card:hover > .e-card.section-card,
   .e-sidebar.e-left {
     position: fixed !important;
     z-index: 1200 !important;
-    width: 300px !important;
+    width: 260px !important;
     height: 100vh !important;
     max-height: 100vh !important;
     overflow-y: auto !important;
@@ -844,79 +815,46 @@ body.e-light-mode {
   .e-card.section-card,
   .e-dashboardlayout .e-panel {
     background: #ffffff !important;
-    border: 1px solid #e5ecf5 !important;
-    box-shadow:
-      0 1px 3px rgba(15, 23, 42, 0.04),
-      0 8px 24px -6px rgba(46, 79, 200, 0.08),
-      inset 0 1px 0 0 #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
   }
 
   .e-dashboardlayout .e-panel:hover,
   .chart-frame:hover,
   app-section-card:hover > .e-card.section-card,
   .e-card.section-card:hover {
-    border-color: rgba(46, 79, 200, 0.35) !important;
-    box-shadow:
-      0 12px 28px -6px rgba(46, 79, 200, 0.16),
-      inset 0 1px 0 0 #ffffff !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.07) !important;
   }
 
   .section-card-head,
   .e-card.section-card > .e-card-header.section-card-head {
-    border-bottom-color: #e5ecf5 !important;
+    border-bottom-color: #f1f5f9 !important;
   }
 
   .e-card.section-card .e-card-header-title {
-    color: #142b50 !important;
+    color: #0f172a !important;
   }
 
-  /* Shell Light Mode — MyHR Royal Blue sidebar */
+  /* Shell Light Mode — Clean Minimal SaaS Sidebar (#f8f9fb) */
   #app-nav,
   #app-nav.e-sidebar,
   #app-nav.e-control,
   .e-sidebar.e-left,
   .e-sidebar.e-left.e-control {
-    background: linear-gradient(180deg, #2243ac 0%, #4c68e5 100%) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
-    color: #ffffff !important;
-  }
-
-  .brand {
-    background: rgba(255, 255, 255, 0.14) !important;
-    border: 1px solid rgba(255, 255, 255, 0.28) !important;
-
-    &:hover {
-      border-color: rgba(255, 255, 255, 0.5) !important;
-      background: rgba(255, 255, 255, 0.2) !important;
-    }
-  }
-
-  .brand-mark {
-    background: #ffffff !important;
-    color: #2243ac !important;
-    box-shadow: 0 8px 20px -4px rgba(11, 21, 56, 0.4) !important;
-  }
-
-  .brand-title {
-    color: #ffffff !important;
-  }
-
-  .eyebrow {
-    color: #dce4fb !important;
-  }
-
-  .brand-sub {
-    color: rgba(255, 255, 255, 0.85) !important;
+    background: #f8f9fb !important;
+    border-right: 1px solid #e5e7eb !important;
+    color: #0f172a !important;
   }
 
   .shell-appbar {
-    background: rgba(255, 255, 255, 0.96) !important;
-    border-bottom: 1px solid #e5ecf5 !important;
-    box-shadow: 0 2px 12px -4px rgba(46, 79, 200, 0.08) !important;
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
   }
 
   .appbar-title {
-    color: #142b50 !important;
+    color: #0f172a !important;
   }
 
   .appbar-note {

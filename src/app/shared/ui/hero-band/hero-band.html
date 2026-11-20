@@ -5,34 +5,51 @@
   [attr.aria-label]="ariaLabel"
 >
   @if (title || subtitle || badge || crumb || note) {
-    <div class="hero-band__identity">
-      @if (badge) {
-        <div class="hero-band__badge" [class.is-live]="live">
-          @if (live) {
-            <span class="hero-band__dot"></span>
+    <div class="hero-band__top">
+      <div class="hero-band__identity">
+        <div class="hero-band__title-row">
+          @if (title) {
+            <h2 class="hero-band__title">{{ title }}</h2>
           }
-          <span>{{ badge }}</span>
+          @if (badge) {
+            <span class="hero-band__badge" [class.is-live]="live">
+              @if (live) {
+                <span class="hero-band__dot"></span>
+              }
+              <span>{{ badge }}</span>
+            </span>
+          }
+          @if (note) {
+            <span class="hero-band__note">{{ note }}</span>
+          }
         </div>
-      } @else if (crumb) {
-        <div class="hero-band__crumb">{{ crumb }}</div>
-      }
-      @if (title) {
-        <h2 class="hero-band__title">{{ title }}</h2>
-      }
-      @if (subtitle) {
-        <p class="hero-band__subtitle">{{ subtitle }}</p>
-      }
-      @if (note) {
-        <span class="hero-band__note">{{ note }}</span>
-      }
+        @if (subtitle) {
+          <p class="hero-band__subtitle">{{ subtitle }}</p>
+        }
+      </div>
+
+      <div class="hero-band__actions">
+        <ng-content></ng-content>
+      </div>
+    </div>
+  } @else {
+    <div class="hero-band__actions hero-band__actions--solo">
+      <ng-content></ng-content>
     </div>
   }
 
   @if (metrics.length) {
-    <div class="hero-band__metrics">
+    <div class="hero-band__kpi-strip">
       @for (metric of metrics; track $index) {
         <div class="hero-band__metric">
-          <span class="hero-band__label">{{ metric.label }}</span>
+          <div class="hero-band__metric-head">
+            <span class="hero-band__label">{{ metric.label }}</span>
+            @if (metric.tone === 'good') {
+              <span class="hero-band__trend is-good" aria-hidden="true">▲</span>
+            } @else if (metric.tone === 'bad') {
+              <span class="hero-band__trend is-bad" aria-hidden="true">▼</span>
+            }
+          </div>
           <span class="hero-band__value">
             {{ metric.value }}
             @if (metric.unit) {
@@ -52,8 +69,4 @@
       }
     </div>
   }
-
-  <div class="hero-band__actions" [class.is-stack]="actionsLayout === 'stack'">
-    <ng-content></ng-content>
-  </div>
 </header>

@@ -190,7 +190,7 @@ export class App implements AfterViewInit {
     const roleOrLevel = person.jobTitle || `${track} · ${person.level ?? ''}`;
     return roleOrLevel;
   });
-  protected readonly toastPosition = { X: 'Right', Y: 'Top' };
+  protected readonly toastPosition = { X: 'Right', Y: 'Bottom' };
   protected readonly menuSearch = signal('');
   protected onMenuSearch(event: Event): void {
     const target = event.target as HTMLInputElement | null;
@@ -234,6 +234,61 @@ export class App implements AfterViewInit {
             categoryLabel: categoryMeta[leafCategory[leaf.id] ?? 'work'].label,
           })),
       );
+  });
+
+  protected readonly workspaceMenuOpen = signal(false);
+  protected toggleWorkspaceMenu(event?: Event): void {
+    event?.stopPropagation();
+    if (!this.canSwitchMode()) return;
+    this.workspaceMenuOpen.update((open) => !open);
+  }
+  protected closeWorkspaceMenu(): void {
+    this.workspaceMenuOpen.set(false);
+  }
+  protected selectWorkspaceMode(mode: AccessRole): void {
+    this.workspaceMenuOpen.set(false);
+    this.switchWorkspaceMode(mode);
+  }
+  protected readonly activeModeMeta = computed(() => {
+    const r = this.role();
+    if (r === 'admin') {
+      return { id: 'admin' as AccessRole, code: 'AD', label: 'แอดมิน & ธรรมาภิบาล', sub: 'Admin Console', color: '#ef4444' };
+    }
+    if (r === 'lead') {
+      return { id: 'lead' as AccessRole, code: 'LD', label: 'บริหารทีม (Lead)', sub: 'Lead Command Center', color: '#f59e0b' };
+    }
+    return { id: 'member' as AccessRole, code: 'ME', label: 'พื้นที่งานของฉัน', sub: 'Member Workspace', color: '#2e4fc8' };
+  });
+
+  protected readonly groupedNavSections = computed<{ id: NavCategory; label: string; items: NavMenuItem[] }[]>(() => {
+    const role = this.role();
+    const query = this.menuSearch().trim().toLowerCase();
+    const leaves = allNavGroups
+      .filter((group) => !group.roles || group.roles.includes(role))
+      .flatMap((group) =>
+        group.children
+          .filter((leaf) => !leaf.roles || leaf.roles.includes(role))
+          .filter(
+            (leaf) =>
+              !query ||
+              leaf.text.toLowerCase().includes(query) ||
+              group.text.toLowerCase().includes(query) ||
+              (categoryMeta[leafCategory[leaf.id] ?? 'work']?.label.toLowerCase().includes(query) ?? false),
+          )
+          .map((leaf) => ({
+            ...leaf,
+            category: leafCategory[leaf.id] ?? 'work',
+            categoryLabel: categoryMeta[leafCategory[leaf.id] ?? 'work'].label,
+          })),
+      );
+
+    return categoryOrder
+      .map((cat) => ({
+        id: cat,
+        label: categoryMeta[cat].label,
+        items: leaves.filter((item) => item.category === cat),
+      }))
+      .filter((section) => section.items.length > 0);
   });
 
   protected selectRailCategory(cat: NavCategory): void {
@@ -322,16 +377,22 @@ export class App implements AfterViewInit {
         (path === '/team' ||
           path.startsWith('/work') ||
           path.startsWith('/queue') ||
-          path.startsWith('/people') ||
           path.startsWith('/quality') ||
-          path.startsWith('/analytics') ||
-          path.startsWith('/tickets') ||
           path.startsWith('/schedule') ||
           path.startsWith('/mygit') ||
           path.startsWith('/ai'))
       ) {
         if (this.role() !== 'lead') {
           setWorkspaceMode('lead');
+        }
+      } else if (
+        actual !== 'member' &&
+        (path.startsWith('/people') ||
+          path.startsWith('/analytics') ||
+          path.startsWith('/tickets'))
+      ) {
+        if (this.role() === 'member') {
+          setWorkspaceMode(actual === 'admin' ? 'admin' : 'lead');
         }
       }
     });
@@ -503,9 +564,9 @@ const categoryOrder: NavCategory[] = ['cockpit', 'work', 'quality', 'analytics',
 
 const categoryLanding: Partial<Record<NavCategory, readonly string[]>> = {
   cockpit: ['my-cockpit', 'team-cockpit', 'admin-cockpit', 'team-dash'],
-  work: ['me', 'work-hub', 'my-work', 'queue'],
-  quality: ['quality-audit', 'my-tickets', 'my-disputes'],
-  analytics: ['analytics', 'my-analytics', 'people'],
+  work: ['me', 'work-hub', 'work-board', 'work-timeline', 'my-work', 'my-board', 'my-timeline', 'queue'],
+  quality: ['quality-audit', 'my-tickets', 'admin-time-audit', 'time-audit', 'my-disputes', 'admin-tickets'],
+  analytics: ['analytics', 'admin-analytics', 'my-analytics', 'people', 'admin-people', 'lead-mockup'],
   admin: ['admin-home'],
 };
 
@@ -513,6 +574,8 @@ const leafCategory: Record<string, NavCategory> = {
   me: 'work',
   'my-cockpit': 'cockpit',
   'my-work': 'work',
+  'my-board': 'work',
+  'my-timeline': 'work',
   'my-schedule': 'work',
   'my-mygit': 'analytics',
   'my-ai': 'analytics',
@@ -524,6 +587,8 @@ const leafCategory: Record<string, NavCategory> = {
   'team-cockpit': 'cockpit',
   queue: 'work',
   'work-hub': 'work',
+  'work-board': 'work',
+  'work-timeline': 'work',
   schedule: 'work',
   'work-handoff': 'work',
   'quality-audit': 'quality',
@@ -534,8 +599,13 @@ const leafCategory: Record<string, NavCategory> = {
   people: 'analytics',
   mygit: 'analytics',
   ai: 'analytics',
+  'lead-mockup': 'analytics',
   'admin-home': 'admin',
   'admin-cockpit': 'cockpit',
+  'admin-analytics': 'analytics',
+  'admin-time-audit': 'quality',
+  'admin-tickets': 'quality',
+  'admin-people': 'analytics',
   integrations: 'admin',
   'snapshot-check': 'admin',
   rubrics: 'admin',
@@ -555,9 +625,11 @@ const allNavGroups: NavGroup[] = [
     roles: ['member'],
     children: [
       { id: 'me', text: 'ผลงาน & งานวันนี้', iconCss: 'e-icons e-user', route: '/me', exact: true },
-      { id: 'my-cockpit', text: 'ค็อกพิทผลงานของฉัน (Bento)', iconCss: 'e-icons e-dashboard', route: '/me/cockpit' },
-      { id: 'my-work', text: 'ฮับงานของฉัน (Board/Gantt)', iconCss: 'e-icons e-timeline-work-week', route: '/me/work' },
-      { id: 'my-schedule', text: 'ปฏิทินงานของฉัน', iconCss: 'e-icons e-date-time', route: '/me/schedule' },
+      { id: 'my-cockpit', text: 'ค็อกพิทผลงานของฉัน (Bento)', iconCss: 'e-icons e-grid-view', route: '/me/cockpit' },
+      { id: 'my-work', text: 'ฮับงานของฉัน', iconCss: 'e-icons e-timeline-work-week', route: '/me/work', exact: true },
+      { id: 'my-board', text: 'กระดานงานของฉัน (Kanban)', iconCss: 'e-icons e-columns', route: '/me/work/board' },
+      { id: 'my-timeline', text: 'ไทม์ไลน์งานของฉัน (Gantt)', iconCss: 'e-icons e-timeline-month', route: '/me/work/timeline' },
+      { id: 'my-schedule', text: 'ปฏิทินงานของฉัน', iconCss: 'e-icons e-timeline-today', route: '/me/schedule' },
       { id: 'my-mygit', text: 'ซิงก์ MR ของฉัน', iconCss: 'e-icons e-refresh', route: '/me/mygit' },
       { id: 'my-ai', text: 'ติดตามงาน AI ของฉัน', iconCss: 'e-icons e-chart', route: '/me/ai' },
     ],
@@ -569,7 +641,7 @@ const allNavGroups: NavGroup[] = [
     roles: ['member'],
     children: [
       { id: 'my-analytics', text: 'วิเคราะห์ผลงานเชิงลึก (OLS)', iconCss: 'e-icons e-chart', route: '/me/analytics' },
-      { id: 'my-tickets', text: 'ตารางคะแนนใบงานของฉัน', iconCss: 'e-icons e-table-1', route: '/me/tickets' },
+      { id: 'my-tickets', text: 'ตารางคะแนนใบงานของฉัน', iconCss: 'e-icons e-table', route: '/me/tickets' },
       { id: 'my-time-audit', text: 'เช็กเวลา 3 ทางของฉัน', iconCss: 'e-icons e-clock', route: '/me/time-audit' },
       { id: 'my-disputes', text: 'อุทธรณ์คะแนนของฉัน', iconCss: 'e-icons e-edit', route: '/me/disputes' },
     ],
@@ -585,10 +657,12 @@ const allNavGroups: NavGroup[] = [
     roles: ['lead'],
     children: [
       { id: 'team-dash', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
-      { id: 'team-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-dashboard', route: '/cockpit' },
+      { id: 'team-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-grid-view', route: '/cockpit' },
       { id: 'queue', text: 'คิวงานใหม่ & จ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/queue' },
-      { id: 'work-hub', text: 'ฮับบริหารงานทีม', iconCss: 'e-icons e-timeline-work-week', route: '/work' },
-      { id: 'schedule', text: 'ปฏิทินทีม & วันลา', iconCss: 'e-icons e-date-time', route: '/schedule' },
+      { id: 'work-hub', text: 'ฮับบริหารงานทีม', iconCss: 'e-icons e-timeline-work-week', route: '/work', exact: true },
+      { id: 'work-board', text: 'กระดานงาน (Kanban)', iconCss: 'e-icons e-columns', route: '/work/board' },
+      { id: 'work-timeline', text: 'ไทม์ไลน์งาน (Gantt)', iconCss: 'e-icons e-timeline-month', route: '/work/timeline' },
+      { id: 'schedule', text: 'ปฏิทินทีม & วันลา', iconCss: 'e-icons e-timeline-today', route: '/schedule' },
       { id: 'work-handoff', text: 'ส่งต่อ & SLA ข้ามทีม', iconCss: 'e-icons e-clock', route: '/work/handoff' },
     ],
   },
@@ -600,12 +674,13 @@ const allNavGroups: NavGroup[] = [
     children: [
       { id: 'quality-audit', text: 'ตรวจรับคุณภาพ QA (DoD)', iconCss: 'e-icons e-check-box', route: '/quality/audit' },
       { id: 'disputes', text: 'ศูนย์อนุมัติอุทธรณ์ทีม', iconCss: 'e-icons e-edit', route: '/tickets/disputes' },
-      { id: 'tickets', text: 'ตารางคะแนนใบงานทีม', iconCss: 'e-icons e-table-1', route: '/tickets' },
+      { id: 'tickets', text: 'ตารางคะแนนใบงานทีม', iconCss: 'e-icons e-table', route: '/tickets' },
       { id: 'time-audit', text: 'ตรวจสอบเวลา 3 ทางทีม', iconCss: 'e-icons e-clock', route: '/analytics/time-audit' },
       { id: 'analytics', text: 'ศูนย์วิเคราะห์ & Coaching', iconCss: 'e-icons e-chart', route: '/analytics' },
       { id: 'people', text: 'รายชื่อและโปรไฟล์ลูกทีม', iconCss: 'e-icons e-people', route: '/people', exact: true },
       { id: 'mygit', text: 'ซิงก์ mygit (MR) ทีม', iconCss: 'e-icons e-refresh', route: '/mygit' },
       { id: 'ai', text: 'ติดตามงาน AI ทีม', iconCss: 'e-icons e-chart', route: '/ai' },
+      { id: 'lead-mockup', text: 'โหมดจำลองระบบ (Mockup)', iconCss: 'e-icons e-play', route: '/mockup' },
     ],
   },
 
@@ -619,7 +694,7 @@ const allNavGroups: NavGroup[] = [
     roles: ['admin'],
     children: [
       { id: 'admin-home', text: 'หลังบ้าน & สิทธิ์ผู้ใช้', iconCss: 'e-icons e-lock', route: '/admin', exact: true },
-      { id: 'admin-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-dashboard', route: '/cockpit' },
+      { id: 'admin-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-grid-view', route: '/cockpit' },
       { id: 'integrations', text: 'เชื่อมต่อระบบ (Integrations)', iconCss: 'e-icons e-settings', route: '/integrations' },
       {
         id: 'snapshot-check',
@@ -631,6 +706,18 @@ const allNavGroups: NavGroup[] = [
       { id: 'teams', text: 'ตั้งค่าแจ้งเตือน Teams', iconCss: 'e-icons e-comment-show', route: '/teams' },
       { id: 'mockup', text: 'โหมดจำลองระบบ', iconCss: 'e-icons e-play', route: '/mockup' },
       { id: 'login', text: 'สลับบัญชีผู้ใช้', iconCss: 'e-icons e-user', route: '/login' },
+    ],
+  },
+  {
+    id: 'admin-intel',
+    text: 'วิเคราะห์ & ตรวจสอบระดับองค์กร',
+    expanded: true,
+    roles: ['admin'],
+    children: [
+      { id: 'admin-analytics', text: 'ศูนย์วิเคราะห์ Python & AI', iconCss: 'e-icons e-chart', route: '/analytics' },
+      { id: 'admin-time-audit', text: 'ตรวจสอบเวลา 3 ทางองค์กร', iconCss: 'e-icons e-clock', route: '/analytics/time-audit' },
+      { id: 'admin-tickets', text: 'ตารางคะแนนรวมทั้งองค์กร', iconCss: 'e-icons e-table', route: '/tickets' },
+      { id: 'admin-people', text: 'รายชื่อและสิทธิ์พนักงาน', iconCss: 'e-icons e-people', route: '/people', exact: true },
     ],
   },
 ];
@@ -658,8 +745,26 @@ function firstLeaf(role: AccessRole, category?: NavCategory): NavLeaf | undefine
 function matchNavId(url: string, role: AccessRole = 'member'): string {
   const path = url.split('?')[0] || '/';
   const pool = leavesFor(role);
+  if (path === '/me/work/board') {
+    return 'my-board';
+  }
+  if (path === '/me/work/timeline') {
+    return 'my-timeline';
+  }
   if (path.startsWith('/me/work')) {
     return 'my-work';
+  }
+  if (path === '/work/board') {
+    return 'work-board';
+  }
+  if (path === '/work/timeline') {
+    return 'work-timeline';
+  }
+  if (path === '/work/handoff') {
+    return 'work-handoff';
+  }
+  if (path.startsWith('/work')) {
+    return 'work-hub';
   }
   if (path.startsWith('/me/analytics')) {
     return 'my-analytics';
@@ -683,7 +788,7 @@ function matchNavId(url: string, role: AccessRole = 'member'): string {
     return 'my-disputes';
   }
   if (path.startsWith('/people/') && path !== '/people') {
-    return role === 'member' ? 'my-analytics' : 'people';
+    return role === 'member' ? 'my-analytics' : role === 'admin' ? 'admin-people' : 'people';
   }
   const exactHit = pool.find((item) => path === item.route);
   if (exactHit) {
@@ -711,8 +816,20 @@ function screenTitle(url: string): string {
   if (url.startsWith('/work/handoff')) {
     return 'ตรวจสอบการส่งต่อ & SLA ข้ามทีม';
   }
+  if (url.startsWith('/work/board')) {
+    return 'กระดานงานทีม (Team Kanban Board)';
+  }
+  if (url.startsWith('/work/timeline')) {
+    return 'ไทม์ไลน์งานทีม (Team Gantt Chart)';
+  }
   if (url.startsWith('/quality/audit')) {
     return 'ตรวจสอบคุณภาพ QA & Defect Audit';
+  }
+  if (url.startsWith('/me/work/board')) {
+    return 'กระดานงานของฉัน (My Kanban Board)';
+  }
+  if (url.startsWith('/me/work/timeline')) {
+    return 'ไทม์ไลน์งานของฉัน (My Gantt Chart)';
   }
   if (url.startsWith('/me/analytics')) {
     return 'วิเคราะห์ผลงานเชิงลึกของฉัน (Self-Analytics & OLS)';

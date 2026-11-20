@@ -3,391 +3,351 @@
     <router-outlet />
   </main>
 } @else {
-  <div class="app-frame" [class.is-narrow]="narrow()" [class.nav-open]="navOpen()" [class.is-collapsed]="!narrow() && collapsed()" [class]="roleThemeClass()">
-    <ejs-sidebar
-    id="app-nav"
-    [type]="narrow() ? 'Over' : 'Push'"
-    [width]="!narrow() && collapsed() ? '68px' : '300px'"
-    [isOpen]="navOpen()"
-    [showBackdrop]="false"
-    [closeOnDocumentClick]="narrow()"
-    [enableGestures]="false"
-    [animate]="false"
-    (close)="onNavClose()"
+  <div
+    class="app-frame"
+    [class.is-narrow]="narrow()"
+    [class.nav-open]="navOpen()"
+    [class.is-collapsed]="!narrow() && collapsed()"
+    [class]="roleThemeClass()"
+    (click)="closeWorkspaceMenu()"
   >
-    <div class="two-col-sidebar" [class.is-collapsed]="!narrow() && collapsed()">
-      <!-- Column 1: Primary Mini Icon Rail (68px) -->
-      <aside class="sidebar-rail">
-        <div class="rail-top">
-          <div class="rail-brand-btn" (click)="selectRailCategory('cockpit')" title="Man-day Scorecard (กลับหน้าหลัก)">
-            <span class="rail-logo">MD</span>
-          </div>
-
-          <nav class="rail-nav" aria-label="หมวดหมู่งาน">
-            @for (item of visibleRail(); track item.id) {
-              <button
-                type="button"
-                class="rail-item"
-                [class.is-active]="activeNavCategory() === item.id"
-                (click)="selectRailCategory(item.id)"
-                [title]="item.title"
-              >
-                <span class="rail-icon {{ item.icon }}"></span>
-                <span class="rail-label">{{ item.rail }}</span>
-              </button>
+    <ejs-sidebar
+      id="app-nav"
+      [type]="narrow() ? 'Over' : 'Push'"
+      [width]="!narrow() && collapsed() ? '64px' : '244px'"
+      [isOpen]="navOpen()"
+      [showBackdrop]="false"
+      [closeOnDocumentClick]="narrow()"
+      [enableGestures]="false"
+      [animate]="false"
+      (close)="onNavClose()"
+    >
+      <aside class="saas-sidebar" [class.is-collapsed]="!narrow() && collapsed()">
+        <!-- 1. Brand Header -->
+        <div class="sidebar-brand-row">
+          <button
+            type="button"
+            class="sidebar-brand"
+            (click)="selectRailCategory('cockpit')"
+            title="Man-day Scorecard — กลับหน้าหลัก"
+          >
+            <span class="sidebar-brand__mark">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </span>
+            @if (narrow() || !collapsed()) {
+              <span class="sidebar-brand__name">scorecard</span>
             }
-          </nav>
-        </div>
-
-        <div class="rail-bottom">
-          <button
-            type="button"
-            class="rail-action-btn rail-theme-toggle"
-            id="rail-theme-toggle"
-            (click)="theme.toggleTheme()"
-            [title]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
-            [attr.aria-label]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
-          >
-            <span class="e-icons" [class.e-day]="theme.isDark()" [class.e-night]="!theme.isDark()"></span>
           </button>
 
-          <button
-            type="button"
-            class="rail-avatar-btn"
-            (click)="openMyWorkspace()"
-            [title]="userFullName() + ' (' + role() + ')'"
-          >
-            <div class="rail-avatar">
-              @if (userAvatarUrl() && !avatarError()) {
-                <img [src]="userAvatarUrl()" [alt]="userFullName()" class="avatar-img" (error)="onAvatarError()" />
-              } @else {
-                <span>{{ userAvatarInitials() }}</span>
-              }
-              <span class="rail-online-dot"></span>
-            </div>
-          </button>
-        </div>
-      </aside>
-
-      <!-- Column 2: Secondary Content Panel (Sub-Sidebar 232px) -->
-      @if (narrow() || !collapsed()) {
-        <section class="sidebar-subpanel">
-          <div class="subpanel-header">
-            <div class="subpanel-brand">
-              <span class="subpanel-eyebrow">MYHR INTELLIGENCE</span>
-              <h2 class="subpanel-title">คะแนนใบงาน</h2>
-              <span class="subpanel-sub">1 MD = 6 ชม. มาตรฐาน</span>
-            </div>
+          @if (narrow() || !collapsed()) {
             <button
               type="button"
-              class="subpanel-collapse-btn"
+              class="sidebar-collapse-btn"
               (click)="toggleNav()"
-              title="พับเก็บเมนูย่อย"
+              title="พับแถบเมนูด้านข้าง"
+              aria-label="พับแถบเมนูด้านข้าง"
             >
               <span class="e-icons e-chevron-left"></span>
             </button>
+          }
+        </div>
+
+        <!-- 2. Workspace Mode Switcher Dropdown (Tasklyn-style) -->
+        @if (narrow() || !collapsed()) {
+          <div class="workspace-switcher" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="workspace-switcher__trigger"
+              [class.is-open]="workspaceMenuOpen()"
+              [disabled]="!canSwitchMode()"
+              (click)="toggleWorkspaceMenu($event)"
+              [attr.aria-expanded]="workspaceMenuOpen()"
+              title="สลับโหมดการทำงาน"
+            >
+              <span class="workspace-switcher__badge" [style.background]="activeModeMeta().color">
+                {{ activeModeMeta().code }}
+              </span>
+              <span class="workspace-switcher__copy">
+                <span class="workspace-switcher__label">{{ activeModeMeta().label }}</span>
+              </span>
+              @if (canSwitchMode()) {
+                <svg class="workspace-switcher__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="7 15 12 20 17 15"></polyline>
+                  <polyline points="7 9 12 4 17 9"></polyline>
+                </svg>
+              }
+            </button>
+
+            @if (workspaceMenuOpen() && canSwitchMode()) {
+              <div class="workspace-switcher__menu" role="menu" aria-label="เลือกโหมดการทำงาน">
+                @for (mode of availableModes(); track mode.id) {
+                  <button
+                    type="button"
+                    class="workspace-switcher__option"
+                    [class.is-active]="role() === mode.id"
+                    [attr.data-mode]="mode.id"
+                    role="menuitem"
+                    (click)="selectWorkspaceMode(mode.id)"
+                  >
+                    <span [class]="mode.icon"></span>
+                    <span>{{ mode.label }}</span>
+                    @if (role() === mode.id) {
+                      <span class="workspace-switcher__check">✓</span>
+                    }
+                  </button>
+                }
+              </div>
+            }
           </div>
 
-          <!-- Quick Search Filter -->
-          <div class="subpanel-search">
-            <span class="e-icons e-search subpanel-search-icon"></span>
+          <!-- Quick Menu Filter -->
+          <div class="sidebar-search">
+            <span class="e-icons e-search sidebar-search__icon"></span>
             <input
               type="text"
-              class="subpanel-search-input"
+              class="sidebar-search__input"
               placeholder="ค้นหาเมนู..."
               [value]="menuSearch()"
               (input)="onMenuSearch($event)"
             />
             @if (menuSearch()) {
-              <button type="button" class="subpanel-search-clear" (click)="clearMenuSearch()">×</button>
+              <button type="button" class="sidebar-search__clear" (click)="clearMenuSearch()" aria-label="ล้างคำค้น">×</button>
             }
           </div>
+        }
 
-          <!-- Mode Switcher Tabs -->
-          @if (canSwitchMode()) {
-            <div class="subpanel-mode-tabs" role="tablist" aria-label="สลับโหมดการทำงาน">
-              @for (mode of availableModes(); track mode.id) {
-                <button
-                  type="button"
-                  class="subpanel-mode-tab"
-                  [attr.data-mode]="mode.id"
-                  [class.is-active]="role() === mode.id"
-                  [title]="'สลับเป็นโหมด ' + mode.label"
-                  (click)="switchWorkspaceMode(mode.id)"
+        <!-- 3. Categorized Navigation List -->
+        <nav class="saas-nav" aria-label="เมนูหลัก">
+          @for (section of groupedNavSections(); track section.id) {
+            <div class="saas-nav__group">
+              @if (narrow() || !collapsed()) {
+                <div class="saas-nav__label">{{ section.label }}</div>
+              }
+              @for (item of section.items; track item.id) {
+                <a
+                  class="saas-nav__item"
+                  [class.is-active]="selectedNodes()[0] === item.id"
+                  [routerLink]="item.route"
+                  [title]="item.text"
                 >
-                  <span [class]="mode.icon"></span>
-                  <span>{{ mode.shortLabel }}</span>
-                </button>
+                  <span class="saas-nav__icon"><span [class]="item.iconCss"></span></span>
+                  @if (narrow() || !collapsed()) {
+                    <span class="saas-nav__text">{{ item.text }}</span>
+                  }
+                </a>
               }
             </div>
-          }
-
-          <!-- Navigation: only the active rail category, unless searching -->
-          <div class="subpanel-caption">
-            @if (menuSearch()) {
-              <span class="subpanel-caption__kicker">ค้นหาเมนู</span>
-              <span class="subpanel-caption__label">{{ visibleNavItems().length }} รายการ</span>
-            } @else {
-              <span class="subpanel-caption__kicker">เมนูย่อย</span>
-              <span class="subpanel-caption__label">{{ categoryLabel() }}</span>
-              <span class="subpanel-caption__hint">{{ categoryHint() }}</span>
+          } @empty {
+            @if (narrow() || !collapsed()) {
+              <p class="saas-nav__empty">ไม่พบเมนูที่ตรงกับคำค้น</p>
             }
-          </div>
-          <nav class="side-menu" [attr.aria-label]="menuSearch() ? 'ผลการค้นหาเมนู' : categoryLabel()">
-            @for (item of visibleNavItems(); track item.id) {
-              <a
-                class="side-menu__item"
-                [class.is-active]="selectedNodes()[0] === item.id"
-                [routerLink]="item.route"
-                [title]="item.text"
-              >
-                <span class="side-menu__icon"><span [class]="item.iconCss"></span></span>
-                <span class="side-menu__copy">
-                  <span class="side-menu__text">{{ item.text }}</span>
-                  @if (menuSearch()) {
-                    <span class="side-menu__tag">{{ item.categoryLabel }}</span>
-                  }
-                </span>
-              </a>
-            } @empty {
-              <p class="side-menu__empty">ไม่พบเมนูที่ตรงกับคำค้น</p>
-            }
-          </nav>
-
-          <!-- Profile Card -->
-          <div class="subpanel-profile" [attr.data-role]="role()">
-            <div class="subpanel-profile__info" (click)="openMyWorkspace()" title="เปิดพื้นที่ของฉัน (/me)">
-              <div class="subpanel-profile__avatar">
-                @if (userAvatarUrl() && !avatarError()) {
-                  <img [src]="userAvatarUrl()" [alt]="userFullName()" loading="lazy" referrerpolicy="no-referrer" (error)="onAvatarError()" class="avatar-img" />
-                } @else {
-                  <span>{{ userAvatarInitials() }}</span>
-                }
-              </div>
-              <div class="subpanel-profile__details">
-                <span class="subpanel-profile__name">{{ userFullName() }}</span>
-                <div class="subpanel-profile__meta">
-                  <span class="subpanel-profile__role" [attr.data-role]="role()">{{ role() }}</span>
-                  @if (userTrackLevel()) {
-                    <span class="subpanel-profile__track">{{ userTrackLevel() }}</span>
-                  }
-                </div>
-              </div>
-            </div>
-            <button
-              ejs-button
-              cssClass="subpanel-profile__logout e-flat e-small"
-              iconCss="e-icons e-circle-remove"
-              type="button"
-              title="ออกจากระบบ"
-              (click)="logout()"
-            >
-              <span class="logout-text">ออก</span>
-            </button>
-          </div>
-        </section>
-      }
-    </div>
-  </ejs-sidebar>
-
-  @if (narrow() && navOpen()) {
-    <div class="nav-backdrop" (click)="onNavClose()" aria-hidden="true"></div>
-  }
-
-  <div class="workspace">
-    <ejs-appbar colorMode="Inherit" cssClass="shell-appbar" [isSticky]="true">
-      <!-- 1. Left: Navigation Toggle, Brand Crumbs & Screen Title -->
-      <div class="navbar-left">
-        <button
-          ejs-button
-          cssClass="nav-toggle e-flat e-inherit navbar-toggle-btn"
-          iconCss="e-icons e-menu"
-          type="button"
-          (click)="toggleNav()"
-          aria-label="เปิดหรือพับเมนู"
-          title="เปิดหรือพับเมนูด้านข้าง"
-        ></button>
-
-        <div class="navbar-brand-crumb">
-          <div class="navbar-crumb-row">
-            <span class="navbar-crumb-scope" [attr.data-role]="role()">{{ roleDisplayName() }}</span>
-          </div>
-          <h1 class="navbar-page-title" [title]="title()">{{ title() }}</h1>
-        </div>
-      </div>
-
-      <!-- 2. Center: Essential UI Kit Omnisearch & Quick Station Shortcuts -->
-      <div class="navbar-center">
-        <div class="navbar-search-bar" (click)="focusGlobalSearch()" title="ค้นหาด่วน (Ctrl+K)">
-          <span class="e-icons e-search navbar-search-icon"></span>
-          <input
-            #globalSearchInput
-            type="text"
-            class="navbar-search-input"
-            placeholder="ค้นหาใบงาน, พนักงาน, หรือคำสั่ง..."
-            [value]="globalSearch()"
-            (input)="onGlobalSearch($event)"
-            (keydown.enter)="onGlobalSearchSubmit()"
-          />
-          @if (globalSearch()) {
-            <button type="button" class="navbar-search-clear" (click)="clearGlobalSearch($event)" title="ล้างคำค้น">×</button>
-          }
-          <div class="navbar-kbd-pill" title="คีย์ลัดค้นหาด่วน (Ctrl+K)">
-            <kbd>Ctrl</kbd><kbd>K</kbd>
-          </div>
-        </div>
-
-        <nav class="navbar-station-links" aria-label="ทางลัดสถานีงาน">
-          @if (role() === 'admin') {
-            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/cockpit" routerLinkActive="is-active" title="ห้องบัญชาการ Bento (Cockpit)">
-              <span class="e-icons e-dashboard"></span>
-              <span class="station-text">Cockpit</span>
-            </a>
-            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/integrations" routerLinkActive="is-active" title="เชื่อมต่อระบบภายนอก">
-              <span class="e-icons e-settings"></span>
-              <span class="station-text">เชื่อมต่อ</span>
-            </a>
-            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/admin/snapshot-check" routerLinkActive="is-active" title="ตรวจสอบก่อนแช่แข็งคะแนน">
-              <span class="e-icons e-lock"></span>
-              <span class="station-text">Snapshot</span>
-            </a>
-          } @else if (role() === 'lead') {
-            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/cockpit" routerLinkActive="is-active" title="ห้องบัญชาการ Bento (Cockpit)">
-              <span class="e-icons e-dashboard"></span>
-              <span class="station-text">Cockpit</span>
-            </a>
-            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/team" routerLinkActive="is-active" title="แดชบอร์ดทีม">
-              <span class="e-icons e-people"></span>
-              <span class="station-text">แดชบอร์ด</span>
-            </a>
-            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/queue" routerLinkActive="is-active" title="คิวงานใหม่ & จ่ายงาน">
-              <span class="e-icons e-repeat"></span>
-              <span class="station-text">คิวงาน</span>
-            </a>
-          } @else {
-            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/me/cockpit" routerLinkActive="is-active" title="ค็อกพิทผลงานของฉัน (Bento)">
-              <span class="e-icons e-dashboard"></span>
-              <span class="station-text">Cockpit</span>
-            </a>
-            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/me" routerLinkActive="is-active" title="ผลงานของฉันวันนี้">
-              <span class="e-icons e-user"></span>
-              <span class="station-text">งานวันนี้</span>
-            </a>
-            <a ejs-button cssClass="e-flat e-small navbar-station-btn" routerLink="/me/analytics" routerLinkActive="is-active" title="วิเคราะห์ผลงาน OLS ของฉัน">
-              <span class="e-icons e-chart"></span>
-              <span class="station-text">วิเคราะห์ OLS</span>
-            </a>
           }
         </nav>
-      </div>
 
-      <!-- 3. Right: System Status, Alert Bell, Theme Switcher & Profile Card -->
-      <div class="navbar-right">
-        <!-- Live System Connection Status Pill -->
-        <div class="navbar-status-pill" [class.is-api]="usingApi() && !mockMode()" [class.is-mock]="mockMode()" [class.is-seed]="!usingApi() && !mockMode()" [title]="usingApi() ? 'เชื่อมต่อ API สด' : (mockMode() ? 'กำลังใช้โหมดจำลอง' : 'ออฟไลน์ (Seed Data)')">
-          <span class="status-pulse-dot"></span>
-          <span class="status-label">
-            @if (mockMode()) {
-              จำลอง (Mock)
-            } @else if (usingApi()) {
-              API สด
-            } @else {
-              ออฟไลน์
+        <!-- 4. Sidebar Footer Profile -->
+        <div class="sidebar-footer" [attr.data-role]="role()">
+          <button
+            type="button"
+            class="sidebar-profile"
+            (click)="openMyWorkspace()"
+            [title]="userFullName() + ' (' + role() + ') — เปิดพื้นที่ของฉัน'"
+          >
+            <div class="sidebar-profile__avatar">
+              @if (userAvatarUrl() && !avatarError()) {
+                <img [src]="userAvatarUrl()" [alt]="userFullName()" loading="lazy" referrerpolicy="no-referrer" (error)="onAvatarError()" class="avatar-img" />
+              } @else {
+                <span>{{ userAvatarInitials() }}</span>
+              }
+              <span class="sidebar-profile__dot"></span>
+            </div>
+            @if (narrow() || !collapsed()) {
+              <div class="sidebar-profile__meta">
+                <span class="sidebar-profile__name">{{ userFullName() }}</span>
+                <span class="sidebar-profile__sub">{{ userTrackLevel() || role() }}</span>
+              </div>
             }
-          </span>
+          </button>
+
+          @if (narrow() || !collapsed()) {
+            <button
+              type="button"
+              class="sidebar-logout-btn"
+              title="ออกจากระบบ"
+              aria-label="ออกจากระบบ"
+              (click)="logout()"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
+          }
+        </div>
+      </aside>
+    </ejs-sidebar>
+
+    @if (narrow() && navOpen()) {
+      <div class="nav-backdrop" (click)="onNavClose()" aria-hidden="true"></div>
+    }
+
+    <div class="workspace">
+      <ejs-appbar colorMode="Inherit" cssClass="shell-appbar" [isSticky]="true">
+        <!-- 1. Left: Toggle & Clean Screen Title -->
+        <div class="navbar-left">
+          <button
+            type="button"
+            class="navbar-icon-btn navbar-toggle-btn"
+            (click)="toggleNav()"
+            aria-label="เปิดหรือพับเมนู"
+            title="เปิดหรือพับเมนูด้านข้าง"
+          >
+            <span class="e-icons e-menu"></span>
+          </button>
+
+          <div class="navbar-brand-crumb">
+            <h1 class="navbar-page-title" [title]="title()">{{ title() }}</h1>
+            <span class="navbar-crumb-scope" [attr.data-role]="role()">{{ roleDisplayName() }}</span>
+          </div>
         </div>
 
-        <!-- Notification Bell & Theme Toggle Actions -->
-        <div class="navbar-action-group">
-          <span class="appbar-alert-wrap" [class.has-alerts]="alerts().length > 0">
-            <button
-              ejs-button
-              id="appbar-alerts-btn"
-              cssClass="e-flat e-small e-icon-btn navbar-icon-btn appbar-alert-btn"
-              iconCss="e-icons e-warning"
-              type="button"
-              [title]="alertsTitle()"
-              [attr.aria-label]="alertsTitle()"
-              (click)="openAlerts()"
-            ></button>
-            @if (alerts().length > 0) {
-              <span class="e-badge e-badge-danger e-badge-notification e-badge-overlap">
-                {{ alertsBadge() }}
-              </span>
+        <!-- 2. Right: Clean Omnisearch + Status + Alerts + Theme + Profile -->
+        <div class="navbar-right">
+          <div class="navbar-search-bar" (click)="focusGlobalSearch()" title="ค้นหาด่วน (Ctrl+K)">
+            <span class="e-icons e-search navbar-search-icon"></span>
+            <input
+              #globalSearchInput
+              type="text"
+              class="navbar-search-input"
+              placeholder="ค้นหาใบงาน, พนักงาน, เมนู..."
+              [value]="globalSearch()"
+              (input)="onGlobalSearch($event)"
+              (keydown.enter)="onGlobalSearchSubmit()"
+            />
+            @if (globalSearch()) {
+              <button type="button" class="navbar-search-clear" (click)="clearGlobalSearch($event)" title="ล้างคำค้น">×</button>
+            } @else {
+              <div class="navbar-kbd-pill" title="คีย์ลัด (Ctrl+K)">
+                <kbd>⌘</kbd><kbd>K</kbd>
+              </div>
             }
-          </span>
+          </div>
+
+          <div
+            class="navbar-status-pill"
+            [class.is-api]="usingApi() && !mockMode()"
+            [class.is-mock]="mockMode()"
+            [class.is-seed]="!usingApi() && !mockMode()"
+            [title]="usingApi() ? 'เชื่อมต่อ API สด' : (mockMode() ? 'กำลังใช้โหมดจำลอง' : 'ออฟไลน์ (Seed Data)')"
+          >
+            <span class="status-pulse-dot"></span>
+            <span class="status-label">
+              @if (mockMode()) {
+                จำลอง
+              } @else if (usingApi()) {
+                API สด
+              } @else {
+                ออฟไลน์
+              }
+            </span>
+          </div>
+
+          <div class="navbar-action-group">
+            <span class="appbar-alert-wrap" [class.has-alerts]="alerts().length > 0">
+              <button
+                type="button"
+                id="appbar-alerts-btn"
+                class="navbar-icon-btn appbar-alert-btn"
+                [title]="alertsTitle()"
+                [attr.aria-label]="alertsTitle()"
+                (click)="openAlerts()"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+              </button>
+              @if (alerts().length > 0) {
+                <span class="e-badge e-badge-danger e-badge-notification e-badge-overlap">
+                  {{ alertsBadge() }}
+                </span>
+              }
+            </span>
+
+            <button
+              type="button"
+              id="appbar-theme-toggle"
+              class="navbar-icon-btn"
+              [title]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
+              [attr.aria-label]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
+              (click)="theme.toggleTheme()"
+            >
+              @if (theme.isDark()) {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="5"></circle>
+                  <line x1="12" y1="1" x2="12" y2="3"></line>
+                  <line x1="12" y1="21" x2="12" y2="23"></line>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                  <line x1="1" y1="12" x2="3" y2="12"></line>
+                  <line x1="21" y1="12" x2="23" y2="12"></line>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+              } @else {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+              }
+            </button>
+
+            <button
+              type="button"
+              class="navbar-icon-btn"
+              title="สลับบัญชีผู้ใช้ (/login)"
+              aria-label="สลับบัญชีผู้ใช้"
+              (click)="openLogin()"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <polyline points="17 11 19 13 23 9"></polyline>
+              </svg>
+            </button>
+          </div>
 
           <button
-            ejs-button
-            id="appbar-theme-toggle"
-            cssClass="e-flat e-small e-icon-btn navbar-icon-btn"
-            [iconCss]="theme.isDark() ? 'e-icons e-day' : 'e-icons e-night'"
             type="button"
-            [title]="theme.isDark() ? 'กำลังใช้โหมดมืด — คลิกเพื่อสลับเป็นโหมดสว่าง' : 'กำลังใช้โหมดสว่าง — คลิกเพื่อสลับเป็นโหมดมืด'"
-            [attr.aria-label]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
-            (click)="theme.toggleTheme()"
-          ></button>
-        </div>
-
-        <div class="navbar-divider" aria-hidden="true"></div>
-
-        <!-- Unified Modern Profile Pill -->
-        <div class="navbar-profile-pill" [attr.data-role]="role()">
-          <div class="navbar-profile-avatar" (click)="openMyWorkspace()" title="เปิดพื้นที่ของฉัน (/me)">
+            class="navbar-avatar-btn"
+            (click)="openMyWorkspace()"
+            [title]="userFullName() + ' (' + role() + ')'"
+          >
             @if (userAvatarUrl() && !avatarError()) {
               <img [src]="userAvatarUrl()" [alt]="userFullName()" class="avatar-img" (error)="onAvatarError()" />
             } @else {
               <span>{{ userAvatarInitials() }}</span>
             }
-            <span class="navbar-online-dot"></span>
-          </div>
-
-          <div class="navbar-profile-info" (click)="openMyWorkspace()" title="เปิดพื้นที่ของฉัน (/me)">
-            <span class="navbar-profile-name">{{ userFullName() }}</span>
-            <span class="navbar-profile-role-badge" [attr.data-role]="role()">{{ role() }}</span>
-          </div>
-
-          <div class="navbar-profile-actions">
-            <button
-              ejs-button
-              cssClass="e-flat e-small e-icon-btn navbar-profile-btn"
-              iconCss="e-icons e-lock"
-              type="button"
-              title="สลับบัญชีผู้ใช้ตามสิทธิ์ (/login)"
-              [attr.aria-label]="'สลับบัญชีผู้ใช้'"
-              (click)="openLogin()"
-            ></button>
-
-            <button
-              ejs-button
-              id="appbar-logout-btn"
-              cssClass="e-flat e-small e-icon-btn navbar-profile-btn is-logout appbar-logout-chip"
-              iconCss="e-icons e-circle-remove"
-              type="button"
-              title="ออกจากระบบ"
-              [attr.aria-label]="'ออกจากระบบ'"
-              (click)="logout()"
-            ></button>
-          </div>
+          </button>
         </div>
-      </div>
-    </ejs-appbar>
+      </ejs-appbar>
 
-    @if (mockMode()) {
-      <section class="shell-alerts" aria-label="โหมดจำลอง">
-        <ejs-message
-          content="กำลังอยู่ในโหมดจำลอง — ข้อมูลในหน่วยความจำเท่านั้น ไม่เขียนฐานข้อมูล กดออกได้ที่เมนูโหมดจำลอง"
-          severity="Warning"
-          variant="Outlined"
-        ></ejs-message>
-      </section>
-    }
+      @if (mockMode()) {
+        <section class="shell-alerts" aria-label="โหมดจำลอง">
+          <ejs-message
+            content="กำลังอยู่ในโหมดจำลอง — ข้อมูลในหน่วยความจำเท่านั้น ไม่เขียนฐานข้อมูล กดออกได้ที่เมนูโหมดจำลอง"
+            severity="Warning"
+            variant="Outlined"
+          ></ejs-message>
+        </section>
+      }
 
-    <main class="shell-main">
-      <router-outlet />
-    </main>
+      <main class="shell-main">
+        <router-outlet />
+      </main>
+    </div>
   </div>
-</div>
 }
 
 <ejs-dialog

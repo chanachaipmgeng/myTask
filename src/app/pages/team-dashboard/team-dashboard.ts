@@ -7,6 +7,7 @@ import {
   QueryList,
   ViewChildren,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -174,17 +175,21 @@ export class TeamDashboard implements AfterViewInit {
   };
   protected readonly percentAxis = {
     minimum: 0,
+    opposedPosition: true,
     title: 'เปอร์เซ็นต์',
     titleStyle: this.axisFont,
     labelStyle: this.axisFont,
+    majorGridLines: { width: 1, dashArray: '4,4' },
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
   protected readonly quotaAxis = {
     minimum: 0,
+    opposedPosition: true,
     title: 'MD',
     titleStyle: this.axisFont,
     labelStyle: this.axisFont,
+    majorGridLines: { width: 1, dashArray: '4,4' },
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
@@ -221,7 +226,7 @@ export class TeamDashboard implements AfterViewInit {
     border: { width: 1, color: '#f0b429' },
   };
   /** มุมบนแท่ง Grouped/Stacked Column (แนว UI Kit) */
-  protected readonly columnCorner = { topLeft: 4, topRight: 4 };
+  protected readonly columnCorner = { topLeft: 8, topRight: 8 };
 
   protected readonly alerts = this.scorecard.alerts;
   protected readonly explanations = computed(() => kpiExplanations(this.scorecard.tickets(), this.scorecard.people()));
@@ -301,6 +306,10 @@ export class TeamDashboard implements AfterViewInit {
 
   constructor() {
     void this.reloadPeriods();
+    effect(() => {
+      this.theme.isDark();
+      this.scheduleChartRefresh();
+    });
   }
 
   ngAfterViewInit(): void {

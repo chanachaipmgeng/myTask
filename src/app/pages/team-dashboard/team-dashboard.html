@@ -99,280 +99,238 @@
     </app-section-card>
   }
 
-  <ejs-dashboardlayout
-    [columns]="4"
-    [cellSpacing]="cellSpacing"
-    [cellAspectRatio]="1.25"
-    [allowDragging]="false"
-    [allowResizing]="false"
-    [allowFloating]="false"
-    [showGridLines]="false"
-    mediaQuery="max-width: 800px"
-    (created)="onDashboardCreated()"
-  >
-    <div id="chart-context" class="e-panel" data-row="0" data-col="0" data-sizex="2" data-sizey="2">
-      <div class="e-panel-container">
-        <div class="e-panel-header">สัดส่วนงานทีม {{ context.yearLabel }}</div>
-        <div class="e-panel-content">
-          <ejs-accumulationchart
-            id="team-workload-donut"
-            style="display: block; height: 240px; width: 100%"
-            [theme]="theme.sfTheme()"
-            [legendSettings]="legend"
-            [tooltip]="contextTooltip"
-            [centerLabel]="workloadCenter()"
-            [enableAnimation]="true"
-          >
-            <e-accumulation-series-collection>
-              <e-accumulation-series
-                type="Pie"
-                [dataSource]="context.workload"
-                xName="x"
-                yName="y"
-                innerRadius="62%"
-                radius="80%"
-                legendShape="Circle"
-                [dataLabel]="donutLabel"
-                [palettes]="palette"
-              ></e-accumulation-series>
-            </e-accumulation-series-collection>
-          </ejs-accumulationchart>
-        </div>
-      </div>
-    </div>
-    <div id="chart-sample" class="e-panel" data-row="0" data-col="2" data-sizex="2" data-sizey="2">
-      <div class="e-panel-container">
-        <div class="e-panel-header">Bug / Custom / Enhancement แยกสาย</div>
-        <div class="e-panel-content">
-          <p class="kpi-note">{{ sampleSummary() }} จากใบตัวอย่าง ไม่ใช่ 1,319 งาน</p>
-          <ejs-accumulationchart
-            id="team-sample-donut"
-            style="display: block; height: 240px; width: 100%"
-            [theme]="theme.sfTheme()"
-            [legendSettings]="legend"
-            [tooltip]="sampleTooltip"
-            [centerLabel]="sampleCenter()"
-            [enableAnimation]="true"
-          >
-            <e-accumulation-series-collection>
-              <e-accumulation-series
-                type="Pie"
-                [dataSource]="samplePoints()"
-                xName="x"
-                yName="y"
-                innerRadius="62%"
-                radius="80%"
-                legendShape="Circle"
-                [dataLabel]="donutLabel"
-                [palettes]="palette"
-              ></e-accumulation-series>
-            </e-accumulation-series-collection>
-          </ejs-accumulationchart>
-        </div>
-      </div>
-    </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <app-section-card [title]="'สัดส่วนงานทีม ' + context.yearLabel" subtitle="ภาพรวมภาระงานทั้งปีแบ่งตามประเภท">
+      <ejs-accumulationchart
+        id="team-workload-donut"
+        style="display: block; height: 250px; width: 100%"
+        [theme]="theme.sfTheme()"
+        [legendSettings]="legend"
+        [tooltip]="contextTooltip"
+        [centerLabel]="workloadCenter()"
+        [enableAnimation]="true"
+      >
+        <e-accumulation-series-collection>
+          <e-accumulation-series
+            type="Pie"
+            [dataSource]="context.workload"
+            xName="x"
+            yName="y"
+            innerRadius="62%"
+            radius="82%"
+            legendShape="Circle"
+            [dataLabel]="donutLabel"
+            [palettes]="palette"
+          ></e-accumulation-series>
+        </e-accumulation-series-collection>
+      </ejs-accumulationchart>
+    </app-section-card>
+
+    <app-section-card title="Bug / Custom / Enhancement แยกสาย" [subtitle]="sampleSummary() + ' จากใบตัวอย่าง ไม่ใช่ 1,319 งาน'">
+      <ejs-accumulationchart
+        id="team-sample-donut"
+        style="display: block; height: 250px; width: 100%"
+        [theme]="theme.sfTheme()"
+        [legendSettings]="legend"
+        [tooltip]="sampleTooltip"
+        [centerLabel]="sampleCenter()"
+        [enableAnimation]="true"
+      >
+        <e-accumulation-series-collection>
+          <e-accumulation-series
+            type="Pie"
+            [dataSource]="samplePoints()"
+            xName="x"
+            yName="y"
+            innerRadius="62%"
+            radius="82%"
+            legendShape="Circle"
+            [dataLabel]="donutLabel"
+            [palettes]="palette"
+          ></e-accumulation-series>
+        </e-accumulation-series-collection>
+      </ejs-accumulationchart>
+    </app-section-card>
+
     @if (viewingLive()) {
-      <div id="kpi-alerts" class="e-panel" data-row="2" data-col="0" data-sizex="2" data-sizey="2">
-        <div class="e-panel-container">
-          <div class="e-panel-header">แจ้งเตือนใบที่เปิดอยู่</div>
-          <div class="e-panel-content panel-scroll">
-            @if (alerts().length === 0) {
-              <p class="kpi-note">ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate</p>
-            } @else {
-              <div class="grid grid-cols-1 gap-2">
-                @for (alert of alerts(); track alert.id) {
-                  <app-section-card variant="nested" [showHead]="false">
-                    <p class="m-0">{{ alert.message }}</p>
-                  </app-section-card>
-                }
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    }
-    @if (viewingLive()) {
-      <div id="kpi-meaning" class="e-panel" data-row="2" data-col="2" data-sizex="2" data-sizey="2">
-        <div class="e-panel-container">
-          <div class="e-panel-header">ความหมายของ KPI จากใบในกระดาน</div>
-          <div class="e-panel-content panel-scroll">
+      <app-section-card title="เส้นรายเดือน" [subtitle]="'ปิดตามแผน ความแม่น และ rework ของใบที่ปิดในเดือนนั้น · เส้นประคือเป้า ' + target">
+        <ejs-chart
+          id="monthly-line"
+          style="display: block; height: 260px; width: 100%"
+          [theme]="theme.sfTheme()"
+          [primaryXAxis]="categoryAxis"
+          [primaryYAxis]="percentAxis"
+          [tooltip]="chartTooltip"
+          [legendSettings]="chartLegend"
+          [chartArea]="chartArea"
+          [enableAnimation]="true"
+        >
+          <e-series-collection>
+            <e-series
+              type="Line"
+              [dataSource]="monthlyPoints()"
+              xName="month"
+              yName="plan"
+              name="ปิดตามแผน"
+              width="2.5"
+              fill="#2e4fc8"
+              [marker]="seriesMarker"
+            ></e-series>
+            <e-series
+              type="Line"
+              [dataSource]="monthlyPoints()"
+              xName="month"
+              yName="accuracy"
+              name="ความแม่น"
+              width="2.5"
+              fill="#3ec6e0"
+              [marker]="seriesMarker"
+            ></e-series>
+            <e-series
+              type="Line"
+              [dataSource]="monthlyPoints()"
+              xName="month"
+              yName="rework"
+              name="Rework"
+              width="2.5"
+              fill="#e35d6a"
+              [marker]="seriesMarker"
+            ></e-series>
+            <e-series
+              type="Line"
+              [dataSource]="monthlyPoints()"
+              xName="month"
+              yName="target"
+              name="เป้า 75"
+              width="2"
+              fill="#f0b429"
+              dashArray="6,4"
+              legendShape="Diamond"
+              [marker]="targetMarker"
+            ></e-series>
+          </e-series-collection>
+        </ejs-chart>
+      </app-section-card>
+
+      <app-section-card title="โควตาที่ใช้กับที่ว่าง" subtitle="แท่งซ้อน = โควตาสัปดาห์ · ใช้แล้วคือ MD ใบที่ยังไม่ปิด · ว่างคือโควตาที่เหลือ (กัน 1 MD)">
+        <ejs-chart
+          id="quota-bars"
+          style="display: block; height: 260px; width: 100%"
+          [theme]="theme.sfTheme()"
+          [primaryXAxis]="categoryAxis"
+          [primaryYAxis]="quotaAxis"
+          [tooltip]="chartTooltip"
+          [legendSettings]="chartLegend"
+          [chartArea]="chartArea"
+          [enableAnimation]="true"
+        >
+          <e-series-collection>
+            <e-series
+              type="StackingColumn"
+              [dataSource]="quotaPoints()"
+              xName="nickname"
+              yName="used"
+              name="ใช้แล้ว"
+              fill="#2e4fc8"
+              columnWidth="0.48"
+            ></e-series>
+            <e-series
+              type="StackingColumn"
+              [dataSource]="quotaPoints()"
+              xName="nickname"
+              yName="free"
+              name="ว่าง"
+              fill="#c7d2fe"
+              columnWidth="0.48"
+              [cornerRadius]="columnCorner"
+            ></e-series>
+          </e-series-collection>
+        </ejs-chart>
+      </app-section-card>
+
+      <app-section-card title="แจ้งเตือนใบที่เปิดอยู่" subtitle="รายการที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate">
+        <div class="max-h-[260px] overflow-y-auto pr-1">
+          @if (alerts().length === 0) {
+            <p class="kpi-note m-0">ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate</p>
+          } @else {
             <div class="grid grid-cols-1 gap-2">
-              @for (item of explanations(); track item.id) {
-                <app-section-card
-                  variant="nested"
-                  [title]="item.value + ' ' + item.label"
-                  [subtitle]="item.criterion"
-                >
-                  <p class="m-0">{{ item.meaning }}</p>
+              @for (alert of alerts(); track alert.id) {
+                <app-section-card variant="nested" [showHead]="false">
+                  <p class="m-0 text-sm">{{ alert.message }}</p>
                 </app-section-card>
               }
             </div>
+          }
+        </div>
+      </app-section-card>
+
+      <app-section-card title="ความหมายของ KPI จากใบในกระดาน" subtitle="คำอธิบายเกณฑ์การวัดผลของแต่ละดัชนี">
+        <div class="max-h-[260px] overflow-y-auto pr-1">
+          <div class="grid grid-cols-1 gap-2">
+            @for (item of explanations(); track item.id) {
+              <app-section-card
+                variant="nested"
+                [title]="item.value + ' ' + item.label"
+                [subtitle]="item.criterion"
+              >
+                <p class="m-0 text-sm">{{ item.meaning }}</p>
+              </app-section-card>
+            }
           </div>
         </div>
+      </app-section-card>
+
+      <div class="lg:col-span-2">
+        <app-section-card
+          title="สัดส่วนภาระงานรายเดือน: Planned MD vs Unplanned vs งานสั่งตรงจาก MD (MD Mandate)"
+          subtitle="กราฟพื้นที่ซ้อน (Stacked Area) แสดงแนวโน้มสัดส่วน Man-day จริงรายเดือนตามหมวดงาน เพื่อดูผลกระทบต่องานตามแผนต่อเนื่อง"
+        >
+          <ejs-chart
+            id="md-composition-chart"
+            style="display: block; height: 270px; width: 100%"
+            [theme]="theme.sfTheme()"
+            [primaryXAxis]="categoryAxis"
+            [primaryYAxis]="quotaAxis"
+            [tooltip]="chartTooltip"
+            [legendSettings]="chartLegend"
+            [chartArea]="chartArea"
+            [enableAnimation]="true"
+          >
+            <e-series-collection>
+              <e-series
+                type="StackingArea"
+                [dataSource]="mdCompositionPoints()"
+                xName="month"
+                yName="plannedMd"
+                name="Planned (ในแผน)"
+                fill="#2e4fc8"
+                opacity="0.82"
+                [border]="{ width: 1.5, color: '#2e4fc8' }"
+              ></e-series>
+              <e-series
+                type="StackingArea"
+                [dataSource]="mdCompositionPoints()"
+                xName="month"
+                yName="unplannedGeneralMd"
+                name="Unplanned ทั่วไป"
+                fill="#3ec6e0"
+                opacity="0.82"
+                [border]="{ width: 1.5, color: '#0891b2' }"
+              ></e-series>
+              <e-series
+                type="StackingArea"
+                [dataSource]="mdCompositionPoints()"
+                xName="month"
+                yName="mdMandateMd"
+                name="⚡ MD Mandate (สั่งตรง)"
+                fill="#f59e0b"
+                opacity="0.88"
+                [border]="{ width: 1.5, color: '#d97706' }"
+              ></e-series>
+            </e-series-collection>
+          </ejs-chart>
+        </app-section-card>
       </div>
     }
-    @if (viewingLive()) {
-      <div id="chart-monthly" class="e-panel" data-row="4" data-col="0" data-sizex="2" data-sizey="2">
-        <div class="e-panel-container">
-          <div class="e-panel-header">เส้นรายเดือน</div>
-          <div class="e-panel-content">
-            <p class="kpi-note">ปิดตามแผน ความแม่น และ rework ของใบที่ปิดในเดือนนั้น · เส้นประคือเป้า {{ target }}</p>
-            <ejs-chart
-              id="monthly-line"
-              style="display: block; height: 260px; width: 100%"
-              [theme]="theme.sfTheme()"
-              [primaryXAxis]="categoryAxis"
-              [primaryYAxis]="percentAxis"
-              [tooltip]="chartTooltip"
-              [legendSettings]="chartLegend"
-              [chartArea]="chartArea"
-              [enableAnimation]="true"
-            >
-              <e-series-collection>
-                <e-series
-                  type="Line"
-                  [dataSource]="monthlyPoints()"
-                  xName="month"
-                  yName="plan"
-                  name="ปิดตามแผน"
-                  width="2.5"
-                  fill="#4c68e5"
-                  [marker]="seriesMarker"
-                ></e-series>
-                <e-series
-                  type="Line"
-                  [dataSource]="monthlyPoints()"
-                  xName="month"
-                  yName="accuracy"
-                  name="ความแม่น"
-                  width="2.5"
-                  fill="#3ec6e0"
-                  [marker]="seriesMarker"
-                ></e-series>
-                <e-series
-                  type="Line"
-                  [dataSource]="monthlyPoints()"
-                  xName="month"
-                  yName="rework"
-                  name="Rework"
-                  width="2.5"
-                  fill="#e35d6a"
-                  [marker]="seriesMarker"
-                ></e-series>
-                <e-series
-                  type="Line"
-                  [dataSource]="monthlyPoints()"
-                  xName="month"
-                  yName="target"
-                  name="เป้า 75"
-                  width="2"
-                  fill="#f0b429"
-                  dashArray="6,4"
-                  legendShape="Diamond"
-                  [marker]="targetMarker"
-                ></e-series>
-              </e-series-collection>
-            </ejs-chart>
-          </div>
-        </div>
-      </div>
-    }
-    @if (viewingLive()) {
-      <div id="chart-quota" class="e-panel" data-row="4" data-col="2" data-sizex="2" data-sizey="2">
-        <div class="e-panel-container">
-          <div class="e-panel-header">โควตาที่ใช้กับที่ว่าง</div>
-          <div class="e-panel-content">
-            <p class="kpi-note">แท่งซ้อน = โควตาสัปดาห์ · ใช้แล้วคือ MD ใบที่ยังไม่ปิด · ว่างคือโควตาที่เหลือ (กัน 1 MD)</p>
-            <ejs-chart
-              id="quota-bars"
-              style="display: block; height: 260px; width: 100%"
-              [theme]="theme.sfTheme()"
-              [primaryXAxis]="categoryAxis"
-              [primaryYAxis]="quotaAxis"
-              [tooltip]="chartTooltip"
-              [legendSettings]="chartLegend"
-              [chartArea]="chartArea"
-              [enableAnimation]="true"
-            >
-              <e-series-collection>
-                <e-series
-                  type="StackingColumn"
-                  [dataSource]="quotaPoints()"
-                  xName="nickname"
-                  yName="used"
-                  name="ใช้แล้ว"
-                  fill="#4c68e5"
-                  columnWidth="0.55"
-                ></e-series>
-                <e-series
-                  type="StackingColumn"
-                  [dataSource]="quotaPoints()"
-                  xName="nickname"
-                  yName="free"
-                  name="ว่าง"
-                  fill="#93c5fd"
-                  columnWidth="0.55"
-                  [cornerRadius]="columnCorner"
-                ></e-series>
-              </e-series-collection>
-            </ejs-chart>
-          </div>
-        </div>
-      </div>
-    }
-    @if (viewingLive()) {
-      <div id="chart-md-composition" class="e-panel" data-row="6" data-col="0" data-sizex="4" data-sizey="2">
-        <div class="e-panel-container">
-          <div class="e-panel-header">สัดส่วนภาระงานรายเดือน: Planned MD vs Unplanned vs งานสั่งตรงจาก MD (MD Mandate)</div>
-          <div class="e-panel-content">
-            <p class="kpi-note">กราฟพื้นที่ซ้อน (Stacked Area) แสดงแนวโน้มสัดส่วน Man-day จริงรายเดือนตามหมวดงาน เพื่อดูผลกระทบต่องานตามแผนต่อเนื่อง</p>
-            <ejs-chart
-              id="md-composition-chart"
-              style="display: block; height: 260px; width: 100%"
-              [theme]="theme.sfTheme()"
-              [primaryXAxis]="categoryAxis"
-              [primaryYAxis]="quotaAxis"
-              [tooltip]="chartTooltip"
-              [legendSettings]="chartLegend"
-              [chartArea]="chartArea"
-              [enableAnimation]="true"
-            >
-              <e-series-collection>
-                <e-series
-                  type="StackingArea"
-                  [dataSource]="mdCompositionPoints()"
-                  xName="month"
-                  yName="plannedMd"
-                  name="Planned (ในแผน)"
-                  fill="#4c68e5"
-                  opacity="0.85"
-                  [border]="{ width: 1.5, color: '#2e4fc8' }"
-                ></e-series>
-                <e-series
-                  type="StackingArea"
-                  [dataSource]="mdCompositionPoints()"
-                  xName="month"
-                  yName="unplannedGeneralMd"
-                  name="Unplanned ทั่วไป"
-                  fill="#3ec6e0"
-                  opacity="0.85"
-                  [border]="{ width: 1.5, color: '#0891b2' }"
-                ></e-series>
-                <e-series
-                  type="StackingArea"
-                  [dataSource]="mdCompositionPoints()"
-                  xName="month"
-                  yName="mdMandateMd"
-                  name="⚡ MD Mandate (สั่งตรง)"
-                  fill="#f59e0b"
-                  opacity="0.9"
-                  [border]="{ width: 1.5, color: '#d97706' }"
-                ></e-series>
-              </e-series-collection>
-            </ejs-chart>
-          </div>
-        </div>
-      </div>
-    }
-  </ejs-dashboardlayout>
+  </div>
 </section>

@@ -33,12 +33,13 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { workSummaryStats } from '../../core/work-views';
 import { HeroBandComponent, HeroBandMetric } from '../../shared/ui/hero-band/hero-band';
+import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-summary',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DashboardLayoutModule, AccumulationChartModule, ChartModule, HeroBandComponent, MessageModule],
+  imports: [AccumulationChartModule, ChartModule, HeroBandComponent, SectionCardComponent, MessageModule],
   providers: [
     PieSeriesService,
     AccumulationLegendService,
@@ -86,9 +87,14 @@ export class WorkSummary implements AfterViewInit {
     format: '${point.x}: <b>${point.y}</b>',
   };
   protected readonly chartArea = { border: { width: 0 } };
-  protected readonly columnCorner = { topLeft: 4, topRight: 4 };
+  protected readonly columnCorner = { topLeft: 8, topRight: 8 };
   protected readonly categoryAxis = { valueType: 'Category' as const, majorGridLines: { width: 0 } };
-  protected readonly valueAxis = { title: 'MD', majorGridLines: { width: 0 } };
+  protected readonly valueAxis = {
+    title: 'MD',
+    opposedPosition: true,
+    majorGridLines: { width: 1, dashArray: '4,4' },
+    lineStyle: { width: 0 },
+  };
   protected readonly donutLabel = { visible: false };
   protected readonly centerTextStyle = computed(() => ({
     fontFamily: 'Sarabun, Tahoma, sans-serif',
