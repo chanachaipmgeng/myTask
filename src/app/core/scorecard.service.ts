@@ -11,6 +11,7 @@ import {
   accessOverrides,
   alertRules,
   applyRemoteSettings,
+  teamStagingMode,
   levelOverrides,
   trackWeights,
   weeklyQuotas,
@@ -267,6 +268,9 @@ export class ScorecardService {
       this.allocationsState.set((data.allocations ?? []).map((item) => ({ ...item })));
       this.devLoginEnabledState.set(data.auth.devLoginEnabled ?? false);
       applyRemoteSettings(data.settings);
+      if (data.teamStaging === 'all' || data.teamStaging === 'rd') {
+        teamStagingMode.set(data.teamStaging);
+      }
       if (data.auth.authenticated && data.auth.person) {
         setSessionUser(data.auth.person, data.auth.access ?? data.auth.person.access ?? 'member');
       } else {

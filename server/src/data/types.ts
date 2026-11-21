@@ -8,6 +8,13 @@ export interface AlertRulesSetting {
   overrunLimit: number;
 }
 
+export interface OpenProjectCatalogEntry {
+  id: number;
+  identifier: string;
+  name: string;
+  active: boolean;
+}
+
 export interface AppSettings {
   weeklyQuotas: Record<Level, number>;
   trackWeights: TrackWeights;
@@ -15,6 +22,8 @@ export interface AppSettings {
   levelOverrides: Record<string, Level>;
   hoursPerMd: number;
   openprojectMapping: OpenProjectMapping;
+  /** Snapshot โปรเจกต์จาก discovery — ใช้เป็น dropdown แม้ยังไม่มีใบซิงก์ */
+  openprojectProjectCatalog: OpenProjectCatalogEntry[];
 }
 
 export interface PersonRow {
@@ -32,6 +41,7 @@ export interface PersonRow {
   openproject_user_id: number | null;
   avatar_url?: string | null;
   department?: string | null;
+  unit?: string | null;
   job_title?: string | null;
   active: boolean;
 }
@@ -108,6 +118,7 @@ export function personFromRow(row: PersonRow): Person {
     openprojectUserId: row.openproject_user_id,
     avatarUrl: row.avatar_url ?? null,
     department: row.department ?? null,
+    unit: row.unit ?? null,
     jobTitle: row.job_title ?? null,
     active: row.active ?? true,
   };

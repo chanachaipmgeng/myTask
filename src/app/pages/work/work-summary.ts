@@ -29,17 +29,28 @@ import {
 } from '@syncfusion/ej2-angular-charts';
 import { DashboardLayoutComponent, DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
-import { workSummaryStats } from '../../core/work-views';
+import { TicketDetailService } from '../../core/ticket-detail.service';
+import { groupOpenWorkByDueBucket, workSummaryStats } from '../../core/work-views';
 import { HeroBandComponent, HeroBandMetric } from '../../shared/ui/hero-band/hero-band';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { StatusBadgeComponent, workflowStatusToneMap } from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-summary',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AccumulationChartModule, ChartModule, HeroBandComponent, SectionCardComponent, MessageModule],
+  imports: [
+    AccumulationChartModule,
+    ChartModule,
+    HeroBandComponent,
+    SectionCardComponent,
+    MessageModule,
+    ButtonModule,
+    StatusBadgeComponent,
+  ],
   providers: [
     PieSeriesService,
     AccumulationLegendService,
@@ -51,15 +62,18 @@ import { WorkHubFilter } from './work-hub-filter';
     TooltipService,
   ],
   templateUrl: './work-summary.html',
+  styleUrl: './work-summary.scss',
 })
 export class WorkSummary implements AfterViewInit {
   private readonly scorecard = inject(ScorecardService);
   private readonly hub = inject(WorkHubFilter);
+  private readonly ticketDetail = inject(TicketDetailService);
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly zone = inject(NgZone);
   private readonly cdr = inject(ChangeDetectorRef);
   protected readonly theme = inject(ThemeService);
+  protected readonly workflowStatusToneMap = workflowStatusToneMap;
 
   @ViewChild(DashboardLayoutComponent) private dashboard?: DashboardLayoutComponent;
 
@@ -105,7 +119,19 @@ export class WorkSummary implements AfterViewInit {
   protected readonly palette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6', '#94a3b8'];
 
   protected readonly view = computed(() =>
-    workSummaryStats(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
+    workSummaryStats(
+      this.scorecard.tickets(),
+      this.scorecard.people(),
+      this.hub.filterOptions(this.scorecard.people()),
+    ),
+  );
+
+  protected readonly openGrouped = computed(() =>
+    groupOpenWorkByDueBucket(
+      this.scorecard.tickets(),
+      this.scorecard.people(),
+      this.hub.filterOptions(this.scorecard.people()),
+    ),
   );
 
   protected readonly summaryMetrics = computed((): HeroBandMetric[] =>
@@ -116,6 +142,10 @@ export class WorkSummary implements AfterViewInit {
       tone: card.id === 'overdue' && card.value !== '0' ? 'bad' : 'neutral',
     })),
   );
+
+  protected openTicket(id: string): void {
+    this.ticketDetail.open(id);
+  }
 
   protected readonly statusCenter = computed(() => {
     const total = this.view().statusShare.reduce((sum, row) => sum + row.y, 0);

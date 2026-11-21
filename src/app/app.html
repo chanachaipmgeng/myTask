@@ -243,28 +243,103 @@
 
           <div class="navbar-brand-crumb">
             <h1 class="navbar-page-title" [title]="title()">{{ title() }}</h1>
-            <span class="navbar-crumb-scope" [attr.data-role]="role()">{{ roleDisplayName() }}</span>
+            <span
+              class="navbar-crumb-scope"
+              [class.is-borrowed]="viewingBorrowedMode()"
+              [attr.data-role]="role()"
+            >{{ roleDisplayName() }}</span>
+            @if (viewingBorrowedMode()) {
+              <button
+                type="button"
+                class="navbar-mode-restore"
+                title="กลับโหมดตามสิทธิ์จริง"
+                (click)="restoreTrueWorkspaceMode()"
+              >
+                กลับโหมดจริง
+              </button>
+            }
           </div>
         </div>
 
         <!-- 2. Right: Clean Omnisearch + Status + Alerts + Theme + Profile -->
         <div class="navbar-right">
-          <div class="navbar-search-bar" (click)="focusGlobalSearch()" title="ค้นหาด่วน (Ctrl+K)">
-            <span class="e-icons e-search navbar-search-icon"></span>
-            <input
-              #globalSearchInput
-              type="text"
-              class="navbar-search-input"
-              placeholder="ค้นหาใบงาน, พนักงาน, เมนู..."
-              [value]="globalSearch()"
-              (input)="onGlobalSearch($event)"
-              (keydown.enter)="onGlobalSearchSubmit()"
-            />
-            @if (globalSearch()) {
-              <button type="button" class="navbar-search-clear" (click)="clearGlobalSearch($event)" title="ล้างคำค้น">×</button>
-            } @else {
-              <div class="navbar-kbd-pill" title="คีย์ลัด (Ctrl+K)">
-                <kbd>⌘</kbd><kbd>K</kbd>
+          <div class="navbar-search-wrap">
+            <div class="navbar-search-bar" (click)="focusGlobalSearch()" title="ค้นหาด่วน (Ctrl+K)">
+              <span class="e-icons e-search navbar-search-icon"></span>
+              <input
+                #globalSearchInput
+                type="text"
+                class="navbar-search-input"
+                placeholder="ค้นหาใบงาน, พนักงาน, เมนู..."
+                [value]="globalSearch()"
+                (input)="onGlobalSearch($event)"
+                (keydown.enter)="onGlobalSearchSubmit()"
+                (focus)="searchOpen.set(true)"
+              />
+              @if (globalSearch()) {
+                <button type="button" class="navbar-search-clear" (click)="clearGlobalSearch($event)" title="ล้างคำค้น">×</button>
+              } @else {
+                <div class="navbar-kbd-pill" title="คีย์ลัด (Ctrl+K)">
+                  <kbd>⌘</kbd><kbd>K</kbd>
+                </div>
+              }
+            </div>
+            @if (searchOpen() && globalSearch().trim()) {
+              <div class="navbar-search-panel" (mousedown)="$event.preventDefault()">
+                @if (instantResults().tickets.length) {
+                  <div class="search-group">
+                    <div class="search-group__label">ใบงานในระบบ</div>
+                    @for (item of instantResults().tickets; track item.id) {
+                      <button type="button" class="search-hit" (click)="openTicketFromSearch(item.id)">
+                        <strong>{{ item.id }}</strong>
+                        <span>{{ item.title }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+                @if (instantResults().people.length) {
+                  <div class="search-group">
+                    <div class="search-group__label">พนักงาน</div>
+                    @for (item of instantResults().people; track item.id) {
+                      <button type="button" class="search-hit" (click)="goPersonFromSearch(item.id)">
+                        <strong>{{ item.id }}</strong>
+                        <span>{{ item.name }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+                @if (instantResults().menus.length) {
+                  <div class="search-group">
+                    <div class="search-group__label">เมนู</div>
+                    @for (item of instantResults().menus; track item.id) {
+                      <button type="button" class="search-hit" (click)="goMenuFromSearch(item.route)">
+                        <span>{{ item.text }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+                @if (liveResults().length) {
+                  <div class="search-group">
+                    <div class="search-group__label">ผลค้นหาสด</div>
+                    @for (item of liveResults(); track item.id + item.from) {
+                      <button type="button" class="search-hit" (click)="openTicketFromSearch(item.id)">
+                        <strong>{{ item.id }}</strong>
+                        <span>{{ item.title }} · {{ item.from === 'live' ? 'myProject' : 'ในระบบ' }}</span>
+                      </button>
+                    }
+                  </div>
+                }
+                <div class="search-panel-actions">
+                  <button
+                    ejs-button
+                    cssClass="e-small e-outline"
+                    type="button"
+                    [disabled]="liveSearching()"
+                    (click)="searchLiveMyProject()"
+                  >
+                    {{ liveSearching() ? 'กำลังค้นหา…' : 'ค้นหาสดใน myProject' }}
+                  </button>
+                </div>
               </div>
             }
           </div>
@@ -469,3 +544,5 @@
   [showCloseButton]="true"
   width="320px"
 ></ejs-toast>
+
+<app-ticket-detail-dialog></app-ticket-detail-dialog>

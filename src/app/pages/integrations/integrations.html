@@ -10,11 +10,20 @@
       <button ejs-button cssClass="e-primary" type="button" [disabled]="loading() || saving()" (click)="syncNow()">
         Sync OpenProject
       </button>
+      <button ejs-button cssClass="e-outline" type="button" [disabled]="loading() || saving()" (click)="discoverOpenProject()">
+        ดึงโปรเจกต์/สถานะ myProject
+      </button>
+      <button ejs-button cssClass="e-outline" type="button" [disabled]="loading() || saving()" (click)="discoverGitLabProjects()">
+        ดึงรายชื่อ Repo GitLab
+      </button>
     </div>
   </app-page-head>
 
   @if (message()) {
     <ejs-message [content]="message()" severity="Info" variant="Outlined"></ejs-message>
+  }
+  @if (discoveryHint()) {
+    <ejs-message [content]="discoveryHint()" severity="Info" variant="Outlined"></ejs-message>
   }
   @if (error()) {
     <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
@@ -68,6 +77,26 @@
                       [disabled]="!canEdit()"
                       (change)="onEnabled($event)"
                     ></ejs-checkbox>
+                  </div>
+                  <label class="field md:col-span-2">
+                    <span>โปรเจกต์ที่ซิงก์ (identifier คั่นด้วยจุลภาค · ว่าง = ทุกโปรเจกต์ที่ token เห็น)</span>
+                    <ejs-textbox
+                      [value]="projectsText()"
+                      (change)="projectsText.set($any($event).value ?? '')"
+                      [enabled]="canEdit()"
+                      placeholder="เช่น myhr-core, rd-spike"
+                    ></ejs-textbox>
+                  </label>
+                  <div class="field md:col-span-2 flex flex-wrap gap-2 items-center">
+                    <span class="text-sm opacity-80">Team staging (env): <strong>{{ teamStaging() }}</strong></span>
+                    @if (canEdit() && projectCatalog().length) {
+                      <button ejs-button cssClass="e-outline e-small" type="button" (click)="useActiveProjectsFromCatalog()">
+                        ใช้ทุกโปรเจกต์ active จาก catalog ({{ projectCatalog().length }})
+                      </button>
+                      <button ejs-button cssClass="e-flat e-small" type="button" (click)="clearSyncProjects()">
+                        ล้างรายการ (ซิงก์ทุกโปรเจกต์)
+                      </button>
+                    }
                   </div>
                 </div>
               </app-section-card>
@@ -207,6 +236,7 @@
                     <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveGitLabConfig()">บันทึก GitLab</button>
                   }
                   <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="syncGitLabNow()">ซิงก์ MR ตอนนี้</button>
+                  <button ejs-button cssClass="e-outline" type="button" [disabled]="saving()" (click)="discoverGitLabProjects()">ดึงรายชื่อ Repo</button>
                 </div>
                 <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
                   <label class="field">

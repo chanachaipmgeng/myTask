@@ -607,14 +607,18 @@ app-section-card:hover > .e-card.section-card,
 
 .work-hub-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 6px;
   align-items: center;
-  padding: 8px;
+  padding: 6px 8px;
   border-radius: 14px;
   background: rgba(15, 23, 42, 0.72);
   border: 1px solid var(--line);
   backdrop-filter: blur(10px);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .work-hub-tabs a[ejs-button] {
@@ -622,6 +626,7 @@ app-section-card:hover > .e-card.section-card,
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  flex: none;
 }
 
 .legend-chips,

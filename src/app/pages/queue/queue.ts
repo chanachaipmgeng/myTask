@@ -8,6 +8,7 @@ import { ApiClient } from '../../core/api-client';
 import { QueuePlan } from '../../core/capacity';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
 import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
@@ -33,6 +34,7 @@ import { SectionCardComponent } from '../../shared/ui/section-card/section-card'
 export class QueuePage {
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
+  private readonly ticketDetail = inject(TicketDetailService);
   private readonly api = inject(ApiClient, { optional: true });
 
   @ViewChild('writebackConfirm') private writebackConfirm?: ConfirmDialogComponent;
@@ -67,6 +69,12 @@ export class QueuePage {
 
   constructor() {
     void this.loadWritebackFlag();
+  }
+
+  protected openTicket(id: string): void {
+    if (id) {
+      this.ticketDetail.open(id);
+    }
   }
 
   protected accept(item: QueuePlan): void {

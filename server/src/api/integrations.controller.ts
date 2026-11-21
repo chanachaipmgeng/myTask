@@ -2,7 +2,11 @@ import { Body, Controller, Get, Put, Post, Query, Req, UnauthorizedException } f
 import { Inject } from '@nestjs/common';
 import { Ticket } from '../../../shared/domain/models';
 import { collectAlerts, projectedActual } from '../../../shared/domain/alerts';
-import { GitLabMergeRequestRaw, mapGitLabMergeRequests } from '../../../shared/domain/gitlab-mr';
+import {
+  extractTicketIdFromText,
+  GitLabMergeRequestRaw,
+  mapGitLabMergeRequests,
+} from '../../../shared/domain/gitlab-mr';
 import { formatMd, scoreTicket } from '../../../shared/domain/scoring';
 import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
 import { APP_CONFIG, AppConfig } from '../config';
@@ -22,7 +26,8 @@ import {
   upsertWorkItem,
 } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
-import { validateMapping } from '../integrations/openproject/openproject.mapper';
+import { CiStatus, GitLabClient } from '../integrations/gitlab/gitlab.client';
+import { isoDurationToHours, validateMapping } from '../integrations/openproject/openproject.mapper';
 import { OpenProjectSyncService } from '../integrations/openproject/openproject.sync';
 
 @Controller('api')
@@ -48,9 +53,11 @@ export class IntegrationsController {
       configured: envConfigured || Boolean(connection?.base_url && (hasDbToken || this.config.openproject.token)),
       enabled: envConfigured || Boolean(connection?.enabled),
       writeback: this.config.openproject.writeback,
+      teamStaging: this.config.openproject.teamStaging,
       baseUrl: this.config.openproject.url || connection?.base_url || '',
       hasToken: envConfigured || hasDbToken,
       mapping: settings.openprojectMapping,
+      projectCatalog: settings.openprojectProjectCatalog,
       hoursPerMd: settings.hoursPerMd,
       lastRuns: runs,
       unmappedUsers: unmapped.map((row) => ({
@@ -223,16 +230,18 @@ export class IntegrationsController {
   @Post('integrations/gitlab/sync')
   @Roles('admin', 'lead', 'member')
   async syncGitLab(@Req() req: AuthedRequest) {
-    const connection = await getConnection(this.db, 'gitlab');
-    const stored = parseGitLabBaseUrl(connection?.base_url ?? '');
-    const baseUrl = (this.config.gitlab.url || stored.baseUrl).replace(/\/+$/, '');
-    const projectIds =
-      this.config.gitlab.projectIds.length > 0 ? this.config.gitlab.projectIds : stored.projectIds;
-    const token = this.config.gitlab.apiToken || connectionToken(connection, this.config.tokenEncKey);
-    if (!baseUrl || !token || projectIds.length === 0) {
+    const resolved = await this.resolveGitLab();
+    if (!resolved) {
       return {
         ok: false,
         message: 'ยังไม่ได้ตั้งค่า GitLab URL, Project IDs หรือ API Token ในหน้า Integrations หรือ .env',
+      };
+    }
+    const { client, projectIds } = resolved;
+    if (projectIds.length === 0) {
+      return {
+        ok: false,
+        message: 'ยังไม่ได้ตั้งค่า GitLab Project IDs ในหน้า Integrations หรือ .env',
       };
     }
 
@@ -248,48 +257,20 @@ export class IntegrationsController {
     const rawMrs: GitLabMergeRequestRaw[] = [];
     for (const projectId of projectIds) {
       try {
-        const encoded = encodeURIComponent(projectId);
-        const url = `${baseUrl}/api/v4/projects/${encoded}/merge_requests?state=merged&per_page=100`;
-        const response = await fetch(url, {
-          headers: {
-            Accept: 'application/json',
-            'PRIVATE-TOKEN': token,
-          },
-        });
-        if (!response.ok) {
-          const text = await response.text();
-          errors.push(`Project ${projectId}: HTTP ${response.status} ${text.slice(0, 120)}`);
-          continue;
-        }
-        const items = (await response.json()) as GitLabMergeRequestRaw[];
-        if (Array.isArray(items)) {
-          // Fetch approvals for merged MRs to get reviewers & approved_by
-          for (const mr of items) {
-            if (mr.iid) {
-              try {
-                const approvalUrl = `${baseUrl}/api/v4/projects/${encoded}/merge_requests/${mr.iid}/approvals`;
-                const appRes = await fetch(approvalUrl, {
-                  headers: {
-                    Accept: 'application/json',
-                    'PRIVATE-TOKEN': token,
-                  },
-                });
-                if (appRes.ok) {
-                  const appData = (await appRes.json()) as {
-                    approved_by?: { user?: { id?: number; username?: string; name?: string } }[];
-                    approvers?: { user?: { id?: number; username?: string; name?: string } }[];
-                  };
-                  if (Array.isArray(appData.approved_by)) {
-                    mr.approved_by = appData.approved_by;
-                  }
-                }
-              } catch {
-                // Ignore approval fetch error per MR
+        const items = await client.listMergeRequests(projectId, { state: 'merged' });
+        for (const mr of items) {
+          if (mr.iid) {
+            try {
+              const approvals = await client.getMrApprovals(projectId, mr.iid);
+              if (Array.isArray(approvals.approved_by)) {
+                mr.approved_by = approvals.approved_by;
               }
+            } catch {
+              // Ignore approval fetch error per MR
             }
           }
-          rawMrs.push(...items);
         }
+        rawMrs.push(...items);
       } catch (err) {
         errors.push(`Project ${projectId}: ${err instanceof Error ? err.message : String(err)}`);
       }
@@ -374,6 +355,373 @@ export class IntegrationsController {
       matched,
       unmatched,
       updated,
+      errors,
+    };
+  }
+
+  @Get('integrations/gitlab/open-mrs')
+  @Roles('admin', 'lead', 'member')
+  async openMrs(
+    @Query('assignedToMe') assignedToMe: string | undefined,
+    @Req() req: AuthedRequest,
+  ) {
+    const resolved = await this.resolveGitLab();
+    if (!resolved) {
+      return { source: 'offline' as const, items: [], message: 'ยังไม่ได้ตั้งค่า GitLab' };
+    }
+    const { client, projectIds } = resolved;
+    const me = req.authUser?.person.gitlabUsername?.trim().toLowerCase() ?? '';
+    const onlyMine = assignedToMe === '1' || assignedToMe === 'true';
+
+    type OpenMrRow = {
+      projectId: string;
+      iid: number;
+      title: string;
+      webUrl: string;
+      author: string;
+      reviewers: string[];
+      ticketId: string;
+      ageHours: number;
+      ciStatus: CiStatus;
+      createdAt: string;
+      updatedAt: string;
+    };
+
+    const items: OpenMrRow[] = [];
+    const errors: string[] = [];
+    const now = Date.now();
+
+    const collect = async (projectId: string, mrs: GitLabMergeRequestRaw[]) => {
+      for (const mr of mrs) {
+        if (!mr.iid) continue;
+        const reviewers = (mr.reviewers ?? [])
+          .map((r) => r.username?.trim().toLowerCase())
+          .filter((u): u is string => Boolean(u));
+        if (onlyMine && me && !reviewers.includes(me)) {
+          continue;
+        }
+        let ciStatus: CiStatus = 'unknown';
+        try {
+          const pipelines = await client.getMrPipelines(projectId, mr.iid);
+          ciStatus = GitLabClient.latestCiStatus(pipelines);
+        } catch {
+          // keep unknown
+        }
+        const createdAt = String((mr as { created_at?: string }).created_at ?? mr.merged_at ?? '');
+        const updatedAt = String((mr as { updated_at?: string }).updated_at ?? createdAt);
+        const ageMs = createdAt ? Math.max(0, now - new Date(createdAt).getTime()) : 0;
+        items.push({
+          projectId: String(projectId),
+          iid: mr.iid,
+          title: (mr.title ?? '').trim() || `!${mr.iid}`,
+          webUrl: (mr.web_url ?? '').trim(),
+          author: String((mr as { author?: { username?: string } }).author?.username ?? ''),
+          reviewers,
+          ticketId:
+            extractTicketIdFromText(mr.title) ||
+            extractTicketIdFromText(mr.source_branch) ||
+            extractTicketIdFromText(mr.description),
+          ageHours: Math.round((ageMs / 3_600_000) * 10) / 10,
+          ciStatus,
+          createdAt,
+          updatedAt,
+        });
+      }
+    };
+
+    try {
+      if (onlyMine && me) {
+        const mrs = await client.listOpenMergeRequests({ reviewerUsername: me });
+        // Group-level API may omit project id — fall back to configured projects if empty
+        if (mrs.length > 0) {
+          const byProject = new Map<string, GitLabMergeRequestRaw[]>();
+          for (const mr of mrs) {
+            const pid = String((mr as { project_id?: number }).project_id ?? '');
+            if (!pid) continue;
+            const list = byProject.get(pid) ?? [];
+            list.push(mr);
+            byProject.set(pid, list);
+          }
+          for (const [pid, list] of byProject) {
+            await collect(pid, list);
+          }
+        } else {
+          for (const projectId of projectIds) {
+            try {
+              const mrs = await client.listMergeRequests(projectId, { state: 'opened' });
+              await collect(projectId, mrs);
+            } catch (err) {
+              errors.push(`Project ${projectId}: ${err instanceof Error ? err.message : String(err)}`);
+            }
+          }
+        }
+      } else {
+        for (const projectId of projectIds) {
+          try {
+            const mrs = await client.listMergeRequests(projectId, { state: 'opened' });
+            await collect(projectId, mrs);
+          } catch (err) {
+            errors.push(`Project ${projectId}: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      }
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err));
+    }
+
+    items.sort((a, b) => b.ageHours - a.ageHours);
+    return { source: 'live' as const, items, errors };
+  }
+
+  @Get('integrations/gitlab/projects')
+  @Roles('admin', 'lead')
+  async listGitLabProjects() {
+    const resolved = await this.resolveGitLab();
+    if (!resolved) {
+      return { source: 'offline' as const, projects: [], message: 'ยังไม่ได้ตั้งค่า GitLab' };
+    }
+    try {
+      const projects = await resolved.client.listProjects({ membership: true, simple: true });
+      return {
+        source: 'live' as const,
+        projects: projects.map((p) => ({
+          id: String(p.id),
+          name: p.name ?? '',
+          path: p.path_with_namespace ?? '',
+          webUrl: p.web_url ?? '',
+        })),
+      };
+    } catch (err) {
+      return {
+        source: 'error' as const,
+        projects: [],
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  @Get('integrations/openproject/discovery')
+  @Roles('admin', 'lead')
+  async openProjectDiscovery(@Req() req: AuthedRequest) {
+    const client = await this.syncService.getClient();
+    if (!client) {
+      return {
+        source: 'offline' as const,
+        projects: [],
+        statuses: [],
+        types: [],
+        message: 'ยังไม่ได้ตั้งค่า OpenProject',
+      };
+    }
+    try {
+      const [projects, statuses, types] = await Promise.all([
+        client.listProjects(),
+        client.listStatuses(),
+        client.listTypes(),
+      ]);
+      const catalog = projects
+        .filter((p) => p.identifier)
+        .map((p) => ({
+          id: p.id,
+          identifier: p.identifier ?? '',
+          name: p.name ?? p.identifier ?? '',
+          active: p.active ?? true,
+        }));
+      const settings = await getSettings(this.db);
+      settings.openprojectProjectCatalog = catalog;
+      await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
+      return {
+        source: 'live' as const,
+        projects: catalog.map((p) => ({
+          id: String(p.id),
+          name: p.name,
+          identifier: p.identifier,
+          active: p.active,
+        })),
+        statuses: statuses.map((s) => ({
+          id: s.id,
+          name: s.name ?? '',
+          isClosed: s.isClosed ?? false,
+        })),
+        types: types.map((t) => ({
+          id: t.id,
+          name: t.name ?? '',
+          isMilestone: t.isMilestone ?? false,
+        })),
+        teamStaging: this.config.openproject.teamStaging,
+      };
+    } catch (err) {
+      return {
+        source: 'error' as const,
+        projects: [],
+        statuses: [],
+        types: [],
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  /** สมาชิกต่อโปรเจกต์จาก OpenProject (เฟส C) — อ่านอย่างเดียว */
+  @Get('integrations/openproject/memberships')
+  @Roles('admin', 'lead')
+  async openProjectMemberships(@Query('project') projectRaw?: string) {
+    const project = (projectRaw ?? '').trim();
+    if (!project) {
+      return { source: 'error' as const, items: [], message: 'ระบุ project=identifier หรือ id' };
+    }
+    const client = await this.syncService.getClient();
+    if (!client) {
+      return { source: 'offline' as const, items: [], message: 'ยังไม่ได้ตั้งค่า OpenProject' };
+    }
+    try {
+      const items = await client.listMemberships({ project });
+      return {
+        source: 'live' as const,
+        items: items.map((m) => ({
+          id: m.id,
+          principal: m._links?.principal?.title ?? null,
+          principalHref: m._links?.principal?.href ?? null,
+          roles: (m._links?.roles ?? []).map((r) => r.title ?? '').filter(Boolean),
+          project: m._links?.project?.title ?? null,
+        })),
+      };
+    } catch (err) {
+      return {
+        source: 'error' as const,
+        items: [],
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  @Get('team-time')
+  @Roles('admin', 'lead', 'member')
+  async teamTime(
+    @Query('from') fromRaw: string | undefined,
+    @Query('to') toRaw: string | undefined,
+    @Req() req: AuthedRequest,
+  ) {
+    const settings = await getSettings(this.db);
+    const hoursPerMd = settings.hoursPerMd || 6;
+    const { from, to } = resolveWeekRange(fromRaw, toRaw);
+    const days = enumerateDates(from, to);
+    const people = await listPeople(this.db, true);
+    const role = req.authUser?.access ?? 'member';
+    const selfId = req.authUser?.person.id;
+    const visiblePeople =
+      role === 'member' ? people.filter((p) => p.id === selfId) : people;
+
+    const client = await this.syncService.getClient();
+    type DayCell = {
+      date: string;
+      hours: number;
+      ticketIds: string[];
+      hasGitlabActivity: boolean;
+    };
+    type PersonRow = {
+      personId: string;
+      nickname: string;
+      openprojectUserId: number | null;
+      gitlabUsername: string | null;
+      days: DayCell[];
+      totalHours: number;
+    };
+
+    const rows: PersonRow[] = visiblePeople.map((person) => ({
+      personId: person.id,
+      nickname: person.nickname,
+      openprojectUserId: person.openprojectUserId ?? null,
+      gitlabUsername: person.gitlabUsername ?? null,
+      days: days.map((date) => ({ date, hours: 0, ticketIds: [], hasGitlabActivity: false })),
+      totalHours: 0,
+    }));
+    const byPerson = new Map(rows.map((r) => [r.personId, r]));
+    const byOpUser = new Map(
+      rows.filter((r) => r.openprojectUserId != null).map((r) => [r.openprojectUserId!, r]),
+    );
+
+    let source: 'live' | 'offline' = 'offline';
+    const errors: string[] = [];
+
+    if (client) {
+      source = 'live';
+      try {
+        for await (const entry of client.paginateTimeEntries({ spentFrom: from, spentTo: to })) {
+          const userId = client.userIdFromTimeEntry(entry);
+          const row = userId != null ? byOpUser.get(userId) : undefined;
+          if (!row) continue;
+          const spentOn = (entry.spentOn ?? '').slice(0, 10);
+          const cell = row.days.find((d) => d.date === spentOn);
+          if (!cell) continue;
+          const hours = isoDurationToHours(entry.hours);
+          cell.hours = Math.round((cell.hours + hours) * 100) / 100;
+          const wpId = client.workPackageIdFromTimeEntry(entry);
+          if (wpId != null) {
+            const ticketId = `OP-${wpId}`;
+            if (!cell.ticketIds.includes(ticketId)) {
+              cell.ticketIds.push(ticketId);
+            }
+          }
+        }
+      } catch (err) {
+        errors.push(err instanceof Error ? err.message : String(err));
+        source = 'offline';
+      }
+    }
+
+    if (source === 'offline') {
+      const tickets = await listWorkItems(this.db);
+      for (const ticket of tickets) {
+        if (!ticket.assigneeId || !ticket.actualMd) continue;
+        const row = byPerson.get(ticket.assigneeId);
+        if (!row) continue;
+        const closedOn = normalizeDate(ticket.closedOn) || normalizeDate(ticket.dueOn);
+        if (!closedOn || closedOn < from || closedOn > to) continue;
+        const cell = row.days.find((d) => d.date === closedOn);
+        if (!cell) continue;
+        const hours = Math.round(ticket.actualMd * hoursPerMd * 100) / 100;
+        cell.hours = Math.round((cell.hours + hours) * 100) / 100;
+        if (!cell.ticketIds.includes(ticket.id)) {
+          cell.ticketIds.push(ticket.id);
+        }
+      }
+    }
+
+    // Optional GitLab activity dots (best-effort, skip silently on failure)
+    const gitlab = await this.resolveGitLab();
+    if (gitlab) {
+      for (const row of rows) {
+        if (!row.gitlabUsername) continue;
+        try {
+          const events = await gitlab.client.getUserEvents(row.gitlabUsername, {
+            after: from,
+            before: to,
+          });
+          for (const event of events) {
+            const day = (event.created_at ?? '').slice(0, 10);
+            const cell = row.days.find((d) => d.date === day);
+            if (cell) {
+              cell.hasGitlabActivity = true;
+            }
+          }
+        } catch {
+          // ignore per-user event errors
+        }
+      }
+    }
+
+    for (const row of rows) {
+      row.totalHours = Math.round(row.days.reduce((sum, d) => sum + d.hours, 0) * 100) / 100;
+    }
+
+    return {
+      source,
+      from,
+      to,
+      days,
+      hoursPerDayTarget: hoursPerMd,
+      writeback: this.config.openproject.writeback,
+      rows,
       errors,
     };
   }
@@ -544,6 +892,27 @@ export class IntegrationsController {
       return { ok: false, sent: false, message: errMsg, messages };
     }
   }
+
+  private async resolveGitLab(): Promise<{
+    client: GitLabClient;
+    projectIds: string[];
+    baseUrl: string;
+  } | null> {
+    const connection = await getConnection(this.db, 'gitlab');
+    const stored = parseGitLabBaseUrl(connection?.base_url ?? '');
+    const baseUrl = (this.config.gitlab.url || stored.baseUrl).replace(/\/+$/, '');
+    const projectIds =
+      this.config.gitlab.projectIds.length > 0 ? this.config.gitlab.projectIds : stored.projectIds;
+    const token = this.config.gitlab.apiToken || connectionToken(connection, this.config.tokenEncKey);
+    if (!baseUrl || !token) {
+      return null;
+    }
+    return {
+      client: new GitLabClient(baseUrl, token),
+      projectIds,
+      baseUrl,
+    };
+  }
 }
 
 function encodeGitLabBaseUrl(baseUrl: string, projectIds: readonly string[]): string {
@@ -560,4 +929,38 @@ function parseGitLabBaseUrl(stored: string): { baseUrl: string; projectIds: stri
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
   return { baseUrl: baseUrl.trim(), projectIds };
+}
+
+function normalizeDate(raw: string | Date | null | undefined): string {
+  if (!raw) return '';
+  if (raw instanceof Date) {
+    return Number.isNaN(raw.getTime()) ? '' : raw.toISOString().slice(0, 10);
+  }
+  const s = String(raw).trim();
+  return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : '';
+}
+
+function resolveWeekRange(fromRaw?: string, toRaw?: string): { from: string; to: string } {
+  const today = new Date();
+  const to = normalizeDate(toRaw) || today.toISOString().slice(0, 10);
+  if (normalizeDate(fromRaw)) {
+    return { from: normalizeDate(fromRaw), to };
+  }
+  const toDate = new Date(`${to}T12:00:00Z`);
+  const day = toDate.getUTCDay(); // 0 Sun .. 6 Sat
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const monday = new Date(toDate);
+  monday.setUTCDate(toDate.getUTCDate() + mondayOffset);
+  return { from: monday.toISOString().slice(0, 10), to };
+}
+
+function enumerateDates(from: string, to: string): string[] {
+  const out: string[] = [];
+  const cursor = new Date(`${from}T12:00:00Z`);
+  const end = new Date(`${to}T12:00:00Z`);
+  while (cursor.getTime() <= end.getTime()) {
+    out.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return out;
 }

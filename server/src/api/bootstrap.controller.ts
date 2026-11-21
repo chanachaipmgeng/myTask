@@ -29,14 +29,20 @@ export class BootstrapController {
         listStageLogs(this.db),
         listAllocations(this.db),
       ]);
+    const staging = this.config.openproject.teamStaging;
     const activePeopleIds = new Set(people.map((p) => p.id));
-    const tickets = allTickets.filter(
-      (t) => t.track === 'RD' || (t.assigneeId && activePeopleIds.has(t.assigneeId)),
-    );
+    // โหมด rd: ใบ RD หรือ assignee ที่ active — โหมด all: ส่งทุกใบใน DB
+    const tickets =
+      staging === 'all'
+        ? allTickets
+        : allTickets.filter(
+            (t) => t.track === 'RD' || (t.assigneeId && activePeopleIds.has(t.assigneeId)),
+          );
     return {
       people,
       tickets,
       settings,
+      teamStaging: staging,
       departments,
       teams,
       disputes,

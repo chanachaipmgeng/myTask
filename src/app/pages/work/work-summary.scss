@@ -1,0 +1,113 @@
+.stuck-buckets {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stuck-bucket {
+  border: 1px solid color-mix(in srgb, #94a3b8 28%, transparent);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  background: color-mix(in srgb, #94a3b8 6%, transparent);
+
+  &[data-bucket='overdue'] {
+    border-color: color-mix(in srgb, #ef4444 45%, transparent);
+    background: color-mix(in srgb, #ef4444 8%, transparent);
+  }
+
+  &[data-bucket='today'] {
+    border-color: color-mix(in srgb, #f59e0b 45%, transparent);
+    background: color-mix(in srgb, #f59e0b 8%, transparent);
+  }
+}
+
+.stuck-bucket__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.stuck-bucket__count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.stuck-project {
+  margin-top: 0.45rem;
+}
+
+.stuck-project__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.stuck-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stuck-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, #fff 70%, transparent);
+}
+
+.stuck-list__open {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  align-items: baseline;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+
+  &:hover .stuck-list__id {
+    text-decoration: underline;
+  }
+}
+
+.stuck-list__id {
+  font-weight: 700;
+  color: #2746b3;
+}
+
+.stuck-list__title {
+  font-weight: 500;
+}
+
+.stuck-list__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  align-items: center;
+  font-size: 0.82rem;
+  opacity: 0.9;
+}
+
+:host-context(.e-dark-mode),
+:host-context(body.e-dark-mode) {
+  .stuck-list__item {
+    background: color-mix(in srgb, #0f1838 80%, transparent);
+  }
+
+  .stuck-list__id {
+    color: #93b4ff;
+  }
+}

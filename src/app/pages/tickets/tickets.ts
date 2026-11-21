@@ -29,6 +29,7 @@ import { BugCause, PocResult, Size, Ticket, TicketType, Track, VarianceCode, Wor
 import { SIZE_POINTS, SIZE_STANDARD_MD, scoreTicket } from '../../core/scoring';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../../core/ticket-file';
 import { ShellNotice } from '../../core/shell-notice';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import { ViewportService } from '../../core/viewport.service';
 import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID } from '../../data/seed';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
@@ -90,6 +91,7 @@ export class TicketsPage {
   private readonly scorecard = inject(ScorecardService);
   private readonly myProject = inject(MyProjectSyncAdapter);
   private readonly notice = inject(ShellNotice);
+  private readonly ticketDetail = inject(TicketDetailService);
   protected readonly viewport = inject(ViewportService);
 
   @ViewChild('ticketGrid') private ticketGrid?: GridComponent;
@@ -275,6 +277,10 @@ export class TicketsPage {
       totalActualMd,
     };
   });
+
+  protected openTicketDetail(ticketId: string): void {
+    this.ticketDetail.open(ticketId);
+  }
 
   protected openSelfUpdate(ticketId: string): void {
     const ticket = this.scorecard.tickets().find((t) => t.id === ticketId);

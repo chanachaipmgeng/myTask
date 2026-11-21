@@ -1,0 +1,97 @@
+<section class="page">
+  <app-page-head [title]="title()" [description]="description()">
+    <div actions class="head-actions">
+      <button ejs-button cssClass="e-outline" type="button" [disabled]="loading()" (click)="reload()">
+        {{ loading() ? 'กำลังโหลด…' : 'รีเฟรช' }}
+      </button>
+    </div>
+  </app-page-head>
+
+  <app-section-card
+    title="Timesheet Matrix"
+    [subtitle]="
+      data()
+        ? (data()!.from + ' → ' + data()!.to + ' · แหล่งข้อมูล ' + (data()!.source === 'live' ? 'myProject สด' : 'ออฟไลน์/seed'))
+        : 'ยังไม่มีข้อมูล'
+    "
+  >
+    @if (loading() && !data()) {
+      <p class="muted">กำลังโหลดตารางเวลา…</p>
+    } @else if (data(); as matrix) {
+      @if (isEmptyWeek()) {
+        <ejs-message
+          class="empty-week"
+          severity="Info"
+          variant="Outlined"
+          content="สัปดาห์นี้ยังไม่มีชั่วโมงลงเวลา — กดเซลล์แล้วเปิดใบงานเพื่อ Log Time หรือรอซิงก์จาก myProject (เซลล์เทา = ว่าง · ส้ม = ยังไม่ครบเป้า · เขียว = ครบ)"
+        ></ejs-message>
+      }
+      <div class="matrix-wrap">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th>พนักงาน</th>
+              @for (day of matrix.days; track day) {
+                <th>{{ weekdayLabel(day) }}</th>
+              }
+              <th>รวม</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of matrix.rows; track row.personId) {
+              <tr>
+                <td class="person-cell">{{ row.nickname }}</td>
+                @for (cell of row.days; track cell.date) {
+                  <td>
+                    <button
+                      type="button"
+                      [class]="cellClass(cell.hours, matrix.hoursPerDayTarget)"
+                      (click)="openCell(row, cell)"
+                      [title]="cell.ticketIds.join(', ') || 'ว่าง — กดเพื่อดูรายละเอียด'"
+                    >
+                      {{ cell.hours > 0 ? (cell.hours + 'h') : '—' }}
+                      @if (cell.hasGitlabActivity) {
+                        <span class="git-dot" title="มีกิจกรรม GitLab"></span>
+                      }
+                    </button>
+                  </td>
+                }
+                <td class="total-cell">{{ row.totalHours }}h</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="matrix.days.length + 2" class="muted">ไม่พบพนักงานในขอบเขตนี้</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="legend muted">
+        <span class="legend-swatch legend-swatch--empty"></span>ว่าง
+        <span class="legend-swatch legend-swatch--warn"></span>ยังไม่ครบ {{ matrix.hoursPerDayTarget }} ชม.
+        <span class="legend-swatch legend-swatch--ok"></span>ครบเป้า
+        · จุดเขียว = มี push/merge บน GitLab
+      </p>
+    }
+  </app-section-card>
+
+  @if (selectedCell(); as sel) {
+    <app-section-card
+      [title]="'รายละเอียด ' + sel.nickname + ' · ' + sel.date"
+      [subtitle]="sel.hours + ' ชั่วโมง'"
+      variant="nested"
+    >
+      @if (sel.ticketIds.length) {
+        <ul class="ticket-list">
+          @for (id of sel.ticketIds; track id) {
+            <li>
+              <button ejs-button cssClass="e-link" type="button" (click)="openTicket(id)">{{ id }}</button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="muted">ยังไม่มีใบงานในวันนี้ — เปิดใบงานจากคิวหรือค้นหา ⌘K แล้วกด Log Time ในแท็บเวลา</p>
+      }
+    </app-section-card>
+  }
+</section>

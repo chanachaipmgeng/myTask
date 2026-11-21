@@ -1,89 +1,22 @@
 <section class="page">
   <app-page-head
-    title="หลังบ้าน &amp; จัดการสิทธิ์ผู้ใช้งาน (Admin &amp; Governance)"
-    description="จัดการสิทธิ์การเข้าถึง (Admin / Lead / Member), ระดับพนักงาน, โควต้ารายสัปดาห์, น้ำหนักคะแนน, กฎแจ้งเตือน และตรวจสอบประวัติการใช้งาน (Audit Log)"
+    title="หลังบ้าน &amp; สิทธิ์ผู้ใช้"
+    description="จัดการสิทธิ์ (Admin / Lead / Member) และระดับโควตาเป็นหลัก — โควตาสัปดาห์ น้ำหนักคะแนน และกฎแจ้งเตือนอยู่ด้านล่าง"
   >
     <div actions class="flex flex-wrap gap-2">
       <a ejs-button cssClass="e-outline" routerLink="/admin/rubrics">
-        <span class="e-icons e-settings mr-1"></span> ทะเบียนเกณฑ์ (Rubrics)
+        <span class="e-icons e-settings mr-1"></span> ทะเบียนเกณฑ์
       </a>
-      <a ejs-button cssClass="e-outline" routerLink="/login">หน้าเข้าสู่ระบบ / สลับบัญชี (/login)</a>
-      <a ejs-button cssClass="e-primary" routerLink="/analytics">ศูนย์วิเคราะห์ Python (/analytics)</a>
+      <a ejs-button cssClass="e-outline" routerLink="/login">สลับบัญชี</a>
+      <a ejs-button cssClass="e-primary" routerLink="/analytics">ศูนย์วิเคราะห์</a>
     </div>
   </app-page-head>
 
   <app-section-card
-    title="สลับผู้ใช้งานจำลอง &amp; ทดสอบสิทธิ์ (Session &amp; Persona)"
-    subtitle="ทดสอบมุมมองและสิทธิ์การแก้ไขของแต่ละบทบาททั้งโหมดออฟไลน์และ Dev Session"
-  >
-    <div class="flex flex-wrap gap-2 mb-1">
-      <button ejs-button type="button" cssClass="e-outline e-small" (click)="devLogin('paweena')">Dev login · ปวีณา (admin)</button>
-      <button ejs-button type="button" cssClass="e-outline e-small" (click)="devLogin('watchara')">Dev login · วัชระ (lead)</button>
-      <button ejs-button type="button" cssClass="e-outline e-small" (click)="devLogin('itsara')">Dev login · อิสรภาพ (member)</button>
-      <button ejs-button type="button" cssClass="e-flat e-small" (click)="logout()">Logout</button>
-    </div>
-
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-end">
-      <app-form-field label="ผู้ที่กำลังดู (ตัวอย่างออฟไลน์)">
-        <ejs-dropdownlist
-          id="viewer-role"
-          [dataSource]="viewerOptions"
-          [fields]="fields"
-          [value]="viewer().id"
-          [enabled]="!session()"
-          (change)="onViewer($event)"
-          width="100%"
-        ></ejs-dropdownlist>
-      </app-form-field>
-      <ejs-message id="access-flag" [content]="accessBanner()" severity="Info" variant="Outlined"></ejs-message>
-    </div>
-    <app-flash-messages [info]="status() || null"></app-flash-messages>
-  </app-section-card>
-
-  <div class="card-grid-2">
-    <app-section-card
-      title="โควต้ารายสัปดาห์"
-      subtitle="ใช้คำนวณคนว่างบนคิว ไม่เปลี่ยน MD ที่วางไว้ของดัชนี และไม่เปลี่ยนคะแนนใบ"
-      badge="MD / สัปดาห์"
-      badgeTone="info"
-    >
-      <div class="form-grid grid grid-cols-1 sm:grid-cols-2">
-        <app-form-field label="Senior">
-          <ejs-numerictextbox id="quota-senior" [value]="quotas().Senior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Senior', $event)"></ejs-numerictextbox>
-        </app-form-field>
-        <app-form-field label="Mid">
-          <ejs-numerictextbox id="quota-mid" [value]="quotas().Mid" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Mid', $event)"></ejs-numerictextbox>
-        </app-form-field>
-        <app-form-field label="Junior">
-          <ejs-numerictextbox id="quota-junior" [attr.data-quota]="quotas().Junior" [value]="quotas().Junior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Junior', $event)"></ejs-numerictextbox>
-        </app-form-field>
-        <app-form-field label="เดือนแรก">
-          <ejs-numerictextbox id="quota-first" [value]="quotas().FirstMonth" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('FirstMonth', $event)"></ejs-numerictextbox>
-        </app-form-field>
-      </div>
-    </app-section-card>
-
-    <app-section-card
-      title="กฎแจ้งเตือนใบงานเสี่ยง"
-      subtitle="กำหนดเงื่อนไขการแจ้งเตือนใบงานใกล้ครบกำหนดและใบที่เวลาจริงเกินแผน"
-      badge="Alert Rules"
-      badgeTone="warning"
-    >
-      <div class="flex flex-col gap-3">
-        <div class="flex flex-wrap gap-4">
-          <ejs-checkbox id="rule-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="rules().deadline" [disabled]="!canEdit()" (change)="onDeadline($event)"></ejs-checkbox>
-          <ejs-checkbox id="rule-overrun" label="actual มีแนวโน้มเกิน estimate" [checked]="rules().overrun" [disabled]="!canEdit()" (change)="onOverrun($event)"></ejs-checkbox>
-        </div>
-        <app-form-field label="เกณฑ์เกิน (เท่าของ estimate)">
-          <ejs-numerictextbox id="rule-overrun-limit" [value]="rules().overrunLimit" [enabled]="canEdit()" [min]="1.1" [max]="5" [step]="0.1" format="n1" (change)="onOverrunLimit($event)"></ejs-numerictextbox>
-        </app-form-field>
-      </div>
-    </app-section-card>
-  </div>
-
-  <app-section-card
-    title="คน ระดับ และสิทธิ์การใช้งาน (Role Matrix)"
-    subtitle="ปรับสิทธิ์การเข้าถึง (admin / lead / member) และระดับโควตาของพนักงานแต่ละคน"
+    title="คน ระดับ และสิทธิ์ (Role Matrix)"
+    subtitle="งานหลักของหน้านี้ — ปรับ access และระดับโควตาของแต่ละคน"
+    badge="สำคัญ"
+    badgeTone="danger"
   >
     <div actions class="w-full sm:w-64">
       <ejs-textbox
@@ -132,6 +65,47 @@
       }
     </div>
   </app-section-card>
+
+  <div class="card-grid-2">
+    <app-section-card
+      title="โควต้ารายสัปดาห์"
+      subtitle="ใช้คำนวณคนว่างบนคิว — ไม่เปลี่ยนคะแนนใบ"
+      badge="MD / สัปดาห์"
+      badgeTone="info"
+    >
+      <div class="form-grid grid grid-cols-1 sm:grid-cols-2">
+        <app-form-field label="Senior">
+          <ejs-numerictextbox id="quota-senior" [value]="quotas().Senior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Senior', $event)"></ejs-numerictextbox>
+        </app-form-field>
+        <app-form-field label="Mid">
+          <ejs-numerictextbox id="quota-mid" [value]="quotas().Mid" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Mid', $event)"></ejs-numerictextbox>
+        </app-form-field>
+        <app-form-field label="Junior">
+          <ejs-numerictextbox id="quota-junior" [attr.data-quota]="quotas().Junior" [value]="quotas().Junior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Junior', $event)"></ejs-numerictextbox>
+        </app-form-field>
+        <app-form-field label="เดือนแรก">
+          <ejs-numerictextbox id="quota-first" [value]="quotas().FirstMonth" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('FirstMonth', $event)"></ejs-numerictextbox>
+        </app-form-field>
+      </div>
+    </app-section-card>
+
+    <app-section-card
+      title="กฎแจ้งเตือนใบงานเสี่ยง"
+      subtitle="ใกล้ครบกำหนด และเวลาจริงเกินแผน"
+      badge="Alert Rules"
+      badgeTone="warning"
+    >
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-wrap gap-4">
+          <ejs-checkbox id="rule-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="rules().deadline" [disabled]="!canEdit()" (change)="onDeadline($event)"></ejs-checkbox>
+          <ejs-checkbox id="rule-overrun" label="actual มีแนวโน้มเกิน estimate" [checked]="rules().overrun" [disabled]="!canEdit()" (change)="onOverrun($event)"></ejs-checkbox>
+        </div>
+        <app-form-field label="เกณฑ์เกิน (เท่าของ estimate)">
+          <ejs-numerictextbox id="rule-overrun-limit" [value]="rules().overrunLimit" [enabled]="canEdit()" [min]="1.1" [max]="5" [step]="0.1" format="n1" (change)="onOverrunLimit($event)"></ejs-numerictextbox>
+        </app-form-field>
+      </div>
+    </app-section-card>
+  </div>
 
   <app-section-card
     title="น้ำหนักคะแนนแยกสาย"
@@ -189,8 +163,38 @@
   </app-section-card>
 
   <app-section-card
+    title="ทดสอบสิทธิ์ (Session &amp; Persona)"
+    subtitle="สลับบัญชีจำลองเพื่อตรวจมุมมอง — ไม่ใช่งานประจำของแอดมิน"
+    badge="Dev"
+    badgeTone="secondary"
+  >
+    <div class="flex flex-wrap gap-2 mb-1">
+      <button ejs-button type="button" cssClass="e-outline e-small" (click)="devLogin('paweena')">Dev login · ปวีณา (admin)</button>
+      <button ejs-button type="button" cssClass="e-outline e-small" (click)="devLogin('watchara')">Dev login · วัชระ (lead)</button>
+      <button ejs-button type="button" cssClass="e-outline e-small" (click)="devLogin('itsara')">Dev login · อิสรภาพ (member)</button>
+      <button ejs-button type="button" cssClass="e-flat e-small" (click)="logout()">Logout</button>
+    </div>
+
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-end">
+      <app-form-field label="ผู้ที่กำลังดู (ตัวอย่างออฟไลน์)">
+        <ejs-dropdownlist
+          id="viewer-role"
+          [dataSource]="viewerOptions"
+          [fields]="fields"
+          [value]="viewer().id"
+          [enabled]="!session()"
+          (change)="onViewer($event)"
+          width="100%"
+        ></ejs-dropdownlist>
+      </app-form-field>
+      <ejs-message id="access-flag" [content]="accessBanner()" severity="Info" variant="Outlined"></ejs-message>
+    </div>
+    <app-flash-messages [info]="status() || null"></app-flash-messages>
+  </app-section-card>
+
+  <app-section-card
     title="สถานะการเชื่อมต่อระบบภายนอก"
-    subtitle="โหมดการเชื่อมต่อของ myProject, GitLab และ Microsoft Teams"
+    subtitle="myProject · GitLab · Microsoft Teams"
   >
     <a actions ejs-button cssClass="e-outline e-small" routerLink="/integrations">ตั้งค่าละเอียด (/integrations)</a>
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -215,7 +219,7 @@
 
   <app-section-card
     title="ประวัติตรวจสอบระบบ (Audit Log)"
-    subtitle="บันทึกการแก้ไขสิทธิ์ผู้ใช้งาน การตั้งค่า และการสั่งรันวิเคราะห์ข้อมูล"
+    subtitle="แก้ไขสิทธิ์ การตั้งค่า และการสั่งรันวิเคราะห์"
     [badge]="auditLogs().length + ' รายการล่าสุด'"
     badgeTone="secondary"
   >

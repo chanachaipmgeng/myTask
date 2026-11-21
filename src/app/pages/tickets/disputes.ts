@@ -32,6 +32,7 @@ import { scoreTicket } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import {
   defaultThaiSpeechButtonSettings,
@@ -77,7 +78,14 @@ export class DisputesPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   protected readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
+  private readonly ticketDetail = inject(TicketDetailService);
   private readonly destroyRef = inject(DestroyRef);
+
+  protected openTicket(id: string): void {
+    if (id) {
+      this.ticketDetail.open(id);
+    }
+  }
 
   protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
 

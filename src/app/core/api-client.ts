@@ -33,6 +33,13 @@ export interface KpiSnapshotRowDto {
   capturedBy: string | null;
 }
 
+export interface OpenProjectCatalogEntry {
+  id: number;
+  identifier: string;
+  name: string;
+  active: boolean;
+}
+
 export interface BootstrapSettings {
   weeklyQuotas: Record<string, number>;
   trackWeights: TrackWeights;
@@ -40,6 +47,7 @@ export interface BootstrapSettings {
   levelOverrides: Record<string, string>;
   hoursPerMd: number;
   openprojectMapping: unknown;
+  openprojectProjectCatalog?: OpenProjectCatalogEntry[];
 }
 
 export interface BootstrapResponse {
@@ -48,6 +56,7 @@ export interface BootstrapResponse {
   settings: BootstrapSettings;
   departments: Department[];
   teams: Team[];
+  teamStaging?: 'rd' | 'all';
   disputes?: import('./models').TicketDispute[];
   leaves?: import('./models').EmployeeLeave[];
   stageLogs?: import('./models').TicketStageLog[];
@@ -64,9 +73,11 @@ export interface OpenProjectIntegration {
   configured: boolean;
   enabled: boolean;
   writeback: boolean;
+  teamStaging: 'rd' | 'all';
   baseUrl: string;
   hasToken: boolean;
   mapping: Record<string, unknown>;
+  projectCatalog: OpenProjectCatalogEntry[];
   hoursPerMd: number;
   lastRuns: {
     id: string;
@@ -454,4 +465,169 @@ export class ApiClient {
       body: JSON.stringify({ ticketId }),
     });
   }
+
+  liveSearchWorkItems(q: string): Promise<{
+    source: 'live' | 'offline';
+    local: {
+      id: string;
+      title: string;
+      status: string;
+      assigneeId: string;
+      opId: number | null;
+      source: string;
+    }[];
+    live: { id: string; opId: number; title: string; status: string; updatedAt: string | null }[];
+    writeback: boolean;
+    message?: string;
+  }> {
+    const query = new URLSearchParams({ q });
+    return api(`/api/work-items/live-search?${query.toString()}`);
+  }
+
+  getWorkItemDetail(ticketId: string): Promise<TicketDetailResponse> {
+    return api(`/api/work-items/${encodeURIComponent(ticketId)}/detail`);
+  }
+
+  createTimeEntry(
+    ticketId: string,
+    body: { hours: number; spentOn: string; comment?: string },
+  ): Promise<{ ok: boolean; writebackDisabled?: boolean; message?: string }> {
+    return api(`/api/work-items/${encodeURIComponent(ticketId)}/time-entries`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  postWorkItemComment(
+    ticketId: string,
+    comment: string,
+  ): Promise<{ ok: boolean; writebackDisabled?: boolean; message?: string }> {
+    return api(`/api/work-items/${encodeURIComponent(ticketId)}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ comment }),
+    });
+  }
+
+  getTeamTime(from?: string, to?: string): Promise<TeamTimeResponse> {
+    const query = new URLSearchParams();
+    if (from) query.set('from', from);
+    if (to) query.set('to', to);
+    const qs = query.toString();
+    return api(`/api/team-time${qs ? `?${qs}` : ''}`);
+  }
+
+  getOpenMrs(assignedToMe = false): Promise<{
+    source: 'live' | 'offline';
+    items: OpenMrItem[];
+    errors?: string[];
+    message?: string;
+  }> {
+    const query = new URLSearchParams();
+    if (assignedToMe) query.set('assignedToMe', '1');
+    const qs = query.toString();
+    return api(`/api/integrations/gitlab/open-mrs${qs ? `?${qs}` : ''}`);
+  }
+
+  discoverOpenProject(): Promise<{
+    source: 'live' | 'offline' | 'error';
+    projects: { id: string; name: string; identifier: string; active: boolean }[];
+    statuses: { id: number; name: string; isClosed: boolean }[];
+    types: { id: number; name: string; isMilestone: boolean }[];
+    message?: string;
+  }> {
+    return api('/api/integrations/openproject/discovery');
+  }
+
+  listGitLabProjects(): Promise<{
+    source: 'live' | 'offline' | 'error';
+    projects: { id: string; name: string; path: string; webUrl: string }[];
+    message?: string;
+  }> {
+    return api('/api/integrations/gitlab/projects');
+  }
+}
+
+export interface TicketDetailResponse {
+  ok: boolean;
+  message?: string;
+  source: 'live' | 'offline';
+  writeback: boolean;
+  ticket?: Ticket;
+  scores?: {
+    week: number;
+    accuracy: number;
+    review: number;
+    reopen: number;
+    total: number | null;
+  };
+  description?: string;
+  relations?: {
+    id: number;
+    type: string;
+    fromTitle: string;
+    toTitle: string;
+    fromId: number | null;
+    toId: number | null;
+  }[];
+  attachments?: {
+    id: number;
+    fileName: string;
+    fileSize: number;
+    contentType: string;
+    downloadUrl: string;
+  }[];
+  timeEntries?: {
+    id: number;
+    spentOn: string;
+    hours: number;
+    userTitle: string;
+    comment: string;
+  }[];
+  activities?: { createdAt: string; text: string }[];
+  mrs?: {
+    iid: number;
+    projectId: string;
+    title: string;
+    webUrl: string;
+    state: string;
+    ciStatus: string;
+    commitSpan: { firstCommitOn: string | null; lastCommitOn: string | null; commitCount: number };
+    unresolvedThreads: number;
+    reviewRounds: number;
+    reviewers: string[];
+  }[];
+  opUrl?: string | null;
+  errors?: string[];
+}
+
+export interface TeamTimeResponse {
+  source: 'live' | 'offline';
+  from: string;
+  to: string;
+  days: string[];
+  hoursPerDayTarget: number;
+  writeback: boolean;
+  rows: {
+    personId: string;
+    nickname: string;
+    openprojectUserId: number | null;
+    gitlabUsername: string | null;
+    days: { date: string; hours: number; ticketIds: string[]; hasGitlabActivity: boolean }[];
+    totalHours: number;
+  }[];
+  errors?: string[];
+}
+
+export interface OpenMrItem {
+  projectId: string;
+  iid: number;
+  title: string;
+  webUrl: string;
+  author: string;
+  reviewers: string[];
+  ticketId: string;
+  ageHours: number;
+  ciStatus: string;
+  createdAt: string;
+  updatedAt: string;
 }

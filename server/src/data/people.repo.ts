@@ -34,8 +34,8 @@ export async function upsertPerson(
   await db.query(
     `INSERT INTO people (
        id, nickname, full_name, role_title, level, track, planned_md, team_id, access,
-       email, gitlab_username, openproject_user_id, active, avatar_url, department, job_title
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+       email, gitlab_username, openproject_user_id, active, avatar_url, department, unit, job_title
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
      ON CONFLICT (id) DO UPDATE SET
        nickname = EXCLUDED.nickname,
        full_name = EXCLUDED.full_name,
@@ -51,6 +51,7 @@ export async function upsertPerson(
        active = EXCLUDED.active,
        avatar_url = COALESCE(EXCLUDED.avatar_url, people.avatar_url),
        department = COALESCE(EXCLUDED.department, people.department),
+       unit = COALESCE(EXCLUDED.unit, people.unit),
        job_title = COALESCE(EXCLUDED.job_title, people.job_title)`,
     [
       person.id,
@@ -68,6 +69,7 @@ export async function upsertPerson(
       person.active ?? true,
       person.avatarUrl ?? null,
       person.department ?? null,
+      person.unit ?? null,
       person.jobTitle ?? null,
     ],
   );

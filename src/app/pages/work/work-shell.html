@@ -6,16 +6,55 @@
       } @else {
         <a ejs-button cssClass="e-outline" routerLink="/me">ผลงานของฉัน (/me)</a>
       }
+      <button ejs-button cssClass="e-flat e-small" type="button" (click)="clearContext()">ล้างกรอง</button>
+    </div>
+  </app-page-head>
+
+  <div class="work-context-bar" aria-label="บริบททีม สัปดาห์ และโปรเจกต์">
+    <p class="work-context-bar__line">{{ contextLine() }}</p>
+    <div class="work-context-bar__filters">
+      <app-form-field label="ทีม" variant="filter">
+        <ejs-dropdownlist
+          [dataSource]="teamOptions()"
+          [fields]="fields"
+          [value]="filter.teamId()"
+          (change)="setTeam($event)"
+          width="160px"
+          placeholder="ทุกทีม"
+        ></ejs-dropdownlist>
+      </app-form-field>
+      <app-form-field label="โปรเจกต์" variant="filter">
+        <ejs-dropdownlist
+          [dataSource]="projectOptions()"
+          [fields]="fields"
+          [value]="filter.opProject()"
+          (change)="setProject($event)"
+          width="180px"
+          placeholder="ทุกโปรเจกต์"
+        ></ejs-dropdownlist>
+      </app-form-field>
+      <app-form-field label="ค้นหา" variant="filter">
+        <ejs-textbox placeholder="รหัสหรือชื่อใบ" [value]="filter.query()" (change)="setQuery($event)" width="200px"></ejs-textbox>
+      </app-form-field>
+    </div>
+    <div class="work-context-bar__chips">
+      <app-filter-chips
+        [options]="weekChipOptions"
+        [value]="'' + filter.weekOffset()"
+        (valueChange)="setWeekChip($event)"
+      ></app-filter-chips>
       <app-filter-chips
         [options]="trackChipOptions"
         [value]="filter.track()"
         (valueChange)="setTrackChip($event)"
       ></app-filter-chips>
-      <app-form-field label="ค้นหา" variant="filter">
-        <ejs-textbox placeholder="รหัสหรือชื่อใบ" (change)="setQuery($event)" width="220px"></ejs-textbox>
-      </app-form-field>
+      <app-filter-chips
+        [options]="dueBucketOptions"
+        [value]="filter.dueBucket()"
+        (valueChange)="setDueBucketChip($event)"
+      ></app-filter-chips>
     </div>
-  </app-page-head>
+  </div>
 
   <nav class="work-hub-tabs flex flex-wrap gap-2" role="tablist" [attr.aria-label]="heading()">
     @for (tab of tabs(); track tab.path) {

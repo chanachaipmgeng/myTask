@@ -89,6 +89,9 @@ export interface DodAuditRow {
   unitTestLabel: string;
   unitTestPassed: boolean;
   stagingVerified: boolean;
+  /** Display-only CI hint from linked MR (live pipeline status filled by API when available). */
+  ciStatusLabel: string;
+  ciPassed: boolean | null;
   dodStatus: 'สมบูรณ์ 100%' | 'หลักฐานไม่ครบ';
   isComplete: boolean;
 }
@@ -398,6 +401,7 @@ export function computeQualityAuditSummary(
       const unitPass = t.dodChecklist?.unitTest ?? (idx % 3 !== 1);
       const stagPass = t.dodChecklist?.stagingVerified ?? (idx % 2 === 0);
       const isComplete = unitPass && stagPass && Boolean(t.mrLink || mr);
+      const hasMr = Boolean(t.mrLink);
       return {
         ticketId: t.id,
         title: t.title || t.note || t.module,
@@ -407,6 +411,8 @@ export function computeQualityAuditSummary(
         unitTestLabel: unitPass ? 'ผ่าน (85%)' : 'ไม่ระบุ!',
         unitTestPassed: unitPass,
         stagingVerified: stagPass,
+        ciStatusLabel: hasMr ? (unitPass ? 'CI พร้อมตรวจ' : 'รอ CI / ไม่ระบุ') : 'ยังไม่มี MR',
+        ciPassed: hasMr ? unitPass : null,
         dodStatus: isComplete ? 'สมบูรณ์ 100%' : 'หลักฐานไม่ครบ',
         isComplete,
       };

@@ -32,11 +32,20 @@ import {
   applyGanttDateEdit,
   addWorkingDays,
   detectActiveWipTickets,
+  dueBucketOf,
+  groupOpenWorkByDueBucket,
+  mondayOfWeek,
+  resolvePersonTeamId,
   workBacklogRows,
   workGanttTasks,
   workListRows,
   workSummaryStats,
 } from '../src/app/core/work-views';
+import {
+  isPersonActiveForStaging,
+  mapDepartmentToTeam,
+  parseTeamStaging,
+} from '../shared/domain/op-team-staging';
 import { extractTicketIdFromText, mapGitLabMergeRequests } from '../src/app/core/gitlab-mr';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../src/app/core/ticket-file';
 import { Person, Ticket, TicketType } from '../src/app/core/models';
@@ -424,6 +433,35 @@ assert.ok(workSummary.cards.length === 4);
 assert.ok(workSummary.statusShare.length >= 1);
 const workList = workListRows(SEED_TICKETS, SEED_PEOPLE);
 assert.equal(workList.length, SEED_TICKETS.length);
+assert.ok(workList.every((row) => row.projectLabel && row.teamLabel));
+const implementTeam = workListRows(SEED_TICKETS, SEED_PEOPLE, {
+  teamId: 'implement',
+  people: SEED_PEOPLE,
+});
+assert.ok(implementTeam.length > 0);
+assert.ok(implementTeam.every((row) => row.teamId === 'implement'));
+const openGrouped = groupOpenWorkByDueBucket(SEED_TICKETS, SEED_PEOPLE, { people: SEED_PEOPLE });
+assert.ok(openGrouped.totalOpen >= 0);
+assert.equal(
+  openGrouped.buckets.reduce((sum, b) => sum + b.count, 0),
+  openGrouped.totalOpen,
+);
+assert.ok(Object.values(openGrouped.counts).reduce((a, b) => a + b, 0) === openGrouped.totalOpen);
+const sampleOpen = SEED_TICKETS.find((t) => !t.closed);
+if (sampleOpen) {
+  const bucket = dueBucketOf(sampleOpen);
+  assert.ok(['overdue', 'today', 'tomorrow', 'thisWeek', 'later'].includes(bucket));
+}
+assert.equal(mondayOfWeek('2025-11-19'), '2025-11-17');
+assert.equal(resolvePersonTeamId(SEED_PEOPLE.find((p) => p.id === 'itsara')), 'implement');
+assert.equal(resolvePersonTeamId(SEED_PEOPLE.find((p) => p.track === 'RD')), 'rd');
+assert.equal(parseTeamStaging('all'), 'all');
+assert.equal(parseTeamStaging('rd'), 'rd');
+assert.equal(mapDepartmentToTeam('RD-Core').teamId, 'rd');
+assert.equal(mapDepartmentToTeam('QA Automation').teamId, 'qa');
+assert.equal(isPersonActiveForStaging('rd', { isRd: false, locked: false }), false);
+assert.equal(isPersonActiveForStaging('all', { isRd: false, locked: false }), true);
+assert.equal(isPersonActiveForStaging('all', { isRd: true, locked: true }), false);
 const workBacklog = workBacklogRows(SEED_TICKETS, SEED_PEOPLE);
 assert.ok(workBacklog.every((row) => row.status === 'Backlog' || row.assignee === 'ยังไม่มีผู้รับ'));
 const personalBacklogPerson = 'itsara';

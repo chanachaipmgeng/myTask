@@ -101,6 +101,11 @@ export class IntegrationsPage {
   protected readonly token = signal('');
   protected readonly enabled = signal(true);
   protected readonly hoursPerMd = signal(6);
+  protected readonly projectsText = signal('');
+  protected readonly teamStaging = signal<'rd' | 'all'>('rd');
+  protected readonly projectCatalog = signal<
+    { id: number; identifier: string; name: string; active: boolean }[]
+  >([]);
   protected readonly statusMapText = signal('');
   protected readonly typeMapText = signal('');
   protected readonly newStatusKey = signal('');
@@ -134,6 +139,7 @@ export class IntegrationsPage {
   protected readonly gitlabProjectIdsText = signal('');
   protected readonly gitlabToken = signal('');
   protected readonly gitlabEnabled = signal(true);
+  protected readonly discoveryHint = signal('');
 
   // Teams state
   protected readonly teamsChannel = signal('scorecard-alerts');
@@ -173,6 +179,12 @@ export class IntegrationsPage {
       this.baseUrl.set(info.baseUrl);
       this.enabled.set(info.enabled);
       this.hoursPerMd.set(info.hoursPerMd);
+      this.teamStaging.set(info.teamStaging ?? 'rd');
+      this.projectCatalog.set(info.projectCatalog ?? []);
+      const mappedProjects = Array.isArray(info.mapping['projects'])
+        ? (info.mapping['projects'] as string[])
+        : [];
+      this.projectsText.set(mappedProjects.join(', '));
       this.statusMapText.set(JSON.stringify(info.mapping['statusMap'] ?? {}, null, 2));
       this.typeMapText.set(JSON.stringify(info.mapping['typeMap'] ?? {}, null, 2));
       const custom = (info.mapping['customFields'] ?? {}) as Record<string, string>;
@@ -197,7 +209,7 @@ export class IntegrationsPage {
 
       this.message.set(
         info.configured
-          ? `เชื่อมต่อได้ · writeback ${info.writeback ? 'เปิด' : 'ปิด'}`
+          ? `เชื่อมต่อได้ · writeback ${info.writeback ? 'เปิด' : 'ปิด'} · staging ${info.teamStaging ?? 'rd'}`
           : 'ยังไม่ได้ตั้ง URL/token ของ OpenProject',
       );
     } catch (err) {
@@ -268,8 +280,13 @@ export class IntegrationsPage {
       for (const key of Object.keys(customFields) as CustomFieldKey[]) {
         customFields[key] = customFields[key].trim();
       }
+      const projects = this.projectsText()
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
       const mapping = {
         ...current,
+        projects,
         statusMap,
         typeMap,
         customFields: {
@@ -384,6 +401,68 @@ export class IntegrationsPage {
       this.message.set('บันทึกการตั้งค่า GitLab แล้ว');
     } catch (err) {
       this.error.set(err instanceof Error ? err.message : 'บันทึก GitLab ไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async discoverOpenProject(): Promise<void> {
+    this.saving.set(true);
+    try {
+      const res = await this.api.discoverOpenProject();
+      if (res.source !== 'live') {
+        this.discoveryHint.set(res.message || 'ยังดึง discovery จาก myProject ไม่ได้ (โหมดออฟไลน์)');
+        this.notice.warning(this.discoveryHint());
+        return;
+      }
+      this.projectCatalog.set(
+        res.projects.map((p, index) => ({
+          id: Number(p.id) || index + 1,
+          identifier: p.identifier,
+          name: p.name || p.identifier,
+          active: p.active,
+        })),
+      );
+      const statusHints = res.statuses.slice(0, 12).map((s) => s.name).join(', ');
+      this.discoveryHint.set(
+        `พบโปรเจกต์ ${res.projects.length} · สถานะ ${res.statuses.length} · ประเภท ${res.types.length}` +
+          (statusHints ? ` · ตัวอย่างสถานะ: ${statusHints}` : '') +
+          ' · catalog ถูกบันทึกแล้ว — เลือก identifier ด้านล่างแล้วกดบันทึก',
+      );
+      this.notice.success(this.discoveryHint(), 'ดึงรายการ myProject แล้ว');
+    } catch (err) {
+      this.notice.error(err instanceof Error ? err.message : String(err), 'Discovery ไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected useActiveProjectsFromCatalog(): void {
+    const ids = this.projectCatalog()
+      .filter((p) => p.active && p.identifier)
+      .map((p) => p.identifier);
+    this.projectsText.set(ids.join(', '));
+  }
+
+  protected clearSyncProjects(): void {
+    this.projectsText.set('');
+  }
+
+  protected async discoverGitLabProjects(): Promise<void> {
+    this.saving.set(true);
+    try {
+      const res = await this.api.listGitLabProjects();
+      if (res.source !== 'live' || res.projects.length === 0) {
+        this.discoveryHint.set(res.message || 'ยังดึงรายชื่อ repo จาก GitLab ไม่ได้');
+        this.notice.warning(this.discoveryHint());
+        return;
+      }
+      const ids = res.projects.map((p) => p.id).join(', ');
+      this.gitlabProjectIdsText.set(ids);
+      this.discoveryHint.set(`ดึง repo ${res.projects.length} รายการแล้ว — กดบันทึกเพื่อเก็บ Project IDs`);
+      this.notice.success(this.discoveryHint(), 'Discovery GitLab');
+    } catch (err) {
+      this.notice.error(err instanceof Error ? err.message : String(err), 'Discovery GitLab ไม่สำเร็จ');
     } finally {
       this.saving.set(false);
     }

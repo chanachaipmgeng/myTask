@@ -21,7 +21,8 @@ import { ShellNotice, shellNoticeCssClass, shellNoticeTitle } from './core/shell
 import { ScorecardService } from './core/scorecard.service';
 import { currentSession, setSessionUser } from './core/session';
 import { ThemeService } from './core/theme.service';
-import { SectionCardComponent } from './shared/ui';
+import { SectionCardComponent, TicketDetailDialogComponent } from './shared/ui';
+import { TicketDetailService } from './core/ticket-detail.service';
 
 type NavLeaf = {
   id: string;
@@ -53,6 +54,7 @@ type NavGroup = {
     DialogModule,
     TextBoxModule,
     SectionCardComponent,
+    TicketDetailDialogComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -62,6 +64,7 @@ export class App implements AfterViewInit {
   private readonly notice = inject(ShellNotice);
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
+  private readonly ticketDetail = inject(TicketDetailService);
   protected readonly theme = inject(ThemeService);
 
   @ViewChild('toast') private toast?: ToastComponent;
@@ -74,53 +77,139 @@ export class App implements AfterViewInit {
   protected readonly subTabPill = signal({ left: 0, width: 0, visible: false });
 
   protected readonly globalSearch = signal('');
+  protected readonly searchOpen = signal(false);
+  protected readonly liveSearching = signal(false);
+  protected readonly liveResults = signal<
+    { id: string; title: string; status: string; from: 'local' | 'live' }[]
+  >([]);
+
+  protected readonly instantResults = computed(() => {
+    const q = this.globalSearch().trim().toLowerCase();
+    if (!q || q.length < 1) {
+      return { tickets: [] as { id: string; title: string }[], people: [] as { id: string; name: string }[], menus: [] as NavLeaf[] };
+    }
+    const tickets = this.scorecard
+      .tickets()
+      .filter(
+        (t) =>
+          t.id.toLowerCase().includes(q) ||
+          (t.title ?? '').toLowerCase().includes(q),
+      )
+      .slice(0, 8)
+      .map((t) => ({ id: t.id, title: t.title ?? t.id }));
+    const people = this.scorecard
+      .roster()
+      .filter(
+        (p) =>
+          p.id.toLowerCase().includes(q) ||
+          p.nickname.toLowerCase().includes(q) ||
+          p.fullName.toLowerCase().includes(q),
+      )
+      .slice(0, 6)
+      .map((p) => ({ id: p.id, name: `${p.nickname} · ${p.fullName}` }));
+    const menus = allNavLeaves.filter((l) => l.text.toLowerCase().includes(q)).slice(0, 6);
+    return { tickets, people, menus };
+  });
+
   protected onGlobalSearch(event: Event): void {
     const target = event.target as HTMLInputElement | null;
     this.globalSearch.set(target?.value ?? '');
+    this.searchOpen.set(true);
+    this.liveResults.set([]);
   }
   protected clearGlobalSearch(event?: Event): void {
     event?.stopPropagation();
     this.globalSearch.set('');
+    this.liveResults.set([]);
+    this.searchOpen.set(false);
   }
   protected focusGlobalSearch(): void {
     this.globalSearchInput?.nativeElement.focus();
+    this.searchOpen.set(true);
+  }
+  protected closeSearchPanel(): void {
+    this.searchOpen.set(false);
+  }
+  protected openTicketFromSearch(id: string): void {
+    this.ticketDetail.open(id);
+    this.globalSearch.set('');
+    this.liveResults.set([]);
+    this.searchOpen.set(false);
+  }
+  protected goPersonFromSearch(id: string): void {
+    void this.router.navigate(['/people', id]);
+    this.globalSearch.set('');
+    this.searchOpen.set(false);
+  }
+  protected goMenuFromSearch(route: string): void {
+    void this.router.navigateByUrl(route);
+    this.globalSearch.set('');
+    this.searchOpen.set(false);
+  }
+  protected async searchLiveMyProject(): Promise<void> {
+    const q = this.globalSearch().trim();
+    if (!q) return;
+    this.liveSearching.set(true);
+    try {
+      if (this.scorecard.usingApi()) {
+        const res = await this.api.liveSearchWorkItems(q);
+        const merged = [
+          ...res.local.map((item) => ({
+            id: item.id,
+            title: item.title,
+            status: item.status,
+            from: 'local' as const,
+          })),
+          ...res.live.map((item) => ({
+            id: item.id,
+            title: item.title,
+            status: item.status,
+            from: 'live' as const,
+          })),
+        ];
+        this.liveResults.set(merged.slice(0, 20));
+      } else {
+        this.liveResults.set(
+          this.instantResults().tickets.map((t) => ({
+            id: t.id,
+            title: t.title,
+            status: '',
+            from: 'local' as const,
+          })),
+        );
+      }
+      this.searchOpen.set(true);
+    } catch (err) {
+      this.notice.warning(err instanceof Error ? err.message : String(err), 'ค้นหาสดไม่สำเร็จ');
+    } finally {
+      this.liveSearching.set(false);
+    }
   }
   protected onGlobalSearchSubmit(): void {
     const q = this.globalSearch().trim().toLowerCase();
     if (!q) return;
 
-    // 1. Check person in roster
-    const person = this.scorecard.roster().find(
-      (p) =>
-        p.id.toLowerCase() === q ||
-        p.nickname.toLowerCase() === q ||
-        p.fullName.toLowerCase().includes(q),
-    );
-    if (person) {
-      void this.router.navigate(['/people', person.id]);
-      this.globalSearch.set('');
+    const instant = this.instantResults();
+    if (instant.tickets.length === 1) {
+      this.openTicketFromSearch(instant.tickets[0]!.id);
+      return;
+    }
+    if (instant.people.length === 1 && instant.tickets.length === 0) {
+      this.goPersonFromSearch(instant.people[0]!.id);
+      return;
+    }
+    if (instant.menus.length === 1 && instant.tickets.length === 0 && instant.people.length === 0) {
+      this.goMenuFromSearch(instant.menus[0]!.route);
       return;
     }
 
-    // 2. Check ticket ID pattern
-    if (q.startsWith('#') || q.startsWith('op-') || /^\d+$/.test(q)) {
-      const rawId = q.replace(/^#/, '');
-      void this.router.navigate(['/tickets'], { queryParams: { id: rawId } });
-      this.globalSearch.set('');
+    // Prefer opening first ticket match in 360° dialog
+    if (instant.tickets[0]) {
+      this.openTicketFromSearch(instant.tickets[0].id);
       return;
     }
 
-    // 3. Check matching leaf route
-    const leaf = allNavLeaves.find((l) => l.text.toLowerCase().includes(q));
-    if (leaf) {
-      void this.router.navigateByUrl(leaf.route);
-      this.globalSearch.set('');
-      return;
-    }
-
-    // Fallback: search tickets scorecard
-    void this.router.navigate(['/tickets'], { queryParams: { search: q } });
-    this.globalSearch.set('');
+    void this.searchLiveMyProject();
   }
 
   private keepNavOpen = false;
@@ -355,8 +444,13 @@ export class App implements AfterViewInit {
   protected readonly roleThemeClass = computed(() => `role-layout--${this.role()}`);
   protected readonly roleDisplayName = computed(() => {
     const role = this.role();
+    const actual = this.trueRole();
     if (role === 'admin') return 'โหมดแอดมิน · Admin';
+    if (role === 'lead' && actual === 'admin') return 'มุมมอง Lead · สิทธิ์จริง Admin';
     if (role === 'lead') return 'โหมดบริหารทีม · Lead';
+    if (role === 'member' && actual !== 'member') {
+      return actual === 'admin' ? 'มุมมอง Member · สิทธิ์จริง Admin' : 'มุมมอง Member · สิทธิ์จริง Lead';
+    }
     return 'โหมดงานของฉัน · Member';
   });
   protected readonly roleBadgeTone = computed<'danger' | 'warning' | 'info'>(() => {
@@ -365,6 +459,9 @@ export class App implements AfterViewInit {
     if (role === 'lead') return 'warning';
     return 'info';
   });
+  /** true เมื่อโหมดเมนูต่างจากสิทธิ์จริง (เช่น แอดมินถูกพาไปมุมมอง Lead) */
+  protected readonly viewingBorrowedMode = computed(() => this.role() !== this.trueRole());
+  private lastAutoModeNoticeKey = '';
 
   constructor() {
     const media = window.matchMedia('(max-width: 800px)');
@@ -383,7 +480,7 @@ export class App implements AfterViewInit {
       const actual = this.trueRole();
       if (path === '/me' || path.startsWith('/me/')) {
         if (this.role() !== 'member') {
-          setWorkspaceMode('member');
+          this.applyAutoWorkspaceMode('member', path, 'สลับชั่วคราวเป็นมุมมองงานของฉัน — สิทธิ์จริงยังไม่เปลี่ยน');
         }
       } else if (
         actual === 'admin' &&
@@ -394,7 +491,7 @@ export class App implements AfterViewInit {
           path.startsWith('/mockup'))
       ) {
         if (this.role() !== 'admin') {
-          setWorkspaceMode('admin');
+          this.applyAutoWorkspaceMode('admin', path, 'กลับโหมดแอดมินเพื่อตั้งค่าระบบ');
         }
       } else if (
         actual !== 'member' &&
@@ -407,7 +504,13 @@ export class App implements AfterViewInit {
           path.startsWith('/ai'))
       ) {
         if (this.role() !== 'lead') {
-          setWorkspaceMode('lead');
+          this.applyAutoWorkspaceMode(
+            'lead',
+            path,
+            actual === 'admin'
+              ? 'สลับชั่วคราวเป็นมุมมองบริหารทีมเพื่อเปิดงาน/บอร์ด — สิทธิ์แอดมินยังอยู่ (กด «กลับโหมดจริง» ได้)'
+              : 'สลับเข้ามุมมองบริหารทีม',
+          );
         }
       } else if (
         actual !== 'member' &&
@@ -416,7 +519,11 @@ export class App implements AfterViewInit {
           path.startsWith('/tickets'))
       ) {
         if (this.role() === 'member') {
-          setWorkspaceMode(actual === 'admin' ? 'admin' : 'lead');
+          this.applyAutoWorkspaceMode(
+            actual === 'admin' ? 'admin' : 'lead',
+            path,
+            'กลับจากมุมมอง Member เพื่อเปิดหน้าระดับทีม/องค์กร',
+          );
         }
       }
     });
@@ -493,6 +600,7 @@ export class App implements AfterViewInit {
     const target = firstLeaf(next, category) ?? firstLeaf(next);
     this.menuSearch.set('');
     this.keepNavOpen = true;
+    this.lastAutoModeNoticeKey = '';
     if (next === 'member') {
       this.notice.info('สลับเข้าสู่โหมด "งานของฉัน" (Member Workspace)');
     } else if (next === 'lead') {
@@ -503,6 +611,43 @@ export class App implements AfterViewInit {
     if (target) {
       void this.router.navigateByUrl(target.route);
     }
+  }
+
+  /** กลับโหมดตามสิทธิ์จริงโดยไม่เปลี่ยนบัญชีที่ล็อกอิน */
+  protected restoreTrueWorkspaceMode(): void {
+    const actual = this.trueRole();
+    if (this.role() === actual) {
+      return;
+    }
+    this.lastAutoModeNoticeKey = '';
+    setWorkspaceMode(actual);
+    this.menuSearch.set('');
+    this.keepNavOpen = true;
+    this.notice.success(
+      actual === 'admin'
+        ? 'กลับโหมดแอดมินแล้ว'
+        : actual === 'lead'
+          ? 'กลับโหมดบริหารทีมแล้ว'
+          : 'กลับโหมดงานของฉันแล้ว',
+    );
+    const target = firstLeaf(actual) ?? firstLeaf(actual, 'cockpit');
+    if (target) {
+      void this.router.navigateByUrl(target.route);
+    }
+  }
+
+  private applyAutoWorkspaceMode(mode: AccessRole, path: string, message: string): void {
+    const prev = this.role();
+    if (prev === mode) {
+      return;
+    }
+    setWorkspaceMode(mode);
+    const key = `${prev}->${mode}|${path.split('/').slice(0, 3).join('/')}`;
+    if (this.lastAutoModeNoticeKey === key) {
+      return;
+    }
+    this.lastAutoModeNoticeKey = key;
+    this.notice.info(message, 'สลับมุมมองเมนู');
   }
 
   protected togglePersonaPreview(): void {
@@ -613,7 +758,7 @@ const categoryMeta: Record<NavCategory, { label: string; hint: string; rail: str
     hint: 'คิว ฮับ ปฏิทิน และส่งต่อ',
     rail: 'งาน',
     icon: 'e-icons e-timeline-work-week',
-    title: 'ฮับบริหารงานและคิวงาน',
+    title: 'ฮับงานค้าง แผนทีม และคิวงาน',
   },
   quality: {
     label: 'คุณภาพ & คะแนน',
@@ -642,7 +787,7 @@ const categoryOrder: NavCategory[] = ['cockpit', 'work', 'quality', 'analytics',
 
 const categoryLanding: Partial<Record<NavCategory, readonly string[]>> = {
   cockpit: ['my-cockpit', 'team-cockpit', 'admin-cockpit', 'team-dash'],
-  work: ['me', 'work-hub', 'work-board', 'work-timeline', 'my-work', 'my-board', 'my-timeline', 'queue'],
+  work: ['me', 'work-hub', 'my-work', 'queue', 'my-time-log', 'schedule'],
   quality: ['quality-audit', 'my-tickets', 'admin-time-audit', 'time-audit', 'my-disputes', 'admin-tickets'],
   analytics: ['analytics', 'admin-analytics', 'my-analytics', 'people', 'admin-people', 'lead-mockup'],
   admin: ['admin-home'],
@@ -655,6 +800,7 @@ const leafCategory: Record<string, NavCategory> = {
   'my-board': 'work',
   'my-timeline': 'work',
   'my-schedule': 'work',
+  'my-time-log': 'work',
   'my-mygit': 'analytics',
   'my-ai': 'analytics',
   'my-analytics': 'analytics',
@@ -669,6 +815,7 @@ const leafCategory: Record<string, NavCategory> = {
   'work-timeline': 'work',
   schedule: 'work',
   'work-handoff': 'work',
+  'work-team-time': 'work',
   'quality-audit': 'quality',
   disputes: 'quality',
   tickets: 'quality',
@@ -704,10 +851,9 @@ const allNavGroups: NavGroup[] = [
     children: [
       { id: 'me', text: 'ผลงาน & งานวันนี้', iconCss: 'e-icons e-user', route: '/me', exact: true },
       { id: 'my-cockpit', text: 'ค็อกพิทผลงานของฉัน (Bento)', iconCss: 'e-icons e-grid-view', route: '/me/cockpit' },
-      { id: 'my-work', text: 'ฮับงานของฉัน', iconCss: 'e-icons e-timeline-work-week', route: '/me/work', exact: true },
-      { id: 'my-board', text: 'กระดานงานของฉัน (Kanban)', iconCss: 'e-icons e-columns', route: '/me/work/board' },
-      { id: 'my-timeline', text: 'ไทม์ไลน์งานของฉัน (Gantt)', iconCss: 'e-icons e-timeline-month', route: '/me/work/timeline' },
+      { id: 'my-work', text: 'ฮับงานของฉัน (ค้าง/บอร์ด)', iconCss: 'e-icons e-timeline-work-week', route: '/me/work', exact: true },
       { id: 'my-schedule', text: 'ปฏิทินงานของฉัน', iconCss: 'e-icons e-timeline-today', route: '/me/schedule' },
+      { id: 'my-time-log', text: 'ลงเวลางานของฉัน', iconCss: 'e-icons e-day', route: '/me/time-log' },
       { id: 'my-mygit', text: 'ซิงก์ MR ของฉัน', iconCss: 'e-icons e-refresh', route: '/me/mygit' },
       { id: 'my-ai', text: 'ติดตามงาน AI ของฉัน', iconCss: 'e-icons e-chart', route: '/me/ai' },
     ],
@@ -737,11 +883,8 @@ const allNavGroups: NavGroup[] = [
       { id: 'team-dash', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
       { id: 'team-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-grid-view', route: '/cockpit' },
       { id: 'queue', text: 'คิวงานใหม่ & จ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/queue' },
-      { id: 'work-hub', text: 'ฮับบริหารงานทีม', iconCss: 'e-icons e-timeline-work-week', route: '/work', exact: true },
-      { id: 'work-board', text: 'กระดานงาน (Kanban)', iconCss: 'e-icons e-columns', route: '/work/board' },
-      { id: 'work-timeline', text: 'ไทม์ไลน์งาน (Gantt)', iconCss: 'e-icons e-timeline-month', route: '/work/timeline' },
+      { id: 'work-hub', text: 'ฮับงานค้าง & แผนทีม', iconCss: 'e-icons e-timeline-work-week', route: '/work', exact: true },
       { id: 'schedule', text: 'ปฏิทินทีม & วันลา', iconCss: 'e-icons e-timeline-today', route: '/schedule' },
-      { id: 'work-handoff', text: 'ส่งต่อ & SLA ข้ามทีม', iconCss: 'e-icons e-clock', route: '/work/handoff' },
     ],
   },
   {
@@ -822,23 +965,9 @@ function firstLeaf(role: AccessRole, category?: NavCategory): NavLeaf | undefine
 function matchNavId(url: string, role: AccessRole = 'member'): string {
   const path = url.split('?')[0] || '/';
   const pool = leavesFor(role);
-  if (path === '/me/work/board') {
-    return 'my-board';
-  }
-  if (path === '/me/work/timeline') {
-    return 'my-timeline';
-  }
+  // มุมมองย่อยของ Work Hub (Board/Timeline/…) ไฮไลต์ที่ฮับ ไม่แยกเมนูซ้ำ
   if (path.startsWith('/me/work')) {
     return 'my-work';
-  }
-  if (path === '/work/board') {
-    return 'work-board';
-  }
-  if (path === '/work/timeline') {
-    return 'work-timeline';
-  }
-  if (path === '/work/handoff') {
-    return 'work-handoff';
   }
   if (path.startsWith('/work')) {
     return 'work-hub';
@@ -851,6 +980,9 @@ function matchNavId(url: string, role: AccessRole = 'member'): string {
   }
   if (path.startsWith('/me/schedule')) {
     return 'my-schedule';
+  }
+  if (path.startsWith('/me/time-log')) {
+    return 'my-time-log';
   }
   if (path.startsWith('/me/time-audit')) {
     return 'my-time-audit';
@@ -889,6 +1021,12 @@ function screenTitle(url: string): string {
   }
   if (url.startsWith('/admin/rubrics')) {
     return 'ทะเบียนเกณฑ์มาตรฐาน (Rubric Registry)';
+  }
+  if (url.startsWith('/work/team-time')) {
+    return 'เวลาทีมรายวัน (Team Time Matrix)';
+  }
+  if (url.startsWith('/me/time-log')) {
+    return 'ลงเวลางานของฉัน';
   }
   if (url.startsWith('/work/handoff')) {
     return 'ตรวจสอบการส่งต่อ & SLA ข้ามทีม';
@@ -939,7 +1077,7 @@ function screenTitle(url: string): string {
     return 'ตรวจสอบความพร้อมก่อนแช่แข็งคะแนน';
   }
   if (url.startsWith('/me/work')) {
-    return 'ฮับงานของฉัน';
+    return 'ฮับงานของฉัน (ค้าง/บอร์ด)';
   }
   if (url.startsWith('/me')) {
     return 'ผลงานและงานวันนี้ของฉัน';
@@ -957,7 +1095,7 @@ function screenTitle(url: string): string {
     return 'รายชื่อและดัชนีพนักงาน';
   }
   if (url.startsWith('/work')) {
-    return 'ฮับบริหารงานทีม';
+    return 'ฮับงานค้าง & แผนทีม';
   }
   if (url.startsWith('/tickets')) {
     return 'ตารางคะแนนใบงานทีม';

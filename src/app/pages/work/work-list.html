@@ -1,9 +1,18 @@
 <app-section-card
   title="รายการใบงานปฏิบัติการ (Work List)"
-  subtitle="รายการใบงานแนวปฏิบัติงาน (ไม่ใช่ตารางคะแนน) · คลิกแถวหรือปุ่มดูสรุป"
+  subtitle="รายการใบงานแนวปฏิบัติงาน (ไม่ใช่ตารางคะแนน) · จัดกลุ่มตามโปรเจกต์ได้"
   [badge]="rows().length + ' ใบ'"
   badgeTone="info"
 >
+  <button
+    actions
+    ejs-button
+    type="button"
+    [cssClass]="groupByProject() ? 'e-primary e-small' : 'e-outline e-small'"
+    (click)="toggleGroupByProject()"
+  >
+    {{ groupByProject() ? 'จัดกลุ่มโปรเจกต์: เปิด' : 'จัดกลุ่มโปรเจกต์: ปิด' }}
+  </button>
   <ejs-grid
     #listGrid
     [id]="gridId()"
@@ -12,16 +21,26 @@
     [allowPaging]="true"
     [allowSorting]="true"
     [allowFiltering]="true"
+    [allowGrouping]="true"
     [allowResizing]="true"
     [showColumnChooser]="true"
     [allowExcelExport]="true"
     [toolbar]="toolbar"
     [pageSettings]="pageSettings"
+    [groupSettings]="groupSettings()"
     (toolbarClick)="onToolbarClick($event)"
     (rowSelected)="onRowSelected($event)"
   >
     <e-columns>
-      <e-column field="workLabel" headerText="Work" width="300"></e-column>
+      <e-column field="workLabel" headerText="Work" width="280">
+        <ng-template #template let-data>
+          <button ejs-button cssClass="e-link e-small text-left font-semibold" type="button" (click)="openDetail(data.id, $event)">
+            {{ data.workLabel }}
+          </button>
+        </ng-template>
+      </e-column>
+      <e-column field="projectLabel" headerText="โปรเจกต์" width="140"></e-column>
+      <e-column field="teamLabel" headerText="ทีม" width="120"></e-column>
       <e-column field="type" headerText="Type" width="110"></e-column>
       <e-column field="assignee" headerText="Assignee" width="130"></e-column>
       <e-column field="status" headerText="Status" width="130">

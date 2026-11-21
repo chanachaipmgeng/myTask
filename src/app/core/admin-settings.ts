@@ -211,13 +211,27 @@ export function setConnectionState(id: ConnectionId, state: ConnectionState): bo
   return true;
 }
 
+export interface OpenProjectCatalogEntry {
+  id: number;
+  identifier: string;
+  name: string;
+  active: boolean;
+}
+
+export const openprojectProjectCatalog = signal<OpenProjectCatalogEntry[]>([]);
+export const teamStagingMode = signal<'rd' | 'all'>('rd');
+
 export function applyRemoteSettings(settings: {
   weeklyQuotas?: Record<string, number>;
   trackWeights?: TrackWeights;
   alertRules?: AlertRules;
   levelOverrides?: Record<string, string>;
   hoursPerMd?: number;
+  openprojectProjectCatalog?: OpenProjectCatalogEntry[];
 }): void {
+  if (Array.isArray(settings.openprojectProjectCatalog)) {
+    openprojectProjectCatalog.set(settings.openprojectProjectCatalog);
+  }
   if (settings.weeklyQuotas) {
     weeklyQuotas.set({
       Senior: Number(settings.weeklyQuotas['Senior'] ?? WEEKLY_QUOTA.Senior),

@@ -7,6 +7,7 @@ import {
   FilterService,
   GridComponent,
   GridModule,
+  GroupService,
   PageService,
   ResizeService,
   SearchService,
@@ -15,6 +16,7 @@ import {
 } from '@syncfusion/ej2-angular-grids';
 import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { ScorecardService } from '../../core/scorecard.service';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import { workListRows } from '../../core/work-views';
 import {
   SectionCardComponent,
@@ -39,6 +41,7 @@ import { WorkHubFilter } from './work-hub-filter';
     ColumnChooserService,
     ExcelExportService,
     ToolbarService,
+    GroupService,
   ],
   templateUrl: './work-list.html',
 })
@@ -46,6 +49,7 @@ export class WorkList {
   private readonly scorecard = inject(ScorecardService);
   private readonly hub = inject(WorkHubFilter);
   private readonly router = inject(Router);
+  private readonly ticketDetail = inject(TicketDetailService);
 
   @ViewChild('detailDialog') private detailDialog?: DialogComponent;
   @ViewChild('listGrid') private listGrid?: GridComponent;
@@ -53,16 +57,32 @@ export class WorkList {
   protected readonly pageSettings = { pageSize: 15 };
   protected readonly toolbar = ['Search', 'ColumnChooser', 'ExcelExport', 'CsvExport'];
   protected readonly selectedId = signal<string | null>(null);
+  protected readonly groupByProject = signal(true);
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
   protected readonly planToneMap = planToneMap;
   protected readonly isMine = computed(() => this.hub.scope() === 'mine');
+  /** bump id เมื่อเพิ่มคอลัมน์โปรเจกต์/ทีม — persistence จะไม่กลืนคอลัมน์ใหม่ */
   protected readonly gridId = computed(() =>
-    this.isMine() ? 'my-work-operational-list-grid' : 'work-operational-list-grid-v2',
+    this.isMine() ? 'my-work-operational-list-grid-v3' : 'work-operational-list-grid-v3',
+  );
+
+  protected readonly groupSettings = computed(() =>
+    this.groupByProject()
+      ? { showDropArea: false, columns: ['projectLabel'] as string[] }
+      : { showDropArea: false, columns: [] as string[] },
   );
 
   protected readonly rows = computed(() =>
-    workListRows(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
+    workListRows(
+      this.scorecard.tickets(),
+      this.scorecard.people(),
+      this.hub.filterOptions(this.scorecard.people()),
+    ),
   );
+
+  protected toggleGroupByProject(): void {
+    this.groupByProject.update((v) => !v);
+  }
 
   protected readonly detail = computed(() => {
     const id = this.selectedId();
@@ -82,7 +102,7 @@ export class WorkList {
       return;
     }
     this.selectedId.set(id);
-    this.detailDialog?.show();
+    this.ticketDetail.open(id);
   }
 
   protected onRowSelected(event: { data?: { id?: string } }): void {

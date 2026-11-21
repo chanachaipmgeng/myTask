@@ -30,7 +30,78 @@ export interface OpTimeEntry {
   id: number;
   hours?: string | null;
   spentOn?: string;
-  _links?: { workPackage?: { href?: string | null } };
+  comment?: { raw?: string; html?: string } | string | null;
+  _links?: {
+    workPackage?: { href?: string | null; title?: string };
+    user?: { href?: string | null; title?: string };
+    project?: { href?: string | null; title?: string };
+    activity?: { href?: string | null; title?: string };
+  };
+}
+
+export interface OpRelation {
+  id: number;
+  type?: string;
+  reverseType?: string;
+  _links?: {
+    from?: { href?: string | null; title?: string };
+    to?: { href?: string | null; title?: string };
+  };
+}
+
+export interface OpAttachment {
+  id: number;
+  fileName?: string;
+  fileSize?: number;
+  contentType?: string;
+  createdAt?: string;
+  _links?: {
+    downloadLocation?: { href?: string | null };
+    staticDownloadLocation?: { href?: string | null };
+  };
+}
+
+export interface OpProject {
+  id: number;
+  name?: string;
+  identifier?: string;
+  active?: boolean;
+  _links?: { self?: { href?: string } };
+}
+
+export interface OpStatus {
+  id: number;
+  name?: string;
+  isClosed?: boolean;
+  color?: string;
+  _links?: { self?: { href?: string } };
+}
+
+export interface OpType {
+  id: number;
+  name?: string;
+  color?: string;
+  isMilestone?: boolean;
+  _links?: { self?: { href?: string } };
+}
+
+export interface OpVersion {
+  id: number;
+  name?: string;
+  status?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  _links?: { self?: { href?: string }; definingProject?: { href?: string } };
+}
+
+export interface OpMembership {
+  id: number;
+  _links?: {
+    self?: { href?: string };
+    project?: { href?: string | null; title?: string };
+    principal?: { href?: string | null; title?: string };
+    roles?: { href?: string | null; title?: string }[];
+  };
 }
 
 export class OpenProjectClient {
@@ -89,6 +160,8 @@ export class OpenProjectClient {
     offset?: number;
     spentFrom?: string | null;
     spentTo?: string | null;
+    userId?: number | null;
+    workPackageId?: number | null;
   }): Promise<OpCollection<OpTimeEntry>> {
     const filters: unknown[] = [];
     if (params.spentFrom || params.spentTo) {
@@ -98,6 +171,12 @@ export class OpenProjectClient {
           values: [params.spentFrom ?? '1970-01-01', params.spentTo ?? new Date().toISOString().slice(0, 10)],
         },
       });
+    }
+    if (params.userId) {
+      filters.push({ user: { operator: '=', values: [String(params.userId)] } });
+    }
+    if (params.workPackageId) {
+      filters.push({ workPackage: { operator: '=', values: [String(params.workPackageId)] } });
     }
     const query = new URLSearchParams({
       pageSize: String(params.pageSize ?? 200),
@@ -112,6 +191,8 @@ export class OpenProjectClient {
   async *paginateTimeEntries(params: {
     spentFrom?: string | null;
     spentTo?: string | null;
+    userId?: number | null;
+    workPackageId?: number | null;
     pageSize?: number;
   }): AsyncGenerator<OpTimeEntry> {
     const pageSize = params.pageSize ?? 200;
@@ -127,6 +208,151 @@ export class OpenProjectClient {
       }
       offset += 1;
     }
+  }
+
+  async searchWorkPackages(queryText: string, params?: { pageSize?: number }): Promise<OpWorkPackage[]> {
+    const q = queryText.trim();
+    if (!q) {
+      return [];
+    }
+    const filters = [{ subjectOrId: { operator: '**', values: [q] } }];
+    const query = new URLSearchParams({
+      pageSize: String(params?.pageSize ?? 20),
+      offset: '1',
+      filters: JSON.stringify(filters),
+    });
+    const page = await this.get<OpCollection<OpWorkPackage>>(`/api/v3/work_packages?${query.toString()}`);
+    return page._embedded?.elements ?? [];
+  }
+
+  async getWorkPackageRelations(wpId: number): Promise<OpRelation[]> {
+    const data = await this.get<OpCollection<OpRelation>>(
+      `/api/v3/work_packages/${wpId}/relations?pageSize=100`,
+    );
+    return data._embedded?.elements ?? [];
+  }
+
+  async getWorkPackageAttachments(wpId: number): Promise<OpAttachment[]> {
+    const data = await this.get<OpCollection<OpAttachment>>(
+      `/api/v3/work_packages/${wpId}/attachments?pageSize=100`,
+    );
+    return data._embedded?.elements ?? [];
+  }
+
+  async listWorkPackageTimeEntries(wpId: number): Promise<OpTimeEntry[]> {
+    const entries: OpTimeEntry[] = [];
+    for await (const entry of this.paginateTimeEntries({ workPackageId: wpId })) {
+      entries.push(entry);
+    }
+    return entries;
+  }
+
+  async createTimeEntry(payload: {
+    workPackageId: number;
+    hours: string;
+    spentOn: string;
+    comment?: string;
+    activityId?: number;
+  }): Promise<OpTimeEntry> {
+    const body: Record<string, unknown> = {
+      hours: payload.hours,
+      spentOn: payload.spentOn,
+      _links: {
+        workPackage: { href: `/api/v3/work_packages/${payload.workPackageId}` },
+      },
+    };
+    if (payload.comment) {
+      body['comment'] = { raw: payload.comment };
+    }
+    if (payload.activityId) {
+      (body['_links'] as Record<string, unknown>)['activity'] = {
+        href: `/api/v3/time_entries/activities/${payload.activityId}`,
+      };
+    }
+    return this.request<OpTimeEntry>('/api/v3/time_entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async listProjects(params?: { pageSize?: number }): Promise<OpProject[]> {
+    const projects: OpProject[] = [];
+    const pageSize = params?.pageSize ?? 100;
+    let offset = 1;
+    for (;;) {
+      const query = new URLSearchParams({ pageSize: String(pageSize), offset: String(offset) });
+      const page = await this.get<OpCollection<OpProject>>(`/api/v3/projects?${query.toString()}`);
+      const elements = page._embedded?.elements ?? [];
+      projects.push(...elements);
+      if (elements.length < pageSize) {
+        break;
+      }
+      offset += 1;
+    }
+    return projects;
+  }
+
+  async listStatuses(): Promise<OpStatus[]> {
+    const data = await this.get<OpCollection<OpStatus>>('/api/v3/statuses?pageSize=200');
+    return data._embedded?.elements ?? [];
+  }
+
+  async listTypes(): Promise<OpType[]> {
+    const data = await this.get<OpCollection<OpType>>('/api/v3/types?pageSize=200');
+    return data._embedded?.elements ?? [];
+  }
+
+  async listVersions(projectId: number): Promise<OpVersion[]> {
+    const data = await this.get<OpCollection<OpVersion>>(
+      `/api/v3/projects/${projectId}/versions?pageSize=200`,
+    );
+    return data._embedded?.elements ?? [];
+  }
+
+  /**
+   * สมาชิกของโปรเจกต์ (หรือทั้งหมดถ้าไม่ระบุ) — OpenProject `/api/v3/memberships`
+   * `project` รับ identifier หรือ numeric id
+   */
+  async listMemberships(params?: { project?: string; pageSize?: number }): Promise<OpMembership[]> {
+    const memberships: OpMembership[] = [];
+    const pageSize = params?.pageSize ?? 100;
+    let offset = 1;
+    const filters: unknown[] = [];
+    if (params?.project?.trim()) {
+      filters.push({ project: { operator: '=', values: [params.project.trim()] } });
+    }
+    for (;;) {
+      const query = new URLSearchParams({ pageSize: String(pageSize), offset: String(offset) });
+      if (filters.length) {
+        query.set('filters', JSON.stringify(filters));
+      }
+      const page = await this.get<OpCollection<OpMembership>>(`/api/v3/memberships?${query.toString()}`);
+      const elements = page._embedded?.elements ?? [];
+      memberships.push(...elements);
+      if (elements.length < pageSize) {
+        break;
+      }
+      offset += 1;
+    }
+    return memberships;
+  }
+
+  async patchStatus(opId: number, statusId: number, lockVersion: number): Promise<OpWorkPackage> {
+    return this.request<OpWorkPackage>(`/api/v3/work_packages/${opId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lockVersion,
+        _links: {
+          status: { href: `/api/v3/statuses/${statusId}` },
+        },
+      }),
+    });
+  }
+
+  userIdFromTimeEntry(entry: OpTimeEntry): number | null {
+    return idFromHref(entry._links?.user?.href);
   }
 
   async listUsers(params?: {

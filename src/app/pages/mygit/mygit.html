@@ -21,6 +21,62 @@
     </div>
   </app-page-head>
 
+  <app-section-card
+    title="คิวรอรีวิว (Open MRs)"
+    [subtitle]="
+      openMrSource() === 'live'
+        ? 'MR ที่เปิดค้างจาก mygitplus พร้อมสถานะ CI'
+        : 'โหมดออฟไลน์ — แสดงจากใบงานที่ยังเปิดและมีลิงก์ MR'
+    "
+    [badge]="openMrs().length + ' รายการ'"
+    badgeTone="warning"
+  >
+    <div actions class="flex flex-wrap items-center gap-3">
+      <ejs-checkbox
+        label="รอฉันรีวิว (Assigned to Me)"
+        [checked]="assignedToMe()"
+        (change)="onAssignedFilter(!!$event.checked)"
+      ></ejs-checkbox>
+      <button ejs-button cssClass="e-outline e-small" type="button" [disabled]="loadingOpenMrs()" (click)="loadOpenMrs()">
+        {{ loadingOpenMrs() ? 'กำลังโหลด…' : 'รีเฟรชคิว' }}
+      </button>
+    </div>
+    <ejs-grid [dataSource]="openMrs()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
+      <e-columns>
+        <e-column field="title" headerText="Merge Request" width="260"></e-column>
+        <e-column field="ticketId" headerText="ใบงาน" width="120">
+          <ng-template #template let-data>
+            @if (data.ticketId) {
+              <button ejs-button cssClass="e-link e-small" type="button" (click)="openTicket(data.ticketId)">
+                {{ data.ticketId }}
+              </button>
+            } @else {
+              —
+            }
+          </ng-template>
+        </e-column>
+        <e-column field="ageHours" headerText="ค้าง (ชม.)" width="100" textAlign="Right"></e-column>
+        <e-column field="ciStatus" headerText="CI" width="110">
+          <ng-template #template let-data>
+            <app-status-badge [label]="data.ciStatus" [tone]="ciTone(data.ciStatus)"></app-status-badge>
+          </ng-template>
+        </e-column>
+        <e-column field="reviewers" headerText="Reviewers" width="160">
+          <ng-template #template let-data>
+            {{ (data.reviewers || []).join(', ') || '—' }}
+          </ng-template>
+        </e-column>
+        <e-column field="webUrl" headerText="ลิงก์" width="180">
+          <ng-template #template let-data>
+            @if (data.webUrl) {
+              <a [href]="data.webUrl" target="_blank" rel="noopener">เปิด MR</a>
+            }
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  </app-section-card>
+
   @if (isMine) {
     <app-section-card
       title="สถานะลิงก์ Merge Request ในใบงานของฉัน"

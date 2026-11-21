@@ -32,7 +32,13 @@
       (toolbarClick)="onToolbarClick($event)"
     >
       <e-columns>
-        <e-column field="id" headerText="รหัส" width="120"></e-column>
+        <e-column field="id" headerText="รหัส" width="120">
+          <ng-template #template let-data>
+            <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.id)">
+              {{ data.id }}
+            </button>
+          </ng-template>
+        </e-column>
         <e-column field="title" headerText="ชื่องาน" width="280"></e-column>
         <e-column field="trackLabel" headerText="สาย" width="110"></e-column>
         <e-column field="type" headerText="ประเภท" width="130"></e-column>

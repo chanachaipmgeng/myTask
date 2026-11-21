@@ -1,7 +1,11 @@
 import { Person, Ticket, Track, WORKFLOW_STATUSES, WorkflowStatus } from './models';
+import { teamLabelForId } from './op-team-staging';
 import { todayInBangkok, workflowStatusOf } from './workflow';
 
 export type WorkTrackFilter = Track | 'All';
+
+/** ถังวันส่งสำหรับจัดกลุ่มงานค้าง */
+export type DueBucket = 'overdue' | 'today' | 'tomorrow' | 'thisWeek' | 'later' | 'all';
 
 export type WorkFilterOptions = {
   track?: WorkTrackFilter;
@@ -9,7 +13,33 @@ export type WorkFilterOptions = {
   /** When set, keep only tickets assigned to this person. */
   assigneeId?: string;
   today?: string;
+  /** กรองตามทีมของผู้รับ (Person.teamId หรือ fallback สายงาน) */
+  teamId?: string;
+  /** กรองตามโปรเจกต์ OpenProject / โมดูล */
+  opProject?: string;
+  /** กรองถังวันส่ง (all = ไม่กรอง) */
+  dueBucket?: DueBucket;
+  /** จันทร์ของสัปดาห์ที่กำลังดู (YYYY-MM-DD) — กรอง due ในสัปดาห์ + เกินกำหนดที่ยังค้าง */
+  weekStart?: string;
+  /** รายชื่อคนสำหรับแมป assignee → teamId (จำเป็นเมื่อใช้ teamId) */
+  people?: readonly Person[];
 };
+
+export const DUE_BUCKET_LABELS: Record<Exclude<DueBucket, 'all'>, string> = {
+  overdue: 'เกินกำหนด',
+  today: 'วันนี้',
+  tomorrow: 'พรุ่งนี้',
+  thisWeek: 'สัปดาห์นี้',
+  later: 'หลังจากนี้',
+};
+
+export const DUE_BUCKET_ORDER: Exclude<DueBucket, 'all'>[] = [
+  'overdue',
+  'today',
+  'tomorrow',
+  'thisWeek',
+  'later',
+];
 
 export interface WorkSummaryCard {
   id: string;
@@ -78,6 +108,42 @@ export interface WorkListRow {
   unplannedLabel: string;
   weekOffsetLabel: string;
   track: Track;
+  projectLabel: string;
+  teamLabel: string;
+  teamId: string;
+  opProject: string;
+}
+
+export interface OpenWorkItem {
+  id: string;
+  title: string;
+  assignee: string;
+  status: string;
+  dueOn: string | null;
+  projectLabel: string;
+  teamLabel: string;
+  track: Track;
+  estimateMd: number;
+  bucket: Exclude<DueBucket, 'all'>;
+}
+
+export interface OpenWorkProjectGroup {
+  projectKey: string;
+  projectLabel: string;
+  items: OpenWorkItem[];
+}
+
+export interface OpenWorkBucketGroup {
+  bucket: Exclude<DueBucket, 'all'>;
+  label: string;
+  count: number;
+  projects: OpenWorkProjectGroup[];
+}
+
+export interface OpenWorkGroupedView {
+  buckets: OpenWorkBucketGroup[];
+  counts: Record<Exclude<DueBucket, 'all'>, number>;
+  totalOpen: number;
 }
 
 function parseDay(iso: string | null | undefined): Date | null {
@@ -94,6 +160,104 @@ function addDays(date: Date, days: number): Date {
   return next;
 }
 
+/** เลื่อนวันปฏิทินแบบ YYYY-MM-DD (โซน +07 สำหรับความเสถียรของสตริง) */
+export function shiftIsoDay(isoDay: string, days: number): string {
+  const base = parseDay(isoDay.slice(0, 10)) ?? parseDay(todayInBangkok());
+  if (!base) {
+    return isoDay.slice(0, 10);
+  }
+  return addDays(base, days).toISOString().slice(0, 10);
+}
+
+/** จันทร์ของสัปดาห์ที่วันนั้นอยู่ (ISO week Mon–Sun) */
+export function mondayOfWeek(isoDay?: string): string {
+  const day = (isoDay ?? todayInBangkok()).slice(0, 10);
+  const d = parseDay(day);
+  if (!d) {
+    return day;
+  }
+  // getUTCDay: 0=Sun … ใช้ offset จากจ–อา
+  const wd = d.getUTCDay();
+  const offset = wd === 0 ? -6 : 1 - wd;
+  return addDays(d, offset).toISOString().slice(0, 10);
+}
+
+export function fridayOfWeek(mondayIso: string): string {
+  return shiftIsoDay(mondayIso.slice(0, 10), 4);
+}
+
+/** ทีมของผู้รับ — teamId จริง หรือ fallback สาย Implement/RD */
+export function resolvePersonTeamId(person: Person | undefined, ticketTrack?: Track): string {
+  const raw = person?.teamId?.trim();
+  if (raw) {
+    return raw;
+  }
+  const track = person?.track ?? ticketTrack;
+  if (track === 'RD') {
+    return 'rd';
+  }
+  if (track === 'Implement') {
+    return 'implement';
+  }
+  return 'unassigned';
+}
+
+export function resolveTeamLabel(teamId: string, person?: Person): string {
+  if (person?.department?.trim()) {
+    return person.department.trim();
+  }
+  return teamLabelForId(teamId);
+}
+
+export function resolveProjectKey(ticket: Ticket): string {
+  const op = ticket.opProject?.trim();
+  if (op) {
+    return op;
+  }
+  const mod = ticket.module?.trim();
+  if (mod) {
+    return mod;
+  }
+  return '';
+}
+
+export function resolveProjectLabel(ticket: Ticket): string {
+  const key = resolveProjectKey(ticket);
+  return key || 'ไม่มีโปรเจกต์';
+}
+
+export function ticketDueDay(ticket: Ticket): string | null {
+  const raw = ticket.dueOn ?? ticket.firstDueOn ?? null;
+  return raw ? raw.slice(0, 10) : null;
+}
+
+/** จัดถังวันส่งเทียบวันนี้และจันทร์ของสัปดาห์ (ค่าเริ่ม = สัปดาห์ของ today) */
+export function dueBucketOf(
+  ticket: Ticket,
+  today = todayInBangkok(),
+  weekStart = mondayOfWeek(today),
+): Exclude<DueBucket, 'all'> {
+  const due = ticketDueDay(ticket);
+  if (!due) {
+    return 'later';
+  }
+  if (due < today) {
+    return 'overdue';
+  }
+  if (due === today) {
+    return 'today';
+  }
+  const tomorrow = shiftIsoDay(today, 1);
+  if (due === tomorrow) {
+    return 'tomorrow';
+  }
+  const weekEnd = fridayOfWeek(weekStart);
+  if (due <= weekEnd) {
+    return 'thisWeek';
+  }
+  return 'later';
+}
+
 function matchesTrack(ticket: Ticket, track: WorkTrackFilter): boolean {
   return track === 'All' || ticket.track === track;
 }
@@ -103,8 +267,12 @@ function matchesQuery(ticket: Ticket, query: string): boolean {
   if (!q) {
     return true;
   }
-  const hay = `${ticket.id} ${ticket.title ?? ''} ${ticket.module} ${ticket.type}`.toLowerCase();
+  const hay = `${ticket.id} ${ticket.title ?? ''} ${ticket.module} ${ticket.type} ${ticket.opProject ?? ''}`.toLowerCase();
   return hay.includes(q);
+}
+
+function peopleById(people: readonly Person[] | undefined): Map<string, Person> {
+  return new Map((people ?? []).map((person) => [person.id, person]));
 }
 
 export function filterWorkTickets(
@@ -114,6 +282,13 @@ export function filterWorkTickets(
   const track = options?.track ?? 'All';
   const query = options?.query ?? '';
   const assigneeId = options?.assigneeId?.trim() ?? '';
+  const teamId = options?.teamId?.trim() ?? '';
+  const opProject = options?.opProject?.trim() ?? '';
+  const dueBucket = options?.dueBucket ?? 'all';
+  const today = options?.today ?? todayInBangkok();
+  const weekStart = options?.weekStart?.trim() || mondayOfWeek(today);
+  const peopleMap = peopleById(options?.people);
+
   return tickets.filter((ticket) => {
     if (!matchesTrack(ticket, track) || !matchesQuery(ticket, query)) {
       return false;
@@ -121,8 +296,146 @@ export function filterWorkTickets(
     if (assigneeId && ticket.assigneeId !== assigneeId) {
       return false;
     }
+    if (teamId) {
+      const person = ticket.assigneeId ? peopleMap.get(ticket.assigneeId) : undefined;
+      if (resolvePersonTeamId(person, ticket.track) !== teamId) {
+        return false;
+      }
+    }
+    if (opProject) {
+      const key = resolveProjectKey(ticket);
+      if (opProject === '__none__') {
+        if (key) {
+          return false;
+        }
+      } else if (key !== opProject && resolveProjectLabel(ticket) !== opProject) {
+        return false;
+      }
+    }
+    // weekStart ใช้กำหนดขอบเขตถัง «สัปดาห์นี้» — ไม่ตัดใบ due นอกสัปดาห์ออกจาก Board/List
+    if (dueBucket !== 'all') {
+      if (dueBucketOf(ticket, today, weekStart) !== dueBucket) {
+        return false;
+      }
+    }
     return true;
   });
+}
+
+/** รายการทีมที่ใช้ในตัวกรอง (จาก roster) */
+export function listWorkTeamOptions(people: readonly Person[]): { id: string; label: string }[] {
+  const map = new Map<string, string>();
+  for (const person of people) {
+    if (person.active === false) {
+      continue;
+    }
+    const id = resolvePersonTeamId(person);
+    if (!map.has(id)) {
+      map.set(id, resolveTeamLabel(id, person));
+    }
+  }
+  return [...map.entries()]
+    .map(([id, label]) => ({ id, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'th'));
+}
+
+/** รายการโปรเจกต์จากใบในมุมมอง (ก่อนกรองโปรเจกต์) */
+export function listWorkProjectOptions(tickets: readonly Ticket[]): { id: string; label: string }[] {
+  const map = new Map<string, string>();
+  for (const ticket of tickets) {
+    const key = resolveProjectKey(ticket);
+    const label = resolveProjectLabel(ticket);
+    const id = key || '__none__';
+    if (!map.has(id)) {
+      map.set(id, label);
+    }
+  }
+  return [...map.entries()]
+    .map(([id, label]) => ({ id: id === '__none__' ? '' : id, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'th'));
+}
+
+/**
+ * จัดกลุ่มใบเปิดตามถังวันส่ง แล้ว subgroup ตามโปรเจกต์
+ */
+export function groupOpenWorkByDueBucket(
+  tickets: readonly Ticket[],
+  people: readonly Person[],
+  options?: WorkFilterOptions,
+): OpenWorkGroupedView {
+  const today = options?.today ?? todayInBangkok();
+  const weekStart = options?.weekStart?.trim() || mondayOfWeek(today);
+  const filtered = filterWorkTickets(tickets, {
+    ...options,
+    today,
+    weekStart: options?.weekStart,
+    people: options?.people ?? people,
+    // จัดกลุ่มใช้ถังเอง — ไม่ซ้ำกรอง dueBucket จาก options เมื่อต้องการภาพรวม
+    dueBucket: 'all',
+  }).filter((ticket) => !ticket.closed);
+
+  const counts: Record<Exclude<DueBucket, 'all'>, number> = {
+    overdue: 0,
+    today: 0,
+    tomorrow: 0,
+    thisWeek: 0,
+    later: 0,
+  };
+  const byBucket = new Map<Exclude<DueBucket, 'all'>, Ticket[]>();
+  for (const bucket of DUE_BUCKET_ORDER) {
+    byBucket.set(bucket, []);
+  }
+  const names = new Map(people.map((person) => [person.id, person]));
+  for (const ticket of filtered) {
+    const bucket = dueBucketOf(ticket, today, weekStart);
+    counts[bucket] += 1;
+    byBucket.get(bucket)!.push(ticket);
+  }
+
+  const wanted = options?.dueBucket && options.dueBucket !== 'all' ? [options.dueBucket] : DUE_BUCKET_ORDER;
+  const buckets: OpenWorkBucketGroup[] = wanted.map((bucket) => {
+    const list = byBucket.get(bucket) ?? [];
+    const projectMap = new Map<string, OpenWorkItem[]>();
+    for (const ticket of list) {
+      const person = ticket.assigneeId ? names.get(ticket.assigneeId) : undefined;
+      const teamId = resolvePersonTeamId(person, ticket.track);
+      const projectKey = resolveProjectKey(ticket) || '__none__';
+      const item: OpenWorkItem = {
+        id: ticket.id,
+        title: ticket.title?.trim() || ticket.module || ticket.id,
+        assignee: person?.nickname ?? (ticket.assigneeId || 'ยังไม่มีผู้รับ'),
+        status: workflowStatusOf(ticket),
+        dueOn: ticketDueDay(ticket),
+        projectLabel: resolveProjectLabel(ticket),
+        teamLabel: resolveTeamLabel(teamId, person),
+        track: ticket.track,
+        estimateMd: ticket.estimateMd || 0,
+        bucket,
+      };
+      const arr = projectMap.get(projectKey) ?? [];
+      arr.push(item);
+      projectMap.set(projectKey, arr);
+    }
+    const projects: OpenWorkProjectGroup[] = [...projectMap.entries()]
+      .map(([projectKey, items]) => ({
+        projectKey: projectKey === '__none__' ? '' : projectKey,
+        projectLabel: items[0]?.projectLabel ?? 'ไม่มีโปรเจกต์',
+        items: items.sort((a, b) => (a.dueOn ?? '9999').localeCompare(b.dueOn ?? '9999') || a.id.localeCompare(b.id)),
+      }))
+      .sort((a, b) => a.projectLabel.localeCompare(b.projectLabel, 'th'));
+    return {
+      bucket,
+      label: DUE_BUCKET_LABELS[bucket],
+      count: list.length,
+      projects,
+    };
+  });
+
+  return {
+    buckets: buckets.filter((b) => b.count > 0 || (options?.dueBucket && options.dueBucket === b.bucket)),
+    counts,
+    totalOpen: filtered.length,
+  };
 }
 
 export function workSummaryStats(
@@ -130,7 +443,7 @@ export function workSummaryStats(
   people: readonly Person[],
   options?: WorkFilterOptions,
 ): WorkSummaryView {
-  const filtered = filterWorkTickets(tickets, options);
+  const filtered = filterWorkTickets(tickets, { ...options, people: options?.people ?? people });
   const today = options?.today ?? todayInBangkok();
   const open = filtered.filter((ticket) => !ticket.closed);
   const closed = filtered.filter((ticket) => ticket.closed);
@@ -201,7 +514,7 @@ export function workGanttTasks(
   options?: WorkFilterOptions,
 ): WorkGanttTask[] {
   const names = new Map(people.map((person) => [person.id, person.nickname]));
-  const visible = filterWorkTickets(tickets, options).filter(
+  const visible = filterWorkTickets(tickets, { ...options, people: options?.people ?? people }).filter(
     (ticket) => !!(ticket.actualStartOn || ticket.firstDueOn || ticket.dueOn || ticket.closedOn),
   );
   const visibleIds = new Set(visible.map((ticket) => ticket.id));
@@ -287,7 +600,7 @@ export function workBacklogRows(
 ): WorkBacklogRow[] {
   const names = new Map(people.map((person) => [person.id, person.nickname]));
   const personalAssignee = options?.assigneeId?.trim() ?? '';
-  return filterWorkTickets(tickets, options)
+  return filterWorkTickets(tickets, { ...options, people: options?.people ?? people })
     .filter((ticket) => {
       if (ticket.closed) {
         return false;
@@ -316,15 +629,17 @@ export function workListRows(
   people: readonly Person[],
   options?: WorkFilterOptions,
 ): WorkListRow[] {
-  const names = new Map(people.map((person) => [person.id, person.nickname]));
-  return filterWorkTickets(tickets, options).map((ticket) => {
+  const peopleMap = new Map(people.map((person) => [person.id, person]));
+  return filterWorkTickets(tickets, { ...options, people: options?.people ?? people }).map((ticket) => {
     const title = ticket.title?.trim() || ticket.module || ticket.id;
+    const person = ticket.assigneeId ? peopleMap.get(ticket.assigneeId) : undefined;
+    const teamId = resolvePersonTeamId(person, ticket.track);
     return {
       id: ticket.id,
       workLabel: `${ticket.id} · ${title}`,
       title,
       type: ticket.type,
-      assignee: ticket.assigneeId ? (names.get(ticket.assigneeId) ?? ticket.assigneeId) : 'Unassigned',
+      assignee: person?.nickname ?? (ticket.assigneeId || 'Unassigned'),
       status: workflowStatusOf(ticket),
       size: ticket.size,
       dueOnLabel: ticket.dueOn ?? ticket.firstDueOn ?? '—',
@@ -332,6 +647,10 @@ export function workListRows(
       unplannedLabel: ticket.unplanned ? 'นอกแผน' : 'ในแผน',
       weekOffsetLabel: ticket.weekOffset === 0 ? 'ตรงสัปดาห์' : `เลื่อน +${ticket.weekOffset}`,
       track: ticket.track,
+      projectLabel: resolveProjectLabel(ticket),
+      teamLabel: resolveTeamLabel(teamId, person),
+      teamId,
+      opProject: resolveProjectKey(ticket),
     };
   });
 }

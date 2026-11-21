@@ -802,6 +802,39 @@
     background: rgba(46, 79, 200, 0.12);
     color: #2e4fc8;
   }
+
+  &.is-borrowed {
+    outline: 1px dashed color-mix(in srgb, currentColor 55%, transparent);
+    outline-offset: 1px;
+  }
+}
+
+.navbar-mode-restore {
+  flex: none;
+  margin: 0;
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, #2746b3 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, #2746b3 10%, transparent);
+  color: #2746b3;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: color-mix(in srgb, #2746b3 18%, transparent);
+  }
+}
+
+:host-context(.e-dark-mode),
+:host-context(body.e-dark-mode) {
+  .navbar-mode-restore {
+    border-color: color-mix(in srgb, #93b4ff 40%, transparent);
+    background: color-mix(in srgb, #93b4ff 12%, transparent);
+    color: #c7d7ff;
+  }
 }
 
 .navbar-right {
@@ -812,6 +845,11 @@
 }
 
 // Omnisearch (Tasklyn "Search anything ⌘ K")
+.navbar-search-wrap {
+  position: relative;
+  z-index: 40;
+}
+
 .navbar-search-bar {
   display: flex;
   align-items: center;
@@ -832,6 +870,79 @@
     border-color: #2e4fc8;
     width: 284px;
     box-shadow: 0 0 0 3px rgba(46, 79, 200, 0.14);
+  }
+}
+
+.navbar-search-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(420px, 92vw);
+  max-height: min(70vh, 480px);
+  overflow: auto;
+  padding: 0.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--shell-omni-border);
+  background: var(--shell-card-bg, #fff);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+}
+
+.search-group {
+  margin-bottom: 0.4rem;
+}
+
+.search-group__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  padding: 0.25rem 0.4rem;
+}
+
+.search-hit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: inherit;
+
+  strong {
+    font-size: 0.82rem;
+  }
+
+  span {
+    font-size: 0.78rem;
+    color: #64748b;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, #2746b3 10%, transparent);
+  }
+}
+
+.search-panel-actions {
+  padding: 0.35rem 0.25rem 0.15rem;
+  border-top: 1px dashed color-mix(in srgb, #94a3b8 40%, transparent);
+  margin-top: 0.25rem;
+}
+
+:host-context(.e-dark-mode),
+body.e-dark-mode {
+  .navbar-search-panel {
+    background: #0f1838;
+  }
+
+  .search-hit span,
+  .search-group__label {
+    color: #94a3b8;
   }
 }
 

@@ -13,6 +13,53 @@
 
   <app-hero-band ariaLabel="สรุปงาน" [metrics]="summaryMetrics()"></app-hero-band>
 
+  <app-section-card
+    title="งานค้างตามวันส่ง"
+    [subtitle]="'จัดกลุ่มวัน → โปรเจกต์ · ใบเปิด ' + openGrouped().totalOpen + ' ใบ (ตามกรองด้านบน)'"
+    badge="ศูนย์งานค้าง"
+    badgeTone="warning"
+  >
+    @if (openGrouped().totalOpen === 0) {
+      <ejs-message
+        severity="Success"
+        variant="Outlined"
+        content="ไม่มีใบเปิดตามกรองนี้ — ลองเปลี่ยนทีม สัปดาห์ หรือถังวัน"
+      ></ejs-message>
+    } @else {
+      <div class="stuck-buckets">
+        @for (bucket of openGrouped().buckets; track bucket.bucket) {
+          <section class="stuck-bucket" [attr.data-bucket]="bucket.bucket">
+            <header class="stuck-bucket__head">
+              <strong>{{ bucket.label }}</strong>
+              <span class="stuck-bucket__count">{{ bucket.count }} ใบ</span>
+            </header>
+            @for (project of bucket.projects; track project.projectKey) {
+              <div class="stuck-project">
+                <h4 class="stuck-project__title">{{ project.projectLabel }}</h4>
+                <ul class="stuck-list">
+                  @for (item of project.items; track item.id) {
+                    <li class="stuck-list__item">
+                      <button type="button" class="stuck-list__open" (click)="openTicket(item.id)">
+                        <span class="stuck-list__id">{{ item.id }}</span>
+                        <span class="stuck-list__title">{{ item.title }}</span>
+                      </button>
+                      <span class="stuck-list__meta">
+                        <app-status-badge [value]="item.status" [toneMap]="workflowStatusToneMap"></app-status-badge>
+                        <span>{{ item.assignee }}</span>
+                        <span>{{ item.dueOn || 'ไม่มี due' }}</span>
+                        <span>{{ item.estimateMd }} MD</span>
+                      </span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+          </section>
+        }
+      </div>
+    }
+  </app-section-card>
+
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
     <app-section-card title="สัดส่วนสถานะ" subtitle="จำนวนใบงานแยกตามสถานะปัจจุบัน">
       <ejs-accumulationchart

@@ -33,6 +33,7 @@ export function defaultSettings(): AppSettings {
     levelOverrides: {},
     hoursPerMd: FOCUS_HOURS_PER_MD,
     openprojectMapping: { ...DEFAULT_OPENPROJECT_MAPPING, customFields: { ...DEFAULT_OPENPROJECT_MAPPING.customFields } },
+    openprojectProjectCatalog: [],
   };
 }
 
@@ -77,6 +78,29 @@ export function mergeSettings(raw: Partial<AppSettings> | null | undefined): App
         ? raw.hoursPerMd
         : base.hoursPerMd,
     openprojectMapping: mappingCheck.mapping ?? base.openprojectMapping,
+    openprojectProjectCatalog: Array.isArray(raw.openprojectProjectCatalog)
+      ? raw.openprojectProjectCatalog
+          .filter(
+            (row) =>
+              row &&
+              typeof row === 'object' &&
+              typeof (row as { identifier?: unknown }).identifier === 'string',
+          )
+          .map((row) => {
+            const r = row as {
+              id?: number;
+              identifier: string;
+              name?: string;
+              active?: boolean;
+            };
+            return {
+              id: typeof r.id === 'number' ? r.id : 0,
+              identifier: r.identifier,
+              name: r.name ?? r.identifier,
+              active: r.active !== false,
+            };
+          })
+      : base.openprojectProjectCatalog,
   };
 }
 

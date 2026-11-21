@@ -635,7 +635,12 @@ async function runSeed(): Promise<void> {
     let opUserCounter = 101;
     for (const person of SEED_PEOPLE) {
       const teamId = person.track === 'RD' ? 'rd' : 'implement';
-      const access = person.id === 'paweena' ? 'admin' : person.id === 'chanachai' || person.id === 'watchara' ? 'lead' : 'member';
+      const access =
+        person.id === 'paweena' || person.id === 'chanachai'
+          ? 'admin'
+          : person.id === 'watchara'
+            ? 'lead'
+            : 'member';
       const email = `${person.id}@company.com`;
       const opUserId = opUserCounter++;
 

@@ -235,7 +235,13 @@
       height="auto"
     >
       <e-columns>
-        <e-column field="id" headerText="รหัส" width="120"></e-column>
+        <e-column field="id" headerText="รหัส" width="120">
+          <ng-template #template let-data>
+            <button ejs-button cssClass="e-link e-small" type="button" (click)="openTicketDetail(data.id)">
+              {{ data.id }}
+            </button>
+          </ng-template>
+        </e-column>
         <e-column field="workflowStatus" headerText="สถานะงาน" width="140">
           <ng-template #template let-data>
             <app-status-badge [value]="data.workflowStatus" [toneMap]="workflowStatusToneMap"></app-status-badge>

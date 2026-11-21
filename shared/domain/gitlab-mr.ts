@@ -1,14 +1,18 @@
 export interface GitLabMergeRequestRaw {
   id?: number;
   iid?: number;
+  project_id?: number;
   sha?: string | null;
   merge_commit_sha?: string | null;
   title?: string | null;
   description?: string | null;
   source_branch?: string | null;
   merged_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
   web_url?: string | null;
   user_notes_count?: number | null;
+  author?: { id?: number; username?: string; name?: string };
   /** Optional explicit override when provided by custom labels or notes. */
   reviewRounds?: number | null;
   reopenCount?: number | null;

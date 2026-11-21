@@ -48,7 +48,13 @@
                         <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.disputeCode }}</span>
                       </ng-template>
                     </e-column>
-                    <e-column field="ticketId" headerText="ใบงาน" width="90"></e-column>
+                    <e-column field="ticketId" headerText="ใบงาน" width="90">
+                      <ng-template #template let-data>
+                        <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
+                          {{ data.ticketId }}
+                        </button>
+                      </ng-template>
+                    </e-column>
                     <e-column field="requesterId" headerText="ผู้ยื่น" width="95"></e-column>
                     <e-column field="requestedFlag" headerText="ประเภท" width="105">
                       <ng-template #template let-data>
@@ -102,6 +108,19 @@
               "
               [showHead]="true"
             >
+              <div actions>
+                @if (selectedDispute()?.ticketId) {
+                  <button
+                    ejs-button
+                    cssClass="e-small e-outline e-primary"
+                    iconCss="e-icons e-search"
+                    type="button"
+                    (click)="openTicket(selectedDispute()!.ticketId)"
+                  >
+                    ดูใบงาน 360°
+                  </button>
+                }
+              </div>
               @if (selectedDispute(); as sel) {
                 <div class="flex flex-col gap-3 text-sm">
                   <app-section-card variant="nested" title="เหตุผลที่ยื่นขอ">

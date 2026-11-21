@@ -2,10 +2,22 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { AccessRole, Person } from '../../../../shared/domain/models';
+import {
+  isPersonActiveForStaging,
+  mapDepartmentToTeam,
+  teamLabelForId,
+} from '../../../../shared/domain/op-team-staging';
 import { todayInBangkok } from '../../../../shared/domain/workflow';
 import { APP_CONFIG, AppConfig } from '../../config';
 import { Db } from '../../db/db.service';
-import { listPeople, personByOpUserMap, upsertOpUserSeen, upsertPerson } from '../../data/people.repo';
+import {
+  listPeople,
+  personByOpUserMap,
+  upsertDepartment,
+  upsertOpUserSeen,
+  upsertPerson,
+  upsertTeam,
+} from '../../data/people.repo';
 import { connectionToken, getConnection, getSettings } from '../../data/settings.repo';
 import {
   finishSyncRun,
@@ -103,7 +115,8 @@ export class OpenProjectSyncService implements OnModuleInit {
       const mapping = settings.openprojectMapping;
       const client = new OpenProjectClient(creds.url, creds.token);
       const spentHours = await this.loadSpentHours(client, since);
-      const personByOp = await this.refreshUserMap(client);
+      const staging = this.config.openproject.teamStaging;
+      const personByOp = await this.refreshUserMap(client, staging === 'rd');
 
       const updatedSince = since ? since.toISOString() : null;
       for await (const wp of client.paginateWorkPackages({
@@ -112,8 +125,9 @@ export class OpenProjectSyncService implements OnModuleInit {
       })) {
         try {
           const assigneeUser = idFromHref(singleLink(wp._links?.['assignee'])?.href);
-          if (assigneeUser !== null && !personByOp.has(assigneeUser)) {
-            // Skip work packages not assigned to active team members during R&D testing
+          // โหมด rd (POC): ข้ามใบที่ assignee ยังไม่อยู่ในคน active
+          // โหมด all: ซิงก์ทุกใบในโปรเจกต์ที่เลือก แม้ยังไม่แมปคน (จำ op_users_seen แทน)
+          if (staging === 'rd' && assigneeUser !== null && !personByOp.has(assigneeUser)) {
             continue;
           }
 
@@ -215,9 +229,12 @@ export class OpenProjectSyncService implements OnModuleInit {
     }
   }
 
-  private async refreshUserMap(client: OpenProjectClient): Promise<Map<number, string>> {
+  private async refreshUserMap(
+    client: OpenProjectClient,
+    activeOnly = true,
+  ): Promise<Map<number, string>> {
     void client;
-    return personByOpUserMap(this.db);
+    return personByOpUserMap(this.db, activeOnly);
   }
 
   private async loadSpentHours(client: OpenProjectClient, since: Date | null): Promise<Map<number, number>> {
@@ -354,12 +371,13 @@ export class OpenProjectSyncService implements OnModuleInit {
         await upsertOpUserSeen(this.db, { opUserId, name, login, email });
 
         const deptTitle = user._links?.customField1?.title ?? null;
+        const unitTitle = user._links?.customField2?.title ?? null;
         const roleTitle = user._links?.customField3?.title ?? null;
         const avatarUrl = user.avatar ?? (opUserId ? `${creds.url}/users/${opUserId}/avatar` : null);
-        const isRd = Boolean(
-          deptTitle && (deptTitle.startsWith('RD-') || deptTitle.toLowerCase().includes('research')),
-        );
-        const active = isRd && user.status !== 'locked';
+        const teamMap = mapDepartmentToTeam(deptTitle);
+        const staging = this.config.openproject.teamStaging;
+        const locked = user.status === 'locked';
+        const active = isPersonActiveForStaging(staging, { isRd: teamMap.isRd, locked });
 
         let existing: Person | null = personByOp.get(opUserId) ?? null;
         if (!existing && email) {
@@ -400,18 +418,22 @@ export class OpenProjectSyncService implements OnModuleInit {
             patch.department = deptTitle;
             changed = true;
           }
+          if (unitTitle && patch.unit !== unitTitle) {
+            patch.unit = unitTitle;
+            changed = true;
+          }
           if (roleTitle && patch.jobTitle !== roleTitle) {
             patch.jobTitle = roleTitle;
             patch.role = roleTitle;
             changed = true;
           }
-          if (isRd) {
-            if (patch.track !== 'RD') {
-              patch.track = 'RD';
+          if (deptTitle) {
+            if (patch.track !== teamMap.track) {
+              patch.track = teamMap.track;
               changed = true;
             }
-            if (patch.teamId !== 'rd') {
-              patch.teamId = 'rd';
+            if (patch.teamId !== teamMap.teamId) {
+              patch.teamId = teamMap.teamId;
               changed = true;
             }
           }
@@ -422,8 +444,17 @@ export class OpenProjectSyncService implements OnModuleInit {
           if (user.admin && patch.access !== 'admin') {
             patch.access = 'admin';
             changed = true;
+          } else if (
+            !user.admin &&
+            teamMap.isRd &&
+            roleTitle?.toLowerCase().includes('lead') &&
+            patch.access === 'member'
+          ) {
+            patch.access = 'lead';
+            changed = true;
           }
           if (changed) {
+            await this.ensureOrgRows(teamMap.teamId, deptTitle);
             await upsertPerson(this.db, patch);
             personByOp.set(opUserId, patch);
             if (email) personByEmail.set(email.toLowerCase().trim(), patch);
@@ -457,19 +488,25 @@ export class OpenProjectSyncService implements OnModuleInit {
             fullName: name,
             role: roleTitle || (user.admin ? 'Lead' : 'Developer'),
             level: 'Mid',
-            track: isRd ? 'RD' : 'Implement',
+            track: teamMap.track,
             plannedMd: 3.5,
-            teamId: isRd ? 'rd' : 'implement',
-            access: user.admin ? 'admin' : isRd && roleTitle?.toLowerCase().includes('lead') ? 'lead' : 'member',
+            teamId: teamMap.teamId,
+            access: user.admin
+              ? 'admin'
+              : teamMap.isRd && roleTitle?.toLowerCase().includes('lead')
+                ? 'lead'
+                : 'member',
             email,
             gitlabUsername: candidateGitlab,
             openprojectUserId: opUserId,
             active,
             avatarUrl,
             department: deptTitle,
+            unit: unitTitle,
             jobTitle: roleTitle,
           };
 
+          await this.ensureOrgRows(teamMap.teamId, deptTitle);
           await upsertPerson(this.db, newPerson);
           personByOp.set(opUserId, newPerson);
           if (email) personByEmail.set(email.toLowerCase(), newPerson);
@@ -478,10 +515,16 @@ export class OpenProjectSyncService implements OnModuleInit {
         }
       }
 
-      // Deactivate any people whose track is not RD or whose department is not RD
-      await this.db.query(
-        `UPDATE people SET active = false WHERE track != 'RD' AND (department IS NULL OR department NOT LIKE 'RD-%')`,
-      );
+      // โหมด POC (rd): ปิดคนที่ไม่อยู่ในขอบเขต R&D — โหมด all ไม่บังคับปิด
+      if (this.config.openproject.teamStaging === 'rd') {
+        await this.db.query(
+          `UPDATE people SET active = false
+           WHERE active = true
+             AND track != 'RD'
+             AND (department IS NULL OR department NOT LIKE 'RD-%')
+             AND COALESCE(team_id, '') != 'rd'`,
+        );
+      }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       errors.push(msg);
@@ -499,7 +542,35 @@ export class OpenProjectSyncService implements OnModuleInit {
     return { total, created, updated, linked, errors };
   }
 
-  private async resolveCredentials(): Promise<{ url: string; token: string } | null> {
+  /** Returns a live OpenProject client when URL+token are configured; otherwise null. */
+  async getClient(): Promise<OpenProjectClient | null> {
+    const creds = await this.resolveCredentials();
+    return creds ? new OpenProjectClient(creds.url, creds.token) : null;
+  }
+
+  /** สร้างแถว departments/teams จากแผนกที่เจอตอน sync-users (ไม่ลบของเดิม) */
+  private async ensureOrgRows(teamId: string, departmentTitle: string | null): Promise<void> {
+    if (!teamId || teamId === 'unassigned') {
+      return;
+    }
+    const deptId = teamId === 'rd' || teamId === 'implement' ? teamId : teamId;
+    const deptName = departmentTitle?.trim() || teamLabelForId(teamId);
+    try {
+      await upsertDepartment(this.db, { id: deptId, name: deptName });
+      await upsertTeam(this.db, {
+        id: teamId,
+        departmentId: deptId,
+        name: teamLabelForId(teamId),
+        leadId: null,
+      });
+    } catch (error) {
+      this.log.warn(
+        `ensureOrgRows ${teamId} failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  async resolveCredentials(): Promise<{ url: string; token: string } | null> {
     const envUrl = this.config.openproject.url;
     const envToken = this.config.openproject.token;
     if (envUrl && envToken) {
@@ -515,6 +586,60 @@ export class OpenProjectSyncService implements OnModuleInit {
       return null;
     }
     return { url, token };
+  }
+
+  /**
+   * When OPENPROJECT_WRITEBACK is true, POST a time entry on the work package.
+   * Returns null on success, or an error message.
+   */
+  async writebackTimeEntry(payload: {
+    workPackageId: number;
+    hours: string;
+    spentOn: string;
+    comment?: string;
+  }): Promise<string | null> {
+    if (!this.config.openproject.writeback) {
+      return 'writebackDisabled';
+    }
+    const client = await this.getClient();
+    if (!client) {
+      return 'OpenProject URL/token is not configured';
+    }
+    try {
+      await client.createTimeEntry(payload);
+      return null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.log.warn(`writeback time entry OP-${payload.workPackageId} failed: ${message}`);
+      return message;
+    }
+  }
+
+  async writebackComment(opId: number, commentMarkdown: string): Promise<string | null> {
+    if (!this.config.openproject.writeback) {
+      return 'writebackDisabled';
+    }
+    return this.postActivity(opId, commentMarkdown);
+  }
+
+  async writebackStatus(opId: number, statusId: number): Promise<string | null> {
+    if (!this.config.openproject.writeback) {
+      return 'writebackDisabled';
+    }
+    const client = await this.getClient();
+    if (!client) {
+      return 'OpenProject URL/token is not configured';
+    }
+    try {
+      const wp = await client.getWorkPackage(opId);
+      const lockVersion = typeof wp.lockVersion === 'number' ? wp.lockVersion : 0;
+      await client.patchStatus(opId, statusId, lockVersion);
+      return null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.log.warn(`writeback status OP-${opId} failed: ${message}`);
+      return message;
+    }
   }
 }
 

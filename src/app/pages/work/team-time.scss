@@ -1,0 +1,143 @@
+.head-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.matrix-wrap {
+  overflow: auto;
+}
+
+.matrix {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+  font-size: 0.88rem;
+
+  th,
+  td {
+    padding: 0.4rem 0.35rem;
+    border-bottom: 1px solid color-mix(in srgb, #94a3b8 30%, transparent);
+    text-align: center;
+  }
+
+  th:first-child,
+  td:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    background: var(--shell-card-bg, #fff);
+    z-index: 1;
+  }
+}
+
+.person-cell {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.total-cell {
+  font-weight: 700;
+}
+
+.cell {
+  position: relative;
+  min-width: 4.2rem;
+  padding: 0.45rem 0.35rem;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  background: color-mix(in srgb, #22c55e 16%, transparent);
+  color: inherit;
+}
+
+/* ว่าง = เทา (ไม่ใช่แดง) · ไม่ครบ = ส้ม · ครบ = เขียว */
+.cell--empty {
+  background: color-mix(in srgb, #94a3b8 18%, transparent);
+  color: #64748b;
+  font-weight: 500;
+}
+
+.cell--warn {
+  background: color-mix(in srgb, #f59e0b 22%, transparent);
+  color: #b45309;
+}
+
+.cell--ok {
+  background: color-mix(in srgb, #22c55e 18%, transparent);
+  color: #15803d;
+}
+
+.git-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: #16a34a;
+  vertical-align: middle;
+}
+
+.legend {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin: 0 0.2rem 0 0.55rem;
+  border-radius: 3px;
+  vertical-align: -1px;
+
+  &:first-child {
+    margin-left: 0;
+  }
+
+  &--empty {
+    background: color-mix(in srgb, #94a3b8 45%, transparent);
+  }
+  &--warn {
+    background: color-mix(in srgb, #f59e0b 70%, transparent);
+  }
+  &--ok {
+    background: color-mix(in srgb, #22c55e 70%, transparent);
+  }
+}
+
+.empty-week {
+  margin-bottom: 0.85rem;
+}
+
+.ticket-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.muted {
+  color: #64748b;
+}
+
+:host-context(.e-dark-mode) {
+  .matrix th:first-child,
+  .matrix td:first-child {
+    background: #0f1838;
+  }
+
+  .muted {
+    color: #94a3b8;
+  }
+
+  .cell--empty {
+    color: #94a3b8;
+  }
+
+  .cell--warn {
+    color: #fbbf24;
+  }
+
+  .cell--ok {
+    color: #86efac;
+  }
+}

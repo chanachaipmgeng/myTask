@@ -13,6 +13,7 @@ import { buildDeliveryTimeline } from '../../core/delivery-timeline';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import { HeroBandComponent } from '../../shared/ui/hero-band/hero-band';
 import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
@@ -44,9 +45,10 @@ import {
   todayInBangkok,
   workflowStatusOf,
 } from '../../core/workflow';
+import { filterWorkTickets, resolveProjectKey, resolveProjectLabel } from '../../core/work-views';
 import { WorkHubFilter } from './work-hub-filter';
 
-type SwimlaneMode = 'none' | 'assignee' | 'track';
+type SwimlaneMode = 'none' | 'assignee' | 'track' | 'project';
 
 @Component({
   selector: 'app-work-board',
@@ -75,6 +77,7 @@ export class WorkBoard {
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
   private readonly hub = inject(WorkHubFilter);
+  private readonly ticketDetail = inject(TicketDetailService);
   protected readonly theme = inject(ThemeService);
   private readonly boardRevision = signal(0);
 
@@ -102,6 +105,7 @@ export class WorkBoard {
       { text: 'ไม่จัดกลุ่ม Swimlane', value: 'none' },
       { text: 'แยกตามผู้รับผิดชอบ', value: 'assignee' },
       { text: 'แยกตามสายงาน (Track)', value: 'track' },
+      { text: 'แยกตามโปรเจกต์', value: 'project' },
     ];
     return this.isMine() ? options.filter((option) => option.value !== 'assignee') : options;
   });
@@ -113,6 +117,9 @@ export class WorkBoard {
     }
     if (mode === 'track') {
       return { keyField: 'trackKey', textField: 'trackLabel', showItemCount: true };
+    }
+    if (mode === 'project') {
+      return { keyField: 'projectKey', textField: 'projectLabel', showItemCount: true };
     }
     return {};
   });
@@ -157,24 +164,9 @@ export class WorkBoard {
   protected readonly pocResult = signal<PocResult | ''>('');
   protected readonly bugCause = signal<BugCause | ''>('');
 
-  protected readonly visibleTickets = computed(() => {
-    const options = this.hub.filterOptions();
-    const track = options.track ?? 'All';
-    const query = (options.query ?? '').trim().toLowerCase();
-    const assigneeId = options.assigneeId?.trim() ?? '';
-    return this.scorecard.tickets().filter((ticket) => {
-      if (assigneeId && ticket.assigneeId !== assigneeId) {
-        return false;
-      }
-      if (track !== 'All' && ticket.track !== track) {
-        return false;
-      }
-      if (!query) {
-        return true;
-      }
-      return `${ticket.id} ${ticket.title ?? ''} ${ticket.module}`.toLowerCase().includes(query);
-    });
-  });
+  protected readonly visibleTickets = computed(() =>
+    filterWorkTickets(this.scorecard.tickets(), this.hub.filterOptions(this.scorecard.people())),
+  );
 
   protected readonly cards = computed(() => {
     this.boardRevision();
@@ -182,6 +174,8 @@ export class WorkBoard {
     return this.visibleTickets().map((ticket) => {
       const assigneeLabel = names.get(ticket.assigneeId) ?? 'ยังไม่มีผู้รับ';
       const trackLabel = ticket.track === 'RD' ? 'R&D' : 'Implement';
+      const projectLabel = resolveProjectLabel(ticket);
+      const projectKey = resolveProjectKey(ticket) || '__none__';
       return {
         id: ticket.id,
         status: workflowStatusOf(ticket),
@@ -190,6 +184,8 @@ export class WorkBoard {
         size: ticket.size,
         trackKey: ticket.track,
         trackLabel,
+        projectKey,
+        projectLabel,
         assigneeKey: ticket.assigneeId || 'unassigned',
         assigneeLabel,
         storyPoints: ticket.storyPoints ?? '—',
@@ -199,7 +195,7 @@ export class WorkBoard {
         isMdDirect: Boolean(ticket.isMdDirect),
         isPaused: Boolean(ticket.isPaused),
         pausedReason: ticket.pausedReason,
-        summary: `${ticket.module} · ${assigneeLabel} · ${ticket.storyPoints ?? '—'} pts`,
+        summary: `${projectLabel} · ${assigneeLabel} · ${ticket.storyPoints ?? '—'} pts`,
       };
     });
   });
@@ -253,8 +249,14 @@ export class WorkBoard {
       this.swimlaneMode.set('none');
       return;
     }
-    if (val === 'none' || val === 'assignee' || val === 'track') {
+    if (val === 'none' || val === 'assignee' || val === 'track' || val === 'project') {
       this.swimlaneMode.set(val);
+    }
+  }
+
+  protected openTicket360(id: string): void {
+    if (id) {
+      this.ticketDetail.open(id);
     }
   }
 

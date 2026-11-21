@@ -97,11 +97,22 @@
   <ng-template #content>
     @if (selected(); as ticket) {
       <form id="board-edit-form" class="grid grid-cols-1 gap-3 md:grid-cols-2" (submit)="$event.preventDefault(); saveFields()">
-        <div class="app-modal__intro md:col-span-2">
-          <p class="app-modal__intro-title">{{ ticket.id }} · {{ ticket.title || ticket.module }}</p>
-          <p class="app-modal__intro-meta">
-            สถานะ: {{ ticket.workflowStatus }} · เริ่ม: {{ ticket.actualStartOn || '—' }} · Reopen: {{ ticket.reopenCount }}
-          </p>
+        <div class="app-modal__intro md:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <p class="app-modal__intro-title">{{ ticket.id }} · {{ ticket.title || ticket.module }}</p>
+            <p class="app-modal__intro-meta">
+              สถานะ: {{ ticket.workflowStatus }} · เริ่ม: {{ ticket.actualStartOn || '—' }} · Reopen: {{ ticket.reopenCount }}
+            </p>
+          </div>
+          <button
+            ejs-button
+            cssClass="e-small e-outline e-primary self-start sm:self-center"
+            iconCss="e-icons e-search"
+            type="button"
+            (click)="openTicket360(ticket.id)"
+          >
+            ดูรายละเอียด 360°
+          </button>
         </div>
         <app-section-card
           variant="nested"

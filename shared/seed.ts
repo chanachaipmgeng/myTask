@@ -77,7 +77,7 @@ export const SEED_PEOPLE: readonly Person[] = [
     level: 'Senior',
     track: 'RD',
     plannedMd: WEEKLY_QUOTA.Senior,
-    access: 'lead',
+    access: 'admin',
     gitlabUsername: 'chanachai',
   },
   {

@@ -28,7 +28,9 @@
                 <e-columns>
                   <e-column field="ticketId" headerText="รหัสใบงาน" width="110" textAlign="Left">
                     <ng-template #template let-data>
-                      <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
+                      <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
+                        {{ data.ticketId }}
+                      </button>
                     </ng-template>
                   </e-column>
                   <e-column field="devName" headerText="ผู้พัฒนา (Dev)" width="130"></e-column>
@@ -43,6 +45,14 @@
                       <app-status-badge
                         [label]="data.unitTestLabel"
                         [value]="data.unitTestPassed"
+                      ></app-status-badge>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="ciStatusLabel" headerText="CI Pipeline" width="120">
+                    <ng-template #template let-data>
+                      <app-status-badge
+                        [label]="data.ciStatusLabel"
+                        [tone]="data.ciPassed === true ? 'success' : data.ciPassed === false ? 'warning' : 'secondary'"
                       ></app-status-badge>
                     </ng-template>
                   </e-column>
@@ -148,7 +158,13 @@
               <!-- Reopen & Bug Escape Breakdown Grid -->
               <ejs-grid [dataSource]="reopenEscapes()" [allowSorting]="true" [allowFiltering]="true" [allowResizing]="true">
                 <e-columns>
-                  <e-column field="ticketId" headerText="รหัสใบงาน" width="110"></e-column>
+                  <e-column field="ticketId" headerText="รหัสใบงาน" width="110">
+                    <ng-template #template let-data>
+                      <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
+                        {{ data.ticketId }}
+                      </button>
+                    </ng-template>
+                  </e-column>
                   <e-column field="title" headerText="ชื่องาน" width="180"></e-column>
                   <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="130"></e-column>
                   <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right">

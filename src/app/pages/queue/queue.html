@@ -62,7 +62,13 @@
     >
       <ejs-grid class="queue-grid" [dataSource]="implementQueue()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
         <e-columns>
-          <e-column field="id" headerText="รหัส" width="120"></e-column>
+          <e-column field="id" headerText="รหัส" width="120">
+            <ng-template #template let-data>
+              <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.id)">
+                {{ data.id }}
+              </button>
+            </ng-template>
+          </e-column>
           <e-column field="type" headerText="ชนิด" width="140"></e-column>
           <e-column field="module" headerText="โมดูล" width="120"></e-column>
           <e-column field="size" headerText="ขนาด" width="80"></e-column>
@@ -80,7 +86,13 @@
     >
       <ejs-grid class="queue-grid" [dataSource]="researchQueue()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
         <e-columns>
-          <e-column field="id" headerText="รหัส" width="120"></e-column>
+          <e-column field="id" headerText="รหัส" width="120">
+            <ng-template #template let-data>
+              <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.id)">
+                {{ data.id }}
+              </button>
+            </ng-template>
+          </e-column>
           <e-column field="type" headerText="ชนิด" width="140"></e-column>
           <e-column field="module" headerText="โมดูล" width="120"></e-column>
           <e-column field="size" headerText="ขนาด" width="80"></e-column>

@@ -1,11 +1,14 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { extractTicketIdFromText } from '../../../shared/domain/gitlab-mr';
 import { Ticket, TicketDueShift, TicketStageLog } from '../../../shared/domain/models';
+import { scoreTicket } from '../../../shared/domain/scoring';
 import { addWorkingDays, applyGanttDateEdit, detectActiveWipTickets } from '../../../shared/domain/work-views';
 import { todayInBangkok, workflowStatusOf } from '../../../shared/domain/workflow';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { APP_CONFIG, AppConfig } from '../config';
 import { closeOpenStageLog, insertDueShift, insertStageLog } from '../data/multi-team.repo';
 import { getPerson } from '../data/people.repo';
+import { connectionToken, getConnection, getSettings } from '../data/settings.repo';
 import {
   getWorkItem,
   insertWorkItems,
@@ -14,6 +17,8 @@ import {
   upsertWorkItem,
 } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
+import { GitLabClient } from '../integrations/gitlab/gitlab.client';
+import { isoDurationToHours } from '../integrations/openproject/openproject.mapper';
 import { OpenProjectSyncService } from '../integrations/openproject/openproject.sync';
 
 @Controller('api/work-items')
@@ -29,10 +34,391 @@ export class WorkItemsController {
     return { tickets: await listWorkItems(this.db) };
   }
 
+  @Get('live-search')
+  @Roles('admin', 'lead', 'member')
+  async liveSearch(@Query('q') qRaw: string | undefined) {
+    const q = (qRaw ?? '').trim();
+    if (!q) {
+      return { source: 'offline' as const, local: [], live: [], writeback: this.config.openproject.writeback };
+    }
+    const needle = q.toLowerCase();
+    const all = await listWorkItems(this.db);
+    const local = all
+      .filter(
+        (t) =>
+          t.id.toLowerCase().includes(needle) ||
+          (t.title ?? '').toLowerCase().includes(needle) ||
+          (t.module ?? '').toLowerCase().includes(needle),
+      )
+      .slice(0, 20)
+      .map((t) => ({
+        id: t.id,
+        title: t.title ?? t.id,
+        status: workflowStatusOf(t),
+        assigneeId: t.assigneeId,
+        opId: t.opId ?? null,
+        source: t.source,
+      }));
+
+    const client = await this.openProject.getClient();
+    if (!client) {
+      return { source: 'offline' as const, local, live: [], writeback: this.config.openproject.writeback };
+    }
+    try {
+      const found = await client.searchWorkPackages(q, { pageSize: 20 });
+      const live = found.map((wp) => ({
+        id: `OP-${wp.id}`,
+        opId: wp.id,
+        title: wp.subject ?? `OP-${wp.id}`,
+        status: wp._embedded?.status?.name ?? '',
+        updatedAt: wp.updatedAt ?? null,
+      }));
+      return { source: 'live' as const, local, live, writeback: this.config.openproject.writeback };
+    } catch (err) {
+      return {
+        source: 'offline' as const,
+        local,
+        live: [],
+        writeback: this.config.openproject.writeback,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  @Get(':id/detail')
+  @Roles('admin', 'lead', 'member')
+  async detail(@Param('id') id: string) {
+    const ticket = await getWorkItem(this.db, id);
+    if (!ticket) {
+      return { ok: false, message: 'ไม่พบใบงาน', source: 'offline' as const };
+    }
+    const scores = scoreTicket(ticket);
+    const writeback = this.config.openproject.writeback;
+    const client = await this.openProject.getClient();
+    const opId = typeof ticket.opId === 'number' ? ticket.opId : null;
+
+    let description = '';
+    let relations: {
+      id: number;
+      type: string;
+      fromTitle: string;
+      toTitle: string;
+      fromId: number | null;
+      toId: number | null;
+    }[] = [];
+    let attachments: {
+      id: number;
+      fileName: string;
+      fileSize: number;
+      contentType: string;
+      downloadUrl: string;
+    }[] = [];
+    let timeEntries: {
+      id: number;
+      spentOn: string;
+      hours: number;
+      userTitle: string;
+      comment: string;
+    }[] = [];
+    let activities: { createdAt: string; text: string }[] = [];
+    let source: 'live' | 'offline' = 'offline';
+    const errors: string[] = [];
+
+    if (client && opId != null) {
+      source = 'live';
+      try {
+        const [wp, rels, atts, entries, acts] = await Promise.all([
+          client.getWorkPackage(opId),
+          client.getWorkPackageRelations(opId),
+          client.getWorkPackageAttachments(opId),
+          client.listWorkPackageTimeEntries(opId),
+          client.getActivities(opId),
+        ]);
+        description = String((wp as { description?: { raw?: string } }).description?.raw ?? '');
+        relations = rels.map((r) => ({
+          id: r.id,
+          type: r.type ?? r.reverseType ?? 'relates',
+          fromTitle: r._links?.from?.title ?? '',
+          toTitle: r._links?.to?.title ?? '',
+          fromId: idFromHrefSafe(r._links?.from?.href),
+          toId: idFromHrefSafe(r._links?.to?.href),
+        }));
+        attachments = atts.map((a) => ({
+          id: a.id,
+          fileName: a.fileName ?? `file-${a.id}`,
+          fileSize: a.fileSize ?? 0,
+          contentType: a.contentType ?? '',
+          downloadUrl:
+            a._links?.downloadLocation?.href || a._links?.staticDownloadLocation?.href || '',
+        }));
+        timeEntries = entries.map((e) => ({
+          id: e.id,
+          spentOn: e.spentOn ?? '',
+          hours: isoDurationToHours(e.hours),
+          userTitle: e._links?.user?.title ?? '',
+          comment:
+            typeof e.comment === 'string'
+              ? e.comment
+              : e.comment && typeof e.comment === 'object'
+                ? e.comment.raw ?? ''
+                : '',
+        }));
+        activities = acts.map((a) => {
+          const commentText =
+            typeof a.comment === 'string'
+              ? a.comment
+              : a.comment && typeof a.comment === 'object'
+                ? a.comment.raw ?? ''
+                : '';
+          const detailText = (a.details ?? []).map((d) => d.raw ?? '').filter(Boolean).join(' · ');
+          return {
+            createdAt: a.createdAt ?? '',
+            text: commentText || detailText || 'อัปเดต',
+          };
+        });
+      } catch (err) {
+        errors.push(err instanceof Error ? err.message : String(err));
+        source = 'offline';
+      }
+    }
+
+    if (timeEntries.length === 0 && ticket.actualMd > 0) {
+      timeEntries = [
+        {
+          id: 0,
+          spentOn: String(ticket.closedOn || ticket.dueOn || '').slice(0, 10),
+          hours: Math.round(ticket.actualMd * ((await getSettings(this.db)).hoursPerMd || 6) * 100) / 100,
+          userTitle: ticket.assigneeId,
+          comment: 'จากข้อมูลในสกอร์การ์ด (โหมดออฟไลน์)',
+        },
+      ];
+    }
+
+    const mrs = await this.resolveTicketMrs(ticket);
+
+    const opUrl =
+      opId != null
+        ? `${(await this.openProject.resolveCredentials())?.url?.replace(/\/+$/, '') ?? ''}/work_packages/${opId}`
+        : null;
+
+    return {
+      ok: true,
+      source,
+      writeback,
+      ticket,
+      scores: {
+        week: scores.week,
+        accuracy: scores.accuracy,
+        review: scores.review,
+        reopen: scores.reopen,
+        total: scores.total,
+      },
+      description,
+      relations,
+      attachments,
+      timeEntries,
+      activities,
+      mrs,
+      opUrl: opUrl || null,
+      errors,
+    };
+  }
+
+  @Post(':id/time-entries')
+  @Roles('admin', 'lead', 'member')
+  async createTimeEntry(
+    @Param('id') id: string,
+    @Body() body: { hours?: number; spentOn?: string; comment?: string },
+    @Req() req: AuthedRequest,
+  ) {
+    const ticket = await getWorkItem(this.db, id);
+    if (!ticket) {
+      return { ok: false, message: 'ไม่พบใบงาน' };
+    }
+    if (!this.config.openproject.writeback) {
+      return { ok: false, writebackDisabled: true, message: 'Writeback ยังปิดอยู่ (OPENPROJECT_WRITEBACK=false)' };
+    }
+    const opId = ticket.opId;
+    if (typeof opId !== 'number') {
+      return { ok: false, message: 'ใบงานนี้ยังไม่ได้ผูกกับ myProject' };
+    }
+    const role = req.authUser?.access ?? 'member';
+    const selfId = req.authUser?.person.id;
+    if (role === 'member' && ticket.assigneeId !== selfId) {
+      return { ok: false, message: 'ลงเวลาได้เฉพาะใบงานของตัวเอง' };
+    }
+    const hours = typeof body.hours === 'number' && body.hours > 0 ? body.hours : 0;
+    if (!hours) {
+      return { ok: false, message: 'hours ต้องมากกว่า 0' };
+    }
+    const spentOn = (body.spentOn ?? todayInBangkok()).slice(0, 10);
+    const isoHours = hoursToIsoDuration(hours);
+    const err = await this.openProject.writebackTimeEntry({
+      workPackageId: opId,
+      hours: isoHours,
+      spentOn,
+      comment: body.comment?.trim() || undefined,
+    });
+    if (err === 'writebackDisabled') {
+      return { ok: false, writebackDisabled: true, message: 'Writeback ยังปิดอยู่' };
+    }
+    if (err) {
+      return { ok: false, message: err };
+    }
+    await this.db.audit(selfId ?? null, 'work_item.time_entry', id, { hours, spentOn });
+    return { ok: true };
+  }
+
+  @Post(':id/comments')
+  @Roles('admin', 'lead', 'member')
+  async postComment(
+    @Param('id') id: string,
+    @Body() body: { comment?: string },
+    @Req() req: AuthedRequest,
+  ) {
+    const ticket = await getWorkItem(this.db, id);
+    if (!ticket) {
+      return { ok: false, message: 'ไม่พบใบงาน' };
+    }
+    if (!this.config.openproject.writeback) {
+      return { ok: false, writebackDisabled: true, message: 'Writeback ยังปิดอยู่ (OPENPROJECT_WRITEBACK=false)' };
+    }
+    const opId = ticket.opId;
+    if (typeof opId !== 'number') {
+      return { ok: false, message: 'ใบงานนี้ยังไม่ได้ผูกกับ myProject' };
+    }
+    const comment = (body.comment ?? '').trim();
+    if (!comment) {
+      return { ok: false, message: 'comment required' };
+    }
+    const err = await this.openProject.writebackComment(opId, comment);
+    if (err === 'writebackDisabled') {
+      return { ok: false, writebackDisabled: true, message: 'Writeback ยังปิดอยู่' };
+    }
+    if (err) {
+      return { ok: false, message: err };
+    }
+    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.comment', id, { length: comment.length });
+    return { ok: true };
+  }
+
   @Get(':id')
   async one(@Param('id') id: string) {
     const ticket = await getWorkItem(this.db, id);
     return ticket ? { ticket } : { ticket: null };
+  }
+
+  private async resolveTicketMrs(ticket: Ticket) {
+    const empty: {
+      iid: number;
+      projectId: string;
+      title: string;
+      webUrl: string;
+      state: string;
+      ciStatus: string;
+      commitSpan: { firstCommitOn: string | null; lastCommitOn: string | null; commitCount: number };
+      unresolvedThreads: number;
+      reviewRounds: number;
+      reviewers: string[];
+    }[] = [];
+
+    if (ticket.mrLink) {
+      empty.push({
+        iid: 0,
+        projectId: '',
+        title: ticket.mrLink,
+        webUrl: ticket.mrLink,
+        state: 'linked',
+        ciStatus: 'unknown',
+        commitSpan: { firstCommitOn: null, lastCommitOn: null, commitCount: 0 },
+        unresolvedThreads: 0,
+        reviewRounds: ticket.reviewRounds ?? 1,
+        reviewers: ticket.reviewers ?? [],
+      });
+    }
+
+    const gitlab = await this.resolveGitLabClient();
+    if (!gitlab || gitlab.projectIds.length === 0) {
+      return empty;
+    }
+    const { client, projectIds } = gitlab;
+    const results: typeof empty = [];
+    for (const projectId of projectIds) {
+      try {
+        const [opened, merged] = await Promise.all([
+          client.listMergeRequests(projectId, { state: 'opened' }),
+          client.listMergeRequests(projectId, { state: 'merged' }),
+        ]);
+        for (const mr of [...opened, ...merged]) {
+          if (!mr.iid) continue;
+          const ticketId =
+            extractTicketIdFromText(mr.title) ||
+            extractTicketIdFromText(mr.source_branch) ||
+            extractTicketIdFromText(mr.description);
+          const matches =
+            ticketId.toUpperCase() === ticket.id.toUpperCase() ||
+            (ticket.opId != null && ticketId === `OP-${ticket.opId}`) ||
+            (ticket.mrLink && mr.web_url && ticket.mrLink === mr.web_url);
+          if (!matches) continue;
+          let commitSpan = { firstCommitOn: null as string | null, lastCommitOn: null as string | null, commitCount: 0 };
+          let unresolvedThreads = 0;
+          let reviewRounds = ticket.reviewRounds ?? 1;
+          let ciStatus = 'unknown';
+          try {
+            const [commits, discussions, pipelines] = await Promise.all([
+              client.getMrCommits(projectId, mr.iid),
+              client.getMrDiscussions(projectId, mr.iid),
+              client.getMrPipelines(projectId, mr.iid),
+            ]);
+            commitSpan = GitLabClient.commitSpan(commits);
+            const summary = GitLabClient.discussionSummary(discussions);
+            unresolvedThreads = summary.unresolvedThreads;
+            reviewRounds = summary.reviewRounds;
+            ciStatus = GitLabClient.latestCiStatus(pipelines);
+          } catch {
+            // keep defaults
+          }
+          results.push({
+            iid: mr.iid,
+            projectId: String(projectId),
+            title: (mr.title ?? '').trim() || `!${mr.iid}`,
+            webUrl: (mr.web_url ?? '').trim(),
+            state: mr.merged_at ? 'merged' : 'opened',
+            ciStatus,
+            commitSpan,
+            unresolvedThreads,
+            reviewRounds,
+            reviewers: (mr.reviewers ?? [])
+              .map((r) => r.username?.trim().toLowerCase())
+              .filter((u): u is string => Boolean(u)),
+          });
+        }
+      } catch {
+        // skip project
+      }
+    }
+    return results.length > 0 ? results : empty;
+  }
+
+  private async resolveGitLabClient(): Promise<{
+    client: GitLabClient;
+    projectIds: string[];
+  } | null> {
+    const connection = await getConnection(this.db, 'gitlab');
+    const stored = connection?.base_url ?? '';
+    const [basePart = '', hash = ''] = stored.split('#projects=');
+    const storedProjects = hash
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+    const baseUrl = (this.config.gitlab.url || basePart).replace(/\/+$/, '');
+    const projectIds =
+      this.config.gitlab.projectIds.length > 0 ? this.config.gitlab.projectIds : storedProjects;
+    const token = this.config.gitlab.apiToken || connectionToken(connection, this.config.tokenEncKey);
+    if (!baseUrl || !token) {
+      return null;
+    }
+    return { client: new GitLabClient(baseUrl, token), projectIds };
   }
 
   @Post()
@@ -313,4 +699,21 @@ export class WorkItemsController {
 
     return { ok: true, ticket: saved };
   }
+}
+
+function idFromHrefSafe(href: string | null | undefined): number | null {
+  if (!href) return null;
+  const match = /\/(\d+)(?:\?|$)/.exec(href);
+  return match ? Number(match[1]) : null;
+}
+
+/** Convert decimal hours to ISO-8601 duration (e.g. 1.5 → PT1H30M). */
+function hoursToIsoDuration(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0 && m === 0) return 'PT0S';
+  if (m === 0) return `PT${h}H`;
+  if (h === 0) return `PT${m}M`;
+  return `PT${h}H${m}M`;
 }

@@ -14,6 +14,7 @@ import {
   ToolbarService,
 } from '@syncfusion/ej2-angular-grids';
 import { ScorecardService } from '../../core/scorecard.service';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import { workBacklogRows } from '../../core/work-views';
 import { SectionCardComponent } from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
@@ -37,6 +38,7 @@ import { WorkHubFilter } from './work-hub-filter';
 export class WorkBacklog {
   private readonly scorecard = inject(ScorecardService);
   private readonly hub = inject(WorkHubFilter);
+  private readonly ticketDetail = inject(TicketDetailService);
 
   @ViewChild('backlogGrid') private backlogGrid?: GridComponent;
 
@@ -50,8 +52,18 @@ export class WorkBacklog {
     this.isMine() ? '/me/work/board' : '/work/board',
   );
   protected readonly rows = computed(() =>
-    workBacklogRows(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
+    workBacklogRows(
+      this.scorecard.tickets(),
+      this.scorecard.people(),
+      this.hub.filterOptions(this.scorecard.people()),
+    ),
   );
+
+  protected openTicket(id: string): void {
+    if (id) {
+      this.ticketDetail.open(id);
+    }
+  }
 
   protected onToolbarClick(args: { item?: { id?: string } }): void {
     const id = args.item?.id ?? '';

@@ -34,6 +34,11 @@ export const routes: Routes = [
     children: workChildren,
   },
   {
+    path: 'me/time-log',
+    loadComponent: () => import('./pages/work/team-time').then((m) => m.TeamTimePage),
+    data: { scope: 'mine' },
+  },
+  {
     path: 'me/cockpit',
     loadComponent: () => import('./pages/cockpit/cockpit').then((m) => m.CockpitPage),
     data: { scope: 'mine' },
@@ -116,6 +121,11 @@ export const routes: Routes = [
       {
         path: 'handoff',
         loadComponent: () => import('./pages/work/work-handoff').then((m) => m.WorkHandoffPage),
+      },
+      {
+        path: 'team-time',
+        loadComponent: () => import('./pages/work/team-time').then((m) => m.TeamTimePage),
+        data: { scope: 'team' },
       },
     ],
   },

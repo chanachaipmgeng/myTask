@@ -108,7 +108,11 @@ export class WorkTimeline {
   protected readonly splitterSettings = { position: '42%' };
 
   protected readonly tasks = computed(() =>
-    workGanttTasks(this.scorecard.tickets(), this.scorecard.people(), this.hub.filterOptions()),
+    workGanttTasks(
+      this.scorecard.tickets(),
+      this.scorecard.people(),
+      this.hub.filterOptions(this.scorecard.people()),
+    ),
   );
 
   /**

@@ -85,6 +85,8 @@ export interface Person {
   openprojectUserId?: number | null;
   avatarUrl?: string | null;
   department?: string | null;
+  /** ฝ่ายย่อยจาก OpenProject customField2 */
+  unit?: string | null;
   jobTitle?: string | null;
   active?: boolean;
 }

@@ -7,7 +7,7 @@ import { currentViewer, effectiveRole, setViewer, setWorkspaceMode } from '../..
 import { ApiClient } from '../../core/api-client';
 import { AccessRole, Person } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
-import { currentSession } from '../../core/session';
+import { currentSession, setSessionUser } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
 
@@ -135,12 +135,14 @@ export class LoginPage {
       }
     } else {
       setViewer(person.id);
+      setSessionUser(person, person.access ?? 'member');
     }
 
     const access = person.access ?? 'member';
-    const initialMode: AccessRole = access === 'member' ? 'member' : 'lead';
+    const initialMode: AccessRole =
+      access === 'admin' ? 'admin' : access === 'member' ? 'member' : 'lead';
     setWorkspaceMode(initialMode);
-    const targetRoute = access === 'member' ? '/me' : '/team';
+    const targetRoute = access === 'member' ? '/me' : access === 'admin' ? '/admin' : '/team';
     const text = `เข้าสู่ระบบเป็น ${person.nickname} (${access}) เรียบร้อยแล้ว`;
     this.message.set(text);
     this.notice.success(text);

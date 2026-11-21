@@ -46,7 +46,9 @@
       <e-columns>
         <e-column field="ticketId" headerText="รหัสใบงาน" width="110" textAlign="Left">
           <ng-template #template let-data>
-            <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
+            <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
+              {{ data.ticketId }}
+            </button>
           </ng-template>
         </e-column>
         <e-column field="title" headerText="ชื่องาน" width="170" textAlign="Left"></e-column>
@@ -63,9 +65,9 @@
             </span>
           </ng-template>
         </e-column>
-        <e-column field="gitlabSpanMd" headerText="GitLab (3)" width="105" textAlign="Right">
+        <e-column field="gitlabSpanMd" headerText="GitLab Commit Span (3)" width="150" textAlign="Right">
           <ng-template #template let-data>
-            <span>{{ data.gitlabSpanMd > 0 ? data.gitlabSpanMd + ' MD' : 'ไม่มี Commit!' }}</span>
+            <span>{{ data.gitlabSpanMd > 0 ? data.gitlabSpanMd + ' MD (ช่วง commit)' : 'ไม่มี Commit!' }}</span>
           </ng-template>
         </e-column>
         <e-column field="ratio" headerText="สัดส่วน" width="85" textAlign="Right">

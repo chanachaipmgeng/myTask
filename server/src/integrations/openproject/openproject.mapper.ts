@@ -163,7 +163,9 @@ export interface OpLink {
 
 export interface OpActivity {
   createdAt?: string;
+  comment?: { raw?: string; html?: string } | string | null;
   details?: { raw?: string; format?: string }[];
+  _links?: { user?: { title?: string; href?: string } };
 }
 
 export interface MapContext {
