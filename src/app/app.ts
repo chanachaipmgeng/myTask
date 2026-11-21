@@ -316,14 +316,22 @@ export class App implements AfterViewInit {
   protected readonly activeSubTabs = computed<NavMenuItem[]>(() => {
     const role = this.role();
     const category = this.activeNavCategory();
-    return leavesFor(role)
+    const tabs = leavesFor(role)
       .filter((leaf) => (leafCategory[leaf.id] ?? 'work') === category)
       .map((leaf) => ({
         ...leaf,
         category,
         categoryLabel: categoryMeta[category].label,
+        groupId: leafGroupId(leaf.id, role),
       }));
+    return tabs.map((tab, index) => ({
+      ...tab,
+      sepBefore: index > 0 && tab.groupId !== tabs[index - 1].groupId,
+    }));
   });
+
+  /** Path key so shell can restart enter cascade when the route changes. */
+  protected readonly navKey = computed(() => this.url().split('?')[0] || '/');
 
   protected readonly visibleNavItems = computed<NavMenuItem[]>(() => {
     const role = this.role();
@@ -345,6 +353,7 @@ export class App implements AfterViewInit {
             ...leaf,
             category: leafCategory[leaf.id] ?? 'work',
             categoryLabel: categoryMeta[leafCategory[leaf.id] ?? 'work'].label,
+            groupId: group.id,
           })),
       );
   });
@@ -392,6 +401,7 @@ export class App implements AfterViewInit {
             ...leaf,
             category: leafCategory[leaf.id] ?? 'work',
             categoryLabel: categoryMeta[leafCategory[leaf.id] ?? 'work'].label,
+            groupId: group.id,
           })),
       );
 
@@ -405,9 +415,7 @@ export class App implements AfterViewInit {
   });
 
   protected selectRailCategory(cat: NavCategory): void {
-    if (this.collapsed()) {
-      this.collapsed.set(false);
-    }
+    // Keep desktop rail collapsed when switching pages — expand only via toggleNav().
     const leaf = firstLeaf(this.role(), cat);
     if (leaf) {
       void this.router.navigateByUrl(leaf.route);
@@ -533,7 +541,9 @@ export class App implements AfterViewInit {
       this.role();
       this.collapsed();
       this.menuSearch();
+      this.activeNavCategory();
       this.scheduleActivePillSync();
+      queueMicrotask(() => this.observeSubnavTabs());
     });
     window.addEventListener('keydown', (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -720,6 +730,8 @@ export class App implements AfterViewInit {
     this.subTabPill.set({ left, width, visible: true });
   }
 
+  private pillResizeObserver?: ResizeObserver;
+
   ngAfterViewInit(): void {
     this.notice.bind((payload) => {
       const type = payload.type ?? 'info';
@@ -731,9 +743,16 @@ export class App implements AfterViewInit {
     });
     this.scheduleActivePillSync();
     if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => this.scheduleActivePillSync());
-      if (this.saasNav?.nativeElement) ro.observe(this.saasNav.nativeElement);
-      if (this.subnavTabs?.nativeElement) ro.observe(this.subnavTabs.nativeElement);
+      this.pillResizeObserver = new ResizeObserver(() => this.scheduleActivePillSync());
+      if (this.saasNav?.nativeElement) this.pillResizeObserver.observe(this.saasNav.nativeElement);
+      this.observeSubnavTabs();
+    }
+  }
+
+  private observeSubnavTabs(): void {
+    const el = this.subnavTabs?.nativeElement;
+    if (el && this.pillResizeObserver) {
+      this.pillResizeObserver.observe(el);
     }
   }
 }
@@ -743,6 +762,8 @@ type NavCategory = 'cockpit' | 'work' | 'quality' | 'analytics' | 'admin';
 type NavMenuItem = NavLeaf & {
   category: NavCategory;
   categoryLabel: string;
+  groupId: string;
+  sepBefore?: boolean;
 };
 
 const categoryMeta: Record<NavCategory, { label: string; hint: string; rail: string; icon: string; title: string }> = {
@@ -786,10 +807,10 @@ const categoryMeta: Record<NavCategory, { label: string; hint: string; rail: str
 const categoryOrder: NavCategory[] = ['cockpit', 'work', 'quality', 'analytics', 'admin'];
 
 const categoryLanding: Partial<Record<NavCategory, readonly string[]>> = {
-  cockpit: ['my-cockpit', 'team-cockpit', 'admin-cockpit', 'team-dash'],
+  cockpit: ['my-cockpit', 'team-cockpit', 'admin-cockpit', 'team-dash', 'people', 'admin-people'],
   work: ['me', 'work-hub', 'my-work', 'queue', 'my-time-log', 'schedule'],
   quality: ['quality-audit', 'my-tickets', 'admin-time-audit', 'time-audit', 'my-disputes', 'admin-tickets'],
-  analytics: ['analytics', 'admin-analytics', 'my-analytics', 'people', 'admin-people', 'lead-mockup'],
+  analytics: ['analytics', 'admin-analytics', 'my-analytics', 'lead-mockup'],
   admin: ['admin-home'],
 };
 
@@ -809,6 +830,7 @@ const leafCategory: Record<string, NavCategory> = {
   'my-disputes': 'quality',
   'team-dash': 'cockpit',
   'team-cockpit': 'cockpit',
+  people: 'cockpit',
   queue: 'work',
   'work-hub': 'work',
   'work-board': 'work',
@@ -821,7 +843,6 @@ const leafCategory: Record<string, NavCategory> = {
   tickets: 'quality',
   'time-audit': 'quality',
   analytics: 'analytics',
-  people: 'analytics',
   mygit: 'analytics',
   ai: 'analytics',
   'lead-mockup': 'analytics',
@@ -830,7 +851,7 @@ const leafCategory: Record<string, NavCategory> = {
   'admin-analytics': 'analytics',
   'admin-time-audit': 'quality',
   'admin-tickets': 'quality',
-  'admin-people': 'analytics',
+  'admin-people': 'cockpit',
   integrations: 'admin',
   'snapshot-check': 'admin',
   rubrics: 'admin',
@@ -844,30 +865,46 @@ const allNavGroups: NavGroup[] = [
   // โหมดที่ 1: งานของฉัน (Member Workspace)
   // ==========================================
   {
-    id: 'mine-daily',
-    text: 'จัดการใบงานประจำวัน',
+    id: 'mine-home',
+    text: 'ภาพรวมผลงานของฉัน',
     expanded: true,
     roles: ['member'],
     children: [
       { id: 'me', text: 'ผลงาน & งานวันนี้', iconCss: 'e-icons e-user', route: '/me', exact: true },
       { id: 'my-cockpit', text: 'ค็อกพิทผลงานของฉัน (Bento)', iconCss: 'e-icons e-grid-view', route: '/me/cockpit' },
-      { id: 'my-work', text: 'ฮับงานของฉัน (ค้าง/บอร์ด)', iconCss: 'e-icons e-timeline-work-week', route: '/me/work', exact: true },
-      { id: 'my-schedule', text: 'ปฏิทินงานของฉัน', iconCss: 'e-icons e-timeline-today', route: '/me/schedule' },
-      { id: 'my-time-log', text: 'ลงเวลางานของฉัน', iconCss: 'e-icons e-day', route: '/me/time-log' },
-      { id: 'my-mygit', text: 'ซิงก์ MR ของฉัน', iconCss: 'e-icons e-refresh', route: '/me/mygit' },
-      { id: 'my-ai', text: 'ติดตามงาน AI ของฉัน', iconCss: 'e-icons e-chart', route: '/me/ai' },
     ],
   },
   {
-    id: 'mine-analytics',
-    text: 'ผลงาน & วิเคราะห์ตัวเอง',
+    id: 'mine-daily',
+    text: 'จัดการใบงานประจำวัน',
+    expanded: true,
+    roles: ['member'],
+    children: [
+      { id: 'my-work', text: 'ฮับงานของฉัน (ค้าง/บอร์ด)', iconCss: 'e-icons e-timeline-work-week', route: '/me/work', exact: true },
+      { id: 'my-schedule', text: 'ปฏิทินงานของฉัน', iconCss: 'e-icons e-timeline-today', route: '/me/schedule' },
+      { id: 'my-time-log', text: 'ลงเวลางานของฉัน', iconCss: 'e-icons e-day', route: '/me/time-log' },
+    ],
+  },
+  {
+    id: 'mine-quality',
+    text: 'คะแนน & อุทธรณ์ของฉัน',
+    expanded: true,
+    roles: ['member'],
+    children: [
+      { id: 'my-tickets', text: 'ตารางคะแนนใบงานของฉัน', iconCss: 'e-icons e-table', route: '/me/tickets' },
+      { id: 'my-time-audit', text: 'เช็กเวลา 3 ทางของฉัน', iconCss: 'e-icons e-clock', route: '/me/time-audit' },
+      { id: 'my-disputes', text: 'อุทธรณ์คะแนนของฉัน', iconCss: 'e-icons e-edit', route: '/me/disputes' },
+    ],
+  },
+  {
+    id: 'mine-intel',
+    text: 'วิเคราะห์ & ซิงก์ของฉัน',
     expanded: true,
     roles: ['member'],
     children: [
       { id: 'my-analytics', text: 'วิเคราะห์ผลงานเชิงลึก (OLS)', iconCss: 'e-icons e-chart', route: '/me/analytics' },
-      { id: 'my-tickets', text: 'ตารางคะแนนใบงานของฉัน', iconCss: 'e-icons e-table', route: '/me/tickets' },
-      { id: 'my-time-audit', text: 'เช็กเวลา 3 ทางของฉัน', iconCss: 'e-icons e-clock', route: '/me/time-audit' },
-      { id: 'my-disputes', text: 'อุทธรณ์คะแนนของฉัน', iconCss: 'e-icons e-edit', route: '/me/disputes' },
+      { id: 'my-mygit', text: 'ซิงก์ MR ของฉัน', iconCss: 'e-icons e-refresh', route: '/me/mygit' },
+      { id: 'my-ai', text: 'ติดตามงาน AI ของฉัน', iconCss: 'e-icons e-chart', route: '/me/ai' },
     ],
   },
 
@@ -875,21 +912,30 @@ const allNavGroups: NavGroup[] = [
   // โหมดที่ 2: บริหารทีม (Lead Command Center)
   // ==========================================
   {
-    id: 'lead-plan',
-    text: 'บริหารแผน & จ่ายงานทีม',
+    id: 'lead-overview',
+    text: 'ภาพรวมทีม & คน',
     expanded: true,
     roles: ['lead'],
     children: [
       { id: 'team-dash', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
       { id: 'team-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-grid-view', route: '/cockpit' },
+      { id: 'people', text: 'รายชื่อและโปรไฟล์ลูกทีม', iconCss: 'e-icons e-people', route: '/people', exact: true },
+    ],
+  },
+  {
+    id: 'lead-plan',
+    text: 'บริหารแผน & จ่ายงานทีม',
+    expanded: true,
+    roles: ['lead'],
+    children: [
       { id: 'queue', text: 'คิวงานใหม่ & จ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/queue' },
       { id: 'work-hub', text: 'ฮับงานค้าง & แผนทีม', iconCss: 'e-icons e-timeline-work-week', route: '/work', exact: true },
       { id: 'schedule', text: 'ปฏิทินทีม & วันลา', iconCss: 'e-icons e-timeline-today', route: '/schedule' },
     ],
   },
   {
-    id: 'lead-audit',
-    text: 'ตรวจรับ & วิเคราะห์ทีม',
+    id: 'lead-quality',
+    text: 'ตรวจรับ & คะแนนทีม',
     expanded: true,
     roles: ['lead'],
     children: [
@@ -897,8 +943,15 @@ const allNavGroups: NavGroup[] = [
       { id: 'disputes', text: 'ศูนย์อนุมัติอุทธรณ์ทีม', iconCss: 'e-icons e-edit', route: '/tickets/disputes' },
       { id: 'tickets', text: 'ตารางคะแนนใบงานทีม', iconCss: 'e-icons e-table', route: '/tickets' },
       { id: 'time-audit', text: 'ตรวจสอบเวลา 3 ทางทีม', iconCss: 'e-icons e-clock', route: '/analytics/time-audit' },
+    ],
+  },
+  {
+    id: 'lead-intel',
+    text: 'วิเคราะห์ & ซิงก์ทีม',
+    expanded: true,
+    roles: ['lead'],
+    children: [
       { id: 'analytics', text: 'ศูนย์วิเคราะห์ & Coaching', iconCss: 'e-icons e-chart', route: '/analytics' },
-      { id: 'people', text: 'รายชื่อและโปรไฟล์ลูกทีม', iconCss: 'e-icons e-people', route: '/people', exact: true },
       { id: 'mygit', text: 'ซิงก์ mygit (MR) ทีม', iconCss: 'e-icons e-refresh', route: '/mygit' },
       { id: 'ai', text: 'ติดตามงาน AI ทีม', iconCss: 'e-icons e-chart', route: '/ai' },
       { id: 'lead-mockup', text: 'โหมดจำลองระบบ (Mockup)', iconCss: 'e-icons e-play', route: '/mockup' },
@@ -909,13 +962,22 @@ const allNavGroups: NavGroup[] = [
   // โหมดที่ 3: แอดมิน (Admin & Governance Console)
   // ==========================================
   {
+    id: 'admin-overview',
+    text: 'ภาพรวมองค์กร & คน',
+    expanded: true,
+    roles: ['admin'],
+    children: [
+      { id: 'admin-cockpit', text: 'ห้องบัญชาการ Bento', iconCss: 'e-icons e-grid-view', route: '/cockpit' },
+      { id: 'admin-people', text: 'รายชื่อและสิทธิ์พนักงาน', iconCss: 'e-icons e-people', route: '/people', exact: true },
+    ],
+  },
+  {
     id: 'admin-gov',
     text: 'การตั้งค่าระบบ & ธรรมาภิบาล',
     expanded: true,
     roles: ['admin'],
     children: [
       { id: 'admin-home', text: 'หลังบ้าน & สิทธิ์', iconCss: 'e-icons e-lock', route: '/admin', exact: true },
-      { id: 'admin-cockpit', text: 'ห้องบัญชาการ Bento', iconCss: 'e-icons e-grid-view', route: '/cockpit' },
       { id: 'integrations', text: 'เชื่อมต่อระบบ', iconCss: 'e-icons e-settings', route: '/integrations' },
       {
         id: 'snapshot-check',
@@ -937,7 +999,6 @@ const allNavGroups: NavGroup[] = [
       { id: 'admin-analytics', text: 'ศูนย์วิเคราะห์ Python & AI', iconCss: 'e-icons e-chart', route: '/analytics' },
       { id: 'admin-time-audit', text: 'ตรวจสอบเวลา 3 ทางองค์กร', iconCss: 'e-icons e-clock', route: '/analytics/time-audit' },
       { id: 'admin-tickets', text: 'ตารางคะแนนรวมทั้งองค์กร', iconCss: 'e-icons e-table', route: '/tickets' },
-      { id: 'admin-people', text: 'รายชื่อและสิทธิ์พนักงาน', iconCss: 'e-icons e-people', route: '/people', exact: true },
     ],
   },
 ];
@@ -948,6 +1009,16 @@ function leavesFor(role: AccessRole): NavLeaf[] {
   return allNavGroups
     .filter((group) => !group.roles || group.roles.includes(role))
     .flatMap((group) => group.children.filter((leaf) => !leaf.roles || leaf.roles.includes(role)));
+}
+
+function leafGroupId(leafId: string, role: AccessRole): string {
+  for (const group of allNavGroups) {
+    if (group.roles && !group.roles.includes(role)) continue;
+    if (group.children.some((leaf) => leaf.id === leafId && (!leaf.roles || leaf.roles.includes(role)))) {
+      return group.id;
+    }
+  }
+  return 'other';
 }
 
 function firstLeaf(role: AccessRole, category?: NavCategory): NavLeaf | undefined {

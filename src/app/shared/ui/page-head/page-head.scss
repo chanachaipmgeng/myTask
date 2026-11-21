@@ -1,3 +1,21 @@
 :host {
   display: block;
+  animation: pageHeadEnter var(--dur-fast) var(--ease-crisp) both;
+}
+
+@keyframes pageHeadEnter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    animation: none !important;
+  }
 }

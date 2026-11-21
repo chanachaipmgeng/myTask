@@ -48,8 +48,30 @@
 // -----------------------------------------------------------------------------
 .e-grid {
   border: 1px solid var(--line) !important;
-  border-radius: 12px;
+  border-radius: var(--radius-nested);
   overflow: hidden;
+}
+
+/* ตารางในเปลือก section-card — โปร่งเปลือกนอก ไม่ blur รายแถว */
+.e-card.section-card .e-grid,
+.section-card .e-grid {
+  border: none !important;
+  border-radius: 0;
+  background: transparent !important;
+}
+
+.e-card.section-card .e-grid .e-gridheader,
+.e-card.section-card .e-grid .e-headercontent,
+.e-card.section-card .e-grid .e-gridcontent,
+.section-card .e-grid .e-gridheader,
+.section-card .e-grid .e-headercontent,
+.section-card .e-grid .e-gridcontent {
+  background: transparent !important;
+}
+
+.e-card.section-card .e-grid .e-headercell,
+.section-card .e-grid .e-headercell {
+  font-variant-numeric: tabular-nums;
 }
 
 .e-grid .e-gridcontent {
@@ -142,7 +164,7 @@ body.e-light-mode {
 // -----------------------------------------------------------------------------
 .e-kanban.pipeline-board {
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   padding: 6px;
   background: rgba(15, 23, 42, 0.48);
   max-width: 100%;
@@ -241,13 +263,29 @@ body.e-light-mode .e-dlg-overlay {
   align-self: flex-start;
 }
 
-/* Modal polish (แนว UI Kit จุดๆ) — อย่าใส่ transform บน .e-dialog */
+/* Modal polish — มุมมนด้วย token; ห้าม transform บน .e-dialog */
 .e-dialog.app-modal,
 .e-dialog.app-modal-confirm {
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   border: 1px solid var(--line);
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+  box-shadow: var(--shadow-floating);
   overflow: hidden;
+}
+
+/* Popup ที่ Syncfusion ย้ายไป <body> — เขียนใน global เท่านั้น */
+.e-ddl.e-popup,
+.e-datepicker.e-popup,
+.e-popup.e-popup-open.e-ddl,
+.e-popup.e-popup-open.e-datepicker {
+  border-radius: var(--radius-card) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--shadow-floating) !important;
+  overflow: hidden;
+}
+
+.e-ddl.e-popup .e-list-item {
+  border-radius: var(--radius-tile);
+  margin-inline: 4px;
 }
 
 .e-dialog.app-modal .e-dlg-header-content,
@@ -588,4 +626,17 @@ body.e-light-mode .e-dashboardlayout .e-panel-header {
 .workspace {
   margin-left: 0 !important;
   transform: none !important;
+}
+
+// -----------------------------------------------------------------------------
+// 10) Soft surfaces — pill inputs ในฟอร์ม (ไม่ทับ toolbar Syncfusion)
+// -----------------------------------------------------------------------------
+.field > .e-input-group,
+.field > .e-control-wrapper.e-ddl,
+.field > .e-control-wrapper.e-date-wrapper,
+.filter > .e-input-group,
+.filter > .e-control-wrapper.e-ddl,
+.filter > .e-control-wrapper.e-date-wrapper {
+  border-radius: var(--radius-nested) !important;
+  transition: box-shadow var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }

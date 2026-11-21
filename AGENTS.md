@@ -31,6 +31,8 @@ npm --prefix server run build
 - Angular **22.2.6** (pin ใน package.json) · **signals / computed / `@if` `@for`** · **OnPush** ทุก component  
 - คง **Zone** (`provideZoneChangeDetection`) — ยังไม่ทำ zoneless เพราะ Syncfusion  
 - Syncfusion: ใช้ `[value]="x()"` + `(change)` ไม่ใช้ `[(value)]` กับ class field  
+- **Surface tokens (คงสี MyHR)**: รัศมี/เงา/โมชันใน `src/styles.scss` — `--radius-panel` 24 → `--radius-card` 16 → `--radius-nested` 12 · `--shadow-card*` · `--ease-crisp` + `--dur-*` · KPI ใช้ `tabular-nums` · ห้าม hardcode มุม/เงาซ้ำเมื่อมีโทเคน · ห้ามย้อมแบรนด์เป็น lime/sage · cockpit overview ใช้ `.ov-grid` เป็นแบบอย่าง  
+
 - AppBar (`app.html`): แสดงชิปสถานะระบบ + ชิปผู้ใช้/สิทธิ์ + ปุ่มแจ้งเตือนแบบไอคอน (`e-warning`) พร้อม `e-badge-notification e-badge-overlap` เปิด `ejs-dialog` (`#alertDialog`) · Toast ผ่าน `ShellNotice` (typed)  
 
 - ตารางหลัก (`/tickets`, `/people`, `/work/list`): ใช้ `FreezeService` (ผูก `ViewportService` แทนการ hardcode), `ColumnChooserService`, `ExcelExportService`, `ResizeService`, `AggregateService`  
@@ -92,7 +94,7 @@ npm --prefix server run build
   - Desktop (`>= 801px`): `#app-nav` ใช้ `position: sticky !important; top: 0; height: 100vh; overflow-y: auto; overscroll-behavior: contain;` และ `[type]="narrow() ? 'Over' : 'Push'"` `[showBackdrop]="false"` · Mobile (`<= 800px`): `position: fixed !important; z-index: 1200 !important;` อยู่เหนือ Backdrop (`z-index: 1050`)
 - **CSS Grid over `ejs-dashboardlayout` & Refined Spring Motion**:
   - ใช้ **CSS Grid (`grid-cols-1 lg:grid-cols-2 gap-4`) + `app-section-card`** แทน `<ejs-dashboardlayout>` บนหน้าแดชบอร์ดกราฟ (`/team`, `/work/summary`) เพื่อป้องกันการ์ดบีบ/กราฟพับ · แท่งกราฟใช้ `cornerRadius: { topLeft: 8, topRight: 8 }` + เส้นกริดประ (`dashArray: '4,4'`) + `opposedPosition: true` · Donut `centerLabel` ที่อิงธีมต้องผูก `effect()` รีเฟรชเมื่อ `theme.isDark()` เปลี่ยน
-  - **Refined Spring Motion & Dual Sliding Pills (Syncfusion-Safe)**: แถบ Active Pill บน Sidebar (`.saas-nav__active-pill`) และ Sub-Nav Bar (`.subnav-tabs__pill`) วัดพิกัดจริงด้วย `getBoundingClientRect()` + `ResizeObserver` ไหลด้วย `cubic-bezier(0.22, 1.28, 0.36, 1)` · Micro-interactions ใช้ `cubic-bezier(0.34, 1.56, 0.64, 1)` บน KPI Strip/inner icon-value/chips/badges/shell buttons + Page Cascade + `@media (prefers-reduced-motion: reduce)` · ห้าม `transform` บน `:hover` ของ `.e-card`/`.e-btn`/`.e-dialog`
+  - **Refined Motion & Dual Sliding Pills (Syncfusion-Safe)**: แถบ Active Pill บน Sidebar (`.saas-nav__active-pill`) และ Sub-Nav Bar (`.subnav-tabs__pill`) วัดพิกัดจริงด้วย `getBoundingClientRect()` + `ResizeObserver` ไหลด้วย `var(--ease-crisp)` · Micro-interactions บน KPI Strip/chips/badges ใช้ `var(--ease-spring)` ได้ + Page Cascade + `@media (prefers-reduced-motion: reduce)` · ห้าม `transform` บน `:hover` ของ `.e-card`/`.e-btn`/`.e-dialog`
 - **Date Type-Safety**: ฟิลด์วันที่ (`closedOn`, `dueDate`, `startDate`) ที่มาจากฐานข้อมูลอาจเป็นได้ทั้ง `string` หรือ `Date` object ให้ normalize ด้วย `raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '')` ก่อนใช้ string methods เสมอ  
 
 ## สิทธิ์ / Board / Gantt / Writeback / KPI snapshot / Integrations

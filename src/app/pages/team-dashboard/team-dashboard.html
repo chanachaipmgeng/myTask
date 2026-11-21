@@ -1,4 +1,4 @@
-<section class="page flex flex-col gap-4">
+<section class="page team-dashboard flex flex-col gap-4">
   <app-page-head
     title="แดชบอร์ดทีม"
     description="ตัวเลขปี {{ context.yearLabel }} เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง เส้นรายเดือน และแท่งโควตา เป้า {{ target }} อยู่บนเส้นรายเดือน · เลือก snapshot เพื่อดูดัชนีที่แช่แข็งตามเดือน/ไตรมาส"
@@ -99,7 +99,7 @@
     </app-section-card>
   }
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <div class="card-grid-2">
     <app-section-card [title]="'สัดส่วนงานทีม ' + context.yearLabel" subtitle="ภาพรวมภาระงานทั้งปีแบ่งตามประเภท">
       <ejs-accumulationchart
         id="team-workload-donut"
@@ -280,7 +280,7 @@
         </div>
       </app-section-card>
 
-      <div class="lg:col-span-2">
+      <div class="card-grid-2__full">
         <app-section-card
           title="สัดส่วนภาระงานรายเดือน: Planned MD vs Unplanned vs งานสั่งตรงจาก MD (MD Mandate)"
           subtitle="กราฟพื้นที่ซ้อน (Stacked Area) แสดงแนวโน้มสัดส่วน Man-day จริงรายเดือนตามหมวดงาน เพื่อดูผลกระทบต่องานตามแผนต่อเนื่อง"

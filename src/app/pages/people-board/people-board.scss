@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+.people-board {
+  gap: 16px;
+}
+
+.people-board .chart-frame {
+  border-radius: var(--radius-nested);
+  margin: 0;
+  box-shadow: none;
+  border: 0;
+  background: transparent;
+  padding: 4px 0 0;
+  backdrop-filter: none;
+}
+
+.people-board .person-link {
+  font-weight: 600;
+  color: var(--primary-bright, #5f7ce3);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-crisp);
+
+  &:hover {
+    color: var(--primary);
+    text-decoration: underline;
+  }
+}
+
+.people-board .grid-index-value,
+.people-board .tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+:host-context(.e-light-mode) .people-board .person-link,
+:host-context(body:not(.e-dark-mode)) .people-board .person-link {
+  color: #2746b3;
+
+  &:hover {
+    color: #2e4fc8;
+  }
+}

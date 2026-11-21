@@ -46,9 +46,10 @@
   </app-hero-band>
 
   <!-- ========================================== -->
-  <!-- Bento Tier 2: Mid-Level Core Charts (Row 2)-->
+  <!-- Brisko Overview: main column + side rail -->
   <!-- ========================================== -->
-  <section class="bento-tier2-container" aria-label="การกระจายงานและแนวโน้มการส่งมอบ">
+  <div class="ov-grid">
+  <section class="ov-main bento-tier2-container" aria-label="การกระจายงานและแนวโน้มการส่งมอบ">
     <div class="tier2-controls-bar">
       <div class="tier2-filters">
         <span class="control-label">ช่วงเวลา:</span>
@@ -338,119 +339,142 @@
         </div>
       </div>
     }
-  </section>
 
-  <!-- ========================================== -->
-  <!-- Bento Tier 3: Bottom Analytics & Radar (Row 3)-->
-  <!-- ========================================== -->
-  <section class="bento-bottom-grid" aria-label="การตรวจสอบคุณภาพ คอขวด และเหตุการณ์เสี่ยง">
-    <!-- Card C: Quality Gate Donut -->
-    <div class="bento-card bento-card--small bento-card--glow">
-      <div class="bento-card__head">
-        <div class="head-info">
-          <div class="head-title-row">
-            <span class="head-title">เกณฑ์คุณภาพ (DoD Gate)</span>
-            <span class="head-badge head-badge--blue">First-Time Right</span>
+    <div class="ov-low" aria-label="คุณภาพและเวลาค้างแต่ละช่วง">
+      <!-- Card C: Quality Gate Donut -->
+      <div class="bento-card bento-card--small bento-card--glow">
+        <div class="bento-card__head">
+          <div class="head-info">
+            <div class="head-title-row">
+              <span class="head-title">เกณฑ์คุณภาพ (DoD Gate)</span>
+              <span class="head-badge head-badge--blue">First-Time Right</span>
+            </div>
+            <span class="head-desc">สัดส่วนส่งมอบผ่านรอบแรก vs รีวิวซ้ำ</span>
           </div>
-          <span class="head-desc">สัดส่วนส่งมอบผ่านรอบแรก vs รีวิวซ้ำ</span>
+          <button
+            ejs-button
+            cssClass="bento-icon-btn e-flat e-small"
+            iconCss="e-icons e-expand"
+            type="button"
+            title="ขยายเต็มจอ"
+            (click)="openMaximize('quality')"
+          ></button>
         </div>
-        <button
-          ejs-button
-          cssClass="bento-icon-btn e-flat e-small"
-          iconCss="e-icons e-expand"
-          type="button"
-          title="ขยายเต็มจอ"
-          (click)="openMaximize('quality')"
-        ></button>
+        <div class="bento-card__body flex-center">
+          <ejs-accumulationchart
+            id="bento-quality-chart"
+            style="display: block; width: 100%; height: 100%; min-height: 160px;"
+            [theme]="theme.sfTheme()"
+            [tooltip]="tooltip"
+            [legendSettings]="pieLegend"
+            [enableAnimation]="true"
+          >
+            <e-accumulation-series-collection>
+              <e-accumulation-series
+                type="Pie"
+                [dataSource]="qualityPieData()"
+                xName="label"
+                yName="count"
+                innerRadius="58%"
+                radius="88%"
+                pointColorMapping="color"
+                [dataLabel]="{ visible: true, name: 'label', position: 'Inside', font: { color: '#ffffff', size: '10px' } }"
+              ></e-accumulation-series>
+            </e-accumulation-series-collection>
+          </ejs-accumulationchart>
+        </div>
       </div>
-      <div class="bento-card__body flex-center">
-        <ejs-accumulationchart
-          id="bento-quality-chart"
-          style="display: block; width: 100%; height: 100%; min-height: 160px;"
-          [theme]="theme.sfTheme()"
-          [tooltip]="tooltip"
-          [legendSettings]="pieLegend"
-          [enableAnimation]="true"
-        >
-          <e-accumulation-series-collection>
-            <e-accumulation-series
-              type="Pie"
-              [dataSource]="qualityPieData()"
-              xName="label"
-              yName="count"
-              innerRadius="58%"
-              radius="88%"
-              pointColorMapping="color"
-              [dataLabel]="{ visible: true, name: 'label', position: 'Inside', font: { color: '#ffffff', size: '10px' } }"
-            ></e-accumulation-series>
-          </e-accumulation-series-collection>
-        </ejs-accumulationchart>
+
+      <!-- Card D: Stage Aging / Handoff SLA -->
+      <div class="bento-card bento-card--small bento-card--glow">
+        <div class="bento-card__head">
+          <div class="head-info">
+            <div class="head-title-row">
+              <span class="head-title">เวลาค้างแต่ละช่วง (Stage Aging)</span>
+              <span class="head-badge head-badge--indigo">Handoff SLA</span>
+            </div>
+            <span class="head-desc">Dev vs Code Review vs QA Hours</span>
+          </div>
+          <button
+            ejs-button
+            cssClass="bento-icon-btn e-flat e-small"
+            iconCss="e-icons e-expand"
+            type="button"
+            title="ขยายเต็มจอ"
+            (click)="openMaximize('stage')"
+          ></button>
+        </div>
+        <div class="bento-card__body">
+          <ejs-chart
+            id="bento-stage-chart"
+            style="display: block; width: 100%; height: 100%; min-height: 160px;"
+            [theme]="theme.sfTheme()"
+            [primaryXAxis]="horizontalCategoryAxis"
+            [primaryYAxis]="hoursAxis"
+            [tooltip]="tooltip"
+            [legendSettings]="legend"
+            [chartArea]="chartArea"
+            [enableAnimation]="true"
+          >
+            <e-series-collection>
+              <e-series
+                type="StackingBar"
+                [dataSource]="stageAgingData()"
+                xName="track"
+                yName="devHours"
+                name="Dev ทำงาน"
+                fill="#3b82f6"
+              ></e-series>
+              <e-series
+                type="StackingBar"
+                [dataSource]="stageAgingData()"
+                xName="track"
+                yName="reviewHours"
+                name="รอ/ตรวจ MR"
+                fill="#f59e0b"
+              ></e-series>
+              <e-series
+                type="StackingBar"
+                [dataSource]="stageAgingData()"
+                xName="track"
+                yName="qaHours"
+                name="รอ/ตรวจ QA"
+                fill="#10b981"
+              ></e-series>
+            </e-series-collection>
+          </ejs-chart>
+        </div>
       </div>
     </div>
+  </section>
 
-    <!-- Card D: Stage Aging / Handoff SLA -->
-    <div class="bento-card bento-card--small bento-card--glow">
-      <div class="bento-card__head">
-        <div class="head-info">
-          <div class="head-title-row">
-            <span class="head-title">เวลาค้างแต่ละช่วง (Stage Aging)</span>
-            <span class="head-badge head-badge--indigo">Handoff SLA</span>
-          </div>
-          <span class="head-desc">Dev vs Code Review vs QA Hours</span>
-        </div>
-        <button
-          ejs-button
-          cssClass="bento-icon-btn e-flat e-small"
-          iconCss="e-icons e-expand"
-          type="button"
-          title="ขยายเต็มจอ"
-          (click)="openMaximize('stage')"
-        ></button>
+  <aside class="ov-side" aria-label="สรุปสุขภาพทีมและเรดาร์ความเสี่ยง">
+    <div class="bento-card bento-pace">
+      <div class="bento-pace__label">สุขภาพทีม</div>
+      <div class="bento-pace__status" [attr.data-tone]="paceHealth().tone">
+        {{ paceHealth().label }}
       </div>
-      <div class="bento-card__body">
-        <ejs-chart
-          id="bento-stage-chart"
-          style="display: block; width: 100%; height: 100%; min-height: 160px;"
-          [theme]="theme.sfTheme()"
-          [primaryXAxis]="horizontalCategoryAxis"
-          [primaryYAxis]="hoursAxis"
-          [tooltip]="tooltip"
-          [legendSettings]="legend"
-          [chartArea]="chartArea"
-          [enableAnimation]="true"
-        >
-          <e-series-collection>
-            <e-series
-              type="StackingBar"
-              [dataSource]="stageAgingData()"
-              xName="track"
-              yName="devHours"
-              name="Dev ทำงาน"
-              fill="#3b82f6"
-            ></e-series>
-            <e-series
-              type="StackingBar"
-              [dataSource]="stageAgingData()"
-              xName="track"
-              yName="reviewHours"
-              name="รอ/ตรวจ MR"
-              fill="#f59e0b"
-            ></e-series>
-            <e-series
-              type="StackingBar"
-              [dataSource]="stageAgingData()"
-              xName="track"
-              yName="qaHours"
-              name="รอ/ตรวจ QA"
-              fill="#10b981"
-            ></e-series>
-          </e-series-collection>
-        </ejs-chart>
+      <p class="bento-pace__hint">{{ paceHealth().hint }}</p>
+      <div class="bento-pace__meters">
+        <div class="bento-pace__meter">
+          <span>ส่งมอบตรงเวลา</span>
+          <strong class="tabular-nums">{{ heroKpis().onTimeRate }}%</strong>
+          <div class="bento-pace__track">
+            <i [style.width.%]="heroKpis().onTimeRate"></i>
+          </div>
+        </div>
+        <div class="bento-pace__meter">
+          <span>คุณภาพ DoD</span>
+          <strong class="tabular-nums">{{ heroKpis().firstTimeRightRate }}%</strong>
+          <div class="bento-pace__track">
+            <i [style.width.%]="heroKpis().firstTimeRightRate"></i>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Card E: AI Intelligence & Bottleneck Radar -->
-    <div class="bento-card bento-card--small bento-card--glow">
+    <div class="bento-card bento-card--small bento-card--glow bento-card--side-scroll">
       <div class="bento-card__head">
         <div class="head-info">
           <div class="head-title-row">
@@ -482,7 +506,8 @@
         </div>
       </div>
     </div>
-  </section>
+  </aside>
+  </div>
 </div>
 
 <!-- ========================================== -->

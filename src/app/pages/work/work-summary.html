@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-4">
+<div class="page work-summary flex flex-col gap-4">
   @if (mdMandate().mdDirectCount > 0) {
     <div class="flex flex-wrap items-center gap-2">
       <span class="e-badge e-badge-warning e-badge-pill">MD MANDATE</span>
@@ -31,7 +31,7 @@
           <section class="stuck-bucket" [attr.data-bucket]="bucket.bucket">
             <header class="stuck-bucket__head">
               <strong>{{ bucket.label }}</strong>
-              <span class="stuck-bucket__count">{{ bucket.count }} ใบ</span>
+              <span class="stuck-bucket__count tabular-nums">{{ bucket.count }} ใบ</span>
             </header>
             @for (project of bucket.projects; track project.projectKey) {
               <div class="stuck-project">
@@ -47,7 +47,7 @@
                         <app-status-badge [value]="item.status" [toneMap]="workflowStatusToneMap"></app-status-badge>
                         <span>{{ item.assignee }}</span>
                         <span>{{ item.dueOn || 'ไม่มี due' }}</span>
-                        <span>{{ item.estimateMd }} MD</span>
+                        <span class="tabular-nums">{{ item.estimateMd }} MD</span>
                       </span>
                     </li>
                   }
@@ -60,7 +60,7 @@
     }
   </app-section-card>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <div class="card-grid-2">
     <app-section-card title="สัดส่วนสถานะ" subtitle="จำนวนใบงานแยกตามสถานะปัจจุบัน">
       <ejs-accumulationchart
         id="work-status-donut"
@@ -113,7 +113,7 @@
       </ejs-accumulationchart>
     </app-section-card>
 
-    <div class="lg:col-span-2">
+    <div class="card-grid-2__full">
       <app-section-card title="WIP ต่อคน (MD ประมาณ)" subtitle="ภาระงานที่เปิดค้างอยู่รายบุคคลเทียบตาม Man-days">
         <ejs-chart
           style="display: block; height: 280px; width: 100%"

@@ -1,4 +1,4 @@
-<section class="page flex flex-col gap-4">
+<section class="page people-board flex flex-col gap-4">
   <app-page-head
     title="รายชื่อพนักงาน"
     [description]="'คลิกชื่อเพื่อดูงานของคนนั้นและกราฟวิเคราะห์หลายมุม เป้าดัชนีคือ ' + target + '.'"
@@ -122,19 +122,19 @@
         <e-aggregate>
           <e-columns>
             <e-column type="Count" field="personLabel">
-              <ng-template #footerTemplate let-data>รวม {{ data.Count }} คน</ng-template>
+              <ng-template #footerTemplate let-data><span class="tabular-nums">รวม {{ data.Count }} คน</span></ng-template>
             </e-column>
             <e-column type="Sum" field="quota" format="N1">
-              <ng-template #footerTemplate let-data>รวม {{ data.Sum }}</ng-template>
+              <ng-template #footerTemplate let-data><span class="tabular-nums">รวม {{ data.Sum }}</span></ng-template>
             </e-column>
             <e-column type="Sum" field="openCount">
-              <ng-template #footerTemplate let-data>รวม {{ data.Sum }}</ng-template>
+              <ng-template #footerTemplate let-data><span class="tabular-nums">รวม {{ data.Sum }}</span></ng-template>
             </e-column>
             <e-column type="Sum" field="closedCount">
-              <ng-template #footerTemplate let-data>รวม {{ data.Sum }}</ng-template>
+              <ng-template #footerTemplate let-data><span class="tabular-nums">รวม {{ data.Sum }}</span></ng-template>
             </e-column>
             <e-column type="Average" field="index" format="N1">
-              <ng-template #footerTemplate let-data>เฉลี่ย {{ data.Average }}</ng-template>
+              <ng-template #footerTemplate let-data><span class="tabular-nums">เฉลี่ย {{ data.Average }}</span></ng-template>
             </e-column>
           </e-columns>
         </e-aggregate>

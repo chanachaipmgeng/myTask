@@ -1,0 +1,21 @@
+:host {
+  display: block;
+}
+
+.team-dashboard {
+  gap: 16px;
+}
+
+.team-dashboard .card-grid-2 {
+  gap: 16px;
+}
+
+.team-dashboard .chart-frame {
+  border-radius: var(--radius-nested);
+  margin: 0;
+}
+
+.team-dashboard .tabular-nums,
+.team-dashboard .e-rowcell.e-rightalign {
+  font-variant-numeric: tabular-nums;
+}

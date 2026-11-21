@@ -400,6 +400,32 @@ export class CockpitPage implements OnInit, AfterViewInit {
     return list;
   });
 
+  protected readonly paceHealth = computed(() => {
+    const kpis = this.heroKpis();
+    const blocked = this.bottleneckItems().filter((item) => item.tone === 'danger').length;
+    if (blocked > 0 || kpis.onTimeRate < 80 || kpis.firstTimeRightRate < 75) {
+      return {
+        label: 'ต้องดูแล',
+        tone: 'warning' as const,
+        hint: blocked > 0
+          ? `พบคอขวดวิกฤต ${blocked} รายการ · ตรวจเรดาร์ด้านล่าง`
+          : `On-time ${kpis.onTimeRate}% · DoD ${kpis.firstTimeRightRate}% ต่ำกว่าเป้า`,
+      };
+    }
+    if (kpis.onTimeRate >= 90 && kpis.firstTimeRightRate >= 85 && kpis.mainScore >= 80) {
+      return {
+        label: 'HEALTHY',
+        tone: 'good' as const,
+        hint: `ดัชนี ${kpis.mainScore} · WIP ${kpis.activeWipMd} MD · ปิดแล้ว ${kpis.closedCount} ใบ`,
+      };
+    }
+    return {
+      label: 'Stable',
+      tone: 'info' as const,
+      hint: `ส่งมอบ ${kpis.onTimeRate}% · DoD ${kpis.firstTimeRightRate}% · เป้า On-time 90%`,
+    };
+  });
+
   // ==========================================
   // Chart Visual Layout Configurations
   // ==========================================

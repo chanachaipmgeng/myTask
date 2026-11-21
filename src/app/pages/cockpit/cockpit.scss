@@ -3,14 +3,30 @@
   width: 100%;
 }
 
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ===================================================
    Bento Cockpit Container — 100vh Viewport Fit
    =================================================== */
 .bento-cockpit {
   container-type: inline-size;
+  /* Brisko-inspired nesting: outer 24 → inner 18 → tile 12 */
   --bento-card-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 16, 32, 0.94) 100%);
   --bento-card-border: rgba(148, 163, 184, 0.14);
-  --bento-card-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.5);
+  --bento-card-shadow: var(--shadow-card);
+  --bento-card-radius: 24px;
+  --bento-inner-radius: 18px;
+  --bento-tile-radius: 12px;
+  --bento-gap: 16px;
   --bento-bar-bg: rgba(15, 23, 42, 0.6);
   --bento-bar-border: rgba(148, 163, 184, 0.12);
   --bento-item-bg: rgba(255, 255, 255, 0.03);
@@ -18,10 +34,15 @@
   --bento-chip-color: #94a3b8;
   --bento-chip-border: rgba(148, 163, 184, 0.2);
   --bento-chip-hover: rgba(255, 255, 255, 0.08);
+  --bento-pace-bg: #0f1838;
+  --bento-pace-ink: #f8fafc;
+  --bento-pace-muted: #94a3b8;
+  --bento-pace-track: rgba(255, 255, 255, 0.12);
+  --bento-pace-fill: #5f7ce3;
 
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--bento-gap);
   width: 100%;
   box-sizing: border-box;
 
@@ -41,15 +62,81 @@
 :host-context(.e-light-mode) .bento-cockpit,
 :host-context(body:not(.e-dark-mode)) .bento-cockpit {
   --bento-card-bg: #ffffff;
-  --bento-card-border: #e2e8f0;
-  --bento-card-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --bento-bar-bg: #f8fafc;
-  --bento-bar-border: #e2e8f0;
+  --bento-card-border: rgba(20, 28, 16, 0.08);
+  --bento-card-shadow: 0 1px 1px rgba(20, 28, 16, 0.04), 0 16px 32px -24px rgba(20, 28, 16, 0.28);
+  --bento-bar-bg: rgba(244, 247, 254, 0.92);
+  --bento-bar-border: rgba(20, 28, 16, 0.08);
   --bento-item-bg: #f8fafc;
-  --bento-item-border: #e2e8f0;
+  --bento-item-border: #e6ecf8;
   --bento-chip-color: #475569;
   --bento-chip-border: #cbd5e1;
   --bento-chip-hover: #f1f5f9;
+  --bento-pace-bg: #142b50;
+  --bento-pace-ink: #f8fafc;
+  --bento-pace-muted: #a4b2c8;
+  --bento-pace-track: rgba(255, 255, 255, 0.14);
+  --bento-pace-fill: #5f7ce3;
+}
+
+/* ===================================================
+   Brisko Overview Grid — main + side rail
+   =================================================== */
+.ov-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 26vw, 400px);
+  gap: var(--bento-gap);
+  align-items: start;
+  flex: 1;
+  min-height: 0;
+
+  @media (min-width: 1200px) and (min-height: 850px) {
+    overflow: hidden;
+  }
+
+  @media (max-width: 1024px) {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+}
+
+.ov-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bento-gap);
+  min-width: 0;
+  min-height: 0;
+
+  @media (min-width: 1200px) and (min-height: 850px) {
+    overflow: hidden;
+  }
+}
+
+.ov-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bento-gap);
+  min-width: 0;
+  min-height: 0;
+
+  @media (min-width: 1200px) and (min-height: 850px) {
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 2px;
+  }
+}
+
+.ov-low {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bento-gap);
+  flex: 1;
+  min-height: 180px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: minmax(0, 1fr);
+    flex: none;
+  }
 }
 
 /* ===================================================
@@ -61,14 +148,14 @@
   align-items: center;
   gap: 8px 18px;
   padding: 12px 16px 14px;
-  border-radius: 18px;
+  border-radius: var(--bento-card-radius);
   flex-shrink: 0;
   color: #f8fafc;
   background:
     radial-gradient(120% 160% at 0% 0%, rgba(116, 101, 232, 0.32), transparent 42%),
     linear-gradient(105deg, #1c3a9e 0%, #2e4fc8 58%, #3a5ed4 100%);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 12px 28px -18px rgba(17, 36, 110, 0.9);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .bento-band__metrics {
@@ -331,7 +418,7 @@
    =================================================== */
 .bento-card {
   position: relative;
-  border-radius: 18px;
+  border-radius: var(--bento-card-radius);
   background: var(--bento-card-bg);
   border: 1px solid var(--bento-card-border);
   backdrop-filter: blur(16px);
@@ -339,11 +426,19 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  animation: cardReveal var(--dur-base) var(--ease-crisp) both;
+  transition:
+    border-color var(--dur-fast) var(--ease-crisp),
+    box-shadow var(--dur-fast) var(--ease-crisp);
 
   &--glow:hover {
     border-color: rgba(95, 124, 227, 0.35);
-    box-shadow: 0 12px 30px -8px rgba(46, 79, 200, 0.22);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  &--side-scroll {
+    flex: 1;
+    min-height: 220px;
   }
 
   &__head {
@@ -438,14 +533,15 @@
 }
 
 /* ===================================================
-   Bento Tier 2: Mid-Level Core Charts (Row 2)
+   Bento Tier 2: Mid-Level Core Charts (inside ov-main)
    =================================================== */
 .bento-tier2-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 1.25;
+  gap: var(--bento-gap);
+  flex: 1.15;
   min-height: 230px;
+  min-width: 0;
 }
 
 .tier2-controls-bar {
@@ -453,7 +549,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 4px 12px;
-  border-radius: 12px;
+  border-radius: var(--bento-inner-radius);
   background: var(--bento-bar-bg);
   border: 1px solid var(--bento-bar-border);
   gap: 12px;
@@ -476,12 +572,16 @@
     padding: 3px 10px;
     font-size: 11px;
     font-weight: 600;
-    border-radius: 14px;
+    border-radius: var(--radius-pill);
     border: 1px solid var(--bento-chip-border);
     background: transparent;
     color: var(--bento-chip-color);
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition:
+      background-color var(--dur-instant) ease,
+      color var(--dur-instant) ease,
+      border-color var(--dur-instant) ease,
+      box-shadow var(--dur-fast) ease;
 
     &:hover {
       background: var(--bento-chip-hover);
@@ -489,10 +589,10 @@
     }
 
     &.is-active {
-      background: #2e4fc8;
-      border-color: #3b82f6;
+      background: var(--primary);
+      border-color: var(--primary-bright);
       color: #ffffff;
-      box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+      box-shadow: var(--shadow-pill);
     }
   }
 
@@ -511,7 +611,7 @@
 .bento-mid-grid {
   display: grid;
   grid-template-columns: 1.45fr 1fr;
-  gap: 12px;
+  gap: var(--bento-gap);
   flex: 1;
   min-height: 200px;
 
@@ -521,19 +621,108 @@
   }
 }
 
-/* ===================================================
-   Bento Tier 3: Bottom Analytics (Row 3)
-   =================================================== */
-.bento-bottom-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.25fr 1fr;
-  gap: 12px;
-  flex: 1.05;
-  min-height: 200px;
+/* Stagger enter — Brisko-like cascade, no hover transform */
+.ov-main .bento-card:nth-child(1),
+.ov-main .bento-mid-grid .bento-card:nth-child(1) {
+  animation-delay: 40ms;
+}
+.ov-main .bento-card:nth-child(2),
+.ov-main .bento-mid-grid .bento-card:nth-child(2),
+.ov-low .bento-card:nth-child(1) {
+  animation-delay: 85ms;
+}
+.ov-low .bento-card:nth-child(2) {
+  animation-delay: 130ms;
+}
+.ov-side .bento-card:nth-child(1),
+.ov-side .bento-pace {
+  animation-delay: 70ms;
+}
+.ov-side .bento-card:nth-child(2) {
+  animation-delay: 115ms;
+}
 
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-    flex: none;
+/* Dark-anchor pace card (Brisko month-end / health) */
+.bento-pace {
+  border-radius: var(--bento-card-radius);
+  background: var(--bento-pace-bg);
+  border: 1px solid transparent;
+  box-shadow: var(--bento-card-shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--bento-pace-ink);
+  animation: cardReveal var(--dur-base) var(--ease-crisp) both;
+  flex: none;
+
+  &__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--bento-pace-muted);
+    letter-spacing: 0.02em;
+  }
+
+  &__status {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+
+    &[data-tone='good'] {
+      color: #86efac;
+    }
+    &[data-tone='warning'] {
+      color: #fbbf24;
+    }
+    &[data-tone='info'] {
+      color: #93c5fd;
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--bento-pace-muted);
+  }
+
+  &__meters {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 6px;
+  }
+
+  &__meter {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 10px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--bento-pace-muted);
+
+    strong {
+      font-size: 13px;
+      color: var(--bento-pace-ink);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  &__track {
+    grid-column: 1 / -1;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--bento-pace-track);
+    overflow: hidden;
+
+    i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--bento-pace-fill);
+      transition: width var(--dur-deliberate) var(--ease-crisp);
+    }
   }
 }
 
@@ -546,7 +735,7 @@
 
 .bottleneck-item {
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--bento-tile-radius);
   background: var(--bento-item-bg);
   border: 1px solid var(--bento-item-border);
 
@@ -654,7 +843,7 @@
 
 .bento-callout {
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: var(--bento-inner-radius);
   background: rgba(147, 51, 234, 0.12);
   border: 1px solid rgba(147, 51, 234, 0.3);
   font-size: 13px;
@@ -674,27 +863,47 @@
 }
 
 /* ===================================================
-   Light Mode Overrides
+   Light Mode Overrides (scoped — body อยู่นอก host)
    =================================================== */
-body.e-light-mode {
-  .bento-card {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+:host-context(.e-light-mode),
+:host-context(body:not(.e-dark-mode)) {
+  .bento-card:not(.bento-pace) {
+    background: var(--bento-card-bg);
+    border: 1px solid var(--bento-card-border);
+    box-shadow: var(--bento-card-shadow);
 
-    &--glow:hover {
-      border-color: rgba(46, 79, 200, 0.35) !important;
-      box-shadow: 0 8px 24px rgba(46, 79, 200, 0.12) !important;
+    &.bento-card--glow:hover {
+      border-color: rgba(46, 79, 200, 0.28);
+      box-shadow: 0 2px 6px rgba(20, 28, 16, 0.06), 0 24px 48px -28px rgba(39, 70, 179, 0.28);
     }
   }
 
+  .bento-pace {
+    background: var(--bento-pace-bg);
+    color: var(--bento-pace-ink);
+  }
+
   .bottleneck-item {
-    background: #f8fafc !important;
-    border-color: #e2e8f0 !important;
+    background: var(--bento-item-bg);
+    border-color: var(--bento-item-border);
   }
 
   .bento-table th {
-    background: #f1f5f9 !important;
+    background: #f1f5f9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bento-card,
+  .bento-pace,
+  .ov-main .bento-card,
+  .ov-side .bento-card {
+    animation: none !important;
+  }
+
+  .bento-pace__track i,
+  .bento-card {
+    transition: none !important;
   }
 }
 

@@ -2,7 +2,7 @@
   display: block;
   min-width: 0;
   height: 100%;
-  animation: kpi-stat-enter 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: kpi-stat-enter var(--dur-deliberate) var(--ease-crisp) both;
 }
 
 @keyframes kpi-stat-enter {
@@ -53,7 +53,7 @@
   }
 }
 
-/* Syncfusion KPI Stat Card — ตัวกลางทุกหน้า (แนว Essential UI Kit) */
+/* Syncfusion KPI Stat Card — optical nesting + soft elevation */
 .e-card.kpi-stat {
   display: flex;
   flex-direction: column;
@@ -63,22 +63,19 @@
   overflow: hidden;
   position: relative;
   padding: 0;
+  border-radius: var(--radius-card) !important;
   border: 1px solid color-mix(in srgb, var(--border, #e2e8f0) 80%, transparent);
   background-clip: padding-box;
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.05),
-    0 10px 24px -12px rgba(46, 79, 200, 0.32);
+  box-shadow: var(--shadow-card);
   transition:
-    box-shadow 0.28s ease,
-    border-color 0.28s ease,
-    background-color 0.28s ease;
+    box-shadow var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    background-color var(--dur-fast) ease;
 }
 
 :host:hover .e-card.kpi-stat {
   border-color: color-mix(in srgb, #2746b3 35%, var(--border, #e2e8f0));
-  box-shadow:
-    0 2px 4px rgba(15, 23, 42, 0.05),
-    0 12px 28px -10px rgba(39, 70, 179, 0.24);
+  box-shadow: var(--shadow-card-hover);
 }
 
 :host:hover .kpi-stat__value {
@@ -91,11 +88,12 @@
 
 .kpi-stat__value {
   transform-origin: left center;
-  transition: transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-variant-numeric: tabular-nums;
+  transition: transform var(--dur-fast) var(--ease-spring);
 }
 
 .kpi-stat__icon {
-  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--dur-fast) var(--ease-spring);
 }
 
 :host:hover .kpi-stat__icon-wrap {
@@ -124,7 +122,7 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 3px;
-  border-radius: 16px 0 0 16px;
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
   background: linear-gradient(180deg, #4c68e5, #2e4fc8);
   opacity: 0.95;
   z-index: 2;
@@ -236,14 +234,14 @@
   flex: none;
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: var(--radius-nested);
   background: rgba(76, 104, 229, 0.14);
   margin: 0;
   transition:
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.28s ease,
-    background-color 0.28s ease;
-  animation: kpi-stat-icon-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform var(--dur-fast) var(--ease-crisp),
+    box-shadow var(--dur-fast) ease,
+    background-color var(--dur-fast) ease;
+  animation: kpi-stat-icon-pop var(--dur-deliberate) var(--ease-crisp) both;
   animation-delay: 0.12s;
 }
 
@@ -308,7 +306,8 @@
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  animation: kpi-stat-value-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  font-variant-numeric: tabular-nums;
+  animation: kpi-stat-value-in var(--dur-deliberate) var(--ease-crisp) both;
   animation-delay: 0.08s;
 }
 
@@ -327,7 +326,7 @@
 }
 
 .kpi-stat__progress {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .kpi-stat__spark {
@@ -352,15 +351,11 @@ body.e-light-mode .e-card.kpi-stat .kpi-stat__value {
 }
 
 :host-context(body.e-dark-mode) .e-card.kpi-stat {
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.24),
-    0 10px 24px -14px rgba(76, 104, 229, 0.35);
+  box-shadow: var(--shadow-card);
 }
 
 :host-context(body.e-dark-mode):hover .e-card.kpi-stat {
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.3),
-    0 18px 32px -14px rgba(76, 104, 229, 0.48);
+  box-shadow: var(--shadow-card-hover);
 }
 
 @media (prefers-reduced-motion: reduce) {

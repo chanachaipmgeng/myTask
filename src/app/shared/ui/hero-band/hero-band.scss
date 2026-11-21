@@ -59,11 +59,12 @@
   gap: 12px 20px;
   flex-wrap: wrap;
   padding: 16px 20px 16px 22px;
-  border-radius: 16px;
+  border-radius: var(--radius-panel);
   background: var(--hb-banner-bg);
   border: 1px solid var(--hb-banner-border);
   overflow: hidden;
-  transition: background 0.22s ease, border-color 0.22s ease;
+  animation: kpiStripEnter var(--dur-fast) var(--ease-crisp) both;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 
   &::before {
     content: '';
@@ -154,18 +155,18 @@
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   background: var(--hb-strip-bg);
   border: 1px solid var(--hb-strip-border);
-  border-radius: 14px;
+  border-radius: var(--radius-nested);
   box-shadow: var(--hb-strip-shadow);
   padding: 10px 6px;
-  animation: kpiStripEnter 0.34s cubic-bezier(0.16, 1, 0.3, 1) 55ms both;
-  transition: background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  animation: kpiStripEnter var(--dur-base) var(--ease-crisp) 55ms both;
+  transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 
 .hero-band__metric {
   position: relative;
   min-width: 0;
   padding: 6px 18px;
-  border-radius: 10px;
+  border-radius: var(--radius-tile);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -183,8 +184,8 @@
     opacity: 0;
     transform: scaleX(0.4);
     transition:
-      opacity 0.2s ease,
-      transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity var(--dur-fast) ease,
+      transform var(--dur-fast) var(--ease-spring);
   }
 
   &:hover {
@@ -215,13 +216,13 @@
 .hero-band__value {
   transform-origin: left center;
   transition:
-    transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform var(--dur-fast) var(--ease-spring),
     color 0.18s ease;
 }
 
 .hero-band__trend {
   display: inline-block;
-  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--dur-fast) var(--ease-spring);
 }
 
 @keyframes kpiStripEnter {
@@ -324,4 +325,15 @@
 @keyframes heroBandPulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.45; transform: scale(0.85); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-band__top,
+  .hero-band__kpi-strip {
+    animation: none !important;
+  }
+
+  .hero-band__dot {
+    animation: none !important;
+  }
 }

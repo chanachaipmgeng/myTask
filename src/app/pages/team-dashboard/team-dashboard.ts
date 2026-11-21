@@ -90,6 +90,7 @@ const LIVE_MODE = 'live';
     ResizeService,
   ],
   templateUrl: './team-dashboard.html',
+  styleUrl: './team-dashboard.scss',
 })
 export class TeamDashboard implements AfterViewInit {
   private readonly scorecard = inject(ScorecardService);

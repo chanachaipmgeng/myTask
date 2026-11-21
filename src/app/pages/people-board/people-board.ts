@@ -82,6 +82,7 @@ type TrackFilter = Track | 'All';
     TooltipService,
   ],
   templateUrl: './people-board.html',
+  styleUrl: './people-board.scss',
 })
 export class PeopleBoard {
   private readonly scorecard = inject(ScorecardService);

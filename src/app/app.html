@@ -444,28 +444,33 @@
 
       <!-- Top Sub-Navigation Tab Bar (for active sidebar category) -->
       @if (activeSubTabs().length > 1) {
-        <div class="subnav-bar">
-          <nav #subnavTabs class="subnav-tabs" [attr.aria-label]="'เมนูย่อยหมวด ' + categoryLabel()">
-            <div
-              class="subnav-tabs__pill"
-              aria-hidden="true"
-              [class.is-visible]="subTabPill().visible"
-              [style.transform]="'translateX(' + subTabPill().left + 'px)'"
-              [style.width.px]="subTabPill().width"
-            ></div>
-            @for (tab of activeSubTabs(); track tab.id) {
-              <a
-                class="subnav-tab"
-                [class.is-active]="selectedNodes()[0] === tab.id"
-                [routerLink]="tab.route"
-                [title]="tab.text"
-              >
-                <span class="subnav-tab__icon"><span [class]="tab.iconCss"></span></span>
-                <span class="subnav-tab__text">{{ tab.text }}</span>
-              </a>
-            }
-          </nav>
-        </div>
+        @for (cat of [activeNavCategory()]; track cat) {
+          <div class="subnav-bar">
+            <nav #subnavTabs class="subnav-tabs" [attr.aria-label]="'เมนูย่อยหมวด ' + categoryLabel()">
+              <div
+                class="subnav-tabs__pill"
+                aria-hidden="true"
+                [class.is-visible]="subTabPill().visible"
+                [style.transform]="'translateX(' + subTabPill().left + 'px)'"
+                [style.width.px]="subTabPill().width"
+              ></div>
+              @for (tab of activeSubTabs(); track tab.id) {
+                @if (tab.sepBefore) {
+                  <span class="subnav-tabs__sep" aria-hidden="true"></span>
+                }
+                <a
+                  class="subnav-tab"
+                  [class.is-active]="selectedNodes()[0] === tab.id"
+                  [routerLink]="tab.route"
+                  [title]="tab.text"
+                >
+                  <span class="subnav-tab__icon"><span [class]="tab.iconCss"></span></span>
+                  <span class="subnav-tab__text">{{ tab.text }}</span>
+                </a>
+              }
+            </nav>
+          </div>
+        }
       }
 
       @if (mockMode()) {
@@ -478,7 +483,7 @@
         </section>
       }
 
-      <main class="shell-main">
+      <main class="shell-main" [attr.data-nav-key]="navKey()">
         <router-outlet />
       </main>
     </div>

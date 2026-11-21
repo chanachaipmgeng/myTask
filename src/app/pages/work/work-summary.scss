@@ -1,14 +1,21 @@
+:host {
+  display: block;
+}
+
 .stuck-buckets {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .stuck-bucket {
   border: 1px solid color-mix(in srgb, #94a3b8 28%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-nested);
   padding: 0.65rem 0.75rem;
   background: color-mix(in srgb, #94a3b8 6%, transparent);
+  transition:
+    border-color var(--dur-fast) var(--ease-crisp),
+    box-shadow var(--dur-fast) var(--ease-crisp);
 
   &[data-bucket='overdue'] {
     border-color: color-mix(in srgb, #ef4444 45%, transparent);
@@ -33,6 +40,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   opacity: 0.85;
+  font-variant-numeric: tabular-nums;
 }
 
 .stuck-project {
@@ -61,7 +69,7 @@
   justify-content: space-between;
   gap: 0.45rem 0.75rem;
   padding: 0.4rem 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-tile);
   background: color-mix(in srgb, #fff 70%, transparent);
 }
 
