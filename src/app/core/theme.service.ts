@@ -4,7 +4,7 @@ export type AppTheme = 'dark' | 'light';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  private readonly _theme = signal<AppTheme>('dark');
+  private readonly _theme = signal<AppTheme>('light');
   readonly theme = this._theme.asReadonly();
   readonly isDark = computed(() => this._theme() === 'dark');
   readonly sfTheme = computed(() => (this._theme() === 'dark' ? 'Tailwind3Dark' : 'Tailwind3'));
@@ -26,8 +26,8 @@ export class ThemeService {
     if (saved === 'light' || saved === 'dark') {
       this.applyTheme(saved);
     } else {
-      // Default to dark mode
-      this.applyTheme('dark');
+      // ค่าเริ่มต้น: โหมดสว่าง
+      this.applyTheme('light');
     }
   }
 
