@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CountUpDirective } from '../count-up';
+import { PersonAvatarComponent } from '../person-avatar/person-avatar';
 
 export interface HeroBandMetric {
   label: string;
@@ -12,7 +13,7 @@ export interface HeroBandMetric {
 @Component({
   selector: 'app-hero-band',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CountUpDirective],
+  imports: [CountUpDirective, PersonAvatarComponent],
   templateUrl: './hero-band.html',
   styleUrl: './hero-band.scss',
 })
@@ -23,6 +24,8 @@ export class HeroBandComponent {
   @Input() subtitle = '';
   @Input() crumb = '';
   @Input() note = '';
+  @Input() avatarPersonId: string | null | undefined = null;
+  @Input() avatarName: string | null | undefined = null;
   @Input() metrics: readonly HeroBandMetric[] = [];
   @Input() actionsLayout: 'row' | 'stack' = 'row';
   @Input() ariaLabel = 'หัวหน้าและดัชนี';

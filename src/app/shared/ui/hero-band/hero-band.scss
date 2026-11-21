@@ -51,6 +51,24 @@
   gap: 12px;
 }
 
+.hero-band.metrics-only .hero-band__top--actions-only:not(:has(button, a, input, select)) {
+  display: none;
+}
+
+.hero-band__identity.has-avatar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-band__identity-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
 .hero-band__top {
   position: relative;
   display: flex;

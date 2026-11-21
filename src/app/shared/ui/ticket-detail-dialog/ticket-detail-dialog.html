@@ -20,7 +20,9 @@
       @let scores = data()!.scores;
       <div class="detail-meta">
         <app-status-badge [value]="t.workflowStatus || ''" [toneMap]="workflowStatusToneMap"></app-status-badge>
-        <span class="meta-chip">{{ t.assigneeId || 'ยังไม่มอบหมาย' }}</span>
+        <span class="meta-chip inline-flex items-center gap-1.5">
+          <app-person-avatar [personId]="t.assigneeId" [name]="t.assigneeId || 'ยังไม่มอบหมาย'" [showName]="true" size="xs"></app-person-avatar>
+        </span>
         <span class="meta-chip">{{ data()!.source === 'live' ? 'สดจาก myProject' : 'โหมดออฟไลน์' }}</span>
         @if (data()!.opUrl) {
           <a class="meta-link" [href]="data()!.opUrl!" target="_blank" rel="noopener">เปิดใน myProject</a>

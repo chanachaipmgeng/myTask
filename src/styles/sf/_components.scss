@@ -640,3 +640,74 @@ body.e-light-mode .e-dashboardlayout .e-panel-header {
   border-radius: var(--radius-nested) !important;
   transition: box-shadow var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
+
+// -----------------------------------------------------------------------------
+// 11) Nordic Soft Glass Syncfusion Overrides (MyHR Royal Blue Edition)
+//     - Single outer blur on cards (never per-row blur on Grid)
+//     - Frosted Popups & Dialogs in global scope (Syncfusion appends to <body>)
+//     - No hover transform on .e-card / .e-btn / .e-dialog
+// -----------------------------------------------------------------------------
+.e-card.section-card .e-grid .e-table,
+.e-card.section-card .e-grid .e-gridpager,
+.section-card .e-grid .e-table,
+.section-card .e-grid .e-gridpager {
+  background: transparent !important;
+}
+
+.e-card.section-card .e-grid .e-row:hover .e-rowcell:not(.e-leftfreeze):not(.e-rightfreeze):not(.e-fixedfreeze),
+.section-card .e-grid .e-row:hover .e-rowcell:not(.e-leftfreeze):not(.e-rightfreeze):not(.e-fixedfreeze) {
+  background: var(--surface-glass-hover) !important;
+  transition: background-color var(--dur-instant) ease;
+}
+
+/* Frosted Floating Popups (Dropdowns, DatePicker, DateRangePicker) */
+.e-ddl.e-popup,
+.e-datepicker.e-popup,
+.e-daterangepicker.e-popup {
+  border-radius: 18px !important;
+  background: var(--surface-glass-strong) !important;
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--border-glass) !important;
+  box-shadow: var(--shadow-floating) !important;
+  overflow: hidden;
+  padding: 5px;
+}
+
+.e-ddl.e-popup .e-list-item {
+  border-radius: 10px;
+  transition: background-color var(--dur-instant) ease;
+}
+
+/* Frosted Dialogs & Soft Blur Backdrop */
+.e-dialog.app-modal,
+.e-dialog.ticket-detail-dialog {
+  border-radius: var(--radius-panel) !important;
+  background: var(--surface-glass-strong) !important;
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--border-glass) !important;
+  box-shadow: var(--shadow-floating) !important;
+  overflow: hidden;
+}
+
+.e-dlg-overlay {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Frosted Kanban Columns (zero transform on .e-card:hover) */
+.pipeline-board.e-kanban {
+  background: transparent !important;
+}
+
+.pipeline-board.e-kanban .e-content-cells,
+.pipeline-board.e-kanban .e-header-cells {
+  background: var(--surface-glass) !important;
+  border-color: var(--border-glass) !important;
+}
+
+.pipeline-board.e-kanban .e-card {
+  border-radius: var(--radius-nested) !important;
+  box-shadow: var(--shadow-pill) !important;
+}

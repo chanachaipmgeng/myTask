@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { filter, map, startWith } from 'rxjs';
@@ -38,7 +38,6 @@ const MINE_TABS = TEAM_TABS.filter((tab) => tab.path !== 'handoff' && tab.path !
   imports: [
     RouterOutlet,
     RouterLink,
-    RouterLinkActive,
     ButtonModule,
     TextBoxModule,
     FilterChipsComponent,

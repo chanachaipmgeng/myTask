@@ -106,10 +106,8 @@ export const effectiveRole = computed<AccessRole>(() => {
   if (actual === 'member') {
     return 'member';
   }
-  if (actual === 'lead') {
-    return explicit === 'member' ? 'member' : 'lead';
-  }
-  return explicit;
+  // Unified role-aware sidebar: Lead/Admin only switch down to Member for preview
+  return explicit === 'member' ? 'member' : actual;
 });
 
 export function setWorkspaceMode(mode: AccessRole | null): AccessRole {

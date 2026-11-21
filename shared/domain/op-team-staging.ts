@@ -10,53 +10,47 @@ export function parseTeamStaging(raw: string | undefined | null): OpenProjectTea
 
 export interface DepartmentTeamMap {
   teamId: string;
+  teamName: string;
   track: Track;
   /** true เมื่อแผนกถือเป็น R&D ตามกฎ staging */
   isRd: boolean;
 }
 
+/** สร้าง slug สำหรับชื่อทีม/แผนกจาก myProject (รองรับภาษาไทยและอังกฤษ) */
+export function slugifyTeamName(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return 'unassigned';
+  }
+  const slug = trimmed
+    .toLowerCase()
+    .replace(/[^a-z0-9\u0E00-\u0E7F]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48);
+  return slug || 'other';
+}
+
 /**
- * แมปชื่อแผนกจาก OpenProject (customField1) → teamId + track คู่ Implement/RD
- * (DB people.track ยังจำกัดสองค่า — สาย QA/UXBA ฯลฯ เก็บใน teamId)
+ * แมปชื่อแผนกจริงจาก OpenProject (customField1) → teamId/teamName ตามชื่อจริงใน myProject
+ * โดยยังคงคำนวณ track (RD/Implement) และ isRd สำหรับสูตรคะแนนและกฎ staging
  */
 export function mapDepartmentToTeam(department: string | null | undefined): DepartmentTeamMap {
   const raw = (department ?? '').trim();
   const lower = raw.toLowerCase();
   if (!raw) {
-    return { teamId: 'unassigned', track: 'Implement', isRd: false };
+    return { teamId: 'unassigned', teamName: 'ยังไม่ระบุทีม', track: 'Implement', isRd: false };
   }
-  if (raw.startsWith('RD-') || lower.includes('research') || lower === 'r&d' || lower.includes('r&d')) {
-    return { teamId: 'rd', track: 'RD', isRd: true };
-  }
-  if (lower.includes('qa') || lower.includes('quality') || lower.includes('test')) {
-    return { teamId: 'qa', track: 'Implement', isRd: false };
-  }
-  if (lower.includes('ux') || lower.includes('ba') || lower.includes('design') || lower.includes('product')) {
-    return { teamId: 'uxba', track: 'Implement', isRd: false };
-  }
-  if (lower.includes('infra') || lower.includes('devops') || lower.includes('sre') || lower.includes('platform')) {
-    return { teamId: 'infra', track: 'Implement', isRd: false };
-  }
-  if (lower.includes('support') || lower.includes('helpdesk') || lower.includes('service desk')) {
-    return { teamId: 'support', track: 'Implement', isRd: false };
-  }
-  if (
-    lower.includes('implement') ||
-    lower.includes('develop') ||
-    lower.includes('software') ||
-    lower.includes('engineering') ||
-    lower.includes('dev')
-  ) {
-    return { teamId: 'implement', track: 'Implement', isRd: false };
-  }
-  // แผนกอื่น — ใช้ slug จากชื่อแผนกเป็น teamId
-  const slug =
-    raw
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 40) || 'other';
-  return { teamId: slug, track: 'Implement', isRd: false };
+  const isRd =
+    raw.startsWith('RD-') ||
+    lower.includes('research') ||
+    lower === 'r&d' ||
+    lower.includes('r&d');
+  return {
+    teamId: slugifyTeamName(raw),
+    teamName: raw,
+    track: isRd ? 'RD' : 'Implement',
+    isRd,
+  };
 }
 
 export function teamLabelForId(teamId: string): string {

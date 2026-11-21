@@ -37,6 +37,7 @@ import { INDEX_TARGET } from '../../core/scoring';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import {
   FormFieldComponent,
+  PersonAvatarComponent,
   SectionCardComponent,
   StatusBadgeComponent,
   toneForAlertLabel,
@@ -56,6 +57,7 @@ import {
     RouterLink,
     TextBoxModule,
     PageHeadComponent,
+    PersonAvatarComponent,
     ProgressBarModule,
     StatusBadgeComponent,
     SectionCardComponent,

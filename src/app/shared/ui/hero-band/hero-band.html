@@ -9,26 +9,35 @@
     [class.hero-band__top--actions-only]="!(title || subtitle || badge || crumb || note)"
   >
     @if (title || subtitle || badge || crumb || note) {
-      <div class="hero-band__identity">
-        <div class="hero-band__title-row">
-          @if (title) {
-            <h2 class="hero-band__title">{{ title }}</h2>
-          }
-          @if (badge) {
-            <span class="hero-band__badge" [class.is-live]="live">
-              @if (live) {
-                <span class="hero-band__dot"></span>
-              }
-              <span>{{ badge }}</span>
-            </span>
-          }
-          @if (note) {
-            <span class="hero-band__note">{{ note }}</span>
+      <div class="hero-band__identity" [class.has-avatar]="avatarPersonId || avatarName">
+        @if (avatarPersonId || avatarName) {
+          <app-person-avatar
+            [personId]="avatarPersonId"
+            [name]="avatarName"
+            size="lg"
+          ></app-person-avatar>
+        }
+        <div class="hero-band__identity-copy">
+          <div class="hero-band__title-row">
+            @if (title) {
+              <h2 class="hero-band__title">{{ title }}</h2>
+            }
+            @if (badge) {
+              <span class="hero-band__badge" [class.is-live]="live">
+                @if (live) {
+                  <span class="hero-band__dot"></span>
+                }
+                <span>{{ badge }}</span>
+              </span>
+            }
+            @if (note) {
+              <span class="hero-band__note">{{ note }}</span>
+            }
+          </div>
+          @if (subtitle) {
+            <p class="hero-band__subtitle">{{ subtitle }}</p>
           }
         </div>
-        @if (subtitle) {
-          <p class="hero-band__subtitle">{{ subtitle }}</p>
-        }
       </div>
     }
 

@@ -16,7 +16,7 @@
         <a ejs-button cssClass="e-primary" iconCss="e-icons e-chart" routerLink="/me/analytics">
           วิเคราะห์ผลงานเชิงลึก (OLS)
         </a>
-        <a ejs-button cssClass="e-outline" iconCss="e-icons e-kanban" routerLink="/me/work/board">
+        <a ejs-button cssClass="e-outline" iconCss="e-icons e-columns" routerLink="/me/work/board">
           เปิดบอร์ดงานของฉัน
         </a>
         <a ejs-button cssClass="e-outline" iconCss="e-icons e-edit" routerLink="/me/disputes">
@@ -280,7 +280,11 @@
         <e-column field="module" headerText="โมดูล" width="120"></e-column>
         <e-column field="size" headerText="ขนาด" width="80"></e-column>
         <e-column field="points" headerText="Points" width="90" textAlign="Right"></e-column>
-        <e-column field="assignee" headerText="ผู้รับ" width="170"></e-column>
+        <e-column field="assignee" headerText="ผู้รับ" width="185">
+          <ng-template #template let-data>
+            <app-person-avatar [name]="data.assignee" [showName]="true" size="xs"></app-person-avatar>
+          </ng-template>
+        </e-column>
         <e-column field="estimateMd" headerText="Est" width="95" textAlign="Right" format="N2"></e-column>
         <e-column field="actualMd" headerText="Actual" width="95" textAlign="Right" format="N2"></e-column>
         <e-column field="ratioLabel" headerText="อัตราส่วน" width="110"></e-column>

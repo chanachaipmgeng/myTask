@@ -8,6 +8,7 @@
   } @else {
     <app-page-head
       [title]="(isMine ? 'วิเคราะห์ผลงานเชิงลึกของฉัน · ' : '') + view().name + ' · ' + view().role"
+      [avatarName]="view().name"
       [description]="
         view().trackLabel +
         ' · ' +

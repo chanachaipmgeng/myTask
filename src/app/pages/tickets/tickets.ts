@@ -35,6 +35,7 @@ import { WorkspaceFilter } from '../../core/workspace-filter';
 import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID } from '../../data/seed';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import {
+  PersonAvatarComponent,
   StatusBadgeComponent,
   blockerToneMap,
   closedToneMap,
@@ -59,6 +60,7 @@ type TypeFilter = TicketType | 'All';
   imports: [
     RouterLink,
     GridModule,
+    PersonAvatarComponent,
     DropDownListModule,
     NumericTextBoxModule,
     TextBoxModule,

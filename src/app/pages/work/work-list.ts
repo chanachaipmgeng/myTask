@@ -19,6 +19,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { workListRows } from '../../core/work-views';
 import {
+  PersonAvatarComponent,
   SectionCardComponent,
   StatusBadgeComponent,
   planToneMap,
@@ -31,7 +32,7 @@ import { WorkHubFilter } from './work-hub-filter';
 @Component({
   selector: 'app-work-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, DialogModule, ButtonModule, StatusBadgeComponent, SectionCardComponent],
+  imports: [GridModule, DialogModule, ButtonModule, StatusBadgeComponent, SectionCardComponent, PersonAvatarComponent],
   providers: [
     PageService,
     SortService,

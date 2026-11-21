@@ -1,5 +1,5 @@
 import { Person, Ticket, Track, TrackCode, normalizeTrack, WORKFLOW_STATUSES, WorkflowStatus } from './models';
-import { teamLabelForId } from './op-team-staging';
+import { slugifyTeamName, teamLabelForId } from './op-team-staging';
 import { todayInBangkok, workflowStatusOf } from './workflow';
 
 export type WorkTrackFilter = Track | TrackCode | 'All';
@@ -186,8 +186,12 @@ export function fridayOfWeek(mondayIso: string): string {
   return shiftIsoDay(mondayIso.slice(0, 10), 4);
 }
 
-/** ทีมของผู้รับ — teamId จริง หรือ fallback สาย Implement/RD */
+/** ทีมของผู้รับ — ใช้แผนกจริงจาก myProject (department) ก่อน แล้วค่อย fallback teamId / สายงาน */
 export function resolvePersonTeamId(person: Person | undefined, ticketTrack?: Track): string {
+  const dept = person?.department?.trim();
+  if (dept) {
+    return slugifyTeamName(dept);
+  }
   const raw = person?.teamId?.trim();
   if (raw) {
     return raw;

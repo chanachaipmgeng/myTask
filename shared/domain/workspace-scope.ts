@@ -74,21 +74,33 @@ export interface WorkspaceScope {
   yearCe?: number | null;
 }
 
+const LEGACY_STUB_TEAM_IDS = new Set(['rd', 'implement']);
+
 export function listOrgTeamOptions(
   people: readonly Person[],
   teams: readonly Team[] = [],
 ): { id: string; label: string }[] {
   const map = new Map<string, string>();
-  for (const team of teams) {
-    const id = team.id?.trim();
-    if (!id) continue;
-    map.set(id, team.name?.trim() || teamLabelForId(id));
-  }
+  // ดึงทีมจริงจากพนักงานที่ active (อิงแผนกจาก myProject ก่อน)
   for (const person of people) {
     if (person.active === false) continue;
     const id = resolvePersonTeamId(person);
     if (!map.has(id)) {
       map.set(id, resolveTeamLabel(id, person));
+    }
+  }
+  const hasRealMyProjectTeams = [...map.keys()].some(
+    (id) => !LEGACY_STUB_TEAM_IDS.has(id) && id !== 'unassigned',
+  );
+  for (const team of teams) {
+    const id = team.id?.trim();
+    if (!id) continue;
+    // ถ้ามีทีมจริงจาก myProject แล้ว ไม่เติม stub เก่า rd/implement ที่ไม่มีสมาชิก
+    if (hasRealMyProjectTeams && LEGACY_STUB_TEAM_IDS.has(id) && !map.has(id)) {
+      continue;
+    }
+    if (!map.has(id)) {
+      map.set(id, team.name?.trim() || teamLabelForId(id));
     }
   }
   return [...map.entries()]

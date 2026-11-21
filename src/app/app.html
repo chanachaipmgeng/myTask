@@ -9,7 +9,7 @@
     [class.nav-open]="navOpen()"
     [class.is-collapsed]="!narrow() && collapsed()"
     [class]="roleThemeClass()"
-    (click)="closeWorkspaceMenu()"
+    (click)="closeFilterPopover()"
   >
     <ejs-sidebar
       id="app-nav"
@@ -54,123 +54,26 @@
           }
         </div>
 
-        <!-- 2. Workspace Mode Switcher Dropdown (Tasklyn-style) -->
-        @if (narrow() || !collapsed()) {
-          <div class="workspace-switcher" (click)="$event.stopPropagation()">
-            <button
-              type="button"
-              class="workspace-switcher__trigger"
-              [class.is-open]="workspaceMenuOpen()"
-              [disabled]="!canSwitchMode()"
-              (click)="toggleWorkspaceMenu($event)"
-              [attr.aria-expanded]="workspaceMenuOpen()"
-              title="สลับโหมดการทำงาน"
-            >
-              <span class="workspace-switcher__badge" [style.background]="activeModeMeta().color">
-                {{ activeModeMeta().code }}
-              </span>
-              <span class="workspace-switcher__copy">
-                <span class="workspace-switcher__label">{{ activeModeMeta().label }}</span>
-              </span>
-              @if (canSwitchMode()) {
-                <svg class="workspace-switcher__caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <polyline points="7 15 12 20 17 15"></polyline>
-                  <polyline points="7 9 12 4 17 9"></polyline>
-                </svg>
-              }
-            </button>
-
-            @if (workspaceMenuOpen() && canSwitchMode()) {
-              <div class="workspace-switcher__menu" role="menu" aria-label="เลือกโหมดการทำงาน">
-                @for (mode of availableModes(); track mode.id) {
-                  <button
-                    type="button"
-                    class="workspace-switcher__option"
-                    [class.is-active]="role() === mode.id"
-                    [attr.data-mode]="mode.id"
-                    role="menuitem"
-                    (click)="selectWorkspaceMode(mode.id)"
-                  >
-                    <span [class]="mode.icon"></span>
-                    <span>{{ mode.label }}</span>
-                    @if (role() === mode.id) {
-                      <span class="workspace-switcher__check">✓</span>
-                    }
-                  </button>
-                }
-              </div>
-            }
-          </div>
-
-          <!-- Quick Menu Filter -->
-          <div class="sidebar-search">
-            <span class="e-icons e-search sidebar-search__icon"></span>
-            <input
-              type="text"
-              class="sidebar-search__input"
-              placeholder="ค้นหาเมนู..."
-              [value]="menuSearch()"
-              (input)="onMenuSearch($event)"
-            />
-            @if (menuSearch()) {
-              <button type="button" class="sidebar-search__clear" (click)="clearMenuSearch()" aria-label="ล้างคำค้น">×</button>
-            }
-          </div>
-        }
-
-        <!-- 3. P20 Flat hub navigation (search still lists deep leaves) -->
+        <!-- 2. Role-Aware Grouped Sidebar Navigation -->
         <nav #saasNav class="saas-nav" aria-label="เมนูหลัก">
-          <div
-            class="saas-nav__active-pill"
-            aria-hidden="true"
-            [class.is-visible]="activePill().visible"
-            [style.transform]="'translateY(' + activePill().top + 'px)'"
-            [style.height.px]="activePill().height"
-          ></div>
-
-          @if (menuSearch()) {
-            @for (section of groupedNavSections(); track section.id) {
-              <div class="saas-nav__group">
-                @if (narrow() || !collapsed()) {
-                  <div class="saas-nav__label">{{ section.label }}</div>
-                }
-                @for (item of section.items; track item.id) {
-                  <a
-                    class="saas-nav__item"
-                    [class.is-active]="selectedNodes()[0] === item.id"
-                    [routerLink]="item.route"
-                    queryParamsHandling="preserve"
-                    (click)="clearMenuSearch()"
-                    [title]="item.text"
-                  >
-                    <span class="saas-nav__icon"><span [class]="item.iconCss"></span></span>
-                    @if (narrow() || !collapsed()) {
-                      <span class="saas-nav__text">{{ item.text }}</span>
-                    }
-                  </a>
-                }
-              </div>
-            } @empty {
+          @for (section of sidebarSections(); track section.id) {
+            <div class="saas-nav__group">
               @if (narrow() || !collapsed()) {
-                <p class="saas-nav__empty">ไม่พบเมนูที่ตรงกับคำค้น</p>
+                <div class="saas-nav__label">{{ section.label }}</div>
+              } @else if (!$first) {
+                <div class="saas-nav__divider" aria-hidden="true"></div>
               }
-            }
-          } @else {
-            <div class="saas-nav__group saas-nav__group--primary">
-              @if (narrow() || !collapsed()) {
-                <div class="saas-nav__label">เมนูหลัก</div>
-              }
-              @for (hub of hubNavItems(); track hub.id) {
+              @for (item of section.items; track item.id) {
                 <a
                   class="saas-nav__item"
-                  [class.is-active]="selectedNodes()[0] === hub.id"
-                  [routerLink]="hub.route"
+                  [class.is-active]="selectedNodes()[0] === item.id"
+                  [routerLink]="item.route"
                   queryParamsHandling="preserve"
-                  [title]="hub.text"
+                  [title]="item.text"
                 >
-                  <span class="saas-nav__icon"><span [class]="hub.iconCss"></span></span>
+                  <span class="saas-nav__icon"><span [class]="item.iconCss"></span></span>
                   @if (narrow() || !collapsed()) {
-                    <span class="saas-nav__text">{{ hub.text }}</span>
+                    <span class="saas-nav__text">{{ item.text }}</span>
                   }
                 </a>
               }
@@ -250,10 +153,19 @@
               <button
                 type="button"
                 class="navbar-mode-restore"
-                title="กลับโหมดตามสิทธิ์จริง"
+                title="ออกจากมุมมองพรีวิว Member"
                 (click)="restoreTrueWorkspaceMode()"
               >
                 กลับโหมดจริง
+              </button>
+            } @else if (canPreviewMember()) {
+              <button
+                type="button"
+                class="navbar-mode-preview"
+                title="พรีวิวหน้าจอในมุมมองพนักงานทั่วไป (Member)"
+                (click)="togglePersonaPreview()"
+              >
+                ดูในมุม Member
               </button>
             }
           </div>
@@ -300,7 +212,7 @@
                     <div class="search-group__label">พนักงาน</div>
                     @for (item of instantResults().people; track item.id) {
                       <button type="button" class="search-hit" (click)="goPersonFromSearch(item.id)">
-                        <strong>{{ item.id }}</strong>
+                        <app-person-avatar [personId]="item.id" [name]="item.name" size="xs"></app-person-avatar>
                         <span>{{ item.name }}</span>
                       </button>
                     }
@@ -449,147 +361,159 @@
         </div>
       </ejs-appbar>
 
-      <div class="workspace-filter-bar" aria-label="ตัวกรองทีมและรอบประเมินทั่วทั้งระบบ">
-        <div class="workspace-filter-bar__controls">
-          <label class="workspace-filter-field">
-            <span>รอบประเมิน</span>
-            <ejs-dropdownlist
-              [dataSource]="workspaceFilter.cycleOptions()"
-              [fields]="filterFields"
-              [value]="workspaceFilter.cycleId()"
-              (change)="onWorkspaceCycle($event)"
-              placeholder="รอบระบบ"
-              width="190px"
-              cssClass="e-outline"
-            ></ejs-dropdownlist>
-          </label>
-          <label class="workspace-filter-field">
-            <span>ปี</span>
-            <ejs-dropdownlist
-              [dataSource]="workspaceFilter.yearOptions()"
-              [fields]="filterFields"
-              [value]="workspaceFilter.yearCe() == null ? '' : '' + workspaceFilter.yearCe()"
-              (change)="onWorkspaceYear($event)"
-              placeholder="ทุกปี"
-              width="160px"
-              cssClass="e-outline"
-            ></ejs-dropdownlist>
-          </label>
-          <label class="workspace-filter-field">
-            <span>จากวัน</span>
-            <input
-              class="workspace-filter-date"
-              type="date"
-              [value]="workspaceFilter.fromDate()"
-              (change)="onWorkspaceFrom($event)"
-            />
-          </label>
-          <label class="workspace-filter-field">
-            <span>ถึงวัน</span>
-            <input
-              class="workspace-filter-date"
-              type="date"
-              [value]="workspaceFilter.toDate()"
-              (change)="onWorkspaceTo($event)"
-            />
-          </label>
-          <label class="workspace-filter-field">
-            <span>ทีม</span>
-            <ejs-dropdownlist
-              [dataSource]="workspaceFilter.teamOptions()"
-              [fields]="filterFields"
-              [value]="workspaceFilter.teamId()"
-              (change)="onWorkspaceTeam($event)"
-              placeholder="ทุกทีม"
-              width="170px"
-              cssClass="e-outline"
-            ></ejs-dropdownlist>
-          </label>
-          <label class="workspace-filter-field">
-            <span>โปรเจกต์</span>
-            <ejs-dropdownlist
-              [dataSource]="workspaceFilter.projectOptions()"
-              [fields]="filterFields"
-              [value]="workspaceFilter.opProject()"
-              (change)="onWorkspaceProject($event)"
-              placeholder="ทุกโปรเจกต์"
-              width="180px"
-              cssClass="e-outline"
-            ></ejs-dropdownlist>
-          </label>
-          <app-filter-chips
-            [options]="workspaceFilter.trackChipOptions"
-            [value]="workspaceFilter.track()"
-            (valueChange)="onWorkspaceTrack($event)"
-          ></app-filter-chips>
-          @if (workspaceFilter.personId(); as personId) {
-            <span class="workspace-person-chip" [title]="personId">
-              คน: {{ workspaceFilter.selectedPersonLabel() || personId }}
-              <button
-                ejs-button
-                cssClass="e-small e-flat"
-                type="button"
-                title="ล้างตัวกรองคน"
-                (click)="clearWorkspacePerson()"
-              >
-                ล้างคน
-              </button>
-            </span>
-          }
-        </div>
-        <div class="workspace-filter-bar__meta">
-          <span class="workspace-filter-summary" [title]="workspaceFilter.filterSummary()">
-            {{ workspaceFilter.filterSummary() }}
-          </span>
-          @if (workspaceFilter.systemCycle(); as sys) {
-            <button
-              ejs-button
-              cssClass="e-small e-outline"
-              type="button"
-              title="ใช้รอบที่แอดมินเปิดเป็นค่าเริ่ม"
-              (click)="applySystemCycle()"
-            >
-              ใช้รอบระบบ · {{ sys.label }}
-            </button>
-          }
-          @if (workspaceFilter.hasActiveFilter()) {
-            <button ejs-button cssClass="e-small e-outline" type="button" (click)="clearWorkspaceFilter()">
-              ล้างฟิลเตอร์
-            </button>
-          }
-        </div>
-      </div>
-
-      <!-- Top Sub-Navigation Tab Bar (for active sidebar category) -->
-      @if (activeSubTabs().length > 1) {
-        @for (cat of [activeNavCategory()]; track cat) {
-          <div class="subnav-bar">
-            <nav #subnavTabs class="subnav-tabs" [attr.aria-label]="'เมนูย่อยหมวด ' + categoryLabel()">
-              <div
-                class="subnav-tabs__pill"
-                aria-hidden="true"
-                [class.is-visible]="subTabPill().visible"
-                [style.transform]="'translateX(' + subTabPill().left + 'px)'"
-                [style.width.px]="subTabPill().width"
-              ></div>
-              @for (tab of activeSubTabs(); track tab.id) {
-                @if (tab.sepBefore) {
-                  <span class="subnav-tabs__sep" aria-hidden="true"></span>
-                }
-                <a
-                  class="subnav-tab"
-                  [class.is-active]="selectedNodes()[0] === tab.id"
-                  [routerLink]="tab.route"
-                  queryParamsHandling="preserve"
-                  [title]="tab.text"
+      @if (showGlobalFilterBar()) {
+        <div class="workspace-filter-bar" aria-label="ตัวกรองทีมและรอบประเมินทั่วทั้งระบบ" (click)="$event.stopPropagation()">
+          <div class="workspace-filter-bar__controls">
+            <label class="workspace-filter-field workspace-filter-field--inline">
+              <span>รอบ</span>
+              <ejs-dropdownlist
+                [dataSource]="workspaceFilter.cycleOptions()"
+                [fields]="filterFields"
+                [value]="workspaceFilter.cycleId()"
+                (change)="onWorkspaceCycle($event)"
+                placeholder="รอบระบบ"
+                width="175px"
+                cssClass="e-outline"
+              ></ejs-dropdownlist>
+            </label>
+            <label class="workspace-filter-field workspace-filter-field--inline">
+              <span>ทีม</span>
+              <ejs-dropdownlist
+                [dataSource]="workspaceFilter.teamOptions()"
+                [fields]="filterFields"
+                [value]="workspaceFilter.teamId()"
+                (change)="onWorkspaceTeam($event)"
+                [allowFiltering]="true"
+                filterBarPlaceholder="ค้นหาทีมจาก myProject..."
+                placeholder="ทุกทีม"
+                width="195px"
+                cssClass="e-outline"
+              ></ejs-dropdownlist>
+            </label>
+            @if (workspaceFilter.personId(); as personId) {
+              <span class="workspace-person-chip" [title]="personId">
+                <app-person-avatar [personId]="personId" [name]="workspaceFilter.selectedPersonLabel()" size="xs"></app-person-avatar>
+                <span>{{ workspaceFilter.selectedPersonLabel() || personId }}</span>
+                <button
+                  ejs-button
+                  cssClass="e-small e-flat"
+                  type="button"
+                  title="ล้างตัวกรองคน"
+                  (click)="clearWorkspacePerson()"
                 >
-                  <span class="subnav-tab__icon"><span [class]="tab.iconCss"></span></span>
-                  <span class="subnav-tab__text">{{ tab.text }}</span>
-                </a>
+                  ×
+                </button>
+              </span>
+            }
+
+            <div class="filter-popover-anchor">
+              <button
+                type="button"
+                class="filter-more-btn"
+                [class.is-active]="filterPopoverOpen() || extraFilterCount() > 0"
+                [attr.aria-expanded]="filterPopoverOpen()"
+                (click)="toggleFilterPopover($event)"
+              >
+                <span class="e-icons e-filter" aria-hidden="true"></span>
+                <span>ตัวกรองเพิ่ม</span>
+                @if (extraFilterCount() > 0) {
+                  <span class="filter-more-btn__badge">{{ extraFilterCount() }}</span>
+                }
+              </button>
+
+              @if (filterPopoverOpen()) {
+                <div class="filter-popover" role="dialog" aria-label="ตัวกรองเพิ่มเติม">
+                  <div class="filter-popover__grid">
+                    <label class="workspace-filter-field">
+                      <span>ปี</span>
+                      <ejs-dropdownlist
+                        [dataSource]="workspaceFilter.yearOptions()"
+                        [fields]="filterFields"
+                        [value]="workspaceFilter.yearCe() == null ? '' : '' + workspaceFilter.yearCe()"
+                        (change)="onWorkspaceYear($event)"
+                        placeholder="ทุกปี"
+                        width="100%"
+                        cssClass="e-outline"
+                      ></ejs-dropdownlist>
+                    </label>
+                    <label class="workspace-filter-field">
+                      <span>โปรเจกต์</span>
+                      <ejs-dropdownlist
+                        [dataSource]="workspaceFilter.projectOptions()"
+                        [fields]="filterFields"
+                        [value]="workspaceFilter.opProject()"
+                        (change)="onWorkspaceProject($event)"
+                        [allowFiltering]="true"
+                        filterBarPlaceholder="ค้นหาโปรเจกต์..."
+                        placeholder="ทุกโปรเจกต์"
+                        width="100%"
+                        cssClass="e-outline"
+                      ></ejs-dropdownlist>
+                    </label>
+                    <label class="workspace-filter-field">
+                      <span>จากวัน</span>
+                      <input
+                        class="workspace-filter-date"
+                        type="date"
+                        [value]="workspaceFilter.fromDate()"
+                        (change)="onWorkspaceFrom($event)"
+                      />
+                    </label>
+                    <label class="workspace-filter-field">
+                      <span>ถึงวัน</span>
+                      <input
+                        class="workspace-filter-date"
+                        type="date"
+                        [value]="workspaceFilter.toDate()"
+                        (change)="onWorkspaceTo($event)"
+                      />
+                    </label>
+                  </div>
+                  <div class="filter-popover__tracks">
+                    <span class="filter-popover__label">สายงาน</span>
+                    <app-filter-chips
+                      [options]="workspaceFilter.trackChipOptions"
+                      [value]="workspaceFilter.track()"
+                      (valueChange)="onWorkspaceTrack($event)"
+                    ></app-filter-chips>
+                  </div>
+                  <div class="filter-popover__footer">
+                    @if (workspaceFilter.systemCycle(); as sys) {
+                      <button
+                        ejs-button
+                        cssClass="e-small e-outline"
+                        type="button"
+                        title="ใช้รอบที่แอดมินเปิดเป็นค่าเริ่ม"
+                        (click)="applySystemCycle()"
+                      >
+                        ใช้รอบระบบ · {{ sys.label }}
+                      </button>
+                    }
+                    <button
+                      ejs-button
+                      cssClass="e-small e-primary"
+                      type="button"
+                      (click)="closeFilterPopover()"
+                    >
+                      เสร็จสิ้น
+                    </button>
+                  </div>
+                </div>
               }
-            </nav>
+            </div>
           </div>
-        }
+
+          <div class="workspace-filter-bar__meta">
+            <span class="workspace-filter-summary" [title]="workspaceFilter.filterSummary()">
+              {{ workspaceFilter.filterSummary() }}
+            </span>
+            @if (workspaceFilter.hasActiveFilter()) {
+              <button ejs-button cssClass="e-small e-flat" type="button" (click)="clearWorkspaceFilter()">
+                ล้าง
+              </button>
+            }
+          </div>
+        </div>
       }
 
       @if (mockMode()) {
@@ -603,6 +527,23 @@
       }
 
       <main class="shell-main" [attr.data-nav-key]="navKey()">
+        @if (contextualTabs().length > 1) {
+          <nav class="hub-underline-tabs shell-contextual-tabs" role="tablist" [attr.aria-label]="title()">
+            @for (tab of contextualTabs(); track tab.route) {
+              <a
+                class="hub-underline-tab"
+                role="tab"
+                [routerLink]="tab.route"
+                queryParamsHandling="preserve"
+                [class.is-active]="tab.active"
+                [attr.aria-selected]="tab.active"
+              >
+                <span [class]="tab.icon" aria-hidden="true"></span>
+                <span>{{ tab.text }}</span>
+              </a>
+            }
+          </nav>
+        }
         <router-outlet />
       </main>
     </div>

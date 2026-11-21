@@ -31,10 +31,25 @@
           variant="nested"
         >
           <div class="org-team-card__body">
-            <p class="org-team-card__meta">
+            <div class="org-team-card__meta flex items-center gap-2">
               <span class="org-team-card__label">Lead</span>
-              <span>{{ card.leadName }}</span>
-            </p>
+              <app-person-avatar [personId]="card.leadId" [name]="card.leadName" [showName]="true" size="xs"></app-person-avatar>
+            </div>
+            @let preview = teamMembersPreview(card.id);
+            @if (preview.length) {
+              <div class="flex items-center gap-2 mt-2">
+                <div class="flex items-center -space-x-2">
+                  @for (m of preview; track m.id) {
+                    <app-person-avatar [personId]="m.id" [name]="m.nickname" size="sm"></app-person-avatar>
+                  }
+                </div>
+                @if (card.memberCount > preview.length) {
+                  <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-600 dark:text-blue-300 tabular-nums">
+                    +{{ card.memberCount - preview.length }}
+                  </span>
+                }
+              </div>
+            }
             <p class="org-team-card__hint">คลิกเพื่อเข้า Workspace ทีม</p>
           </div>
         </app-section-card>

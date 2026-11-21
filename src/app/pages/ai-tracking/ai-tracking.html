@@ -87,10 +87,14 @@
         height="320"
       >
         <e-columns>
-          <e-column field="id" headerText="รหัส" width="130"></e-column>
-          <e-column field="label" headerText="ผู้รับผิดชอบ" width="160"></e-column>
-          <e-column field="module" headerText="โมดูล / หัวข้อ" width="220"></e-column>
-          <e-column field="md" headerText="MD" width="110" textAlign="Right" format="N2"></e-column>
+          <e-column field="id" headerText="รหัส" width="120"></e-column>
+          <e-column field="assigneeName" headerText="ผู้รับผิดชอบ" width="160">
+            <ng-template #template let-data>
+              <app-person-avatar [personId]="data.assigneeId" [name]="data.assigneeName" [showName]="true" size="xs"></app-person-avatar>
+            </ng-template>
+          </e-column>
+          <e-column field="module" headerText="โมดูล / หัวข้อ" width="190"></e-column>
+          <e-column field="md" headerText="MD" width="90" textAlign="Right" format="N2"></e-column>
         </e-columns>
         <e-aggregates>
           <e-aggregate>

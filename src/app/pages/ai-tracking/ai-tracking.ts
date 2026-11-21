@@ -16,12 +16,13 @@ import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
+import { PersonAvatarComponent } from '../../shared/ui/person-avatar/person-avatar';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
 @Component({
   selector: 'app-ai-tracking',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChartModule, GridModule, PageHeadComponent, ProgressBarModule, SectionCardComponent],
+  imports: [ChartModule, GridModule, PageHeadComponent, PersonAvatarComponent, ProgressBarModule, SectionCardComponent],
   providers: [CategoryService, ColumnSeriesService, LegendService, TooltipService, PageService, SortService, ResizeService, AggregateService],
   templateUrl: './ai-tracking.html',
 })
@@ -83,7 +84,20 @@ export class AiTrackingPage {
   protected readonly chartArea = { border: { width: 0 } };
   protected readonly columnCorner = { topLeft: 4, topRight: 4 };
 
-  protected readonly points = computed(() => aiTicketPoints(this.scopedTickets()));
+  protected readonly points = computed(() => {
+    const peopleById = new Map(this.scorecard.roster().map((p) => [p.id, p]));
+    const ticketById = new Map(this.scopedTickets().map((t) => [t.id, t]));
+    return aiTicketPoints(this.scopedTickets()).map((pt) => {
+      const ticket = ticketById.get(pt.id);
+      const assigneeId = ticket?.assigneeId ?? null;
+      const person = assigneeId ? peopleById.get(assigneeId) : undefined;
+      return {
+        ...pt,
+        assigneeId,
+        assigneeName: person?.nickname || person?.fullName || assigneeId || 'ยังไม่ระบุ',
+      };
+    });
+  });
   protected readonly share = computed(() => researchSpikeShare(this.scopedPeople(), this.scopedTickets()));
   protected readonly sharePct = computed(() => Math.min(100, Math.round(this.share().ratio * 100)));
   protected readonly acceptedMd = computed(() => formatTrackedMd(acceptedTrackedMd(this.scopedTickets())));

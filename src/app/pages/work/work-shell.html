@@ -31,19 +31,19 @@
     </div>
   </div>
 
-  <nav class="work-hub-tabs flex flex-wrap gap-2" role="tablist" [attr.aria-label]="heading()">
+  <nav class="hub-underline-tabs" role="tablist" [attr.aria-label]="heading()">
     @for (tab of tabs(); track tab.path) {
       <a
-        ejs-button
+        class="hub-underline-tab"
         role="tab"
         [id]="'work-tab-' + tab.path"
-        [iconCss]="tab.icon"
         [routerLink]="[basePath(), tab.path]"
-        routerLinkActive="e-primary"
+        queryParamsHandling="preserve"
+        [class.is-active]="activePath() === tab.path"
         [attr.aria-selected]="activePath() === tab.path"
-        [cssClass]="activePath() === tab.path ? 'e-primary' : 'e-flat'"
       >
-        {{ tab.text }}
+        <span [class]="tab.icon" aria-hidden="true"></span>
+        <span>{{ tab.text }}</span>
       </a>
     }
   </nav>

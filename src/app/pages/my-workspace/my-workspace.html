@@ -1,6 +1,7 @@
 <section class="page">
   <app-page-head
     [title]="'พื้นที่ของฉัน · ' + view().name + ' (' + view().role + ')'"
+    [avatarName]="view().name"
     description="หน้าหลักสำหรับติดตามใบงานที่รับผิดชอบ โควตาคงเหลือในสัปดาห์ และดัชนีพัฒนาของตัวเองเทียบกับตัวเอง (ไม่จัดอันดับเปรียบเทียบกับเพื่อนร่วมงาน)"
     [metrics]="[
       { label: 'ดัชนีพัฒนาของฉัน', value: view().indexLabel, hint: 'เป้า ' + view().target, tone: view().index >= view().target ? 'good' : 'bad' },

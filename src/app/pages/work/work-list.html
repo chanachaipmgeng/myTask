@@ -42,7 +42,11 @@
       <e-column field="projectLabel" headerText="โปรเจกต์" width="140"></e-column>
       <e-column field="teamLabel" headerText="ทีม" width="120"></e-column>
       <e-column field="type" headerText="Type" width="110"></e-column>
-      <e-column field="assignee" headerText="Assignee" width="130"></e-column>
+      <e-column field="assignee" headerText="Assignee" width="165">
+        <ng-template #template let-data>
+          <app-person-avatar [name]="data.assignee" [showName]="true" size="xs"></app-person-avatar>
+        </ng-template>
+      </e-column>
       <e-column field="status" headerText="Status" width="130">
         <ng-template #template let-data>
           <app-status-badge [value]="data.status" [toneMap]="workflowStatusToneMap"></app-status-badge>

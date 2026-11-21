@@ -1,0 +1,33 @@
+<span class="person-av-wrap" [class.has-label]="showName()">
+  <span
+    class="person-av"
+    [class]="'person-av person-av--' + size()"
+    [style.background]="showImage() ? null : fallbackBg()"
+    [title]="displayName()"
+  >
+    @if (showImage()) {
+      <img
+        [src]="resolvedUrl()"
+        [alt]="displayName()"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        (error)="onImgError()"
+      />
+    } @else if (isUnassigned()) {
+      <svg width="58%" height="58%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+    } @else {
+      <span class="person-av__initials">{{ initials() }}</span>
+    }
+  </span>
+  @if (showName()) {
+    <span class="person-av__copy">
+      <span class="person-av__name">{{ displayName() }}</span>
+      @if (subtitle()) {
+        <span class="person-av__sub">{{ subtitle() }}</span>
+      }
+    </span>
+  }
+</span>

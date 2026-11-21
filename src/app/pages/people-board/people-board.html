@@ -27,7 +27,7 @@
         [theme]="theme.sfTheme()"
         [primaryXAxis]="primaryXAxis"
         [primaryYAxis]="primaryYAxis"
-        [margin]="{ top: 14, right: 18, bottom: 28, left: 12 }"
+        [margin]="{ top: 14, right: 34, bottom: 28, left: 12 }"
         [tooltip]="tooltip"
         [legendSettings]="legend"
         [chartArea]="chartArea"
@@ -73,9 +73,12 @@
       height="auto"
     >
       <e-columns>
-        <e-column field="personLabel" headerText="พนักงาน" width="190" [isFrozen]="!viewport.isMobile()">
+        <e-column field="personLabel" headerText="พนักงาน" width="245" [isFrozen]="!viewport.isMobile()">
           <ng-template #template let-data>
-            <a class="person-link" [routerLink]="['/people', data.id]" [queryParams]="{ teamId: workspace.teamId() || null, track: workspace.track() === 'All' ? null : workspace.track(), project: workspace.opProject() || null }">{{ data.personLabel }}</a>
+            <a class="person-link inline-flex items-center gap-2" [routerLink]="['/people', data.id]" [queryParams]="{ teamId: workspace.teamId() || null, track: workspace.track() === 'All' ? null : workspace.track(), project: workspace.opProject() || null }">
+              <app-person-avatar [personId]="data.id" [name]="data.personLabel" size="sm"></app-person-avatar>
+              <span>{{ data.personLabel }}</span>
+            </a>
           </ng-template>
         </e-column>
         <e-column field="levelLabel" headerText="ระดับ" width="110"></e-column>

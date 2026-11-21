@@ -548,19 +548,18 @@ export class OpenProjectSyncService implements OnModuleInit {
     return creds ? new OpenProjectClient(creds.url, creds.token) : null;
   }
 
-  /** สร้างแถว departments/teams จากแผนกที่เจอตอน sync-users (ไม่ลบของเดิม) */
+  /** สร้างแถว departments/teams จากแผนกจริงที่เจอใน myProject ตอน sync-users */
   private async ensureOrgRows(teamId: string, departmentTitle: string | null): Promise<void> {
     if (!teamId || teamId === 'unassigned') {
       return;
     }
-    const deptId = teamId === 'rd' || teamId === 'implement' ? teamId : teamId;
-    const deptName = departmentTitle?.trim() || teamLabelForId(teamId);
+    const realName = departmentTitle?.trim() || teamLabelForId(teamId);
     try {
-      await upsertDepartment(this.db, { id: deptId, name: deptName });
+      await upsertDepartment(this.db, { id: teamId, name: realName });
       await upsertTeam(this.db, {
         id: teamId,
-        departmentId: deptId,
-        name: teamLabelForId(teamId),
+        departmentId: teamId,
+        name: realName,
         leadId: null,
       });
     } catch (error) {

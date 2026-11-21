@@ -213,7 +213,18 @@ export class IntegrationsPage {
           : 'ยังไม่ได้ตั้ง URL/token ของ OpenProject',
       );
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : 'โหลดสถานะ integrations ไม่ได้');
+      const raw = err instanceof Error ? err.message : '';
+      const isServerDown =
+        !raw ||
+        raw.includes('500') ||
+        raw.includes('Internal server error') ||
+        raw.includes('Failed to fetch') ||
+        raw.startsWith('{');
+      this.error.set(
+        isServerDown
+          ? 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ API ได้ในขณะนี้ (กำลังทำงานในโหมดออฟไลน์ — เปิด Backend Server เพื่อจัดการการเชื่อมต่อจริง)'
+          : raw,
+      );
     } finally {
       this.loading.set(false);
     }

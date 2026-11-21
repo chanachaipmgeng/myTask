@@ -1,6 +1,7 @@
 <section class="page person-ws flex flex-col gap-4">
   <app-page-head
     title="ทีม · Workspace คน"
+    [avatarPersonId]="selectedPersonId()"
     description="เลือกลูกทีมด้านซ้าย แล้วดูงาน คะแนน และสรุปของคนนั้น — กรองทีมได้จากแถบ Global Filter"
     [metrics]="[
       { label: 'ในรายการ', value: filteredPeople().length },
@@ -52,18 +53,18 @@
     <!-- Center: tabs + content -->
     <div class="person-ws__main">
       @if (selectedPerson(); as person) {
-        <nav class="person-ws__tabs flex flex-wrap gap-2" role="tablist" aria-label="มุมมองคน">
+        <nav class="hub-underline-tabs" role="tablist" aria-label="มุมมองคน">
           @for (tab of tabs; track tab.id) {
             <button
-              ejs-button
               type="button"
+              class="hub-underline-tab"
               role="tab"
-              [iconCss]="tab.icon"
-              [cssClass]="activeTab() === tab.id ? 'e-primary' : 'e-flat'"
+              [class.is-active]="activeTab() === tab.id"
               [attr.aria-selected]="activeTab() === tab.id"
               (click)="setTab(tab.id)"
             >
-              {{ tab.text }}
+              <span [class]="tab.icon" aria-hidden="true"></span>
+              <span>{{ tab.text }}</span>
             </button>
           }
         </nav>

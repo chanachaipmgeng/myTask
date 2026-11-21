@@ -19,6 +19,7 @@ import { scoreTicket } from '../../../../../shared/domain/scoring';
 import { workflowStatusOf } from '../../../../../shared/domain/workflow';
 import { BadgeTone, workflowStatusToneMap } from '../badge';
 import { FormFieldComponent } from '../form-field/form-field';
+import { PersonAvatarComponent } from '../person-avatar/person-avatar';
 import { StatusBadgeComponent } from '../status-badge/status-badge';
 
 @Component({
@@ -31,6 +32,7 @@ import { StatusBadgeComponent } from '../status-badge/status-badge';
     TextBoxModule,
     NumericTextBoxModule,
     FormFieldComponent,
+    PersonAvatarComponent,
     StatusBadgeComponent,
     SlicePipe,
   ],

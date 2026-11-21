@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 
 const QUALITY_TABS = [
@@ -14,7 +13,7 @@ const QUALITY_TABS = [
 @Component({
   selector: 'app-quality-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule],
+  imports: [RouterOutlet, RouterLink],
   templateUrl: './hub-shell.html',
   styleUrl: './hub-shell.scss',
 })
@@ -23,6 +22,7 @@ export class QualityShell {
   protected readonly heading = 'คุณภาพ & คะแนนทีม';
   protected readonly basePath = '/quality';
   protected readonly tabs = QUALITY_TABS;
+  protected readonly showTabs = computed(() => true);
 
   private readonly url = toSignal(
     this.router.events.pipe(

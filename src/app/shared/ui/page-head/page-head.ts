@@ -15,5 +15,7 @@ export class PageHeadComponent {
   @Input() periodBadge = '';
   @Input() badge = '';
   @Input() live = false;
+  @Input() avatarPersonId: string | null | undefined = null;
+  @Input() avatarName: string | null | undefined = null;
   @Input() metrics: readonly HeroBandMetric[] = [];
 }

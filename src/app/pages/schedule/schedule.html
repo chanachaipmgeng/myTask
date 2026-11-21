@@ -1,7 +1,9 @@
 <section id="schedule-page" class="page schedule-page">
   <app-page-head
-    title="ปฏิทินทีม"
-    description="แต่ละคนเป็นแถว ใบงานเป็นช่วงจากวันเริ่มจริงถึงวันครบกำหนด ถ้าไม่มีวันครบกำหนดใช้วันส่งครั้งแรก แถบสีส้มคือใบที่หลุดจากสัปดาห์ที่ commit ปฏิทินนี้อ่านอย่างเดียว ไม่เขียนวันกลับไปที่ใบงาน"
+    [title]="isMine ? 'ปฏิทินงานและวันลาของฉัน' : 'ปฏิทินทีม'"
+    [description]="isMine
+      ? 'ดูช่วงเวลางานของตัวเองตั้งแต่วันเริ่มจริงถึงวันครบกำหนด แถบสีส้มคือใบที่หลุดจากสัปดาห์ที่ commit (อ่านอย่างเดียว)'
+      : 'แต่ละคนเป็นแถว ใบงานเป็นช่วงจากวันเริ่มจริงถึงวันครบกำหนด ถ้าไม่มีวันครบกำหนดใช้วันส่งครั้งแรก แถบสีส้มคือใบที่หลุดจากสัปดาห์ที่ commit ปฏิทินนี้อ่านอย่างเดียว ไม่เขียนวันกลับไปที่ใบงาน'"
   >
     <div actions class="flex flex-wrap items-center gap-2">
       <app-form-field label="คน" variant="filter">
@@ -23,7 +25,7 @@
   <div class="schedule-layout">
     <app-section-card
       class="schedule-layout__timeline"
-      title="ไทม์ไลน์ทีม"
+      [title]="isMine ? 'ไทม์ไลน์ของฉัน' : 'ไทม์ไลน์ทีม'"
       subtitle="คลิกแถบงานเพื่อโฟกัสวันทางขวา · อ่านอย่างเดียว"
     >
       <div actions class="flex flex-wrap items-center gap-2">

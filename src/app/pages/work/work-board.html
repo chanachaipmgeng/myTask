@@ -64,7 +64,7 @@
         </div>
         <p class="m-0 text-xs font-medium line-clamp-2">{{ data.title }}</p>
         <div class="flex flex-wrap items-center justify-between gap-1 text-xs text-muted">
-          <span>{{ data.assigneeLabel }}</span>
+          <app-person-avatar [personId]="data.assigneeId" [name]="data.assigneeLabel" [showName]="true" size="xs"></app-person-avatar>
           <span>{{ data.storyPoints }} pts</span>
         </div>
         <div class="flex flex-wrap items-center justify-between gap-1 text-xs">

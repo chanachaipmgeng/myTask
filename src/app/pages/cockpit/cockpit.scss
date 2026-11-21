@@ -771,6 +771,15 @@
     &.tag--success { background: rgba(16, 185, 129, 0.18); color: #a7f3d0; }
   }
 
+  :host-context(.e-light-mode) &,
+  :host-context(body:not(.e-dark-mode)) & {
+    .item-tag {
+      &.tag--danger { background: rgba(220, 38, 38, 0.12); color: #b91c1c; }
+      &.tag--warning { background: rgba(217, 119, 6, 0.14); color: #b45309; }
+      &.tag--success { background: rgba(5, 150, 105, 0.14); color: #047857; }
+    }
+  }
+
   .item-id {
     font-size: 11px;
     font-weight: 700;

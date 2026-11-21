@@ -17,6 +17,7 @@ import { TicketDetailService } from '../../core/ticket-detail.service';
 import { HeroBandComponent } from '../../shared/ui/hero-band/hero-band';
 import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
+import { PersonAvatarComponent } from '../../shared/ui/person-avatar/person-avatar';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import {
   BUG_CAUSES,
@@ -68,6 +69,7 @@ type SwimlaneMode = 'none' | 'assignee' | 'track' | 'project';
     HeroBandComponent,
     ConfirmDialogComponent,
     FormFieldComponent,
+    PersonAvatarComponent,
     SectionCardComponent,
   ],
   templateUrl: './work-board.html',
