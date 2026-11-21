@@ -4,9 +4,17 @@ import { resolve, join } from 'node:path';
 
 const edgePath = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const outputDir = resolve('docs/manual_assets');
+/** บังคับแคปโหมดสว่างทุกหน้า (ไม่พึ่ง localStorage ของโปรไฟล์ headless) */
+const CAPTURE_THEME = 'light';
 
 if (!existsSync(outputDir)) {
   mkdirSync(outputDir, { recursive: true });
+}
+
+function withTheme(url, theme = CAPTURE_THEME) {
+  const u = new URL(url);
+  u.searchParams.set('theme', theme);
+  return u.toString();
 }
 
 const screens = [
@@ -27,7 +35,7 @@ const screens = [
   { name: '15_integrations.png', url: 'http://127.0.0.1:4200/integrations', wait: 5000 },
   { name: '16_admin.png', url: 'http://127.0.0.1:4200/admin', wait: 5000 },
   { name: '17_mockup.png', url: 'http://127.0.0.1:4200/mockup', wait: 5000 },
-  { name: '19_light_mode_team.png', url: 'http://127.0.0.1:4200/team?theme=light', wait: 6000 },
+  { name: '19_light_mode_team.png', url: 'http://127.0.0.1:4200/team', wait: 6000 },
   { name: '20_queue.png', url: 'http://127.0.0.1:4200/queue', wait: 5000 },
   { name: '21_work_handoff.png', url: 'http://127.0.0.1:4200/work/handoff', wait: 6000 },
   { name: '22_quality_audit.png', url: 'http://127.0.0.1:4200/quality/audit', wait: 6000 },
@@ -39,8 +47,16 @@ const screens = [
   { name: '28_me_cockpit.png', url: 'http://127.0.0.1:4200/me/cockpit', wait: 6000 },
   { name: '29_mygit.png', url: 'http://127.0.0.1:4200/mygit', wait: 5000 },
   { name: '30_teams.png', url: 'http://127.0.0.1:4200/teams', wait: 5000 },
-  { name: '31_cockpit_light.png', url: 'http://127.0.0.1:4200/cockpit?theme=light', wait: 6000 },
-];
+  { name: '31_cockpit_light.png', url: 'http://127.0.0.1:4200/cockpit', wait: 6000 },
+  // v2026.6 — เมนูใหม่ / หน้า member ย่อย + เวลาทีมใน Work Hub
+  { name: '32_me_time_log.png', url: 'http://127.0.0.1:4200/me/time-log', wait: 5000 },
+  { name: '33_work_team_time.png', url: 'http://127.0.0.1:4200/work/team-time', wait: 5000 },
+  { name: '34_me_work_hub.png', url: 'http://127.0.0.1:4200/me/work/summary', wait: 5000 },
+  { name: '35_me_tickets.png', url: 'http://127.0.0.1:4200/me/tickets', wait: 5000 },
+  { name: '36_me_analytics.png', url: 'http://127.0.0.1:4200/me/analytics', wait: 6000 },
+  { name: '37_me_time_audit.png', url: 'http://127.0.0.1:4200/me/time-audit', wait: 5000 },
+  { name: '38_me_disputes.png', url: 'http://127.0.0.1:4200/me/disputes', wait: 5000 },
+].map((s) => ({ ...s, url: withTheme(s.url) }));
 
 function capture(screen) {
   const dest = join(outputDir, screen.name);
@@ -50,11 +66,21 @@ function capture(screen) {
     '--disable-gpu',
     '--window-size=1600,1050',
     '--hide-scrollbars',
+    '--timeout=45000',
     `--virtual-time-budget=${screen.wait}`,
     `--screenshot=${dest}`,
     screen.url,
-  ]);
-  
+  ], {
+    timeout: 60000,
+    killSignal: 'SIGTERM',
+  });
+
+  if (result.error) {
+    console.error(`⚠️  ${screen.name}: ${result.error.message}`);
+  } else if (result.status !== 0 && result.status != null) {
+    console.error(`⚠️  ${screen.name}: Edge exit ${result.status}`);
+  }
+
   if (existsSync(dest)) {
     const size = statSync(dest).size;
     console.log(`✅ ${screen.name}: ${(size / 1024).toFixed(1)} KB`);
@@ -64,8 +90,16 @@ function capture(screen) {
 }
 
 function run() {
-  console.log(`Starting real-time capture of ${screens.length} screens via Edge Headless...`);
-  for (const s of screens) {
+  const fromArg = process.argv.find((a) => a.startsWith('--from='));
+  const fromName = fromArg ? fromArg.slice('--from='.length) : '';
+  let list = screens;
+  if (fromName) {
+    const idx = screens.findIndex((s) => s.name === fromName || s.name.startsWith(fromName));
+    if (idx >= 0) list = screens.slice(idx);
+    else console.warn(`--from=${fromName} not found; capturing all`);
+  }
+  console.log(`Starting light-mode capture of ${list.length}/${screens.length} screens via Edge Headless...`);
+  for (const s of list) {
     capture(s);
   }
   console.log('🎉 All screen captures completed!');
