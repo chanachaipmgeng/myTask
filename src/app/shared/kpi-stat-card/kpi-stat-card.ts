@@ -21,6 +21,7 @@ import {
 } from '@syncfusion/ej2-angular-progressbar';
 import { ThemeService } from '../../core/theme.service';
 import { BadgeTone, badgeToneClass } from '../ui/badge';
+import { CountUpDirective } from '../ui/count-up';
 
 export type { BadgeTone as KpiBadgeTone } from '../ui/badge';
 export type KpiAccent = 'default' | 'success' | 'warning' | 'danger' | 'info';
@@ -41,7 +42,7 @@ const ACCENT_SPARK: Record<KpiAccent, string> = {
 @Component({
   selector: 'app-kpi-stat',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ProgressBarModule, SparklineModule],
+  imports: [ProgressBarModule, SparklineModule, CountUpDirective],
   providers: [SparklineTooltipService],
   templateUrl: './kpi-stat-card.html',
   styleUrl: './kpi-stat-card.scss',

@@ -63,7 +63,8 @@
   background: var(--hb-banner-bg);
   border: 1px solid var(--hb-banner-border);
   overflow: hidden;
-  animation: kpiStripEnter var(--dur-fast) var(--ease-crisp) both;
+  /* Soft opacity only — title/subtitle own the drop cascade */
+  animation: heroBandTopSoft var(--dur-fast) var(--ease-crisp) both;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 
   &::before {
@@ -97,6 +98,7 @@
   letter-spacing: -0.025em;
   line-height: 1.2;
   color: var(--hb-title);
+  animation: titleDrop var(--dur-base) var(--ease-crisp) both;
 }
 
 .hero-band__subtitle {
@@ -105,6 +107,7 @@
   line-height: 1.45;
   color: var(--hb-subtitle);
   max-width: 72ch;
+  animation: subtitleRise var(--dur-fast) var(--ease-crisp) 80ms both;
 }
 
 .hero-band__badge,
@@ -120,6 +123,7 @@
   color: var(--hb-badge-text);
   background: var(--hb-badge-bg);
   border: 1px solid var(--hb-badge-border);
+  animation: subtitleRise var(--dur-fast) var(--ease-crisp) 90ms both;
 }
 
 .hero-band__badge.is-live {
@@ -171,6 +175,26 @@
   flex-direction: column;
   gap: 4px;
   transition: background-color 0.18s ease;
+  animation: kpiStripEnter var(--dur-base) var(--ease-crisp) both;
+
+  &:nth-child(1) {
+    animation-delay: 100ms;
+  }
+  &:nth-child(2) {
+    animation-delay: 155ms;
+  }
+  &:nth-child(3) {
+    animation-delay: 210ms;
+  }
+  &:nth-child(4) {
+    animation-delay: 265ms;
+  }
+  &:nth-child(5) {
+    animation-delay: 320ms;
+  }
+  &:nth-child(n + 6) {
+    animation-delay: 360ms;
+  }
 
   &::after {
     content: '';
@@ -225,10 +249,42 @@
   transition: transform var(--dur-fast) var(--ease-spring);
 }
 
+@keyframes heroBandTopSoft {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes kpiStripEnter {
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Local copies so scoped styles can resolve names reliably */
+@keyframes titleDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subtitleRise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -329,7 +385,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .hero-band__top,
-  .hero-band__kpi-strip {
+  .hero-band__kpi-strip,
+  .hero-band__title,
+  .hero-band__subtitle,
+  .hero-band__badge,
+  .hero-band__note,
+  .hero-band__metric {
     animation: none !important;
   }
 

@@ -153,12 +153,31 @@ body.e-light-mode {
 }
 
 /* ==========================================================================
-   Keyframes & Motion — Clean Modern SaaS (Linear / Tasklyn Feel)
+   Keyframes & Motion — MyHR Soft Cascade (title → KPI → cards)
    ========================================================================== */
+@keyframes pageFadeSoft {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Legacy alias — soft opacity only so children drive the cascade */
 @keyframes pageFadeUp {
   from {
     opacity: 0;
-    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes titleDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
@@ -166,44 +185,83 @@ body.e-light-mode {
   }
 }
 
-@keyframes cardReveal {
+@keyframes subtitleRise {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Soft one-shot settle (gentle tilt, not a looping shake) */
+@keyframes cardSettle {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) rotate(-0.35deg);
+  }
+  62% {
+    opacity: 1;
+    transform: translateY(-2px) rotate(0.2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+/* Keep name for older references; same motion as cardSettle */
+@keyframes cardReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) rotate(-0.35deg);
+  }
+  62% {
+    opacity: 1;
+    transform: translateY(-2px) rotate(0.2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.motion-title {
+  animation: titleDrop var(--dur-base) var(--ease-crisp) both;
+}
+
+.motion-subtitle {
+  animation: subtitleRise var(--dur-fast) var(--ease-crisp) 80ms both;
 }
 
 /* Subtle stagger for 2-col / bento grid cards (enter only, no hover transform) */
 .grid > app-section-card:nth-child(1) > .e-card.section-card,
 .grid > div:nth-child(1) > app-section-card > .e-card.section-card {
-  animation-delay: 20ms;
+  animation-delay: 40ms;
 }
 .grid > app-section-card:nth-child(2) > .e-card.section-card,
 .grid > div:nth-child(2) > app-section-card > .e-card.section-card {
-  animation-delay: 65ms;
+  animation-delay: 95ms;
 }
 .grid > app-section-card:nth-child(3) > .e-card.section-card,
 .grid > div:nth-child(3) > app-section-card > .e-card.section-card {
-  animation-delay: 110ms;
+  animation-delay: 150ms;
 }
 .grid > app-section-card:nth-child(4) > .e-card.section-card,
 .grid > div:nth-child(4) > app-section-card > .e-card.section-card {
-  animation-delay: 155ms;
+  animation-delay: 205ms;
 }
 .grid > app-section-card:nth-child(n + 5) > .e-card.section-card,
 .grid > div:nth-child(n + 5) > app-section-card > .e-card.section-card {
-  animation-delay: 190ms;
+  animation-delay: 260ms;
 }
 
-/* Smooth page enter on router views — Brisko crisp settle.
-   data-nav-key on .shell-main marks the active path for cascade restart cues. */
+/* Soft host enter — children own the cascade (title / KPI / cards) */
 .shell-main > *:not(router-outlet),
 .shell-main[data-nav-key] > *:not(router-outlet) {
-  animation: pageFadeUp 0.38s var(--ease-crisp) both;
+  animation: pageFadeSoft 180ms var(--ease-crisp) both;
 }
 
 /* Subtle spring micro-interaction on status badges */
@@ -297,7 +355,7 @@ p {
   flex-direction: column;
   gap: 1rem;
   max-width: 1420px;
-  animation: pageFadeUp 0.4s var(--ease-crisp) both;
+  animation: pageFadeSoft 180ms var(--ease-crisp) both;
 }
 
 .page-head {
@@ -411,7 +469,7 @@ p {
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   background: #0f172a !important;
   box-shadow: var(--shadow-card) !important;
-  animation: cardReveal var(--dur-base) var(--ease-crisp) both;
+  animation: cardSettle 0.42s var(--ease-crisp) both;
   min-width: 0;
   overflow: hidden;
   position: relative;
@@ -544,22 +602,41 @@ app-section-card:hover > .e-card.section-card,
   gap: 16px;
 }
 
-.card-grid-2 > app-section-card:nth-child(1) > .e-card.section-card {
-  animation-delay: 40ms;
+.card-grid-2 > app-section-card:nth-child(1) > .e-card.section-card,
+.card-grid-2 > .card-grid-2__full:nth-child(1) > app-section-card > .e-card.section-card,
+.card-grid-2 > .lg\:col-span-2:nth-child(1) > app-section-card > .e-card.section-card {
+  animation-delay: 60ms;
 }
-.card-grid-2 > app-section-card:nth-child(2) > .e-card.section-card {
-  animation-delay: 85ms;
+.card-grid-2 > app-section-card:nth-child(2) > .e-card.section-card,
+.card-grid-2 > .card-grid-2__full:nth-child(2) > app-section-card > .e-card.section-card,
+.card-grid-2 > .lg\:col-span-2:nth-child(2) > app-section-card > .e-card.section-card {
+  animation-delay: 115ms;
 }
-.card-grid-2 > app-section-card:nth-child(3) > .e-card.section-card {
-  animation-delay: 130ms;
+.card-grid-2 > app-section-card:nth-child(3) > .e-card.section-card,
+.card-grid-2 > .card-grid-2__full:nth-child(3) > app-section-card > .e-card.section-card,
+.card-grid-2 > .lg\:col-span-2:nth-child(3) > app-section-card > .e-card.section-card {
+  animation-delay: 170ms;
 }
-.card-grid-2 > app-section-card:nth-child(n + 4) > .e-card.section-card {
-  animation-delay: 175ms;
+.card-grid-2 > app-section-card:nth-child(4) > .e-card.section-card,
+.card-grid-2 > .card-grid-2__full:nth-child(4) > app-section-card > .e-card.section-card,
+.card-grid-2 > .lg\:col-span-2:nth-child(4) > app-section-card > .e-card.section-card {
+  animation-delay: 225ms;
+}
+.card-grid-2 > app-section-card:nth-child(n + 5) > .e-card.section-card,
+.card-grid-2 > .card-grid-2__full:nth-child(n + 5) > app-section-card > .e-card.section-card,
+.card-grid-2 > .lg\:col-span-2:nth-child(n + 5) > app-section-card > .e-card.section-card {
+  animation-delay: 280ms;
 }
 
 .card-grid-2 > .card-grid-2__full,
 .card-grid-2 > .lg\:col-span-2 {
   grid-column: 1 / -1;
+}
+
+/* Full-row card inside card-grid-2 also settles with cascade timing */
+.card-grid-2 > .card-grid-2__full > app-section-card > .e-card.section-card,
+.card-grid-2 > .lg\:col-span-2 > app-section-card > .e-card.section-card {
+  animation-name: cardSettle;
 }
 
 .card-grid-3 {

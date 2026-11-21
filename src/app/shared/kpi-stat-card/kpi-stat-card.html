@@ -25,7 +25,9 @@
 
     <div class="e-card-content kpi-stat__body">
       <div class="kpi-stat__value-row">
-        <p class="kpi-value kpi-stat__value">{{ value }}</p>
+        <p class="kpi-value kpi-stat__value">
+          <span [appCountUp]="value" [countUpDelay]="80"></span>
+        </p>
       </div>
 
       @if (progress !== null && progress !== undefined) {
