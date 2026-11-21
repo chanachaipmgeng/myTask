@@ -1,0 +1,21 @@
+<section class="page hub-shell flex flex-col gap-3">
+  <nav class="hub-shell-tabs flex flex-wrap gap-2" role="tablist" [attr.aria-label]="heading">
+    @for (tab of tabs; track tab.path) {
+      <a
+        ejs-button
+        role="tab"
+        [id]="'hub-tab-' + (tab.path || 'home')"
+        [iconCss]="tab.icon"
+        [routerLink]="tabLink(tab.path)"
+        queryParamsHandling="preserve"
+        routerLinkActive="e-primary"
+        [routerLinkActiveOptions]="tab.path ? { paths: 'subset', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' } : { exact: true }"
+        [attr.aria-selected]="activePath() === tab.path"
+        [cssClass]="activePath() === tab.path ? 'e-primary' : 'e-flat'"
+      >
+        {{ tab.text }}
+      </a>
+    }
+  </nav>
+  <router-outlet />
+</section>

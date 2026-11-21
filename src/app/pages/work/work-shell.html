@@ -2,37 +2,17 @@
   <app-page-head [title]="heading()" [description]="subheading()">
     <div actions class="flex flex-wrap gap-3 items-end">
       @if (!isMine()) {
-        <a ejs-button cssClass="e-outline" routerLink="/tickets">ตารางคะแนนใบงาน (/tickets)</a>
+        <a ejs-button cssClass="e-outline" routerLink="/quality/tickets">ตารางคะแนนใบงาน</a>
       } @else {
         <a ejs-button cssClass="e-outline" routerLink="/me">ผลงานของฉัน (/me)</a>
       }
-      <button ejs-button cssClass="e-flat e-small" type="button" (click)="clearContext()">ล้างกรอง</button>
+      <button ejs-button cssClass="e-flat e-small" type="button" (click)="clearContext()">ล้างกรองสัปดาห์</button>
     </div>
   </app-page-head>
 
-  <div class="work-context-bar" aria-label="บริบททีม สัปดาห์ และโปรเจกต์">
+  <div class="work-context-bar" aria-label="บริบทสัปดาห์และค้นหาใบ">
     <p class="work-context-bar__line">{{ contextLine() }}</p>
     <div class="work-context-bar__filters">
-      <app-form-field label="ทีม" variant="filter">
-        <ejs-dropdownlist
-          [dataSource]="teamOptions()"
-          [fields]="fields"
-          [value]="filter.teamId()"
-          (change)="setTeam($event)"
-          width="160px"
-          placeholder="ทุกทีม"
-        ></ejs-dropdownlist>
-      </app-form-field>
-      <app-form-field label="โปรเจกต์" variant="filter">
-        <ejs-dropdownlist
-          [dataSource]="projectOptions()"
-          [fields]="fields"
-          [value]="filter.opProject()"
-          (change)="setProject($event)"
-          width="180px"
-          placeholder="ทุกโปรเจกต์"
-        ></ejs-dropdownlist>
-      </app-form-field>
       <app-form-field label="ค้นหา" variant="filter">
         <ejs-textbox placeholder="รหัสหรือชื่อใบ" [value]="filter.query()" (change)="setQuery($event)" width="200px"></ejs-textbox>
       </app-form-field>
@@ -42,11 +22,6 @@
         [options]="weekChipOptions"
         [value]="'' + filter.weekOffset()"
         (valueChange)="setWeekChip($event)"
-      ></app-filter-chips>
-      <app-filter-chips
-        [options]="trackChipOptions"
-        [value]="filter.track()"
-        (valueChange)="setTrackChip($event)"
       ></app-filter-chips>
       <app-filter-chips
         [options]="dueBucketOptions"

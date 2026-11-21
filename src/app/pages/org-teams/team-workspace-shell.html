@@ -1,0 +1,39 @@
+<section class="page team-workspace-shell flex flex-col gap-4">
+  <app-page-head
+    [title]="'ทีม · ' + heading()"
+    [description]="
+      (card()?.trackSummary || 'Workspace ทีม') +
+      ' · Lead: ' +
+      (card()?.leadName || '—')
+    "
+    [metrics]="[
+      { label: 'สมาชิก', value: '' + (card()?.memberCount ?? 0) },
+      { label: 'ใบเปิด', value: '' + openTicketCount() },
+    ]"
+  >
+    <div actions class="flex flex-wrap gap-2">
+      <button ejs-button cssClass="e-outline e-small" type="button" (click)="backToHub()">กลับรายการทีม</button>
+      <button ejs-button cssClass="e-flat e-small" type="button" (click)="clearTeam()">ล้างทีม</button>
+    </div>
+  </app-page-head>
+
+  <nav class="team-ws-tabs flex flex-wrap gap-2" role="tablist" aria-label="แท็บ Workspace ทีม">
+    @for (tab of tabs; track tab.path) {
+      <a
+        ejs-button
+        role="tab"
+        [id]="'team-ws-tab-' + tab.path"
+        [iconCss]="tab.icon"
+        [routerLink]="tabRouterLink(tab)"
+        queryParamsHandling="preserve"
+        routerLinkActive="e-primary"
+        [attr.aria-selected]="activePath() === tab.path"
+        [cssClass]="activePath() === tab.path ? 'e-primary' : 'e-flat'"
+      >
+        {{ tab.text }}
+      </a>
+    }
+  </nav>
+
+  <router-outlet />
+</section>

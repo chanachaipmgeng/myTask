@@ -4,16 +4,6 @@
     description="แต่ละคนเป็นแถว ใบงานเป็นช่วงจากวันเริ่มจริงถึงวันครบกำหนด ถ้าไม่มีวันครบกำหนดใช้วันส่งครั้งแรก แถบสีส้มคือใบที่หลุดจากสัปดาห์ที่ commit ปฏิทินนี้อ่านอย่างเดียว ไม่เขียนวันกลับไปที่ใบงาน"
   >
     <div actions class="flex flex-wrap items-center gap-2">
-      <app-form-field label="สายคะแนน" variant="filter">
-        <ejs-dropdownlist
-          id="schedule-track"
-          [dataSource]="trackOptions"
-          [fields]="fields"
-          [value]="track()"
-          (change)="setTrack($event)"
-          width="180px"
-        ></ejs-dropdownlist>
-      </app-form-field>
       <app-form-field label="คน" variant="filter">
         <ejs-dropdownlist
           id="schedule-person"

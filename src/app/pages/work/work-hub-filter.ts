@@ -71,7 +71,17 @@ export class WorkHubFilter {
         return;
       }
       const data = JSON.parse(raw) as Partial<PersistedHubFilter>;
-      if (data.track === 'All' || data.track === 'Implement' || data.track === 'RD') {
+      if (
+        data.track === 'All' ||
+        data.track === 'Implement' ||
+        data.track === 'RD' ||
+        data.track === 'IMP' ||
+        data.track === 'RND' ||
+        data.track === 'QA' ||
+        data.track === 'UXBA' ||
+        data.track === 'SUP' ||
+        data.track === 'INFRA'
+      ) {
         this.track.set(data.track);
       }
       if (typeof data.query === 'string') {

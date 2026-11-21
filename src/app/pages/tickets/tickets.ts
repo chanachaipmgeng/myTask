@@ -25,7 +25,7 @@ import { scorePartNotes } from '../../core/kpi-meaning';
 import { MyProjectSyncAdapter } from '../../core/myproject-sync';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
-import { BugCause, PocResult, Size, Ticket, TicketType, Track, VarianceCode, WorkflowStatus } from '../../core/models';
+import { BugCause, PocResult, Size, Ticket, TicketType, Track, VarianceCode, WorkflowStatus, normalizeTrack } from '../../core/models';
 import { SIZE_POINTS, SIZE_STANDARD_MD, scoreTicket } from '../../core/scoring';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../../core/ticket-file';
 import { ShellNotice } from '../../core/shell-notice';
@@ -47,8 +47,10 @@ import {
   type BadgeTone,
 } from '../../shared/ui';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
+import { listWorkspaceTrackChipOptions, parseWorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
-type TrackFilter = Track | 'All';
+type TrackFilter = WorkspaceTrackFilter;
 type TypeFilter = TicketType | 'All';
 
 @Component({
@@ -132,11 +134,13 @@ export class TicketsPage {
     '20 มาจากรีวิวไม่เกิน 2 รอบและไม่มี blocker — ยังไม่พังเรื่อง security หรือ boundary',
     '20 มาจากไม่ reopen — ของที่ส่งแล้วอยู่ได้หลัง DEV/UAT',
   ];
-  protected readonly trackOptions = [
-    { text: 'Implement', value: 'Implement' },
-    { text: 'R&D', value: 'RD' },
-  ];
-  protected readonly trackFilters = [{ text: 'ทุกสาย', value: 'All' }, ...this.trackOptions];
+  protected readonly trackOptions = listWorkspaceTrackChipOptions()
+    .filter((row) => row.id !== 'All')
+    .map((row) => ({ text: row.label, value: row.id }));
+  protected readonly trackFilters = listWorkspaceTrackChipOptions().map((row) => ({
+    text: row.id === 'All' ? 'ทุกสาย' : row.label,
+    value: row.id,
+  }));
   protected readonly typeOptions = [
     { text: 'Feature', value: 'Feature' },
     { text: 'CR', value: 'CR' },
@@ -264,7 +268,11 @@ export class TicketsPage {
       .ticketRows()
       .filter((row) => scopedIds.has(row.id))
       .filter((row) => (!this.isMine ? true : row.assigneeId === selfId))
-      .filter((row) => (track === 'All' || row.track === track) && (type === 'All' || row.type === type))
+      .filter(
+        (row) =>
+          (track === 'All' || normalizeTrack(row.track) === normalizeTrack(track)) &&
+          (type === 'All' || row.type === type),
+      )
       .filter((row) => query === '' || `${row.id} ${row.module} ${row.assignee}`.toLowerCase().includes(query));
   });
 
@@ -381,11 +389,9 @@ export class TicketsPage {
   }
 
   protected setTrackFilter(event: { value?: string | null }): void {
-    const value = event.value;
-    if (value === 'All' || value === 'Implement' || value === 'RD') {
-      this.trackFilter.set(value);
-      this.workspace.setTrack(value);
-    }
+    const value = parseWorkspaceTrackFilter(event.value);
+    this.trackFilter.set(value);
+    this.workspace.setTrack(value);
   }
 
   protected setTypeFilter(event: { value?: string | null }): void {
@@ -401,11 +407,13 @@ export class TicketsPage {
       return;
     }
     switch (field) {
-      case 'track':
-        if (value === 'Implement' || value === 'RD') {
-          this.track.set(value);
+      case 'track': {
+        const parsed = parseWorkspaceTrackFilter(value);
+        if (parsed !== 'All') {
+          this.track.set(parsed as Track);
         }
         break;
+      }
       case 'type':
         if (this.typeOptions.some((option) => option.value === value)) {
           this.type.set(value as TicketType);
@@ -572,7 +580,7 @@ export class TicketsPage {
     this.moduleName.set('');
     this.error.set('');
     const hidden =
-      (this.trackFilter() !== 'All' && this.trackFilter() !== ticket.track) ||
+      (this.trackFilter() !== 'All' && normalizeTrack(this.trackFilter()) !== normalizeTrack(ticket.track)) ||
       (this.typeFilter() !== 'All' && this.typeFilter() !== ticket.type);
     const text = hidden ? `เพิ่ม ${ticket.id} แล้ว — เปลี่ยนตัวกรองเพื่อดูใบนี้` : `เพิ่ม ${ticket.id} แล้ว`;
     this.message.set(text);

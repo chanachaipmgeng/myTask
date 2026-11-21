@@ -3,12 +3,13 @@ import { ButtonModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
 import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
 import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { canAssignWork } from '../../core/admin-settings';
+import { canAssignWork, weeklyQuotas } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
-import { QueuePlan } from '../../core/capacity';
+import { planNewWork, QueuePlan } from '../../core/capacity';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
 import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
@@ -33,6 +34,7 @@ import { SectionCardComponent } from '../../shared/ui/section-card/section-card'
 })
 export class QueuePage {
   private readonly scorecard = inject(ScorecardService);
+  private readonly workspace = inject(WorkspaceFilter);
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
   private readonly api = inject(ApiClient, { optional: true });
@@ -55,17 +57,40 @@ export class QueuePage {
     return `รับ ${item.ticket.id} ให้ ${item.personLabel} และ PATCH ผู้รับผิดชอบกลับ myProject (OpenProject) เพราะเปิด OPENPROJECT_WRITEBACK อยู่`;
   });
 
-  protected readonly plan = this.scorecard.workPlan;
+  private readonly scopedPeople = computed(() => this.workspace.applyToPeople(this.scorecard.roster()));
+
+  protected readonly plan = computed(() =>
+    planNewWork(
+      this.scopedPeople(),
+      this.scorecard.tickets(),
+      { ...weeklyQuotas() },
+      this.scorecard.leaves(),
+    ),
+  );
   protected readonly freePeople = computed(() => this.plan().rows.filter((row) => row.available));
   protected readonly freeChips = computed(() =>
     this.freePeople().map((person) => `${person.personLabel} ว่าง ${person.freeMd} MD`),
   );
-  protected readonly implementQueue = computed(() =>
-    this.scorecard.ticketRows().filter((row) => row.unassigned && row.track === 'Implement'),
-  );
-  protected readonly researchQueue = computed(() =>
-    this.scorecard.ticketRows().filter((row) => row.unassigned && row.track === 'RD'),
-  );
+  protected readonly implementQueue = computed(() => {
+    const tracks = new Set(this.scopedPeople().map((person) => person.track));
+    const teamScoped = !!this.workspace.teamId();
+    return this.scorecard.ticketRows().filter((row) => {
+      if (!row.unassigned || row.track !== 'Implement') {
+        return false;
+      }
+      return !teamScoped || tracks.has('Implement') || tracks.has('IMP');
+    });
+  });
+  protected readonly researchQueue = computed(() => {
+    const tracks = new Set(this.scopedPeople().map((person) => person.track));
+    const teamScoped = !!this.workspace.teamId();
+    return this.scorecard.ticketRows().filter((row) => {
+      if (!row.unassigned || row.track !== 'RD') {
+        return false;
+      }
+      return !teamScoped || tracks.has('RD') || tracks.has('RND');
+    });
+  });
 
   constructor() {
     void this.loadWritebackFlag();

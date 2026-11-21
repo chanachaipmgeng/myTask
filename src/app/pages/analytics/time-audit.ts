@@ -11,10 +11,12 @@ import {
 } from '@syncfusion/ej2-angular-grids';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { currentViewer } from '../../core/admin-settings';
+import { computeThreeWayTimeAudit } from '../../core/multi-team';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { BadgeTone } from '../../shared/ui/badge';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
@@ -45,6 +47,7 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
 export class TimeAuditPage {
   private readonly route = inject(ActivatedRoute);
   protected readonly scorecard = inject(ScorecardService);
+  private readonly workspace = inject(WorkspaceFilter);
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
 
@@ -69,7 +72,15 @@ export class TimeAuditPage {
   });
 
   protected readonly filterType = signal<string>('ALL');
-  protected readonly report = this.scorecard.threeWayTimeReport;
+  protected readonly report = computed(() => {
+    if (this.isMine) {
+      return this.scorecard.threeWayTimeReport();
+    }
+    return computeThreeWayTimeAudit(
+      this.workspace.applyToTickets(this.scorecard.tickets()),
+      this.workspace.applyToPeople(this.scorecard.roster()),
+    );
+  });
 
   protected readonly scopedRows = computed(() => {
     const rows = this.report().rows;

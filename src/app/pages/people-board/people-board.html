@@ -1,15 +1,14 @@
 <section class="page people-board flex flex-col gap-4">
   <app-page-head
-    title="รายชื่อพนักงาน"
-    [description]="'คลิกชื่อเพื่อดูงานของคนนั้นและกราฟวิเคราะห์หลายมุม เป้าดัชนีคือ ' + target + '.'"
+    title="กระดานดัชนีพนักงาน"
+    [description]="'เปรียบเทียบดัชนีรายคน · เป้า ' + target + ' · จัดการลูกทีมแบบ Workspace ที่ «ทีม»'"
     [metrics]="quotaMetrics()"
   >
     <div actions class="flex flex-wrap gap-3 items-end">
-      <app-filter-chips
-        [options]="trackChipOptions()"
-        [value]="track()"
-        (valueChange)="setTrackChip($event)"
-      ></app-filter-chips>
+      <a ejs-button cssClass="e-primary e-small" routerLink="/workspace/people" queryParamsHandling="preserve">
+        เปิด Workspace คน
+      </a>
+      <a ejs-button cssClass="e-outline e-small" routerLink="/org/teams" queryParamsHandling="preserve">ทีมการ์ด</a>
       <app-form-field label="ค้นหาชื่อ" variant="filter">
         <ejs-textbox placeholder="ชื่อหรือบทบาท" (change)="setQuery($event)" width="200px"></ejs-textbox>
       </app-form-field>

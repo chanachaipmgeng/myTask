@@ -19,10 +19,12 @@ import {
 import { TabModule } from '@syncfusion/ej2-angular-navigations';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { effectiveRole } from '../../core/admin-settings';
+import { computeQualityAuditSummary } from '../../core/multi-team';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
@@ -62,6 +64,7 @@ export interface ParetoCausePoint {
 })
 export class QualityAuditPage {
   protected readonly scorecard = inject(ScorecardService);
+  private readonly workspace = inject(WorkspaceFilter);
   protected readonly theme = inject(ThemeService);
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
@@ -73,7 +76,12 @@ export class QualityAuditPage {
   }
 
   protected readonly role = effectiveRole;
-  protected readonly report = this.scorecard.qualityAuditReport;
+  protected readonly report = computed(() =>
+    computeQualityAuditSummary(
+      this.workspace.applyToTickets(this.scorecard.tickets()),
+      this.workspace.applyToPeople(this.scorecard.roster()),
+    ),
+  );
   protected readonly kpis = computed(() => this.report().kpis);
   protected readonly dodChecklist = computed(() => this.report().dodChecklist);
   protected readonly reopenEscapes = computed(() => this.report().reopenEscapes);

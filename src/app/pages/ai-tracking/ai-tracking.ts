@@ -14,6 +14,7 @@ import { acceptedTrackedMd, aiTicketPoints, formatTrackedMd, researchSpikeShare 
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
@@ -27,6 +28,7 @@ import { SectionCardComponent } from '../../shared/ui/section-card/section-card'
 export class AiTrackingPage {
   private readonly route = inject(ActivatedRoute);
   private readonly scorecard = inject(ScorecardService);
+  private readonly workspace = inject(WorkspaceFilter);
   protected readonly theme = inject(ThemeService);
 
   protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
@@ -35,15 +37,19 @@ export class AiTrackingPage {
   );
   protected readonly scopedTickets = computed(() => {
     const all = this.scorecard.tickets();
-    if (!this.isMine) return all;
-    const selfId = this.activePersonId();
-    return all.filter((t) => t.assigneeId === selfId);
+    if (this.isMine) {
+      const selfId = this.activePersonId();
+      return all.filter((t) => t.assigneeId === selfId);
+    }
+    return this.workspace.applyToTickets(all);
   });
   protected readonly scopedPeople = computed(() => {
     const all = this.scorecard.people();
-    if (!this.isMine) return all;
-    const selfId = this.activePersonId();
-    return all.filter((p) => p.id === selfId);
+    if (this.isMine) {
+      const selfId = this.activePersonId();
+      return all.filter((p) => p.id === selfId);
+    }
+    return this.workspace.applyToPeople(all);
   });
 
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };

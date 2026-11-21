@@ -26,6 +26,7 @@ import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 
@@ -60,6 +61,7 @@ import { SectionCardComponent } from '../../shared/ui/section-card/section-card'
 })
 export class AnalyticsPage {
   private readonly scorecard = inject(ScorecardService);
+  private readonly workspace = inject(WorkspaceFilter);
   private readonly api = inject(ApiClient, { optional: true });
   private readonly notice = inject(ShellNotice);
   protected readonly theme = inject(ThemeService);
@@ -100,12 +102,17 @@ export class AnalyticsPage {
   protected readonly message = signal('');
   protected readonly remoteReport = signal<AnalyticsReport | null>(null);
 
+  private readonly scopedRoster = computed(() => this.workspace.applyToPeople(this.scorecard.roster()));
+  private readonly scopedTickets = computed(() =>
+    this.workspace.applyToTickets(this.scorecard.tickets()),
+  );
+
   protected readonly report = computed<AnalyticsReport>(() => {
     const remote = this.remoteReport();
-    if (remote) {
+    if (remote && !this.workspace.teamId() && this.workspace.track() === 'All') {
       return remote;
     }
-    return buildAnalyticsReport(this.scorecard.roster(), this.scorecard.tickets(), 'python');
+    return buildAnalyticsReport(this.scopedRoster(), this.scopedTickets(), 'python');
   });
 
   protected readonly highRiskCount = computed(
@@ -139,7 +146,7 @@ export class AnalyticsPage {
         this.message.set(text);
         this.notice.success(text);
       } else {
-        const local = buildAnalyticsReport(this.scorecard.roster(), this.scorecard.tickets(), 'python');
+        const local = buildAnalyticsReport(this.scopedRoster(), this.scopedTickets(), 'python');
         this.remoteReport.set(local);
         const text = `คำนวณวิเคราะห์ชุดข้อมูลปัจจุบันแล้ว · ความพร้อมข้อมูล ${local.syncHygiene.readinessScore}% (พบ ${local.syncHygiene.issueCount} รายการต้องตรวจสอบ)`;
         this.message.set(text);

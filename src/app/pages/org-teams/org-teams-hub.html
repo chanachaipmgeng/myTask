@@ -1,0 +1,48 @@
+<section class="page org-teams-hub flex flex-col gap-4">
+  <app-page-head
+    title="ทีมในองค์กร"
+    description="เลือกการ์ดทีมเพื่อเข้า Workspace — ดูคน งาน คะแนน และค็อกพิทของทีมนั้น (กรองด้วย teamId ข้ามหน้า)"
+    [metrics]="[
+      { label: 'จำนวนทีม', value: '' + cards().length },
+      { label: 'สมาชิก active', value: '' + totalMembers() },
+    ]"
+  >
+    <div actions class="flex flex-wrap gap-2">
+      @if (workspace.teamId()) {
+        <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearTeam()">ล้างทีมที่เลือก</button>
+      }
+    </div>
+  </app-page-head>
+
+  <div class="org-teams-hub__grid" role="list">
+    @for (card of cards(); track card.id) {
+      <button
+        type="button"
+        class="org-team-card"
+        role="listitem"
+        (click)="openTeam(card.id)"
+        [attr.aria-label]="'เปิดทีม ' + card.name"
+      >
+        <app-section-card
+          [title]="card.name"
+          [subtitle]="card.trackSummary"
+          [badge]="card.memberCount + ' คน'"
+          badgeTone="info"
+          variant="nested"
+        >
+          <div class="org-team-card__body">
+            <p class="org-team-card__meta">
+              <span class="org-team-card__label">Lead</span>
+              <span>{{ card.leadName }}</span>
+            </p>
+            <p class="org-team-card__hint">คลิกเพื่อเข้า Workspace ทีม</p>
+          </div>
+        </app-section-card>
+      </button>
+    } @empty {
+      <app-section-card title="ยังไม่มีทีม" subtitle="ซิงก์ผู้ใช้จาก OpenProject หรือตรวจ people.teamId">
+        <p class="text-sm opacity-80">เมื่อมีทีมใน bootstrap จะแสดงเป็นการ์ดที่นี่</p>
+      </app-section-card>
+    }
+  </div>
+</section>

@@ -88,13 +88,16 @@ npm --prefix server run build
   - ห้ามเขียนสไตล์ครอบคลุม generic `button` หรือ broad `.e-control-wrapper { width: 100%; }` เพราะจะไปทำลาย Toolbar buttons, Pager dropdowns, และ Checkboxes ของ Syncfusion — ความกว้าง input จำกัดที่ `.field` / `.filter` / `.form-grid` ใน `src/styles/sf/`
   - ห้ามใช้คลาส `.e-chart` โดดๆ เพราะจะไปชนกับไอคอน `e-icons.e-chart` ในเมนู ให้ใช้ `ejs-chart, .e-control.e-chart` แทน
   - ห้ามใส่ `transform: translateY(...)` บน `.e-dashboardlayout .e-panel:hover` หรือ `.e-card:hover` เพื่อไม่ให้รบกวนพิกัดคำนวณภายในของ DashboardLayout และ Kanban
-- **4-Pillar Sidebar (`244px` / `64px`) + Top Sub-Nav Tab Bar**:
-  - Sidebar แสดงเฉพาะ **4 หมวดหลัก (`visibleRail()`)** พร้อมป้ายนับจำนวนหน้าย่อย (ไร้ Scrollbar แนวตั้ง; พิมพ์ค้นหาเมนูจะกางหน้าย่อยที่ตรงคำค้น) + **Workspace Switcher Dropdown** ด้านบนซ้าย (สลับ *งานของฉัน / บริหารทีม / แอดมิน*) · หน้าย่อยแสดงอัตโนมัติใน **Top Sub-Navigation Tab Bar** (`.subnav-bar`) ใต้ AppBar
-  - **Width Single Source of Truth**: ทุกครั้งที่ปรับความกว้าง `#app-nav` / `.e-sidebar` ใน `app.scss` ต้องอัปเดต `@media (min-width: 801px)` ใน `src/styles.scss` ให้ตรงกัน (`244px` / `64px`) เสมอเพื่อป้องกัน Sidebar ล้นทับ `<main>`
-  - Desktop (`>= 801px`): `#app-nav` ใช้ `position: sticky !important; top: 0; height: 100vh; overflow-y: auto; overscroll-behavior: contain;` และ `[type]="narrow() ? 'Over' : 'Push'"` `[showBackdrop]="false"` · Mobile (`<= 800px`): `position: fixed !important; z-index: 1200 !important;` อยู่เหนือ Backdrop (`z-index: 1050`)
+- **Flat Hub Sidebar (P20/P21 · `244px` / `64px`)**:
+  - Sidebar lead แสดง **hub แบน**: ของฉัน · **ทีม** (`/workspace/people`) · งานทีม · คิว · คุณภาพ · วิเคราะห์ — **ไม่**ใส่ «ทีมการ์ด» ซ้ำ (เข้าจากปุ่มใน Workspace คนหรือค้นหาเมนู `/org/teams`)
+  - มุมมองย่อยอยู่ในแท็บของ hub (`MineShell` 6 แท็บ · `QualityShell` · `InsightsShell`) · leaf ที่ซ้ำ hub ใส่ `searchHidden`
+  - **Workspace Switcher** ด้านบนซ้าย: Member / พื้นที่ทำงาน / แอดมิน · จดจำ `md-workspace-mode`
+  - **Global Filter** ใต้ AppBar: รอบ/ปี/วัน/ทีม/โปรเจกต์ + ชิปสาย **6 รหัส** (`IMP/RND/QA/UXBA/SUP/INFRA` + alias) · chip คนเมื่อมี `personId` · `/work` กรองแค่สัปดาห์/ถังวัน/ค้นหาใบ (ไม่ซ้ำทีม/สาย)
+  - **Width Single Source of Truth**: ปรับ `#app-nav` ใน `app.scss` ต้องอัปเดต `@media (min-width: 801px)` ใน `src/styles.scss` ให้ตรง (`244px` / `64px`)
+  - Desktop (`>= 801px`): `#app-nav` sticky 100vh · Mobile (`<= 800px`): fixed `z-index: 1200`
 - **CSS Grid over `ejs-dashboardlayout` & Refined Spring Motion**:
   - ใช้ **CSS Grid (`grid-cols-1 lg:grid-cols-2 gap-4`) + `app-section-card`** แทน `<ejs-dashboardlayout>` บนหน้าแดชบอร์ดกราฟ (`/team`, `/work/summary`) เพื่อป้องกันการ์ดบีบ/กราฟพับ · แท่งกราฟใช้ `cornerRadius: { topLeft: 8, topRight: 8 }` + เส้นกริดประ (`dashArray: '4,4'`) + `opposedPosition: true` · Donut `centerLabel` ที่อิงธีมต้องผูก `effect()` รีเฟรชเมื่อ `theme.isDark()` เปลี่ยน
-  - **Refined Motion & Dual Sliding Pills (Syncfusion-Safe)**: แถบ Active Pill บน Sidebar (`.saas-nav__active-pill`) และ Sub-Nav Bar (`.subnav-tabs__pill`) วัดพิกัดจริงด้วย `getBoundingClientRect()` + `ResizeObserver` ไหลด้วย `var(--ease-crisp)` · Micro-interactions บน KPI Strip/chips/badges ใช้ `var(--ease-spring)` ได้ + Page Cascade + `@media (prefers-reduced-motion: reduce)` · ห้าม `transform` บน `:hover` ของ `.e-card`/`.e-btn`/`.e-dialog`
+  - **Refined Motion**: Active Pill Sidebar (`.saas-nav__active-pill`) วัดพิกัดด้วย `getBoundingClientRect()` + `ResizeObserver` · Micro-interactions บน chip/badge ใช้ `var(--ease-spring)` ได้ · ห้าม `transform` บน `:hover` ของ `.e-card`/`.e-btn`/`.e-dialog`
 - **Date Type-Safety**: ฟิลด์วันที่ (`closedOn`, `dueDate`, `startDate`) ที่มาจากฐานข้อมูลอาจเป็นได้ทั้ง `string` หรือ `Date` object ให้ normalize ด้วย `raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '')` ก่อนใช้ string methods เสมอ  
 
 ## สิทธิ์ / Board / Gantt / Writeback / KPI snapshot / Integrations
@@ -111,8 +114,10 @@ npm --prefix server run build
 - Writeback: env `OPENPROJECT_WRITEBACK` (ค่าเริ่ม `false`) รองรับทั้ง PATCH assignee และ PATCH startDate/dueDate + Dialog ยืนยันบน `/queue` เมื่อมี `opId`  
 - KPI snapshot: จับเดือน/ไตรมาส (`canCaptureKpi`) · อ่านบน `/team` · โดเมน `kpi-snapshot.ts`  
 - GitLab MR & Teams Webhook: ตั้งค่าใน `.env` หรือ `/integrations` (`ejs-tab` 3 ระบบ) · ซิงก์ MR จริงผ่าน `POST /api/integrations/gitlab/sync` (`gitlab-mr.ts`) · ยิง Teams จริงผ่าน `POST /api/integrations/teams/send`  
-- Role-Based Sidebar & Route Guards: เมนูใน `app.ts` กรองตาม `effectiveRole()` (`admin`, `lead`, `member`) + ปุ่มสลับมุมมองพนักงานบน AppBar (`#appbar-persona-toggle`) · การ์ด `requireRoles` ป้องกันหน้าจัดการสำหรับ `member` · หน้า `/me` สำหรับพอร์ทัลพนักงาน · หน้า `/login` สำหรับสลับบัญชีทั้ง 15 คน + SSO · Role Matrix & Audit Log บน `/admin`  
-- Python Sync & Analytics Intelligence Hub (`/analytics` + `scripts/analytics_engine.py` + `shared/domain/analytics.ts`): วิเคราะห์ Sync Hygiene Readiness %, Z-Score Outliers, Delivery Risk Radar, 1-on-1 Coaching Insights และ Module/Variance Bottlenecks ผ่าน `GET /api/analytics/report` และ `POST /api/analytics/run`  
+- Role-Based Sidebar & Route Guards: เมนู hub ใน `app.ts` กรองตาม `effectiveRole()` + สวิตช์ Workspace · `requireRoles` กัน `member` · `/me` พอร์ทัล · `/login` สลับบัญชี + SSO · Role Matrix & Audit Log บน `/admin`  
+- **Person Workspace** `/workspace/people`: master-detail เลือกลูกทีม · แท็บงาน → `setPerson` แล้วไป `/work/list` · รายชื่อซ้ายห้ามกรองด้วย `personId`  
+- Python Sync & Analytics Intelligence Hub (`/insights` · bookmark `/analytics` redirect + `scripts/analytics_engine.py` + `shared/domain/analytics.ts`): Sync Hygiene, Z-Score, Delivery Risk, Coaching ผ่าน `GET /api/analytics/report` และ `POST /api/analytics/run`  
+
 - **MD Mandate & Auto-Shift Workflow (โฟลว์งานสั่งตรงจาก MD)**:
   - **การระบุงาน**: การ์ดแทรกที่สั่งตรงจาก MD จะมีแฟล็ก `isMdDirect: true` พร้อมระบุ `estimateMd` ชัดเจน และแสดงป้าย Tag `[MD-DIRECT]`
   - **Active WIP Auto-Detection**: เมื่อลากเข้า `In Progress` ระบบจะตรวจจับงานค้างในมือ (`In Progress` / `Reopened`) ของ Assignee โดยอัตโนมัติ และแสดง Dialog ยืนยันพักเวลาและเลื่อนกำหนดส่ง

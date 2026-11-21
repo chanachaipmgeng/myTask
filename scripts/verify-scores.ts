@@ -54,6 +54,7 @@ import {
   filterPeopleByWorkspace,
   filterTicketsByWorkspace,
   listOrgTeamOptions,
+  listTeamWorkspaceCards,
 } from '../shared/domain/workspace-scope';
 import { extractTicketIdFromText, mapGitLabMergeRequests } from '../src/app/core/gitlab-mr';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../src/app/core/ticket-file';
@@ -476,6 +477,12 @@ assert.equal(isPersonActiveForStaging('all', { isRd: true, locked: true }), fals
 const orgTeams = listOrgTeamOptions(SEED_PEOPLE, [{ id: 'qa', departmentId: 'dev', name: 'QA', leadId: null }]);
 assert.ok(orgTeams.some((row) => row.id === 'qa'));
 assert.ok(orgTeams.some((row) => row.id === 'rd' || row.id === 'implement'));
+const teamCards = listTeamWorkspaceCards(SEED_PEOPLE, [
+  { id: 'implement', departmentId: 'dev', name: 'Implement', leadId: null },
+  { id: 'qa', departmentId: 'dev', name: 'QA', leadId: null },
+]);
+assert.ok(teamCards.some((card) => card.id === 'implement' && card.memberCount > 0));
+assert.ok(teamCards.every((card) => card.name && card.trackSummary));
 const teamFilteredPeople = filterPeopleByWorkspace(SEED_PEOPLE, { teamId: 'implement' });
 assert.ok(teamFilteredPeople.length > 0);
 assert.ok(teamFilteredPeople.every((p) => resolvePersonTeamId(p) === 'implement'));
@@ -490,6 +497,20 @@ assert.ok(
     return !!person && resolvePersonTeamId(person) === 'implement';
   }),
 );
+const rndByAlias = filterTicketsByWorkspace(SEED_TICKETS, SEED_PEOPLE, { track: 'RND' });
+const rndByLegacy = filterTicketsByWorkspace(SEED_TICKETS, SEED_PEOPLE, { track: 'RD' });
+assert.equal(rndByAlias.length, rndByLegacy.length, 'RND alias must match RD track filter');
+assert.ok(
+  rndByAlias.every((t) => t.track === 'RD' || t.track === 'RND'),
+  'RND filter keeps only R&D tickets',
+);
+const qaFiltered = filterTicketsByWorkspace(SEED_TICKETS, SEED_PEOPLE, { track: 'QA' });
+assert.ok(
+  qaFiltered.every((t) => t.track === 'QA'),
+  'QA track filter keeps only QA tickets',
+);
+const qaPeople = filterPeopleByWorkspace(SEED_PEOPLE, { track: 'QA' });
+assert.ok(qaPeople.every((p) => p.track === 'QA'), 'QA people filter keeps only QA people');
 const cycle2569 = createYearCycle({ yearBe: 2569, teamIds: ['rd'], status: 'open' });
 assert.equal(cycle2569.yearCe, 2026);
 assert.equal(cycle2569.startOn, '2026-01-01');

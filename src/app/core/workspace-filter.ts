@@ -9,19 +9,16 @@ import {
   filterPeopleByWorkspace,
   filterTicketsByWorkspace,
   listOrgTeamOptions,
+  listWorkspaceTrackChipOptions,
+  parseWorkspaceTrackFilter,
 } from '../../../shared/domain/workspace-scope';
 import { listWorkProjectOptions } from '../../../shared/domain/work-views';
 import { Person, Ticket } from './models';
 import { openprojectProjectCatalog } from './admin-settings';
 import { ScorecardService } from './scorecard.service';
 
-const TRACK_VALUES = new Set<WorkspaceTrackFilter>(['All', 'Implement', 'RD']);
-
 function parseTrack(raw: string | null | undefined): WorkspaceTrackFilter {
-  if (raw === 'Implement' || raw === 'RD' || raw === 'All') {
-    return raw;
-  }
-  return 'All';
+  return parseWorkspaceTrackFilter(raw);
 }
 
 function normalizeParam(value: string | null | undefined): string {
@@ -165,11 +162,15 @@ export class WorkspaceFilter {
     ];
   });
 
-  readonly trackChipOptions = [
-    { id: 'All', label: 'ทั้งหมด' },
-    { id: 'Implement', label: 'Implement' },
-    { id: 'RD', label: 'R&D' },
-  ];
+  readonly trackChipOptions = listWorkspaceTrackChipOptions();
+
+  readonly selectedPersonLabel = computed(() => {
+    const id = this.personId();
+    if (!id) {
+      return '';
+    }
+    return this.scorecard.people().find((p) => p.id === id)?.nickname ?? id;
+  });
 
   readonly filterSummary = computed(() => {
     const parts: string[] = [];
@@ -190,11 +191,11 @@ export class WorkspaceFilter {
       parts.push(project.text);
     }
     if (this.track() !== 'All') {
-      parts.push(this.track() === 'RD' ? 'R&D' : 'Implement');
+      const chip = this.trackChipOptions.find((row) => row.id === this.track());
+      parts.push(chip?.label ?? this.track());
     }
     if (this.personId()) {
-      const person = this.scorecard.people().find((p) => p.id === this.personId());
-      parts.push(person?.nickname ?? this.personId());
+      parts.push(this.selectedPersonLabel() || this.personId());
     }
     return parts.length ? parts.join(' · ') : 'ทุกทีม / ทุกรอบ';
   });
@@ -253,7 +254,7 @@ export class WorkspaceFilter {
     const cycleId = scope.cycleId?.trim() ?? '';
     const fromDate = isIsoDay(scope.fromDate) ? scope.fromDate : '';
     const toDate = isIsoDay(scope.toDate) ? scope.toDate : '';
-    const track = scope.track && TRACK_VALUES.has(scope.track) ? scope.track : 'All';
+    const track = parseTrack(scope.track);
     const yearCe = typeof scope.yearCe === 'number' ? scope.yearCe : null;
     params['teamId'] = teamId || null;
     params['project'] = opProject || null;

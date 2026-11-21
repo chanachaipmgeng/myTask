@@ -1121,6 +1121,18 @@ body.e-dark-mode {
   min-width: 0;
 }
 
+.workspace-person-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 12px;
+  border-radius: var(--radius-pill, 999px);
+  background: color-mix(in srgb, var(--primary, #2e4fc8) 12%, transparent);
+  color: var(--shell-appbar-title);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .workspace-filter-bar__meta {
   display: flex;
   flex-wrap: wrap;

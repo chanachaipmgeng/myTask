@@ -10,6 +10,7 @@ import { ShellNotice } from '../../core/shell-notice';
 import { MyGitMatch, MyGitSyncAdapter, MyGitUnmatched } from '../../core/mygit-sync';
 import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { BadgeTone } from '../../shared/ui/badge';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
@@ -35,6 +36,7 @@ export class MyGitPage {
   private readonly route = inject(ActivatedRoute);
   private readonly mygit = inject(MyGitSyncAdapter);
   private readonly scorecard = inject(ScorecardService);
+  private readonly workspace = inject(WorkspaceFilter);
   private readonly notice = inject(ShellNotice);
   private readonly api = inject(ApiClient, { optional: true });
   private readonly ticketDetail = inject(TicketDetailService);
@@ -49,18 +51,18 @@ export class MyGitPage {
   protected readonly loadingOpenMrs = signal(false);
   protected readonly myTicketsWithMr = computed(() => {
     const selfId = this.activePersonId();
-    return this.scorecard
-      .tickets()
-      .filter((t) => (!this.isMine ? true : t.assigneeId === selfId))
-      .map((t) => ({
-        id: t.id,
-        title: t.title || t.module,
-        status: t.workflowStatus ?? (t.closed ? 'Done' : 'In Progress'),
-        mrLink: t.mrLink?.trim() || 'ยังไม่แนบลิงก์ MR',
-        hasMr: !!t.mrLink?.trim(),
-        reviewRounds: t.reviewRounds,
-        reopenCount: t.reopenCount,
-      }));
+    const tickets = this.isMine
+      ? this.scorecard.tickets().filter((t) => t.assigneeId === selfId)
+      : this.workspace.applyToTickets(this.scorecard.tickets());
+    return tickets.map((t) => ({
+      id: t.id,
+      title: t.title || t.module,
+      status: t.workflowStatus ?? (t.closed ? 'Done' : 'In Progress'),
+      mrLink: t.mrLink?.trim() || 'ยังไม่แนบลิงก์ MR',
+      hasMr: !!t.mrLink?.trim(),
+      reviewRounds: t.reviewRounds,
+      reopenCount: t.reopenCount,
+    }));
   });
 
   protected readonly canSyncApi = canAssignWork;

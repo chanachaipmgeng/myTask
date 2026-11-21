@@ -34,6 +34,8 @@ type NavLeaf = {
   route: string;
   exact?: boolean;
   roles?: readonly AccessRole[];
+  /** P21: ซ่อนจากผลการค้นหาเมนูเมื่อซ้ำกับ hub หลัก */
+  searchHidden?: boolean;
 };
 type NavGroup = {
   id: string;
@@ -41,6 +43,13 @@ type NavGroup = {
   expanded: boolean;
   roles?: readonly AccessRole[];
   children: NavLeaf[];
+};
+type HubNavItem = {
+  id: string;
+  text: string;
+  iconCss: string;
+  route: string;
+  roles: readonly AccessRole[];
 };
 
 @Component({
@@ -168,6 +177,10 @@ export class App implements AfterViewInit {
 
   protected clearWorkspaceFilter(): void {
     this.workspaceFilter.clear();
+  }
+
+  protected clearWorkspacePerson(): void {
+    this.workspaceFilter.setPerson('');
   }
 
   protected focusGlobalSearch(): void {
@@ -348,6 +361,16 @@ export class App implements AfterViewInit {
 
   protected readonly categoryLabel = computed(() => categoryMeta[this.activeNavCategory()].label);
   protected readonly categoryHint = computed(() => categoryMeta[this.activeNavCategory()].hint);
+
+  /** P20: hub แบนใน Sidebar (แทน 4-pillar rail) */
+  protected readonly hubNavItems = computed(() => {
+    const role = this.role();
+    return HUB_NAV_ITEMS.filter((hub) => hub.roles.includes(role));
+  });
+
+  /** P20: ปิด top subnav รวม leaf — แท็บอยู่ในหน้า shell */
+  protected readonly activeSubTabs = computed<NavMenuItem[]>(() => []);
+
   protected readonly visibleRail = computed(() => {
     const leaves = leavesFor(this.role());
     const counts = new Map<NavCategory, number>();
@@ -358,23 +381,6 @@ export class App implements AfterViewInit {
     return categoryOrder
       .filter((id) => (counts.get(id) ?? 0) > 0)
       .map((id) => ({ id, count: counts.get(id) ?? 0, ...categoryMeta[id] }));
-  });
-
-  protected readonly activeSubTabs = computed<NavMenuItem[]>(() => {
-    const role = this.role();
-    const category = this.activeNavCategory();
-    const tabs = leavesFor(role)
-      .filter((leaf) => (leafCategory[leaf.id] ?? 'work') === category)
-      .map((leaf) => ({
-        ...leaf,
-        category,
-        categoryLabel: categoryMeta[category].label,
-        groupId: leafGroupId(leaf.id, role),
-      }));
-    return tabs.map((tab, index) => ({
-      ...tab,
-      sepBefore: index > 0 && tab.groupId !== tabs[index - 1].groupId,
-    }));
   });
 
   /** Path key so shell can restart enter cascade when the route changes. */
@@ -424,7 +430,7 @@ export class App implements AfterViewInit {
       return { id: 'admin' as AccessRole, code: 'AD', label: 'แอดมิน & ธรรมาภิบาล', sub: 'Admin Console', color: '#ef4444' };
     }
     if (r === 'lead') {
-      return { id: 'lead' as AccessRole, code: 'LD', label: 'บริหารทีม (Lead)', sub: 'Lead Command Center', color: '#f59e0b' };
+      return { id: 'lead' as AccessRole, code: 'WS', label: 'พื้นที่ทำงาน', sub: 'My work + Team workspace', color: '#2e4fc8' };
     }
     return { id: 'member' as AccessRole, code: 'ME', label: 'พื้นที่งานของฉัน', sub: 'Member Workspace', color: '#2e4fc8' };
   });
@@ -437,6 +443,7 @@ export class App implements AfterViewInit {
       .flatMap((group) =>
         group.children
           .filter((leaf) => !leaf.roles || leaf.roles.includes(role))
+          .filter((leaf) => !leaf.searchHidden)
           .filter(
             (leaf) =>
               !query ||
@@ -462,22 +469,37 @@ export class App implements AfterViewInit {
   });
 
   protected selectRailCategory(cat: NavCategory): void {
-    // Keep desktop rail collapsed when switching pages — expand only via toggleNav().
     const leaf = firstLeaf(this.role(), cat);
     if (leaf) {
       const commands = leaf.route.split('/').filter(Boolean);
       void this.workspaceFilter.navigateWithFilter(['/', ...commands]);
     }
   }
+
+  protected goHomeHub(): void {
+    const first = this.hubNavItems()[0];
+    if (first) {
+      const commands = first.route.split('/').filter(Boolean);
+      void this.workspaceFilter.navigateWithFilter(['/', ...commands]);
+      return;
+    }
+    this.selectRailCategory('cockpit');
+  }
+
+  protected openHub(route: string): void {
+    const commands = route.split('/').filter(Boolean);
+    void this.workspaceFilter.navigateWithFilter(['/', ...commands]);
+  }
   protected readonly selectedNodes = signal<string[]>(['me']);
   protected readonly availableModes = computed(() => {
     const actual = this.trueRole();
-    const list: { id: AccessRole; label: string; shortLabel: string; icon: string }[] = [
-      { id: 'member', label: 'งานของฉัน', shortLabel: 'ของฉัน', icon: 'e-icons e-user' },
-    ];
-    if (actual === 'lead' || actual === 'admin') {
-      list.push({ id: 'lead', label: 'บริหารทีม', shortLabel: 'ทีม', icon: 'e-icons e-people' });
+    // P19: รวมงานของฉัน+บริหารทีมเป็น «พื้นที่ทำงาน» — แอดมินแยกโหมด
+    if (actual === 'member') {
+      return [{ id: 'member' as AccessRole, label: 'งานของฉัน', shortLabel: 'ของฉัน', icon: 'e-icons e-user' }];
     }
+    const list: { id: AccessRole; label: string; shortLabel: string; icon: string }[] = [
+      { id: 'lead', label: 'พื้นที่ทำงาน', shortLabel: 'งาน', icon: 'e-icons e-grid-view' },
+    ];
     if (actual === 'admin') {
       list.push({ id: 'admin', label: 'แอดมิน', shortLabel: 'แอดมิน', icon: 'e-icons e-lock' });
     }
@@ -502,8 +524,8 @@ export class App implements AfterViewInit {
     const role = this.role();
     const actual = this.trueRole();
     if (role === 'admin') return 'โหมดแอดมิน · Admin';
-    if (role === 'lead' && actual === 'admin') return 'มุมมอง Lead · สิทธิ์จริง Admin';
-    if (role === 'lead') return 'โหมดบริหารทีม · Lead';
+    if (role === 'lead' && actual === 'admin') return 'พื้นที่ทำงาน · สิทธิ์จริง Admin';
+    if (role === 'lead') return 'โหมดพื้นที่ทำงาน · Lead';
     if (role === 'member' && actual !== 'member') {
       return actual === 'admin' ? 'มุมมอง Member · สิทธิ์จริง Admin' : 'มุมมอง Member · สิทธิ์จริง Lead';
     }
@@ -534,53 +556,67 @@ export class App implements AfterViewInit {
       this.keepNavOpen = false;
       const path = event.urlAfterRedirects.split('?')[0] || '/';
       const actual = this.trueRole();
-      if (path === '/me' || path.startsWith('/me/')) {
-        if (this.role() !== 'member') {
-          this.applyAutoWorkspaceMode('member', path, 'สลับชั่วคราวเป็นมุมมองงานของฉัน — สิทธิ์จริงยังไม่เปลี่ยน');
-        }
-      } else if (
+      // P19: ไม่สลับ member↔lead อัตโนมัติ — รวมเป็นพื้นที่ทำงาน; แอดมินสลับเข้า/ออกโหมดแอดมินเท่านั้น
+      if (
         actual === 'admin' &&
         (path === '/admin' ||
           path.startsWith('/admin/') ||
           path.startsWith('/integrations') ||
-          path.startsWith('/teams') ||
+          path === '/teams' ||
+          path.startsWith('/teams?') ||
           path.startsWith('/mockup'))
       ) {
         if (this.role() !== 'admin') {
           this.applyAutoWorkspaceMode('admin', path, 'กลับโหมดแอดมินเพื่อตั้งค่าระบบ');
         }
       } else if (
-        actual !== 'member' &&
-        (path === '/team' ||
+        actual === 'admin' &&
+        this.role() === 'admin' &&
+        (path === '/me' ||
+          path.startsWith('/me/') ||
+          path === '/team' ||
+          path.startsWith('/org/teams') ||
+          path.startsWith('/workspace') ||
           path.startsWith('/work') ||
           path.startsWith('/queue') ||
           path.startsWith('/quality') ||
+          path.startsWith('/insights') ||
           path.startsWith('/schedule') ||
+          path.startsWith('/people') ||
+          path.startsWith('/analytics') ||
+          path.startsWith('/tickets') ||
+          path.startsWith('/cockpit') ||
           path.startsWith('/mygit') ||
           path.startsWith('/ai'))
       ) {
-        if (this.role() !== 'lead') {
-          this.applyAutoWorkspaceMode(
-            'lead',
-            path,
-            actual === 'admin'
-              ? 'สลับชั่วคราวเป็นมุมมองบริหารทีมเพื่อเปิดงาน/บอร์ด — สิทธิ์แอดมินยังอยู่ (กด «กลับโหมดจริง» ได้)'
-              : 'สลับเข้ามุมมองบริหารทีม',
-          );
-        }
+        this.applyAutoWorkspaceMode(
+          'lead',
+          path,
+          'สลับเข้าพื้นที่ทำงาน — สิทธิ์แอดมินยังอยู่ (กด «กลับโหมดจริง» ได้)',
+        );
       } else if (
         actual !== 'member' &&
-        (path.startsWith('/people') ||
+        this.role() === 'member' &&
+        (path.startsWith('/org/teams') ||
+          path.startsWith('/workspace') ||
+          path === '/team' ||
+          path.startsWith('/work') ||
+          path.startsWith('/queue') ||
+          path.startsWith('/quality') ||
+          path.startsWith('/insights') ||
+          path.startsWith('/schedule') ||
+          path.startsWith('/people') ||
           path.startsWith('/analytics') ||
-          path.startsWith('/tickets'))
+          path.startsWith('/tickets') ||
+          path.startsWith('/cockpit') ||
+          path.startsWith('/mygit') ||
+          path.startsWith('/ai'))
       ) {
-        if (this.role() === 'member') {
-          this.applyAutoWorkspaceMode(
-            actual === 'admin' ? 'admin' : 'lead',
-            path,
-            'กลับจากมุมมอง Member เพื่อเปิดหน้าระดับทีม/องค์กร',
-          );
-        }
+        this.applyAutoWorkspaceMode(
+          actual === 'admin' ? 'lead' : 'lead',
+          path,
+          'กลับจากมุมมอง Member เพื่อเปิดหน้าระดับทีม/องค์กร',
+        );
       }
     });
     effect(() => {
@@ -662,7 +698,7 @@ export class App implements AfterViewInit {
     if (next === 'member') {
       this.notice.info('สลับเข้าสู่โหมด "งานของฉัน" (Member Workspace)');
     } else if (next === 'lead') {
-      this.notice.info('สลับเข้าสู่โหมด "บริหารทีม" (Lead Command Center)');
+      this.notice.info('สลับเข้าสู่โหมด "พื้นที่ทำงาน" (งานของฉัน + ทีม)');
     } else {
       this.notice.info('สลับเข้าสู่โหมด "แอดมิน" (Admin & Governance Console)');
     }
@@ -685,7 +721,7 @@ export class App implements AfterViewInit {
       actual === 'admin'
         ? 'กลับโหมดแอดมินแล้ว'
         : actual === 'lead'
-          ? 'กลับโหมดบริหารทีมแล้ว'
+          ? 'กลับโหมดพื้นที่ทำงานแล้ว'
           : 'กลับโหมดงานของฉันแล้ว',
     );
     const target = firstLeaf(actual) ?? firstLeaf(actual, 'cockpit');
@@ -714,8 +750,8 @@ export class App implements AfterViewInit {
       this.notice.info('สลับเป็นมุมมองพนักงานทั่วไป (Member View)');
       void this.router.navigate(['/me']);
     } else {
-      this.notice.info(`กลับสู่มุมมอง ${next === 'lead' ? 'บริหารทีม' : 'แอดมิน'}`);
-      void this.router.navigate([next === 'lead' ? '/team' : '/admin']);
+      this.notice.info(`กลับสู่มุมมอง ${next === 'lead' ? 'พื้นที่ทำงาน' : 'แอดมิน'}`);
+      void this.router.navigate([next === 'lead' ? '/org/teams' : '/admin']);
     }
   }
 
@@ -854,15 +890,96 @@ const categoryMeta: Record<NavCategory, { label: string; hint: string; rail: str
 
 const categoryOrder: NavCategory[] = ['cockpit', 'work', 'quality', 'analytics', 'admin'];
 
+/** P20 flat hubs — roles: member sees mine only; lead = workspace; admin mode = admin hubs */
+const HUB_NAV_ITEMS: readonly HubNavItem[] = [
+  { id: 'hub-mine', text: 'ของฉัน', iconCss: 'e-icons e-user', route: '/me', roles: ['member', 'lead'] },
+  {
+    id: 'hub-people',
+    text: 'ทีม',
+    iconCss: 'e-icons e-people',
+    route: '/workspace/people',
+    roles: ['lead'],
+  },
+  {
+    id: 'hub-work',
+    text: 'งานทีม',
+    iconCss: 'e-icons e-timeline-work-week',
+    route: '/work',
+    roles: ['lead'],
+  },
+  {
+    id: 'hub-queue',
+    text: 'คิวจ่ายงาน',
+    iconCss: 'e-icons e-list-unordered',
+    route: '/queue',
+    roles: ['lead'],
+  },
+  {
+    id: 'hub-quality',
+    text: 'คุณภาพ',
+    iconCss: 'e-icons e-check-box',
+    route: '/quality',
+    roles: ['lead'],
+  },
+  {
+    id: 'hub-insights',
+    text: 'วิเคราะห์',
+    iconCss: 'e-icons e-chart',
+    route: '/insights',
+    roles: ['lead'],
+  },
+  { id: 'hub-admin', text: 'หลังบ้าน', iconCss: 'e-icons e-lock', route: '/admin', roles: ['admin'] },
+  {
+    id: 'hub-integrations',
+    text: 'เชื่อมต่อ',
+    iconCss: 'e-icons e-settings',
+    route: '/integrations',
+    roles: ['admin'],
+  },
+  {
+    id: 'hub-rubrics',
+    text: 'เกณฑ์',
+    iconCss: 'e-icons e-bookmark',
+    route: '/admin/rubrics',
+    roles: ['admin'],
+  },
+  {
+    id: 'hub-snapshot',
+    text: 'แช่แข็ง',
+    iconCss: 'e-icons e-lock',
+    route: '/admin/snapshot-check',
+    roles: ['admin'],
+  },
+  {
+    id: 'hub-teams-hook',
+    text: 'แจ้งเตือน Teams',
+    iconCss: 'e-icons e-comment-show',
+    route: '/teams',
+    roles: ['admin'],
+  },
+];
+
 const categoryLanding: Partial<Record<NavCategory, readonly string[]>> = {
-  cockpit: ['my-cockpit', 'team-cockpit', 'admin-cockpit', 'team-dash', 'people', 'admin-people'],
-  work: ['me', 'work-hub', 'my-work', 'queue', 'my-time-log', 'schedule'],
-  quality: ['quality-audit', 'my-tickets', 'admin-time-audit', 'time-audit', 'my-disputes', 'admin-tickets'],
-  analytics: ['analytics', 'admin-analytics', 'my-analytics', 'lead-mockup'],
-  admin: ['admin-home'],
+  cockpit: ['hub-mine', 'hub-people', 'me', 'org-teams', 'people'],
+  work: ['hub-work', 'hub-queue', 'work-hub', 'my-work', 'queue'],
+  quality: ['hub-quality', 'quality-audit', 'my-tickets'],
+  analytics: ['hub-insights', 'analytics', 'my-analytics'],
+  admin: ['hub-admin', 'admin-home'],
 };
 
 const leafCategory: Record<string, NavCategory> = {
+  'hub-mine': 'cockpit',
+  'hub-people': 'cockpit',
+  'hub-org-teams': 'cockpit',
+  'hub-work': 'work',
+  'hub-queue': 'work',
+  'hub-quality': 'quality',
+  'hub-insights': 'analytics',
+  'hub-admin': 'admin',
+  'hub-integrations': 'admin',
+  'hub-rubrics': 'admin',
+  'hub-snapshot': 'admin',
+  'hub-teams-hook': 'admin',
   me: 'cockpit',
   'my-cockpit': 'cockpit',
   'my-work': 'work',
@@ -878,6 +995,8 @@ const leafCategory: Record<string, NavCategory> = {
   'my-disputes': 'quality',
   'team-dash': 'cockpit',
   'team-cockpit': 'cockpit',
+  'org-teams': 'cockpit',
+  'workspace-people': 'cockpit',
   people: 'cockpit',
   queue: 'work',
   'work-hub': 'work',
@@ -910,15 +1029,15 @@ const leafCategory: Record<string, NavCategory> = {
 
 const allNavGroups: NavGroup[] = [
   // ==========================================
-  // โหมดที่ 1: งานของฉัน (Member Workspace)
+  // งานของฉัน — member + lead (P19 พื้นที่ทำงานรวม)
   // ==========================================
   {
     id: 'mine-home',
     text: 'ภาพรวมผลงานของฉัน',
     expanded: true,
-    roles: ['member'],
+    roles: ['member', 'lead'],
     children: [
-      { id: 'me', text: 'ผลงาน & งานวันนี้', iconCss: 'e-icons e-user', route: '/me', exact: true },
+      { id: 'me', text: 'ผลงาน & งานวันนี้', iconCss: 'e-icons e-user', route: '/me', exact: true, searchHidden: true },
       { id: 'my-cockpit', text: 'ค็อกพิทผลงานของฉัน (Bento)', iconCss: 'e-icons e-grid-view', route: '/me/cockpit' },
     ],
   },
@@ -926,7 +1045,7 @@ const allNavGroups: NavGroup[] = [
     id: 'mine-daily',
     text: 'จัดการใบงานประจำวัน',
     expanded: true,
-    roles: ['member'],
+    roles: ['member', 'lead'],
     children: [
       { id: 'my-work', text: 'ฮับงานของฉัน (ค้าง/บอร์ด)', iconCss: 'e-icons e-timeline-work-week', route: '/me/work', exact: true },
       { id: 'my-schedule', text: 'ปฏิทินงานของฉัน', iconCss: 'e-icons e-timeline-today', route: '/me/schedule' },
@@ -937,7 +1056,7 @@ const allNavGroups: NavGroup[] = [
     id: 'mine-quality',
     text: 'คะแนน & อุทธรณ์ของฉัน',
     expanded: true,
-    roles: ['member'],
+    roles: ['member', 'lead'],
     children: [
       { id: 'my-tickets', text: 'ตารางคะแนนใบงานของฉัน', iconCss: 'e-icons e-table', route: '/me/tickets' },
       { id: 'my-time-audit', text: 'เช็กเวลา 3 ทางของฉัน', iconCss: 'e-icons e-clock', route: '/me/time-audit' },
@@ -948,7 +1067,7 @@ const allNavGroups: NavGroup[] = [
     id: 'mine-intel',
     text: 'วิเคราะห์ & ซิงก์ของฉัน',
     expanded: true,
-    roles: ['member'],
+    roles: ['member', 'lead'],
     children: [
       { id: 'my-analytics', text: 'วิเคราะห์ผลงานเชิงลึก (OLS)', iconCss: 'e-icons e-chart', route: '/me/analytics' },
       { id: 'my-mygit', text: 'ซิงก์ MR ของฉัน', iconCss: 'e-icons e-refresh', route: '/me/mygit' },
@@ -957,7 +1076,7 @@ const allNavGroups: NavGroup[] = [
   },
 
   // ==========================================
-  // โหมดที่ 2: บริหารทีม (Lead Command Center)
+  // ทีมในองค์กร — lead (พื้นที่ทำงาน)
   // ==========================================
   {
     id: 'lead-overview',
@@ -965,9 +1084,23 @@ const allNavGroups: NavGroup[] = [
     expanded: true,
     roles: ['lead'],
     children: [
+      { id: 'org-teams', text: 'ทีมในองค์กร (การ์ด)', iconCss: 'e-icons e-table', route: '/org/teams', exact: true },
+      {
+        id: 'workspace-people',
+        text: 'Workspace คน (เลือกลูกทีม)',
+        iconCss: 'e-icons e-people',
+        route: '/workspace/people',
+        searchHidden: true,
+      },
       { id: 'team-dash', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
       { id: 'team-cockpit', text: 'ห้องบัญชาการ Bento (Cockpit)', iconCss: 'e-icons e-grid-view', route: '/cockpit' },
-      { id: 'people', text: 'รายชื่อและโปรไฟล์ลูกทีม', iconCss: 'e-icons e-people', route: '/people', exact: true },
+      {
+        id: 'people',
+        text: 'กระดานดัชนีพนักงาน',
+        iconCss: 'e-icons e-people',
+        route: '/people',
+        exact: true,
+      },
     ],
   },
   {
@@ -976,8 +1109,8 @@ const allNavGroups: NavGroup[] = [
     expanded: true,
     roles: ['lead'],
     children: [
-      { id: 'queue', text: 'คิวงานใหม่ & จ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/queue' },
-      { id: 'work-hub', text: 'ฮับงานค้าง & แผนทีม', iconCss: 'e-icons e-timeline-work-week', route: '/work', exact: true },
+      { id: 'queue', text: 'คิวงานใหม่ & จ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/queue', searchHidden: true },
+      { id: 'work-hub', text: 'ฮับงานค้าง & แผนทีม', iconCss: 'e-icons e-timeline-work-week', route: '/work', exact: true, searchHidden: true },
       { id: 'schedule', text: 'ปฏิทินทีม & วันลา', iconCss: 'e-icons e-timeline-today', route: '/schedule' },
     ],
   },
@@ -987,10 +1120,10 @@ const allNavGroups: NavGroup[] = [
     expanded: true,
     roles: ['lead'],
     children: [
-      { id: 'quality-audit', text: 'ตรวจรับคุณภาพ QA (DoD)', iconCss: 'e-icons e-check-box', route: '/quality/audit' },
-      { id: 'disputes', text: 'ศูนย์อนุมัติอุทธรณ์ทีม', iconCss: 'e-icons e-edit', route: '/tickets/disputes' },
-      { id: 'tickets', text: 'ตารางคะแนนใบงานทีม', iconCss: 'e-icons e-table', route: '/tickets' },
-      { id: 'time-audit', text: 'ตรวจสอบเวลา 3 ทางทีม', iconCss: 'e-icons e-clock', route: '/analytics/time-audit' },
+      { id: 'quality-audit', text: 'ตรวจรับคุณภาพ QA (DoD)', iconCss: 'e-icons e-check-box', route: '/quality/audit', searchHidden: true },
+      { id: 'disputes', text: 'ศูนย์อนุมัติอุทธรณ์ทีม', iconCss: 'e-icons e-edit', route: '/quality/disputes' },
+      { id: 'tickets', text: 'ตารางคะแนนใบงานทีม', iconCss: 'e-icons e-table', route: '/quality/tickets' },
+      { id: 'time-audit', text: 'ตรวจสอบเวลา 3 ทางทีม', iconCss: 'e-icons e-clock', route: '/quality/time-audit' },
     ],
   },
   {
@@ -999,10 +1132,10 @@ const allNavGroups: NavGroup[] = [
     expanded: true,
     roles: ['lead'],
     children: [
-      { id: 'analytics', text: 'ศูนย์วิเคราะห์ & Coaching', iconCss: 'e-icons e-chart', route: '/analytics' },
-      { id: 'mygit', text: 'ซิงก์ mygit (MR) ทีม', iconCss: 'e-icons e-refresh', route: '/mygit' },
-      { id: 'ai', text: 'ติดตามงาน AI ทีม', iconCss: 'e-icons e-chart', route: '/ai' },
-      { id: 'lead-mockup', text: 'โหมดจำลองระบบ (Mockup)', iconCss: 'e-icons e-play', route: '/mockup' },
+      { id: 'analytics', text: 'ศูนย์วิเคราะห์ & Coaching', iconCss: 'e-icons e-chart', route: '/insights/report', searchHidden: true },
+      { id: 'mygit', text: 'ซิงก์ mygit (MR) ทีม', iconCss: 'e-icons e-refresh', route: '/insights/mygit' },
+      { id: 'ai', text: 'ติดตามงาน AI ทีม', iconCss: 'e-icons e-chart', route: '/insights/ai' },
+      { id: 'lead-mockup', text: 'โหมดจำลองระบบ (Mockup)', iconCss: 'e-icons e-play', route: '/insights/mockup' },
     ],
   },
 
@@ -1044,9 +1177,9 @@ const allNavGroups: NavGroup[] = [
     expanded: true,
     roles: ['admin'],
     children: [
-      { id: 'admin-analytics', text: 'ศูนย์วิเคราะห์ Python & AI', iconCss: 'e-icons e-chart', route: '/analytics' },
-      { id: 'admin-time-audit', text: 'ตรวจสอบเวลา 3 ทางองค์กร', iconCss: 'e-icons e-clock', route: '/analytics/time-audit' },
-      { id: 'admin-tickets', text: 'ตารางคะแนนรวมทั้งองค์กร', iconCss: 'e-icons e-table', route: '/tickets' },
+      { id: 'admin-analytics', text: 'ศูนย์วิเคราะห์ Python & AI', iconCss: 'e-icons e-chart', route: '/insights/report' },
+      { id: 'admin-time-audit', text: 'ตรวจสอบเวลา 3 ทางองค์กร', iconCss: 'e-icons e-clock', route: '/quality/time-audit' },
+      { id: 'admin-tickets', text: 'ตารางคะแนนรวมทั้งองค์กร', iconCss: 'e-icons e-table', route: '/quality/tickets' },
     ],
   },
 ];
@@ -1084,39 +1217,42 @@ function firstLeaf(role: AccessRole, category?: NavCategory): NavLeaf | undefine
 function matchNavId(url: string, role: AccessRole = 'member'): string {
   const path = url.split('?')[0] || '/';
   const pool = leavesFor(role);
-  // มุมมองย่อยของ Work Hub (Board/Timeline/…) ไฮไลต์ที่ฮับ ไม่แยกเมนูซ้ำ
-  if (path.startsWith('/me/work')) {
-    return 'my-work';
+  // P20: ไฮไลต์ hub แบนใน Sidebar
+  if (path === '/me' || path.startsWith('/me/')) {
+    return 'hub-mine';
   }
-  if (path.startsWith('/work')) {
-    return 'work-hub';
+  if (path.startsWith('/workspace/people') || path === '/people' || path.startsWith('/people/')) {
+    return role === 'member' ? 'hub-mine' : 'hub-people';
   }
-  if (path.startsWith('/me/analytics')) {
-    return 'my-analytics';
+  if (path.startsWith('/org/teams') || path === '/team' || path.startsWith('/cockpit')) {
+    return 'hub-people';
   }
-  if (path.startsWith('/me/tickets')) {
-    return 'my-tickets';
+  if (path.startsWith('/work') || path.startsWith('/schedule')) {
+    return 'hub-work';
   }
-  if (path.startsWith('/me/schedule')) {
-    return 'my-schedule';
+  if (path.startsWith('/queue')) {
+    return 'hub-queue';
   }
-  if (path.startsWith('/me/time-log')) {
-    return 'my-time-log';
+  if (path.startsWith('/quality')) {
+    return 'hub-quality';
   }
-  if (path.startsWith('/me/time-audit')) {
-    return 'my-time-audit';
+  if (path.startsWith('/insights') || path.startsWith('/analytics')) {
+    return 'hub-insights';
   }
-  if (path.startsWith('/me/mygit')) {
-    return 'my-mygit';
+  if (path === '/admin' || path.startsWith('/admin?')) {
+    return 'hub-admin';
   }
-  if (path.startsWith('/me/ai')) {
-    return 'my-ai';
+  if (path.startsWith('/integrations')) {
+    return 'hub-integrations';
   }
-  if (path.startsWith('/me/disputes')) {
-    return 'my-disputes';
+  if (path.startsWith('/admin/rubrics')) {
+    return 'hub-rubrics';
   }
-  if (path.startsWith('/people/') && path !== '/people') {
-    return role === 'member' ? 'my-analytics' : role === 'admin' ? 'admin-people' : 'people';
+  if (path.startsWith('/admin/snapshot-check')) {
+    return 'hub-snapshot';
+  }
+  if (path === '/teams' || path.startsWith('/teams?')) {
+    return 'hub-teams-hook';
   }
   const exactHit = pool.find((item) => path === item.route);
   if (exactHit) {
@@ -1132,6 +1268,30 @@ function matchNavId(url: string, role: AccessRole = 'member'): string {
 }
 
 function screenTitle(url: string): string {
+  if (url.startsWith('/workspace/people')) {
+    return 'ทีม · Workspace คน';
+  }
+  if (url.startsWith('/quality')) {
+    return 'คุณภาพ & คะแนนทีม';
+  }
+  if (url.startsWith('/insights')) {
+    return 'วิเคราะห์ & ซิงก์ทีม';
+  }
+  if (url.startsWith('/org/teams/') && url.includes('/people')) {
+    return 'Workspace ทีม · คน';
+  }
+  if (url.startsWith('/org/teams/') && url.includes('/work')) {
+    return 'Workspace ทีม · งาน';
+  }
+  if (url.startsWith('/org/teams/') && url.includes('/tickets')) {
+    return 'Workspace ทีม · คะแนน';
+  }
+  if (url.startsWith('/org/teams/') && url.includes('/cockpit')) {
+    return 'Workspace ทีม · ค็อกพิท';
+  }
+  if (url.startsWith('/org/teams')) {
+    return 'ทีมในองค์กร (การ์ด Workspace)';
+  }
   if (url.startsWith('/me/cockpit')) {
     return 'ค็อกพิทผลงานของฉัน (Personal Bento)';
   }

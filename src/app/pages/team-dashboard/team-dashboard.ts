@@ -39,7 +39,6 @@ import { ApiClient, KpiSnapshotPeriodDto, KpiSnapshotRowDto } from '../../core/a
 import { mdCompositionTrend, monthlyTrend, quotaBars } from '../../core/dashboard-charts';
 import { kpiExplanations } from '../../core/kpi-meaning';
 import { KpiPeriodType, previousMonthKey } from '../../core/kpi-snapshot';
-import { Track } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
@@ -48,13 +47,13 @@ import { ShellNotice } from '../../core/shell-notice';
 import { todayInBangkok } from '../../core/workflow';
 import { TEAM_CONTEXT_2568 } from '../../data/team-context';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton/loading-skeleton';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import { Router } from '@angular/router';
+import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
-type TrackFilter = Track | 'All';
+type TrackFilter = WorkspaceTrackFilter;
 
 const LIVE_MODE = 'live';
 
@@ -73,7 +72,6 @@ const LIVE_MODE = 'live';
     PageHeadComponent,
     SectionCardComponent,
     FormFieldComponent,
-    FilterChipsComponent,
     LoadingSkeletonComponent,
   ],
   providers: [
@@ -111,16 +109,6 @@ export class TeamDashboard implements AfterViewInit {
   protected readonly context = TEAM_CONTEXT_2568;
   protected readonly cellSpacing = [12, 12];
   protected readonly fields = { text: 'text', value: 'value' };
-  protected readonly trackOptions = [
-    { text: 'ทั้งหมด', value: 'All' },
-    { text: 'R&D', value: 'RD' },
-    { text: 'Implement', value: 'Implement' },
-  ];
-  protected readonly trackChipOptions: FilterChipOption[] = [
-    { id: 'All', label: 'ทั้งหมด' },
-    { id: 'RD', label: 'R&D' },
-    { id: 'Implement', label: 'Implement' },
-  ];
   protected readonly captureTypeOptions = [
     { text: 'เดือน', value: 'month' },
     { text: 'ไตรมาส', value: 'quarter' },
@@ -370,21 +358,19 @@ export class TeamDashboard implements AfterViewInit {
   }
 
   protected setTrackChip(value: string): void {
-    if (value === 'All' || value === 'RD' || value === 'Implement') {
-      this.track.set(value);
-      this.workspace.setTrack(value);
-    }
+    this.workspace.setTrack(value);
+    this.track.set(this.workspace.track());
   }
 
   protected drillToWork(track?: TrackFilter): void {
-    if (track === 'RD' || track === 'Implement') {
+    if (track && track !== 'All') {
       this.workspace.setTrack(track);
     }
     void this.workspace.navigateWithFilter(['/work']);
   }
 
   protected drillToTickets(track?: TrackFilter): void {
-    if (track === 'RD' || track === 'Implement') {
+    if (track && track !== 'All') {
       this.workspace.setTrack(track);
     }
     void this.workspace.navigateWithFilter(['/tickets']);

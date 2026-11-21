@@ -33,6 +33,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import {
   defaultThaiSpeechButtonSettings,
@@ -77,6 +78,7 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
 export class DisputesPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   protected readonly scorecard = inject(ScorecardService);
+  private readonly workspace = inject(WorkspaceFilter);
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
   private readonly destroyRef = inject(DestroyRef);
@@ -104,11 +106,18 @@ export class DisputesPage implements OnInit {
   /** Member or /me/disputes sees only their own requests; lead/admin on /tickets/disputes see the full queue. */
   private readonly scopedDisputes = computed(() => {
     const all = this.disputes();
-    if (!this.isMine && this.role() !== 'member') {
+    if (this.isMine || this.role() === 'member') {
+      const personId = this.activePersonId();
+      return all.filter((d) => d.requesterId === personId);
+    }
+    const ticketIds = new Set(this.workspace.applyToTickets(this.scorecard.tickets()).map((t) => t.id));
+    const peopleIds = new Set(this.workspace.applyToPeople(this.scorecard.people()).map((p) => p.id));
+    if (!this.workspace.teamId() && this.workspace.track() === 'All') {
       return all;
     }
-    const personId = this.activePersonId();
-    return all.filter((d) => d.requesterId === personId);
+    return all.filter(
+      (d) => ticketIds.has(d.ticketId) || peopleIds.has(d.requesterId),
+    );
   });
 
   protected readonly filteredDisputes = computed(() => {
@@ -144,17 +153,17 @@ export class DisputesPage implements OnInit {
     const personId = this.activePersonId();
     const role = this.role();
     const mineOnly = this.isMine || role === 'member';
-    return this.scorecard
-      .tickets()
-      .filter((t) => (mineOnly ? t.assigneeId === personId : true))
-      .map((t) => {
-        const score = t.closed ? scoreTicket(t).total : null;
-        const scoreLabel = score !== null ? `คะแนน: ${score} คะแนน` : `ยังไม่ปิด · ${t.actualMd} MD`;
-        return {
-          text: `${t.id} - ${t.title || t.module} (${scoreLabel})`,
-          value: t.id,
-        };
-      });
+    const tickets = mineOnly
+      ? this.scorecard.tickets().filter((t) => t.assigneeId === personId)
+      : this.workspace.applyToTickets(this.scorecard.tickets());
+    return tickets.map((t) => {
+      const score = t.closed ? scoreTicket(t).total : null;
+      const scoreLabel = score !== null ? `คะแนน: ${score} คะแนน` : `ยังไม่ปิด · ${t.actualMd} MD`;
+      return {
+        text: `${t.id} - ${t.title || t.module} (${scoreLabel})`,
+        value: t.id,
+      };
+    });
   });
 
   protected readonly statusToneMap: Record<string, BadgeTone> = {

@@ -41,13 +41,15 @@ import { currentViewer } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
-import { Person, Ticket, Track, WorkflowStatus } from '../../core/models';
+import { WorkspaceFilter } from '../../core/workspace-filter';
+import { Person, Ticket, WorkflowStatus, normalizeTrack, trackDisplayLabel } from '../../core/models';
 import { workflowStatusOf } from '../../core/workflow';
 import { BadgeTone, FilterChipOption, FilterChipsComponent, workflowStatusToneMap } from '../../shared/ui';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
 interface LoadChartRow {
   name: string;
@@ -57,7 +59,7 @@ interface LoadChartRow {
   color: string;
 }
 
-type TrackFilter = Track | 'All';
+type TrackFilter = WorkspaceTrackFilter;
 type DayFilter = 'ALL' | 'SLIPPED';
 
 interface SchedulePerson {
@@ -147,9 +149,26 @@ const COLORS = [
 export class SchedulePage {
   private readonly route = inject(ActivatedRoute);
   private readonly scorecard = inject(ScorecardService);
+  private readonly workspace = inject(WorkspaceFilter);
   protected readonly theme = inject(ThemeService);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+
+  private readonly scopedPeople = computed(() => {
+    const people = this.scorecard.people();
+    if (this.isMine) {
+      return people;
+    }
+    return this.workspace.applyToPeople(people);
+  });
+
+  private readonly scopedTickets = computed(() => {
+    const tickets = this.scorecard.tickets();
+    if (this.isMine) {
+      return tickets;
+    }
+    return this.workspace.applyToTickets(tickets);
+  });
   private readonly board = viewChild<ScheduleComponent>('board');
   private readonly boardHost = viewChild<ElementRef<HTMLElement>>('boardHost');
   private readonly loadChartDialog = viewChild<DialogComponent>('loadChartDialog');
@@ -176,12 +195,8 @@ export class SchedulePage {
   protected readonly chartLegend = { visible: true, position: 'Bottom' as const };
   protected readonly chartArea = { border: { width: 0 } };
   protected readonly chartCorner = { topLeft: 4, topRight: 4 };
-  protected readonly trackOptions = [
-    { text: 'ทุกสาย', value: 'All' },
-    { text: 'Implement', value: 'Implement' },
-    { text: 'R&D', value: 'RD' },
-  ];
-  protected readonly track = signal<TrackFilter>('All');
+  /** สายงานจาก Global Filter */
+  protected readonly track = computed<TrackFilter>(() => this.workspace.track());
   /** All = ทุกคนในสายที่กรอง · หรือ person.id รายคน */
   protected readonly personId = signal<string>(
     this.isMine ? (currentSession()?.person.id ?? currentViewer().id) : 'All',
@@ -194,22 +209,21 @@ export class SchedulePage {
 
   protected readonly personOptions = computed(() => {
     const track = this.track();
-    const people = this.scorecard
-      .people()
-      .filter((person) => track === 'All' || person.track === track)
+    const people = this.scopedPeople()
+      .filter((person) => track === 'All' || normalizeTrack(person.track) === normalizeTrack(track))
       .slice()
       .sort((a, b) => a.nickname.localeCompare(b.nickname, 'th'));
     return [
       { text: 'ทุกคน', value: 'All' },
       ...people.map((person) => ({
-        text: `${person.nickname} · ${person.track === 'RD' ? 'R&D' : 'Implement'}`,
+        text: `${person.nickname} · ${trackDisplayLabel(person.track)}`,
         value: person.id,
       })),
     ];
   });
 
   protected readonly boardModel = computed(() =>
-    buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), this.track(), this.personId()),
+    buildTeamSchedule(this.scopedPeople(), this.scopedTickets(), this.track(), this.personId()),
   );
   protected readonly eventSettings = computed(() => ({
     dataSource: this.boardModel().events,
@@ -274,7 +288,7 @@ export class SchedulePage {
     effect(() => {
       const ready = this.scorecard.apiReady();
       const board = this.board();
-      const events = buildTeamSchedule(this.scorecard.people(), this.scorecard.tickets(), 'All', 'All').events;
+      const events = buildTeamSchedule(this.scopedPeople(), this.scopedTickets(), 'All', 'All').events;
       if (!ready || !board || this.pinned) {
         return;
       }
@@ -316,20 +330,17 @@ export class SchedulePage {
     });
   }
 
-  protected setTrack(event: { value?: string | null }): void {
-    const value = event.value;
-    if (value === 'All' || value === 'Implement' || value === 'RD') {
-      this.track.set(value);
-      // ถ้าคนที่เลือกไม่อยู่ในสายใหม่ ให้กลับเป็นทุกคน
-      const current = this.personId();
-      if (current !== 'All') {
-        const stillVisible = this.personOptions().some((opt) => opt.value === current);
-        if (!stillVisible) {
-          this.personId.set('All');
-        }
-      }
+  private readonly syncPersonWithTrack = effect(() => {
+    void this.track();
+    const current = this.personId();
+    if (current === 'All') {
+      return;
     }
-  }
+    const stillVisible = this.personOptions().some((opt) => opt.value === current);
+    if (!stillVisible) {
+      this.personId.set('All');
+    }
+  });
 
   protected setPerson(event: { value?: string | null }): void {
     const value = event.value?.trim() || 'All';
@@ -511,11 +522,15 @@ function buildTeamSchedule(
   track: TrackFilter,
   personId: string,
 ): TeamSchedule {
-  const byTrack = people.filter((person) => track === 'All' || person.track === track);
+  const byTrack = people.filter(
+    (person) => track === 'All' || normalizeTrack(person.track) === normalizeTrack(track),
+  );
   const visiblePeople =
     personId === 'All' ? byTrack : byTrack.filter((person) => person.id === personId);
   const ids = new Set(visiblePeople.map((person) => person.id));
-  const scoped = tickets.filter((ticket) => track === 'All' || ticket.track === track);
+  const scoped = tickets.filter(
+    (ticket) => track === 'All' || normalizeTrack(ticket.track) === normalizeTrack(track),
+  );
   const events: ScheduleEvent[] = [];
   let hidden = 0;
   for (const ticket of scoped) {

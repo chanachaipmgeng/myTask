@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   CategoryService,
@@ -10,6 +10,7 @@ import {
   StripLineService,
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import {
@@ -32,12 +33,9 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { ViewportService } from '../../core/viewport.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
-import { Track } from '../../core/models';
 import { INDEX_TARGET } from '../../core/scoring';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import {
-  FilterChipOption,
-  FilterChipsComponent,
   FormFieldComponent,
   SectionCardComponent,
   StatusBadgeComponent,
@@ -46,8 +44,6 @@ import {
   type BadgeTone,
 } from '../../shared/ui';
 
-type TrackFilter = Track | 'All';
-
 @Component({
   selector: 'app-people-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,6 +51,7 @@ type TrackFilter = Track | 'All';
     DecimalPipe,
     GridModule,
     ChartModule,
+    ButtonModule,
     DropDownListModule,
     RouterLink,
     TextBoxModule,
@@ -63,7 +60,6 @@ type TrackFilter = Track | 'All';
     StatusBadgeComponent,
     SectionCardComponent,
     FormFieldComponent,
-    FilterChipsComponent,
   ],
   providers: [
     PageService,
@@ -92,13 +88,6 @@ export class PeopleBoard {
   protected readonly theme = inject(ThemeService);
   protected readonly viewport = inject(ViewportService);
 
-  private readonly syncWorkspaceTrack = effect(() => {
-    const track = this.workspace.track();
-    if (this.track() !== track) {
-      this.track.set(track);
-    }
-  });
-
   @ViewChild('peopleGrid') private peopleGrid?: GridComponent;
 
   protected readonly target = INDEX_TARGET;
@@ -108,11 +97,6 @@ export class PeopleBoard {
   protected readonly sortSettings = { columns: [{ field: 'index', direction: 'Descending' }] };
   protected readonly toolbar = ['Search', 'ColumnChooser', 'ExcelExport', 'CsvExport'];
   protected readonly trackToneMap = trackToneMap;
-  protected readonly trackOptions = [
-    { text: 'ทั้งหมด', value: 'All' },
-    { text: 'R&D', value: 'RD' },
-    { text: 'Implement', value: 'Implement' },
-  ];
   protected readonly quotas = computed(() => {
     const quota = weeklyQuotas();
     return [
@@ -130,18 +114,7 @@ export class PeopleBoard {
       hint: 'โควตาต่อสัปดาห์ · ไม่เข้าสูตรดัชนี',
     })),
   );
-  protected readonly track = signal<TrackFilter>('All');
   protected readonly query = signal('');
-  protected readonly trackChipOptions = computed<FilterChipOption[]>(() => {
-    const rows = this.roster();
-    const rd = rows.filter((row) => row.track === 'RD').length;
-    const imp = rows.filter((row) => row.track === 'Implement').length;
-    return [
-      { id: 'All', label: 'ทั้งหมด', count: rows.length },
-      { id: 'RD', label: 'R&D', count: rd },
-      { id: 'Implement', label: 'Implement', count: imp },
-    ];
-  });
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly primaryXAxis = {
     valueType: 'Category',
@@ -205,14 +178,12 @@ export class PeopleBoard {
   );
 
   protected readonly rows = computed(() => {
-    const track = this.track();
+    // สายงาน/ทีมมาจาก Global Filter ผ่าน applyToPeople (normalizeTrack)
+    void this.workspace.track();
     const scopedIds = new Set(this.workspace.applyToPeople(this.scorecard.people()).map((p) => p.id));
     const q = this.query().trim().toLowerCase();
     return this.roster().filter((row) => {
       if (!scopedIds.has(row.id)) {
-        return false;
-      }
-      if (track !== 'All' && row.track !== track) {
         return false;
       }
       if (!q) {
@@ -221,17 +192,6 @@ export class PeopleBoard {
       return `${row.nickname} ${row.role} ${row.personLabel}`.toLowerCase().includes(q);
     });
   });
-
-  protected setTrack(event: { value?: string | null }): void {
-    this.setTrackChip(event.value ?? '');
-  }
-
-  protected setTrackChip(value: string): void {
-    if (value === 'All' || value === 'RD' || value === 'Implement') {
-      this.track.set(value);
-      this.workspace.setTrack(value);
-    }
-  }
 
   protected setQuery(event: { value?: string | null }): void {
     this.query.set(event.value ?? '');

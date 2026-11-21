@@ -27,10 +27,18 @@ alwaysApply: true
 
 ## เมื่อแก้ฟีเจอร์
 
-- รัน `npm run verify` ถ้าแตะ scoring / seed / person-dashboard / work-views / mock
+- รัน `npm run verify` ถ้าแตะ scoring / seed / person-dashboard / work-views / workspace-scope / mock
 - รัน `npm --prefix server run test` ถ้าแตะ OpenProject mapper
 - อย่าแก้ไฟล์แผน `.cursor/plans/` ของผู้ใช้เว้นแต่ถูกขอ
 - อย่า commit `.agents/` `.claude/` `skills-lock.json` หรือ `.env`
+
+## Navigation / Global Filter (P20–P21)
+
+- Sidebar lead = hub แบน: ของฉัน · ทีม (`/workspace/people`) · งานทีม · คิว · คุณภาพ · วิเคราะห์ — อย่าใส่ «ทีมการ์ด» ซ้ำบน rail (ค้นหาเมนู/`/org/teams` หรือปุ่มใน Person WS)
+- Global Filter: ชิปสาย 6 รหัสผ่าน `listWorkspaceTrackChipOptions` / `normalizeTrack` · กรองคน/ใบด้วย `filterPeopleByWorkspace` / `filterTicketsByWorkspace` · chip คนเมื่อมี `personId`
+- `/work` shell: กรองสัปดาห์/ถังวัน/ค้นหาเท่านั้น — ทีม·สาย·โปรเจกต์อ่านจาก `WorkspaceFilter` · `clearContext` ห้ามเรียก `workspace.clear()` ทั้งก้อน
+- `/me` MineShell แท็บสั้น 6 ชุด (วันนี้ · ค็อกพิท · งาน · ปฏิทิน · คุณภาพ · ข้อมูล)
+- Person Workspace: รายชื่อซ้าย scope โดยไม่ใส่ `personId` · แท็บงานตั้ง person แล้วไป `/work/list`
 
 ## สิทธิ์แจกงาน / Board / Gantt / writeback / KPI snapshot
 

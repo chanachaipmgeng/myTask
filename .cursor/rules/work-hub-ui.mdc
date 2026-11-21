@@ -1,12 +1,14 @@
 ---
 description: กฎหน้าฮับงาน /work และมุมมองพนักงาน
-globs: src/app/pages/work/**/*,src/app/pages/cockpit/**/*,src/app/pages/people-board/**/*,src/app/pages/person-dashboard/**/*,shared/domain/work-views.ts,shared/domain/people-roster.ts,shared/domain/person-dashboard.ts
+globs: src/app/pages/work/**/*,src/app/pages/cockpit/**/*,src/app/pages/people-board/**/*,src/app/pages/person-dashboard/**/*,src/app/pages/person-workspace/**/*,src/app/pages/hub-shells/**/*,src/app/pages/org-teams/**/*,shared/domain/work-views.ts,shared/domain/workspace-scope.ts,shared/domain/people-roster.ts,shared/domain/person-dashboard.ts
 alwaysApply: false
 ---
 
-# มุมมองงานและพนักงาน (`/work`, `/tickets`, `/people`)
+# มุมมองงานและพนักงาน (`/work`, `/tickets`, `/people`, `/workspace/people`)
 
 - `/work` (ฮับบริหารงาน) เป็นฮับแท็บ Summary · Timeline · Backlog · Board · List · Handoff & SLA — อย่าสร้างเมนูซ้ำสำหรับ Board
+- **P21**: แถบ `/work` ไม่มี dropdown ทีม/โปรเจกต์/track — อ่านจาก Global Filter · เหลือสัปดาห์/ถังวัน/ค้นหาใบ · ชิปสาย 6 รหัสอยู่ที่ AppBar เท่านั้น
+- **Person Workspace** `/workspace/people`: master-detail · รายชื่อซ้ายห้ามกรอง `personId` · ปุ่มงานตั้ง `person` แล้วไป `/work/list`
 - หน้าจอตรวจสอบใหม่ 5 หน้าจอ (หน้าจอที่ 21–25) ห่อด้วย `app-section-card` (`e-card.section-card`) + KPI แถวบนด้วย `app-kpi-stat`:
   - `/work/handoff`: Stage Aging `StackingBar` + Blocker Matrix (`app-section-card` nested) + Grid ตรึง 2 คอลัมน์ + `ejs-message` Fair Cutoff
   - `/quality/audit`: `ejs-tab` ใน `app-section-card` (DoD Gate + Reopen) · ป้ายสถานะเป็น `e-badge` · แบนเนอร์ DoD เป็น `ejs-message`
@@ -30,11 +32,11 @@ alwaysApply: false
 - Gantt Timeline (`/work/timeline`): กำหนดตำแหน่ง `splitterSettings` เริ่มต้นให้กว้างพอ (เช่น 620px) เพื่อให้คอลัมน์รหัส, งาน, เริ่ม, และ ครบกำหนด แสดงผลครบถ้วนไม่ถูกตัด · อย่าใส่ `overflow:hidden` บน `.e-gantt` โดยไม่จำเป็น (override ขอบเบาอยู่ที่ `src/styles/sf/`) · Resource View ต้อง clone/กรอง `ResourceInfo` ให้มี `resourceId` และซ่อน `TaskID` primary ในโหมดนั้น
 - `/schedule`: Timeline เต็มความสูงหน้าจอ (flex + `ResizeObserver`) · แผงรายวันเป็นคอลัมน์ขวาในหน้า — ห้ามใช้ `ejs-sidebar` Over drawer ทับ Schedule
 - `/tickets/disputes`: `ejs-splitter` ในหน้า — ห้ามใช้ drawer ทับตาราง
-- Sidebar pillars (`244px` / พับ `64px`) + Top Sub-Nav: แสดงหมวดจาก `visibleRail()` + Workspace Switcher · หน้าย่อยใน `.subnav-bar` (ตัวคั่น `.subnav-tabs__sep` ตาม `groupId`) · **พับแล้วคลิก pillar/brand ห้าม auto-expand** — กางเฉพาะ `toggleNav()` · `/people` อยู่ในหมวด cockpit · ความกว้าง `#app-nav` ใน `app.scss` / `styles.scss` ต้องตรงกัน · verified icons + Inline SVG บน AppBar · Admin เข้า `/analytics` `/tickets` `/people` ได้โดยไม่ถูกดีดกลับ `lead`
+- Sidebar flat hubs (`244px` / พับ `64px`) + Workspace Switcher · ไม่ใช้ 4-pillar + top subnav รวมทุกหน้า · ค้นหาเมนูกรอง `searchHidden` · `/people` = กระดานดัชนี (CTA ไป `/workspace/people`) · ความกว้าง `#app-nav` ใน `app.scss` / `styles.scss` ต้องตรงกัน · verified icons + Inline SVG บน AppBar
 - การตรึง Sidebar (`Sidebar Sticky Pinning`): `.app-frame` ใช้ `align-items: start;` และ `#app-nav` บน Desktop ตรึงแบบ `position: sticky; top: 0; height: 100vh; overflow-y: auto; overscroll-behavior: contain;` · Toast วางที่ Bottom-Right (`{ X: 'Right', Y: 'Bottom' }`) เพื่อไม่บังปุ่ม AppBar
 - มาตรฐานธีม (`Corporate MyHR Royal Blue + Dual Theming`): Light Mode ใช้ Sidebar Royal Blue (`#2746b3 → #3b60dc`), พื้นฟ้าอ่อน `#f4f7fe`, AppBar/การ์ดขาว `#ffffff` ขอบ `#e6ecf8` เงาฟ้านุ่มผ่าน `--shadow-card`, Hero Banner ฟ้าลาเวนเดอร์ขอบน้ำเงิน `4px` + Unified KPI Strip · Dark Mode ใช้ Deep Royal Navy (`#0b1437 → #1a2d75` / `#0f1838`) · ทุกกราฟผูก `[theme]="theme.sfTheme()"` · **คงสีแบรนด์** ห้ามย้อม lime/sage จากเดโมภายนอก
 - **Surface tokens**: ใช้ `--radius-panel|card|nested|tile|pill`, `--shadow-card|card-hover|pill|floating`, `--ease-crisp`, `--dur-*` จาก `src/styles.scss` · optical nesting panel 24 → card 16 → nested 12 · ตัวเลข KPI เป็น `tabular-nums` · gap แผงกราฟประมาณ `16px`
-- แต่ง Syncfusion & Refined Motion: ใส่หมวดใหม่ใน `src/styles/sf/_components.scss` เท่านั้น · Dual Sliding Active Pills (`.saas-nav__active-pill` + `.subnav-tabs__pill`) วัดพิกัดด้วย `getBoundingClientRect()` + `ResizeObserver` ไหลด้วย `var(--ease-crisp)` · Micro-interactions บน badge/chip (ไม่ใช่ SF control หลัก) ใช้ `var(--ease-spring)` ได้ · รองรับ `prefers-reduced-motion: reduce` · ห้าม `transform` บน `:hover` ของ `.e-btn` / `.e-dialog` / `.e-card` / `.e-panel`
+- แต่ง Syncfusion & Refined Motion: ใส่หมวดใหม่ใน `src/styles/sf/_components.scss` เท่านั้น · Active Pill Sidebar (`.saas-nav__active-pill`) วัดพิกัดด้วย `getBoundingClientRect()` + `ResizeObserver` · Micro-interactions บน badge/chip ใช้ `var(--ease-spring)` ได้ · รองรับ `prefers-reduced-motion: reduce` · ห้าม `transform` บน `:hover` ของ `.e-btn` / `.e-dialog` / `.e-card` / `.e-panel`
 - **Modern Bento Grid Cockpit (P16)**:
   - **100vh Viewport Fit & Fluid Scaling**: ล็อกความสูง `calc(100vh - 78px)` เฉพาะจอเดสก์ท็อปขนาดใหญ่ `@media (min-width: 1200px) and (min-height: 850px)` หากความสูง $< 850$px (Scaling 125%/150%) ให้ยืดหยุ่นเป็น `min-height` พร้อม `overflow-y: auto` และผูก `ResizeObserver` ยิง resize event เมื่อพับ/ขยาย Sidebar โดยที่ `.shell-appbar` / `.appbar-actions` ต้องมี `flex-wrap: nowrap !important;` ล็อกความสูง 56px เพื่อไม่ให้ดันเกิด Vertical Scrollbar บนจอเดสก์ท็อปขนาดใหญ่
   - **Overview layout (Brisko-inspired)**: ใช้ `.ov-grid` = คอลัมน์หลัก + แถบขวา `clamp(300px, 26vw, 400px)` · `.ov-low` คู่ DoD + Stage · `.ov-side` pace + Radar · การ์ดรัศมี `24px` · ไม่บังคับย้าย `/team` `/work/summary` เป็น ov-grid ในคลื่น polish ทั่วไป
@@ -47,5 +49,6 @@ alwaysApply: false
   - ดึงดัชนีคะแนนรายคน: ต้องใช้ `scorecard.personRows()` (มีฟิลด์ `.index`) ห้ามใช้ `scorecard.roster()` ซึ่งคืนค่า `Person[]` ดิบที่ไม่มีคะแนน
   - สรุป QA Gate: `computeQualityAuditSummary(tickets, people)` เก็บ KPI ไว้ใต้ `.kpis.firstTimeRightPct` และ `.kpis.bugEscapeCount`
   - สรุป Handoff Aging: `computeHandoffSlaSummary(tickets, stageLogs, people)` ต้องส่ง 3 อาร์กิวเมนต์ และอ่านค่าจาก `.stageAging`
-- กรองสาย/ค้นหาใน `/work` ใช้ `WorkHubFilter` ของ shell — อย่าทำตัวกรองซ้ำในลูกโดยไม่จำเป็น
-- ข้อมูลแถว/กราฟคำนวณใน `shared/domain/work-views.ts` หรือ `people-roster` / `person-dashboard` แล้วค่อย bind UI
+- กรองสาย/ทีม/โปรเจกต์ = `WorkspaceFilter` (URL) · `WorkHubFilter` เก็บแค่สัปดาห์/ถังวัน/ค้นหา (+ sync track จาก workspace) — อย่าทำชิปสายซ้ำในหน้า
+- เทียบสายงานด้วย `normalizeTrack` / `trackMatchesFilter` ไม่เทียบ string ดิบ `Implement` vs `IMP`
+- ข้อมูลแถว/กราฟคำนวณใน `shared/domain/work-views.ts` หรือ `people-roster` / `person-dashboard` / `workspace-scope` แล้วค่อย bind UI

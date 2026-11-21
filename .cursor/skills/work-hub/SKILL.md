@@ -1,8 +1,9 @@
 ---
 name: work-hub
 description: >-
-  Extend the /work hub views (Summary, Timeline Gantt, Backlog, Board, List) and
-  shared work-views domain. Use when editing src/app/pages/work, work-views.ts,
+  Extend the /work hub views (Summary, Timeline Gantt, Backlog, Board, List),
+  Person Workspace, and shared work-views / workspace-scope domain. Use when
+  editing src/app/pages/work, person-workspace, work-views.ts, workspace-scope,
   or changing work navigation/tabs.
 ---
 
@@ -10,10 +11,11 @@ description: >-
 
 ## โครง
 
-- Shell: `src/app/pages/work/work-shell.*` + `WorkHubFilter` (สาย + ค้นหา + `scope` mine|team + `assigneeId`)
+- Shell: `src/app/pages/work/work-shell.*` + `WorkHubFilter` (สัปดาห์ + ถังวัน + ค้นหา + `scope` mine|team + `assigneeId`) · **ทีม/โปรเจกต์/สายจาก `WorkspaceFilter`** (P21 ไม่ซ้ำใน shell)
 - Routes: `/work` (ทีม · `admin`/`lead` · `data.scope = 'team'`) และ `/me/work` (ของฉัน · ทุกสิทธิ์ · `data.scope = 'mine'`)
-- Children: `summary` | `timeline` | `backlog` | `board` | `list` · แท็บ `handoff` มีเฉพาะฮับทีม
-- โดเมน: `shared/domain/work-views.ts` → re-export `src/app/core/work-views.ts` · `filterWorkTickets` รองรับ `assigneeId`
+- Children: `summary` | `timeline` | `backlog` | `board` | `list` · แท็บ `handoff` / `team-time` มีเฉพาะฮับทีม
+- โดเมน: `shared/domain/work-views.ts` → re-export `src/app/core/work-views.ts` · `filterWorkTickets` เทียบสายด้วย `normalizeTrack`
+- Hub คน: `/workspace/people` (Person Workspace) · การ์ดทีม `/org/teams` (ไม่ซ้ำบน sidebar)
 
 ## มุมมอง
 
@@ -70,7 +72,7 @@ description: >-
 - บน Board: `member` ย้ายการ์ดได้ถึง `Ready for QA` / `In QA` ห้ามปิดเข้า `Done` เอง และแก้ได้เฉพาะฟิลด์ส่งมอบ (`mrLink`, `pocResult`, `bugCause`) พร้อมแสดง Delivery Timeline + Activity Log ใน Dialog
 - `/tickets/disputes`: ใช้ `ejs-splitter` 2 บานในหน้า — ห้าม Over drawer ทับตาราง
 - ตารางหลัก (`/tickets`, `/work/list`): เปิด `[enablePersistence]="true"` เพื่อจดจำการตั้งค่าคอลัมน์ของผู้ใช้
-- โครงสร้าง Sidebar: รองรับ Sticky Pinning (100vh) และสลับ Mini-Sidebar 68px/260px ผ่าน `.nav-toggle` เพื่อเพิ่มพื้นที่ทำงาน
-- การตรวจผลงาน 1-on-1 (`/people/:id`): มีปุ่ม `prevPerson` / `nextPerson` ให้ตรวจประเมินต่อเนื่องได้ครบทั้ง 15 คน · AI Coach ใช้ `ejs-textbox` + ผลลัพธ์ใน `e-card`
+- โครงสร้าง Sidebar: flat hubs + Sticky Pinning (100vh) · สลับพับ `244px`/`64px` ผ่าน `.nav-toggle`
+- การตรวจผลงาน 1-on-1 (`/people/:id`): มีปุ่ม `prevPerson` / `nextPerson` · AI Coach ใช้ `ejs-textbox` + ผลลัพธ์ใน `e-card` · ทางเข้าทีมคนที่ `/workspace/people`
 - UI chrome: ใช้ shared UI ด้านบน · ห้ามห่อใหม่ด้วย Tailwind `rounded-xl … shadow-sm`
-- หลังแก้โดเมน มุมมอง: เพิ่ม assert ใน `scripts/verify-scores.ts` แล้ว `npm run verify`
+- หลังแก้โดเมน / workspace-scope / มุมมอง: เพิ่ม assert ใน `scripts/verify-scores.ts` แล้ว `npm run verify`

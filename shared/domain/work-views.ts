@@ -1,8 +1,8 @@
-import { Person, Ticket, Track, WORKFLOW_STATUSES, WorkflowStatus } from './models';
+import { Person, Ticket, Track, TrackCode, normalizeTrack, WORKFLOW_STATUSES, WorkflowStatus } from './models';
 import { teamLabelForId } from './op-team-staging';
 import { todayInBangkok, workflowStatusOf } from './workflow';
 
-export type WorkTrackFilter = Track | 'All';
+export type WorkTrackFilter = Track | TrackCode | 'All';
 
 /** ถังวันส่งสำหรับจัดกลุ่มงานค้าง */
 export type DueBucket = 'overdue' | 'today' | 'tomorrow' | 'thisWeek' | 'later' | 'all';
@@ -259,7 +259,7 @@ export function dueBucketOf(
 }
 
 function matchesTrack(ticket: Ticket, track: WorkTrackFilter): boolean {
-  return track === 'All' || ticket.track === track;
+  return track === 'All' || normalizeTrack(ticket.track) === normalizeTrack(track);
 }
 
 function matchesQuery(ticket: Ticket, query: string): boolean {

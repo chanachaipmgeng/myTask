@@ -28,7 +28,7 @@
           <button
             type="button"
             class="sidebar-brand"
-            (click)="selectRailCategory('cockpit')"
+            (click)="goHomeHub()"
             title="Man-day Scorecard — กลับหน้าหลัก"
           >
             <span class="sidebar-brand__mark">
@@ -118,7 +118,7 @@
           </div>
         }
 
-        <!-- 3. Primary 4-Category Navigation (Search expands matching leaf items) -->
+        <!-- 3. P20 Flat hub navigation (search still lists deep leaves) -->
         <nav #saasNav class="saas-nav" aria-label="เมนูหลัก">
           <div
             class="saas-nav__active-pill"
@@ -160,22 +160,19 @@
               @if (narrow() || !collapsed()) {
                 <div class="saas-nav__label">เมนูหลัก</div>
               }
-              @for (cat of visibleRail(); track cat.id) {
-                <button
-                  type="button"
-                  class="saas-nav__item saas-nav__item--pillar"
-                  [class.is-active]="activeNavCategory() === cat.id"
-                  (click)="selectRailCategory(cat.id)"
-                  [title]="cat.title"
+              @for (hub of hubNavItems(); track hub.id) {
+                <a
+                  class="saas-nav__item"
+                  [class.is-active]="selectedNodes()[0] === hub.id"
+                  [routerLink]="hub.route"
+                  queryParamsHandling="preserve"
+                  [title]="hub.text"
                 >
-                  <span class="saas-nav__icon"><span [class]="cat.icon"></span></span>
+                  <span class="saas-nav__icon"><span [class]="hub.iconCss"></span></span>
                   @if (narrow() || !collapsed()) {
-                    <span class="saas-nav__text">{{ cat.label }}</span>
-                    @if (cat.count > 1) {
-                      <span class="saas-nav__count">{{ cat.count }}</span>
-                    }
+                    <span class="saas-nav__text">{{ hub.text }}</span>
                   }
-                </button>
+                </a>
               }
             </div>
           }
@@ -525,6 +522,20 @@
             [value]="workspaceFilter.track()"
             (valueChange)="onWorkspaceTrack($event)"
           ></app-filter-chips>
+          @if (workspaceFilter.personId(); as personId) {
+            <span class="workspace-person-chip" [title]="personId">
+              คน: {{ workspaceFilter.selectedPersonLabel() || personId }}
+              <button
+                ejs-button
+                cssClass="e-small e-flat"
+                type="button"
+                title="ล้างตัวกรองคน"
+                (click)="clearWorkspacePerson()"
+              >
+                ล้างคน
+              </button>
+            </span>
+          }
         </div>
         <div class="workspace-filter-bar__meta">
           <span class="workspace-filter-summary" [title]="workspaceFilter.filterSummary()">

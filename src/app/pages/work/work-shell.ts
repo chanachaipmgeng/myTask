@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { filter, map, startWith } from 'rxjs';
 import { currentViewer, openprojectProjectCatalog } from '../../core/admin-settings';
@@ -42,7 +41,6 @@ const MINE_TABS = TEAM_TABS.filter((tab) => tab.path !== 'handoff' && tab.path !
     RouterLinkActive,
     ButtonModule,
     TextBoxModule,
-    DropDownListModule,
     FilterChipsComponent,
     FormFieldComponent,
     PageHeadComponent,
@@ -57,14 +55,6 @@ export class WorkShell {
   private readonly scorecard = inject(ScorecardService);
   private readonly workspace = inject(WorkspaceFilter);
   protected readonly filter = inject(WorkHubFilter);
-
-  protected readonly fields = { text: 'text', value: 'value' };
-
-  protected readonly trackChipOptions: FilterChipOption[] = [
-    { id: 'All', label: 'ทั้งหมด' },
-    { id: 'Implement', label: 'Implement' },
-    { id: 'RD', label: 'R&D' },
-  ];
 
   protected readonly weekChipOptions: FilterChipOption[] = [
     { id: '-1', label: 'สัปดาห์ก่อน' },
@@ -116,15 +106,24 @@ export class WorkShell {
   }
 
   protected readonly isMine = computed(() => this.filter.scope() === 'mine');
-  protected readonly basePath = computed(() => (this.isMine() ? '/me/work' : '/work'));
+  protected readonly basePath = computed(() => {
+    if (this.isMine()) {
+      return '/me/work';
+    }
+    const orgMatch = this.url().match(/\/org\/teams\/([^/?#]+)\/work/);
+    if (orgMatch?.[1]) {
+      return `/org/teams/${orgMatch[1]}/work`;
+    }
+    return '/work';
+  });
   protected readonly tabs = computed(() => (this.isMine() ? MINE_TABS : TEAM_TABS));
   protected readonly heading = computed(() =>
     this.isMine() ? 'ฮับงานของฉัน (ค้าง/บอร์ด)' : 'ฮับงานค้าง & แผนทีม',
   );
   protected readonly subheading = computed(() =>
     this.isMine()
-      ? 'กรองทีม/สัปดาห์/โปรเจกต์ด้านบน แล้วสลับมุมมองด้านล่าง — เฉพาะใบที่รับผิดชอบ'
-      : 'บริบททีม · สัปดาห์ · โปรเจกต์ ใช้ร่วมทุกแท็บ — งานค้างจัดกลุ่มตามวันที่แท็บสรุป',
+      ? 'ทีม/สาย/โปรเจกต์ใช้ Global Filter ด้านบน — สลับสัปดาห์และค้นหาใบด้านล่าง'
+      : 'ทีม · สาย · โปรเจกต์ จาก Global Filter · สัปดาห์/ถังวัน/ค้นหาใบในแถบนี้',
   );
 
   private readonly url = toSignal(
@@ -192,13 +191,6 @@ export class WorkShell {
     return `${teamLabel} · สัปดาห์ ${formatThaiDay(weekStart)}–${formatThaiDay(weekEnd)} · ${projectLabel} · ใบเปิด ${open}`;
   });
 
-  protected setTrackChip(value: string): void {
-    if (value === 'All' || value === 'Implement' || value === 'RD') {
-      this.filter.track.set(value);
-      this.workspace.setTrack(value);
-    }
-  }
-
   protected setWeekChip(value: string): void {
     const n = Number(value);
     if (n === -1 || n === 0 || n === 1) {
@@ -213,30 +205,15 @@ export class WorkShell {
     }
   }
 
-  protected setTeam(event: { value?: string | null }): void {
-    const value = event.value ?? '';
-    this.filter.teamId.set(value);
-    this.workspace.setTeam(value);
-  }
-
-  protected setProject(event: { value?: string | null }): void {
-    const value = event.value ?? '';
-    this.filter.opProject.set(value);
-    this.workspace.setProject(value);
-  }
-
   protected setQuery(event: { value?: string }): void {
     this.filter.query.set(event.value ?? '');
   }
 
+  /** ล้างเฉพาะกรองสัปดาห์/ถังวัน/ค้นหาของ hub — ไม่แตะ Global Filter */
   protected clearContext(): void {
-    this.filter.track.set('All');
     this.filter.query.set('');
-    this.filter.teamId.set('');
-    this.filter.opProject.set('');
     this.filter.dueBucket.set('all');
     this.filter.weekOffset.set(0);
-    this.workspace.clear();
   }
 }
 
