@@ -48,6 +48,10 @@ export interface BootstrapSettings {
   hoursPerMd: number;
   openprojectMapping: unknown;
   openprojectProjectCatalog?: OpenProjectCatalogEntry[];
+  scorecardCycles?: {
+    cycles: import('../../../shared/domain/scorecard-cycle').ScorecardCycle[];
+    activeCycleId: string | null;
+  };
 }
 
 export interface BootstrapResponse {
@@ -187,6 +191,61 @@ export class ApiClient {
 
   saveSettings(settings: Partial<BootstrapSettings>): Promise<{ ok: boolean }> {
     return api('/api/settings', { method: 'PUT', body: JSON.stringify({ settings }) });
+  }
+
+  listScorecardCycles(): Promise<{
+    ok: boolean;
+    cycles: import('../../../shared/domain/scorecard-cycle').ScorecardCycle[];
+    activeCycleId: string | null;
+  }> {
+    return api('/api/scorecard-cycles');
+  }
+
+  createScorecardCycle(body: Record<string, unknown>): Promise<{
+    ok: boolean;
+    message?: string;
+    cycle?: import('../../../shared/domain/scorecard-cycle').ScorecardCycle;
+    cycles?: import('../../../shared/domain/scorecard-cycle').ScorecardCycle[];
+    activeCycleId?: string | null;
+  }> {
+    return api('/api/scorecard-cycles', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  updateScorecardCycle(
+    id: string,
+    body: Record<string, unknown>,
+  ): Promise<{
+    ok: boolean;
+    message?: string;
+    cycle?: import('../../../shared/domain/scorecard-cycle').ScorecardCycle;
+    cycles?: import('../../../shared/domain/scorecard-cycle').ScorecardCycle[];
+    activeCycleId?: string | null;
+  }> {
+    return api(`/api/scorecard-cycles/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  }
+
+  activateScorecardCycle(id: string): Promise<{
+    ok: boolean;
+    message?: string;
+    cycles?: import('../../../shared/domain/scorecard-cycle').ScorecardCycle[];
+    activeCycleId?: string | null;
+  }> {
+    return api(`/api/scorecard-cycles/${encodeURIComponent(id)}/activate`, {
+      method: 'POST',
+      body: '{}',
+    });
+  }
+
+  deleteScorecardCycle(id: string): Promise<{
+    ok: boolean;
+    message?: string;
+    cycles?: import('../../../shared/domain/scorecard-cycle').ScorecardCycle[];
+    activeCycleId?: string | null;
+  }> {
+    return api(`/api/scorecard-cycles/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 
   getOpenProject(): Promise<OpenProjectIntegration> {

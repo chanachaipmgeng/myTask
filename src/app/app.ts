@@ -12,6 +12,7 @@ import {
   currentViewer,
   effectiveRole,
   setWorkspaceMode,
+  teamStagingMode,
   toggleViewAsMember,
   viewAsRole,
 } from './core/admin-settings';
@@ -21,8 +22,10 @@ import { ShellNotice, shellNoticeCssClass, shellNoticeTitle } from './core/shell
 import { ScorecardService } from './core/scorecard.service';
 import { currentSession, setSessionUser } from './core/session';
 import { ThemeService } from './core/theme.service';
-import { SectionCardComponent, TicketDetailDialogComponent } from './shared/ui';
+import { WorkspaceFilter } from './core/workspace-filter';
+import { FilterChipsComponent, SectionCardComponent, TicketDetailDialogComponent } from './shared/ui';
 import { TicketDetailService } from './core/ticket-detail.service';
+import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 
 type NavLeaf = {
   id: string;
@@ -53,6 +56,8 @@ type NavGroup = {
     MessageModule,
     DialogModule,
     TextBoxModule,
+    DropDownListModule,
+    FilterChipsComponent,
     SectionCardComponent,
     TicketDetailDialogComponent,
   ],
@@ -66,6 +71,9 @@ export class App implements AfterViewInit {
   private readonly api = inject(ApiClient);
   private readonly ticketDetail = inject(TicketDetailService);
   protected readonly theme = inject(ThemeService);
+  protected readonly workspaceFilter = inject(WorkspaceFilter);
+  protected readonly teamStaging = teamStagingMode;
+  protected readonly filterFields = { text: 'text', value: 'value' };
 
   @ViewChild('toast') private toast?: ToastComponent;
   @ViewChild('alertDialog') private alertDialog?: DialogComponent;
@@ -123,6 +131,45 @@ export class App implements AfterViewInit {
     this.liveResults.set([]);
     this.searchOpen.set(false);
   }
+
+  protected onWorkspaceTeam(event: { value?: string | null }): void {
+    this.workspaceFilter.setTeam(event.value ?? '');
+  }
+
+  protected onWorkspaceProject(event: { value?: string | null }): void {
+    this.workspaceFilter.setProject(event.value ?? '');
+  }
+
+  protected onWorkspaceTrack(value: string): void {
+    this.workspaceFilter.setTrack(value);
+  }
+
+  protected onWorkspaceCycle(event: { value?: string | null }): void {
+    this.workspaceFilter.setCycle(event.value ?? '');
+  }
+
+  protected onWorkspaceYear(event: { value?: string | null }): void {
+    this.workspaceFilter.setYear(event.value ?? '');
+  }
+
+  protected onWorkspaceFrom(event: Event): void {
+    const value = (event.target as HTMLInputElement | null)?.value ?? '';
+    this.workspaceFilter.setFromDate(value);
+  }
+
+  protected onWorkspaceTo(event: Event): void {
+    const value = (event.target as HTMLInputElement | null)?.value ?? '';
+    this.workspaceFilter.setToDate(value);
+  }
+
+  protected applySystemCycle(): void {
+    this.workspaceFilter.applySystemCycle();
+  }
+
+  protected clearWorkspaceFilter(): void {
+    this.workspaceFilter.clear();
+  }
+
   protected focusGlobalSearch(): void {
     this.globalSearchInput?.nativeElement.focus();
     this.searchOpen.set(true);
@@ -418,7 +465,8 @@ export class App implements AfterViewInit {
     // Keep desktop rail collapsed when switching pages — expand only via toggleNav().
     const leaf = firstLeaf(this.role(), cat);
     if (leaf) {
-      void this.router.navigateByUrl(leaf.route);
+      const commands = leaf.route.split('/').filter(Boolean);
+      void this.workspaceFilter.navigateWithFilter(['/', ...commands]);
     }
   }
   protected readonly selectedNodes = signal<string[]>(['me']);

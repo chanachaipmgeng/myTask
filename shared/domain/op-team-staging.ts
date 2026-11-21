@@ -4,8 +4,8 @@ import { Track } from './models';
 export type OpenProjectTeamStaging = 'rd' | 'all';
 
 export function parseTeamStaging(raw: string | undefined | null): OpenProjectTeamStaging {
-  const v = (raw ?? 'rd').trim().toLowerCase();
-  return v === 'all' ? 'all' : 'rd';
+  const v = (raw ?? 'all').trim().toLowerCase();
+  return v === 'rd' ? 'rd' : 'all';
 }
 
 export interface DepartmentTeamMap {

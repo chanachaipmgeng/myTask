@@ -78,7 +78,7 @@ export interface AppConfig {
     /** Cron for scheduled sync. Empty disables it. */
     cron: string;
     /**
-     * Team staging: `rd` = POC เฉพาะแผนก R&D (ค่าเริ่ม), `all` = เปิดสมาชิก/ใบงานทุกทีม
+     * Team staging: `all` = เปิดสมาชิก/ใบงานทุกทีม (ค่าเริ่ม), `rd` = POC เฉพาะแผนก R&D
      * Env: OPENPROJECT_TEAM_STAGING=rd|all
      */
     teamStaging: 'rd' | 'all';
@@ -117,7 +117,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       token: env['OPENPROJECT_API_TOKEN'] ?? '',
       writeback: bool(env['OPENPROJECT_WRITEBACK'], false),
       cron: env['OPENPROJECT_SYNC_CRON'] ?? '*/15 * * * *',
-      teamStaging: (env['OPENPROJECT_TEAM_STAGING'] ?? 'rd').trim().toLowerCase() === 'all' ? 'all' : 'rd',
+      teamStaging: (env['OPENPROJECT_TEAM_STAGING'] ?? 'all').trim().toLowerCase() === 'rd' ? 'rd' : 'all',
     },
     teams: {
       webhookUrl: (env['TEAMS_WEBHOOK_URL'] ?? '').trim(),

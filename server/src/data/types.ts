@@ -1,4 +1,5 @@
 import { AccessRole, Department, Level, Person, Team, Ticket, Track } from '../../../shared/domain/models';
+import { ScorecardCycleSettings } from '../../../shared/domain/scorecard-cycle';
 import { TrackWeights } from '../../../shared/domain/scoring';
 import { OpenProjectMapping } from '../integrations/openproject/openproject.mapper';
 
@@ -24,6 +25,8 @@ export interface AppSettings {
   openprojectMapping: OpenProjectMapping;
   /** Snapshot โปรเจกต์จาก discovery — ใช้เป็น dropdown แม้ยังไม่มีใบซิงก์ */
   openprojectProjectCatalog: OpenProjectCatalogEntry[];
+  /** รอบประเมินปี/ช่วงวัน + ขอบเขตทีม */
+  scorecardCycles: ScorecardCycleSettings;
 }
 
 export interface PersonRow {

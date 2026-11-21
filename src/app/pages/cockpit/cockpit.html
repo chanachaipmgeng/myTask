@@ -8,7 +8,7 @@
     badge="LIVE COCKPIT"
     [live]="true"
     [title]="isMine() ? 'ค็อกพิทของฉัน' : 'ห้องบัญชาการ'"
-    [subtitle]="isMine() ? 'ดัชนี ภาระงาน และแนวโน้มส่วนบุคคล' : 'ทีม R&D / IMP · ภาพรวมองค์กร'"
+    [subtitle]="isMine() ? 'ดัชนี ภาระงาน และแนวโน้มส่วนบุคคล' : (filterHint() || 'ทีมทั้งหมด · ภาพรวมองค์กร')"
     [metrics]="bandMetrics()"
     actionsLayout="row"
     ariaLabel="ดัชนีภาพรวมสำคัญ"
@@ -32,14 +32,26 @@
       <span class="e-icons e-expand"></span>
       <span>{{ isFullscreen() ? 'ย่อ' : 'เต็มจอ' }}</span>
     </button>
+    <button ejs-button type="button" title="ดูงานที่กรองตามทีมปัจจุบัน" (click)="drillToWork()">
+      <span class="e-icons e-table"></span>
+      <span>งาน</span>
+    </button>
+    <button ejs-button type="button" title="ดูใบงานที่กรองตามทีมปัจจุบัน" (click)="drillToTickets()">
+      <span class="e-icons e-list-unordered"></span>
+      <span>ใบงาน</span>
+    </button>
     @if (isMine()) {
       <a ejs-button routerLink="/me" title="หน้างานของฉัน">
         <span class="e-icons e-user"></span>
         <span>งานฉัน</span>
       </a>
     } @else {
-      <a ejs-button routerLink="/team" title="แดชบอร์ดทีม">
+      <button ejs-button type="button" title="ดูคนในทีมที่กรองอยู่" (click)="drillToPeople()">
         <span class="e-icons e-people"></span>
+        <span>คน</span>
+      </button>
+      <a ejs-button routerLink="/team" title="แดชบอร์ดทีม">
+        <span class="e-icons e-chart"></span>
         <span>ทีม</span>
       </a>
     }

@@ -11,6 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import {
   AccumulationChartModule,
@@ -102,6 +103,7 @@ export class CockpitPage implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
+  private readonly workspace = inject(WorkspaceFilter);
 
   @ViewChild('cockpitRoot') private cockpitRoot?: ElementRef<HTMLElement>;
 
@@ -125,13 +127,17 @@ export class CockpitPage implements OnInit, AfterViewInit {
 
   /** Scoped tickets */
   protected readonly scopedTickets = computed<readonly Ticket[]>(() => {
-    const all = this.scorecard.tickets();
+    const filtered = this.workspace.applyToTickets(this.scorecard.tickets(), this.scorecard.people());
     if (!this.isMine()) {
-      return all;
+      return filtered;
     }
     const myId = this.activePerson().id;
-    return all.filter((t) => t.assigneeId === myId);
+    return filtered.filter((t) => t.assigneeId === myId);
   });
+
+  protected readonly filterHint = computed(() =>
+    this.workspace.hasActiveFilter() ? `กำลังกรอง: ${this.workspace.filterSummary()}` : '',
+  );
 
   // ==========================================
   // Hero KPI Calculations
@@ -149,7 +155,10 @@ export class CockpitPage implements OnInit, AfterViewInit {
         ? Math.round(myRow.index * 10) / 10
         : 88.5;
     } else {
-      const scoredRows = this.scorecard.personRows().filter((p) => p.index > 0);
+      const teamPeople = new Set(this.workspace.applyToPeople(this.scorecard.people()).map((p) => p.id));
+      const scoredRows = this.scorecard
+        .personRows()
+        .filter((p) => p.index > 0 && teamPeople.has(p.id));
       mainScore = scoredRows.length > 0
         ? Math.round((scoredRows.reduce((sum, p) => sum + p.index, 0) / scoredRows.length) * 10) / 10
         : 89.5;
@@ -565,5 +574,17 @@ export class CockpitPage implements OnInit, AfterViewInit {
 
   protected closeMaximize(): void {
     this.maximizedCard.set(null);
+  }
+
+  protected drillToWork(): void {
+    void this.workspace.navigateWithFilter([this.isMine() ? '/me/work' : '/work']);
+  }
+
+  protected drillToTickets(): void {
+    void this.workspace.navigateWithFilter([this.isMine() ? '/me/tickets' : '/tickets']);
+  }
+
+  protected drillToPeople(): void {
+    void this.workspace.navigateWithFilter(['/people']);
   }
 }

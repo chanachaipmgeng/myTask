@@ -139,6 +139,7 @@
                     class="saas-nav__item"
                     [class.is-active]="selectedNodes()[0] === item.id"
                     [routerLink]="item.route"
+                    queryParamsHandling="preserve"
                     (click)="clearMenuSearch()"
                     [title]="item.text"
                   >
@@ -344,6 +345,15 @@
             }
           </div>
 
+          @if (teamStaging() === 'rd') {
+            <span
+              class="navbar-status-pill is-staging-rd"
+              title="OPENPROJECT_TEAM_STAGING=rd — กำลังกรองเฉพาะแผนก R&D"
+            >
+              <span class="status-label">Staging R&D</span>
+            </span>
+          }
+
           <div
             class="navbar-status-pill"
             [class.is-api]="usingApi() && !mockMode()"
@@ -442,6 +452,103 @@
         </div>
       </ejs-appbar>
 
+      <div class="workspace-filter-bar" aria-label="ตัวกรองทีมและรอบประเมินทั่วทั้งระบบ">
+        <div class="workspace-filter-bar__controls">
+          <label class="workspace-filter-field">
+            <span>รอบประเมิน</span>
+            <ejs-dropdownlist
+              [dataSource]="workspaceFilter.cycleOptions()"
+              [fields]="filterFields"
+              [value]="workspaceFilter.cycleId()"
+              (change)="onWorkspaceCycle($event)"
+              placeholder="รอบระบบ"
+              width="190px"
+              cssClass="e-outline"
+            ></ejs-dropdownlist>
+          </label>
+          <label class="workspace-filter-field">
+            <span>ปี</span>
+            <ejs-dropdownlist
+              [dataSource]="workspaceFilter.yearOptions()"
+              [fields]="filterFields"
+              [value]="workspaceFilter.yearCe() == null ? '' : '' + workspaceFilter.yearCe()"
+              (change)="onWorkspaceYear($event)"
+              placeholder="ทุกปี"
+              width="160px"
+              cssClass="e-outline"
+            ></ejs-dropdownlist>
+          </label>
+          <label class="workspace-filter-field">
+            <span>จากวัน</span>
+            <input
+              class="workspace-filter-date"
+              type="date"
+              [value]="workspaceFilter.fromDate()"
+              (change)="onWorkspaceFrom($event)"
+            />
+          </label>
+          <label class="workspace-filter-field">
+            <span>ถึงวัน</span>
+            <input
+              class="workspace-filter-date"
+              type="date"
+              [value]="workspaceFilter.toDate()"
+              (change)="onWorkspaceTo($event)"
+            />
+          </label>
+          <label class="workspace-filter-field">
+            <span>ทีม</span>
+            <ejs-dropdownlist
+              [dataSource]="workspaceFilter.teamOptions()"
+              [fields]="filterFields"
+              [value]="workspaceFilter.teamId()"
+              (change)="onWorkspaceTeam($event)"
+              placeholder="ทุกทีม"
+              width="170px"
+              cssClass="e-outline"
+            ></ejs-dropdownlist>
+          </label>
+          <label class="workspace-filter-field">
+            <span>โปรเจกต์</span>
+            <ejs-dropdownlist
+              [dataSource]="workspaceFilter.projectOptions()"
+              [fields]="filterFields"
+              [value]="workspaceFilter.opProject()"
+              (change)="onWorkspaceProject($event)"
+              placeholder="ทุกโปรเจกต์"
+              width="180px"
+              cssClass="e-outline"
+            ></ejs-dropdownlist>
+          </label>
+          <app-filter-chips
+            [options]="workspaceFilter.trackChipOptions"
+            [value]="workspaceFilter.track()"
+            (valueChange)="onWorkspaceTrack($event)"
+          ></app-filter-chips>
+        </div>
+        <div class="workspace-filter-bar__meta">
+          <span class="workspace-filter-summary" [title]="workspaceFilter.filterSummary()">
+            {{ workspaceFilter.filterSummary() }}
+          </span>
+          @if (workspaceFilter.systemCycle(); as sys) {
+            <button
+              ejs-button
+              cssClass="e-small e-outline"
+              type="button"
+              title="ใช้รอบที่แอดมินเปิดเป็นค่าเริ่ม"
+              (click)="applySystemCycle()"
+            >
+              ใช้รอบระบบ · {{ sys.label }}
+            </button>
+          }
+          @if (workspaceFilter.hasActiveFilter()) {
+            <button ejs-button cssClass="e-small e-outline" type="button" (click)="clearWorkspaceFilter()">
+              ล้างฟิลเตอร์
+            </button>
+          }
+        </div>
+      </div>
+
       <!-- Top Sub-Navigation Tab Bar (for active sidebar category) -->
       @if (activeSubTabs().length > 1) {
         @for (cat of [activeNavCategory()]; track cat) {
@@ -462,6 +569,7 @@
                   class="subnav-tab"
                   [class.is-active]="selectedNodes()[0] === tab.id"
                   [routerLink]="tab.route"
+                  queryParamsHandling="preserve"
                   [title]="tab.text"
                 >
                   <span class="subnav-tab__icon"><span [class]="tab.iconCss"></span></span>

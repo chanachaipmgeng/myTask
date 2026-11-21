@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
 import { ButtonModule, CheckBoxModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
@@ -31,6 +31,7 @@ import { parseClosedTicketCsv, parseClosedTicketJson } from '../../core/ticket-f
 import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { ViewportService } from '../../core/viewport.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID } from '../../data/seed';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import {
@@ -92,6 +93,7 @@ export class TicketsPage {
   private readonly myProject = inject(MyProjectSyncAdapter);
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
+  private readonly workspace = inject(WorkspaceFilter);
   protected readonly viewport = inject(ViewportService);
 
   @ViewChild('ticketGrid') private ticketGrid?: GridComponent;
@@ -180,6 +182,13 @@ export class TicketsPage {
   protected readonly message = signal('');
   protected readonly error = signal('');
 
+  private readonly syncWorkspaceTrack = effect(() => {
+    const track = this.workspace.track();
+    if (this.trackFilter() !== track) {
+      this.trackFilter.set(track);
+    }
+  });
+
   protected readonly track = signal<Track>('Implement');
   protected readonly type = signal<TicketType>('Bug-Fix');
   protected readonly moduleName = signal('');
@@ -250,8 +259,10 @@ export class TicketsPage {
     const type = this.typeFilter();
     const query = this.query();
     const selfId = this.activePersonId();
+    const scopedIds = new Set(this.workspace.applyToTickets(this.scorecard.tickets()).map((t) => t.id));
     return this.scorecard
       .ticketRows()
+      .filter((row) => scopedIds.has(row.id))
       .filter((row) => (!this.isMine ? true : row.assigneeId === selfId))
       .filter((row) => (track === 'All' || row.track === track) && (type === 'All' || row.type === type))
       .filter((row) => query === '' || `${row.id} ${row.module} ${row.assignee}`.toLowerCase().includes(query));
@@ -373,6 +384,7 @@ export class TicketsPage {
     const value = event.value;
     if (value === 'All' || value === 'Implement' || value === 'RD') {
       this.trackFilter.set(value);
+      this.workspace.setTrack(value);
     }
   }
 

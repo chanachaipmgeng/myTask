@@ -88,7 +88,12 @@
                     ></ejs-textbox>
                   </label>
                   <div class="field md:col-span-2 flex flex-wrap gap-2 items-center">
-                    <span class="text-sm opacity-80">Team staging (env): <strong>{{ teamStaging() }}</strong></span>
+                    <span class="text-sm opacity-80">
+                      Team staging (env): <strong>{{ teamStaging() }}</strong>
+                      @if (teamStaging() === 'rd') {
+                        <span class="e-badge e-badge-warning e-badge-pill ml-2">กำลังกรองเฉพาะ R&D</span>
+                      }
+                    </span>
                     @if (canEdit() && projectCatalog().length) {
                       <button ejs-button cssClass="e-outline e-small" type="button" (click)="useActiveProjectsFromCatalog()">
                         ใช้ทุกโปรเจกต์ active จาก catalog ({{ projectCatalog().length }})

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
+import { CheckBoxSelectionService, DropDownListModule, MultiSelectModule } from '@syncfusion/ej2-angular-dropdowns';
 import { GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
 import { NumericTextBoxModule, TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { MessageModule } from '@syncfusion/ej2-angular-notifications';
@@ -31,6 +31,8 @@ import { DEFAULT_TRACK_WEIGHTS } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
+import { beToCe, ceToBe, createYearCycle, type ScorecardCycleStatus } from '../../../../shared/domain/scorecard-cycle';
+import { listOrgTeamOptions } from '../../../../shared/domain/workspace-scope';
 import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
@@ -42,6 +44,7 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DropDownListModule,
+    MultiSelectModule,
     NumericTextBoxModule,
     TextBoxModule,
     CheckBoxModule,
@@ -56,7 +59,7 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
     FlashMessagesComponent,
     StatusBadgeComponent,
   ],
-  providers: [PageService, SortService, ResizeService],
+  providers: [PageService, SortService, ResizeService, CheckBoxSelectionService],
   templateUrl: './admin.html',
 })
 export class AdminPage {
@@ -95,6 +98,29 @@ export class AdminPage {
   protected readonly links = connections;
   protected readonly roster = this.scorecard.roster;
   protected readonly personQuery = signal('');
+  protected readonly cycles = this.scorecard.cycles;
+  protected readonly activeCycleId = this.scorecard.activeCycleId;
+  protected readonly cycleBusy = signal(false);
+  protected readonly cycleMessage = signal('');
+  protected readonly cycleError = signal('');
+  private readonly nowBe = ceToBe(new Date().getFullYear());
+  protected readonly cycleYearBe = signal(this.nowBe);
+  protected readonly cycleLabel = signal(`ปี ${this.nowBe}`);
+  protected readonly cycleStartOn = signal(`${beToCe(this.nowBe)}-01-01`);
+  protected readonly cycleEndOn = signal(`${beToCe(this.nowBe)}-12-31`);
+  protected readonly cycleTeamIds = signal<string[]>([]);
+  protected readonly cycleStatus = signal<ScorecardCycleStatus>('open');
+  protected readonly cycleStatusOptions = [
+    { text: 'เปิด (open)', value: 'open' },
+    { text: 'ร่าง (draft)', value: 'draft' },
+    { text: 'ปิด (closed)', value: 'closed' },
+  ];
+  protected readonly cycleTeamOptions = computed(() =>
+    listOrgTeamOptions(this.scorecard.people(), this.scorecard.teams()).map((row) => ({
+      text: row.label,
+      value: row.id,
+    })),
+  );
   protected readonly auditLogs = signal<AuditLogDto[]>([
     {
       id: 1,
@@ -158,6 +184,126 @@ export class AdminPage {
 
   constructor() {
     void this.loadAuditLogs();
+  }
+
+  protected onCycleYearBe(event: { value?: number | null }): void {
+    const yearBe = Math.trunc(Number(event.value ?? this.nowBe));
+    this.cycleYearBe.set(yearBe);
+    const yearCe = beToCe(yearBe);
+    this.cycleLabel.set(`ปี ${yearBe}`);
+    this.cycleStartOn.set(`${yearCe}-01-01`);
+    this.cycleEndOn.set(`${yearCe}-12-31`);
+  }
+
+  protected onCycleLabel(event: { value?: string | null }): void {
+    this.cycleLabel.set(event.value ?? '');
+  }
+
+  protected onCycleStart(event: Event): void {
+    this.cycleStartOn.set((event.target as HTMLInputElement | null)?.value ?? '');
+  }
+
+  protected onCycleEnd(event: Event): void {
+    this.cycleEndOn.set((event.target as HTMLInputElement | null)?.value ?? '');
+  }
+
+  protected onCycleTeams(event: { value?: string[] | null }): void {
+    this.cycleTeamIds.set([...(event.value ?? [])]);
+  }
+
+  protected onCycleStatus(event: { value?: string | null }): void {
+    const value = event.value;
+    if (value === 'open' || value === 'draft' || value === 'closed') {
+      this.cycleStatus.set(value);
+    }
+  }
+
+  protected async reloadCycles(): Promise<void> {
+    this.cycleError.set('');
+    try {
+      await this.scorecard.reloadFromApi();
+      this.cycleMessage.set('รีเฟรชรอบจากเซิร์ฟเวอร์แล้ว');
+    } catch (err) {
+      this.cycleError.set(err instanceof Error ? err.message : 'รีเฟรชรอบไม่สำเร็จ');
+    }
+  }
+
+  protected async createCycle(): Promise<void> {
+    if (!this.canEdit()) {
+      return;
+    }
+    this.cycleBusy.set(true);
+    this.cycleError.set('');
+    this.cycleMessage.set('');
+    try {
+      const draft = createYearCycle({
+        yearBe: this.cycleYearBe(),
+        label: this.cycleLabel(),
+        teamIds: this.cycleTeamIds(),
+        status: this.cycleStatus(),
+      });
+      const result = await this.api.createScorecardCycle({
+        yearBe: this.cycleYearBe(),
+        label: this.cycleLabel() || draft.label,
+        startOn: this.cycleStartOn(),
+        endOn: this.cycleEndOn(),
+        teamIds: this.cycleTeamIds(),
+        status: this.cycleStatus(),
+        activate: true,
+      });
+      if (!result.ok) {
+        this.cycleError.set(result.message ?? 'เปิดรอบไม่สำเร็จ');
+        return;
+      }
+      await this.scorecard.reloadFromApi();
+      this.cycleMessage.set(`เปิดรอบ ${result.cycle?.label ?? ''} แล้ว และตั้งเป็นรอบระบบ`);
+    } catch (err) {
+      this.cycleError.set(err instanceof Error ? err.message : 'เปิดรอบไม่สำเร็จ');
+    } finally {
+      this.cycleBusy.set(false);
+    }
+  }
+
+  protected async activateCycle(id: string): Promise<void> {
+    if (!this.canEdit()) {
+      return;
+    }
+    this.cycleBusy.set(true);
+    this.cycleError.set('');
+    try {
+      const result = await this.api.activateScorecardCycle(id);
+      if (!result.ok) {
+        this.cycleError.set(result.message ?? 'เปิดเป็นรอบระบบไม่สำเร็จ');
+        return;
+      }
+      await this.scorecard.reloadFromApi();
+      this.cycleMessage.set('ตั้งเป็นรอบระบบแล้ว — กด «ใช้รอบระบบ» บนแถบฟิลเตอร์เพื่อกรองทันที');
+    } catch (err) {
+      this.cycleError.set(err instanceof Error ? err.message : 'เปิดเป็นรอบระบบไม่สำเร็จ');
+    } finally {
+      this.cycleBusy.set(false);
+    }
+  }
+
+  protected async deleteCycle(id: string): Promise<void> {
+    if (!this.canEdit()) {
+      return;
+    }
+    this.cycleBusy.set(true);
+    this.cycleError.set('');
+    try {
+      const result = await this.api.deleteScorecardCycle(id);
+      if (!result.ok) {
+        this.cycleError.set(result.message ?? 'ลบรอบไม่สำเร็จ');
+        return;
+      }
+      await this.scorecard.reloadFromApi();
+      this.cycleMessage.set('ลบรอบแล้ว');
+    } catch (err) {
+      this.cycleError.set(err instanceof Error ? err.message : 'ลบรอบไม่สำเร็จ');
+    } finally {
+      this.cycleBusy.set(false);
+    }
   }
 
   protected async loadAuditLogs(): Promise<void> {

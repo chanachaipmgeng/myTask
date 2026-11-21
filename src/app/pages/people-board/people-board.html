@@ -76,7 +76,7 @@
       <e-columns>
         <e-column field="personLabel" headerText="พนักงาน" width="190" [isFrozen]="!viewport.isMobile()">
           <ng-template #template let-data>
-            <a class="person-link" [routerLink]="['/people', data.id]">{{ data.personLabel }}</a>
+            <a class="person-link" [routerLink]="['/people', data.id]" [queryParams]="{ teamId: workspace.teamId() || null, track: workspace.track() === 'All' ? null : workspace.track(), project: workspace.opProject() || null }">{{ data.personLabel }}</a>
           </ng-template>
         </e-column>
         <e-column field="levelLabel" headerText="ระดับ" width="110"></e-column>

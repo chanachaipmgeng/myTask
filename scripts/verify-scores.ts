@@ -46,6 +46,15 @@ import {
   mapDepartmentToTeam,
   parseTeamStaging,
 } from '../shared/domain/op-team-staging';
+import {
+  createYearCycle,
+  ticketInDateRange,
+} from '../shared/domain/scorecard-cycle';
+import {
+  filterPeopleByWorkspace,
+  filterTicketsByWorkspace,
+  listOrgTeamOptions,
+} from '../shared/domain/workspace-scope';
 import { extractTicketIdFromText, mapGitLabMergeRequests } from '../src/app/core/gitlab-mr';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../src/app/core/ticket-file';
 import { Person, Ticket, TicketType } from '../src/app/core/models';
@@ -457,11 +466,37 @@ assert.equal(resolvePersonTeamId(SEED_PEOPLE.find((p) => p.id === 'itsara')), 'i
 assert.equal(resolvePersonTeamId(SEED_PEOPLE.find((p) => p.track === 'RD')), 'rd');
 assert.equal(parseTeamStaging('all'), 'all');
 assert.equal(parseTeamStaging('rd'), 'rd');
+assert.equal(parseTeamStaging(undefined), 'all');
+assert.equal(parseTeamStaging(null), 'all');
 assert.equal(mapDepartmentToTeam('RD-Core').teamId, 'rd');
 assert.equal(mapDepartmentToTeam('QA Automation').teamId, 'qa');
 assert.equal(isPersonActiveForStaging('rd', { isRd: false, locked: false }), false);
 assert.equal(isPersonActiveForStaging('all', { isRd: false, locked: false }), true);
 assert.equal(isPersonActiveForStaging('all', { isRd: true, locked: true }), false);
+const orgTeams = listOrgTeamOptions(SEED_PEOPLE, [{ id: 'qa', departmentId: 'dev', name: 'QA', leadId: null }]);
+assert.ok(orgTeams.some((row) => row.id === 'qa'));
+assert.ok(orgTeams.some((row) => row.id === 'rd' || row.id === 'implement'));
+const teamFilteredPeople = filterPeopleByWorkspace(SEED_PEOPLE, { teamId: 'implement' });
+assert.ok(teamFilteredPeople.length > 0);
+assert.ok(teamFilteredPeople.every((p) => resolvePersonTeamId(p) === 'implement'));
+const teamFilteredTickets = filterTicketsByWorkspace(SEED_TICKETS, SEED_PEOPLE, {
+  teamId: 'implement',
+  track: 'Implement',
+});
+assert.ok(teamFilteredTickets.every((t) => t.track === 'Implement'));
+assert.ok(
+  teamFilteredTickets.every((t) => {
+    const person = SEED_PEOPLE.find((p) => p.id === t.assigneeId);
+    return !!person && resolvePersonTeamId(person) === 'implement';
+  }),
+);
+const cycle2569 = createYearCycle({ yearBe: 2569, teamIds: ['rd'], status: 'open' });
+assert.equal(cycle2569.yearCe, 2026);
+assert.equal(cycle2569.startOn, '2026-01-01');
+assert.equal(cycle2569.endOn, '2026-12-31');
+assert.deepEqual(cycle2569.teamIds, ['rd']);
+const datedTicket = SEED_TICKETS.find((t) => !!t.closedOn) ?? SEED_TICKETS[0]!;
+assert.equal(ticketInDateRange(datedTicket, '2000-01-01', '2099-12-31'), true);
 const workBacklog = workBacklogRows(SEED_TICKETS, SEED_PEOPLE);
 assert.ok(workBacklog.every((row) => row.status === 'Backlog' || row.assignee === 'ยังไม่มีผู้รับ'));
 const personalBacklogPerson = 'itsara';

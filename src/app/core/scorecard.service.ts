@@ -22,9 +22,11 @@ import { planNewWork } from './capacity';
 import { MyGitCommit, MyGitMatch, MyGitSyncResult, MyGitUnmatched } from './mygit-sync';
 import { scorePartNotes } from './kpi-meaning';
 import {
+  Department,
   EmployeeLeave,
   Level,
   Person,
+  Team,
   Ticket,
   TicketAllocation,
   TicketDispute,
@@ -32,6 +34,7 @@ import {
   Track,
   VarianceCode,
 } from './models';
+import { ScorecardCycle, defaultCycleSettings, normalizeCycleSettings } from '../../../shared/domain/scorecard-cycle';
 import {
   HandoffSlaReport,
   PreflightReport,
@@ -176,9 +179,17 @@ export class ScorecardService {
   private readonly stageLogsState = signal<TicketStageLog[]>([...SEED_STAGE_LOGS]);
   private readonly leavesState = signal<EmployeeLeave[]>([...SEED_LEAVES]);
   private readonly disputesState = signal<TicketDispute[]>([...SEED_DISPUTES]);
+  private readonly departmentsState = signal<Department[]>([]);
+  private readonly teamsState = signal<Team[]>([]);
+  private readonly cyclesState = signal<ScorecardCycle[]>(defaultCycleSettings().cycles);
+  private readonly activeCycleIdState = signal<string | null>(defaultCycleSettings().activeCycleId);
 
   readonly people = computed(() => this.peopleState());
   readonly tickets = this.ticketsState.asReadonly();
+  readonly departments = this.departmentsState.asReadonly();
+  readonly teams = this.teamsState.asReadonly();
+  readonly cycles = this.cyclesState.asReadonly();
+  readonly activeCycleId = this.activeCycleIdState.asReadonly();
   readonly allocations = this.allocationsState.asReadonly();
   readonly stageLogs = this.stageLogsState.asReadonly();
   readonly leaves = this.leavesState.asReadonly();
@@ -262,10 +273,19 @@ export class ScorecardService {
       }
       this.peopleState.set(data.people.map((person) => ({ ...person })));
       this.ticketsState.set(data.tickets.map((ticket) => ({ ...ticket })));
+      this.departmentsState.set((data.departments ?? []).map((item) => ({ ...item })));
+      this.teamsState.set((data.teams ?? []).map((item) => ({ ...item })));
       this.disputesState.set((data.disputes ?? []).map((item) => ({ ...item })));
       this.leavesState.set((data.leaves ?? []).map((item) => ({ ...item })));
       this.stageLogsState.set((data.stageLogs ?? []).map((item) => ({ ...item })));
       this.allocationsState.set((data.allocations ?? []).map((item) => ({ ...item })));
+      const cycleSettings = normalizeCycleSettings(
+        (data.settings as { scorecardCycles?: Parameters<typeof normalizeCycleSettings>[0] })?.scorecardCycles,
+      );
+      const resolvedCycles =
+        cycleSettings.cycles.length > 0 ? cycleSettings : defaultCycleSettings();
+      this.cyclesState.set(resolvedCycles.cycles.map((row) => ({ ...row, teamIds: [...row.teamIds] })));
+      this.activeCycleIdState.set(resolvedCycles.activeCycleId);
       this.devLoginEnabledState.set(data.auth.devLoginEnabled ?? false);
       applyRemoteSettings(data.settings);
       if (data.teamStaging === 'all' || data.teamStaging === 'rd') {

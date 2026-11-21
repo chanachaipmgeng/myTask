@@ -4,8 +4,11 @@
   [class.metrics-only]="!title && !subtitle && !badge && !crumb"
   [attr.aria-label]="ariaLabel"
 >
-  @if (title || subtitle || badge || crumb || note) {
-    <div class="hero-band__top">
+  <div
+    class="hero-band__top"
+    [class.hero-band__top--actions-only]="!(title || subtitle || badge || crumb || note)"
+  >
+    @if (title || subtitle || badge || crumb || note) {
       <div class="hero-band__identity">
         <div class="hero-band__title-row">
           @if (title) {
@@ -27,16 +30,16 @@
           <p class="hero-band__subtitle">{{ subtitle }}</p>
         }
       </div>
+    }
 
-      <div class="hero-band__actions">
-        <ng-content></ng-content>
-      </div>
-    </div>
-  } @else {
-    <div class="hero-band__actions hero-band__actions--solo">
+    <!-- ng-content ต้องมีจุดเดียวทั้งเทมเพลต ไม่งั้น Angular ไม่ฉายปุ่ม/actions -->
+    <div
+      class="hero-band__actions"
+      [class.hero-band__actions--solo]="!(title || subtitle || badge || crumb || note)"
+    >
       <ng-content></ng-content>
     </div>
-  }
+  </div>
 
   @if (metrics.length) {
     <div class="hero-band__kpi-strip">
@@ -61,11 +64,7 @@
             }
           </span>
           @if (metric.hint) {
-            <span
-              class="hero-band__hint"
-              [class.is-good]="metric.tone === 'good'"
-              [class.is-bad]="metric.tone === 'bad'"
-            >
+            <span class="hero-band__hint" [class.is-bad]="metric.tone === 'bad'" [class.is-good]="metric.tone === 'good'">
               {{ metric.hint }}
             </span>
           }

@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   CategoryService,
@@ -31,6 +31,7 @@ import { buildPeopleRoster } from '../../core/people-roster';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { ViewportService } from '../../core/viewport.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { Track } from '../../core/models';
 import { INDEX_TARGET } from '../../core/scoring';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
@@ -87,8 +88,16 @@ type TrackFilter = Track | 'All';
 export class PeopleBoard {
   private readonly scorecard = inject(ScorecardService);
   private readonly router = inject(Router);
+  protected readonly workspace = inject(WorkspaceFilter);
   protected readonly theme = inject(ThemeService);
   protected readonly viewport = inject(ViewportService);
+
+  private readonly syncWorkspaceTrack = effect(() => {
+    const track = this.workspace.track();
+    if (this.track() !== track) {
+      this.track.set(track);
+    }
+  });
 
   @ViewChild('peopleGrid') private peopleGrid?: GridComponent;
 
@@ -197,8 +206,12 @@ export class PeopleBoard {
 
   protected readonly rows = computed(() => {
     const track = this.track();
+    const scopedIds = new Set(this.workspace.applyToPeople(this.scorecard.people()).map((p) => p.id));
     const q = this.query().trim().toLowerCase();
     return this.roster().filter((row) => {
+      if (!scopedIds.has(row.id)) {
+        return false;
+      }
       if (track !== 'All' && row.track !== track) {
         return false;
       }
@@ -216,6 +229,7 @@ export class PeopleBoard {
   protected setTrackChip(value: string): void {
     if (value === 'All' || value === 'RD' || value === 'Implement') {
       this.track.set(value);
+      this.workspace.setTrack(value);
     }
   }
 
@@ -226,7 +240,7 @@ export class PeopleBoard {
   protected openPerson(args: { data?: { id?: string } }): void {
     const id = args.data?.id;
     if (id) {
-      void this.router.navigate(['/people', id]);
+      void this.workspace.navigateWithFilter(['/people', id]);
     }
   }
 

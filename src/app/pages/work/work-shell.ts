@@ -12,12 +12,13 @@ import {
   DueBucket,
   fridayOfWeek,
   listWorkProjectOptions,
-  listWorkTeamOptions,
   filterWorkTickets,
 } from '../../core/work-views';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
+import { WorkspaceFilter } from '../../core/workspace-filter';
+import { listOrgTeamOptions } from '../../../../shared/domain/workspace-scope';
 import { WorkHubFilter, WorkHubScope } from './work-hub-filter';
 
 const TEAM_TABS = [
@@ -54,6 +55,7 @@ export class WorkShell {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly scorecard = inject(ScorecardService);
+  private readonly workspace = inject(WorkspaceFilter);
   protected readonly filter = inject(WorkHubFilter);
 
   protected readonly fields = { text: 'text', value: 'value' };
@@ -83,12 +85,24 @@ export class WorkShell {
     const scope: WorkHubScope = this.route.snapshot.data['scope'] === 'mine' ? 'mine' : 'team';
     this.filter.scope.set(scope);
     this.filter.restoreFromStorage(scope);
+    // Global workspace wins for team / project / track (cross-page URL)
+    this.filter.teamId.set(this.workspace.teamId());
+    this.filter.opProject.set(this.workspace.opProject());
+    this.filter.track.set(this.workspace.track());
     if (scope === 'mine') {
       const personId = currentSession()?.person.id ?? currentViewer().id;
       this.filter.assigneeId.set(personId);
     } else {
       this.filter.assigneeId.set('');
     }
+    effect(() => {
+      const teamId = this.workspace.teamId();
+      const opProject = this.workspace.opProject();
+      const track = this.workspace.track();
+      if (this.filter.teamId() !== teamId) this.filter.teamId.set(teamId);
+      if (this.filter.opProject() !== opProject) this.filter.opProject.set(opProject);
+      if (this.filter.track() !== track) this.filter.track.set(track);
+    });
     effect(() => {
       // touch signals so persistence stays in sync
       this.filter.track();
@@ -132,7 +146,7 @@ export class WorkShell {
   });
 
   protected readonly teamOptions = computed(() => {
-    const rows = listWorkTeamOptions(this.scorecard.people());
+    const rows = listOrgTeamOptions(this.scorecard.people(), this.scorecard.teams());
     return [{ text: 'ทุกทีม', value: '' }, ...rows.map((row) => ({ text: row.label, value: row.id }))];
   });
 
@@ -181,6 +195,7 @@ export class WorkShell {
   protected setTrackChip(value: string): void {
     if (value === 'All' || value === 'Implement' || value === 'RD') {
       this.filter.track.set(value);
+      this.workspace.setTrack(value);
     }
   }
 
@@ -199,11 +214,15 @@ export class WorkShell {
   }
 
   protected setTeam(event: { value?: string | null }): void {
-    this.filter.teamId.set(event.value ?? '');
+    const value = event.value ?? '';
+    this.filter.teamId.set(value);
+    this.workspace.setTeam(value);
   }
 
   protected setProject(event: { value?: string | null }): void {
-    this.filter.opProject.set(event.value ?? '');
+    const value = event.value ?? '';
+    this.filter.opProject.set(value);
+    this.workspace.setProject(value);
   }
 
   protected setQuery(event: { value?: string }): void {
@@ -217,6 +236,7 @@ export class WorkShell {
     this.filter.opProject.set('');
     this.filter.dueBucket.set('all');
     this.filter.weekOffset.set(0);
+    this.workspace.clear();
   }
 }
 

@@ -42,6 +42,7 @@ import { KpiPeriodType, previousMonthKey } from '../../core/kpi-snapshot';
 import { Track } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { INDEX_TARGET, formatMd, sampleWorkloadPoints } from '../../core/scoring';
 import { ShellNotice } from '../../core/shell-notice';
 import { todayInBangkok } from '../../core/workflow';
@@ -51,6 +52,7 @@ import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-c
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
 import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton/loading-skeleton';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import { Router } from '@angular/router';
 
 type TrackFilter = Track | 'All';
 
@@ -96,6 +98,8 @@ export class TeamDashboard implements AfterViewInit {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient, { optional: true });
   private readonly notice = inject(ShellNotice);
+  private readonly workspace = inject(WorkspaceFilter);
+  private readonly router = inject(Router);
   protected readonly theme = inject(ThemeService);
   private readonly el = inject(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
@@ -122,6 +126,16 @@ export class TeamDashboard implements AfterViewInit {
     { text: 'ไตรมาส', value: 'quarter' },
   ];
   protected readonly track = signal<TrackFilter>('All');
+  private readonly syncWorkspaceTrack = effect(() => {
+    const track = this.workspace.track();
+    if (this.track() !== track) {
+      this.track.set(track);
+    }
+  });
+  private readonly scopedPeople = computed(() => this.workspace.applyToPeople(this.scorecard.people()));
+  private readonly scopedTickets = computed(() =>
+    this.workspace.applyToTickets(this.scorecard.tickets(), this.scorecard.people()),
+  );
   protected readonly periodMode = signal(LIVE_MODE);
   protected readonly periods = signal<KpiSnapshotPeriodDto[]>([]);
   protected readonly snapshotRows = signal<KpiSnapshotRowDto[]>([]);
@@ -230,7 +244,10 @@ export class TeamDashboard implements AfterViewInit {
   protected readonly columnCorner = { topLeft: 8, topRight: 8 };
 
   protected readonly alerts = this.scorecard.alerts;
-  protected readonly explanations = computed(() => kpiExplanations(this.scorecard.tickets(), this.scorecard.people()));
+  protected readonly explanations = computed(() => kpiExplanations(this.scopedTickets(), this.scopedPeople()));
+  protected readonly filterHint = computed(() =>
+    this.workspace.hasActiveFilter() ? `กำลังกรอง: ${this.workspace.filterSummary()}` : '',
+  );
 
   protected readonly viewingLive = computed(() => this.periodMode() === LIVE_MODE);
 
@@ -243,7 +260,7 @@ export class TeamDashboard implements AfterViewInit {
   ]);
 
   protected readonly monthlyPoints = computed(() =>
-    monthlyTrend(this.scorecard.people(), this.scorecard.tickets(), this.track()),
+    monthlyTrend(this.scopedPeople(), this.scopedTickets(), this.track()),
   );
   protected readonly sparkPlan = computed(() =>
     this.monthlyPoints().map((p) => ({ x: p.month, y: p.plan })),
@@ -258,21 +275,19 @@ export class TeamDashboard implements AfterViewInit {
     this.monthlyPoints().map((p) => ({ x: p.month, y: p.target })),
   );
   protected readonly quotaPoints = computed(() =>
-    quotaBars(this.scorecard.people(), this.scorecard.tickets(), this.track()),
+    quotaBars(this.scopedPeople(), this.scopedTickets(), this.track()),
   );
   protected readonly mdCompositionPoints = computed(() =>
-    mdCompositionTrend(this.scorecard.tickets()),
+    mdCompositionTrend(this.scopedTickets()),
   );
 
   protected readonly samplePoints = computed(() =>
-    sampleWorkloadPoints(this.scorecard.tickets(), this.track()),
+    sampleWorkloadPoints(this.scopedTickets(), this.track()),
   );
 
   protected readonly sampleSummary = computed(() => {
     const track = this.track();
-    const tickets = this.scorecard
-      .tickets()
-      .filter((ticket) => track === 'All' || ticket.track === track);
+    const tickets = this.scopedTickets().filter((ticket) => track === 'All' || ticket.track === track);
     const md = tickets.reduce(
       (sum, ticket) => sum + (ticket.closed ? ticket.actualMd : ticket.estimateMd),
       0,
@@ -357,7 +372,39 @@ export class TeamDashboard implements AfterViewInit {
   protected setTrackChip(value: string): void {
     if (value === 'All' || value === 'RD' || value === 'Implement') {
       this.track.set(value);
+      this.workspace.setTrack(value);
     }
+  }
+
+  protected drillToWork(track?: TrackFilter): void {
+    if (track === 'RD' || track === 'Implement') {
+      this.workspace.setTrack(track);
+    }
+    void this.workspace.navigateWithFilter(['/work']);
+  }
+
+  protected drillToTickets(track?: TrackFilter): void {
+    if (track === 'RD' || track === 'Implement') {
+      this.workspace.setTrack(track);
+    }
+    void this.workspace.navigateWithFilter(['/tickets']);
+  }
+
+  protected drillToPeople(): void {
+    void this.workspace.navigateWithFilter(['/people']);
+  }
+
+  protected onSamplePointClick(args: { point?: { x?: string } }): void {
+    const label = (args.point?.x ?? '').toLowerCase();
+    if (label.includes('r&d') || label.includes('rd')) {
+      this.drillToTickets('RD');
+      return;
+    }
+    if (label.includes('implement') || label.includes('imp')) {
+      this.drillToTickets('Implement');
+      return;
+    }
+    this.drillToTickets();
   }
 
   protected setPeriodMode(event: { value?: string | null }): void {

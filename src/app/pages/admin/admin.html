@@ -13,6 +13,133 @@
   </app-page-head>
 
   <app-section-card
+    title="เปิดรอบประเมิน (ปี / ช่วงวัน / ทีม)"
+    subtitle="กำหนดรอบที่ใช้กรองทั้งระบบ — เลือกใช้บนแถบ Global Filter หรือกดเปิดเป็นรอบระบบ"
+    badge="รอบคะแนน"
+    badgeTone="info"
+  >
+    <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+      <app-form-field label="ปี พ.ศ.">
+        <ejs-numerictextbox
+          [value]="cycleYearBe()"
+          [enabled]="canEdit()"
+          [min]="2560"
+          [max]="2600"
+          [step]="1"
+          format="n0"
+          (change)="onCycleYearBe($event)"
+        ></ejs-numerictextbox>
+      </app-form-field>
+      <app-form-field label="ชื่อรอบ">
+        <ejs-textbox
+          [value]="cycleLabel()"
+          [enabled]="canEdit()"
+          placeholder="ปี 2569"
+          (change)="onCycleLabel($event)"
+        ></ejs-textbox>
+      </app-form-field>
+      <app-form-field label="วันเริ่ม">
+        <input
+          class="workspace-filter-date w-full"
+          type="date"
+          [value]="cycleStartOn()"
+          [disabled]="!canEdit()"
+          (change)="onCycleStart($event)"
+        />
+      </app-form-field>
+      <app-form-field label="วันสิ้นสุด">
+        <input
+          class="workspace-filter-date w-full"
+          type="date"
+          [value]="cycleEndOn()"
+          [disabled]="!canEdit()"
+          (change)="onCycleEnd($event)"
+        />
+      </app-form-field>
+      <app-form-field label="ขอบเขตทีม (ว่าง = ทุกทีม)">
+        <ejs-multiselect
+          [dataSource]="cycleTeamOptions()"
+          [fields]="fields"
+          [value]="cycleTeamIds()"
+          [enabled]="canEdit()"
+          placeholder="ทุกทีม"
+          mode="CheckBox"
+          [showDropDownIcon]="true"
+          (change)="onCycleTeams($event)"
+        ></ejs-multiselect>
+      </app-form-field>
+      <app-form-field label="สถานะ">
+        <ejs-dropdownlist
+          [dataSource]="cycleStatusOptions"
+          [fields]="fields"
+          [value]="cycleStatus()"
+          [enabled]="canEdit()"
+          (change)="onCycleStatus($event)"
+        ></ejs-dropdownlist>
+      </app-form-field>
+      <div class="flex flex-wrap items-end gap-2 md:col-span-2">
+        <button ejs-button cssClass="e-primary" type="button" [disabled]="!canEdit() || cycleBusy()" (click)="createCycle()">
+          เปิดรอบใหม่
+        </button>
+        <button ejs-button cssClass="e-outline" type="button" [disabled]="cycleBusy()" (click)="reloadCycles()">
+          รีเฟรชรอบ
+        </button>
+      </div>
+    </div>
+
+    @if (cycleMessage()) {
+      <ejs-message [content]="cycleMessage()" severity="Success" variant="Outlined"></ejs-message>
+    }
+    @if (cycleError()) {
+      <ejs-message [content]="cycleError()" severity="Error" variant="Outlined"></ejs-message>
+    }
+
+    <div class="grid grid-cols-1 gap-2">
+      @for (cycle of cycles(); track cycle.id) {
+        <app-section-card variant="nested" [showHead]="false">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div class="font-bold">
+                {{ cycle.label }}
+                @if (cycle.id === activeCycleId()) {
+                  <span class="e-badge e-badge-success e-badge-pill ml-2">รอบระบบ</span>
+                }
+              </div>
+              <p class="fine m-0">
+                {{ cycle.startOn }} → {{ cycle.endOn }} · พ.ศ. {{ cycle.yearBe ?? cycle.yearCe + 543 }} ·
+                สถานะ {{ cycle.status }} · ทีม
+                {{ cycle.teamIds.length ? cycle.teamIds.join(', ') : 'ทุกทีม' }}
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                ejs-button
+                cssClass="e-small e-success"
+                type="button"
+                [disabled]="!canEdit() || cycleBusy() || cycle.id === activeCycleId()"
+                (click)="activateCycle(cycle.id)"
+              >
+                เปิดเป็นรอบระบบ
+              </button>
+              <button
+                ejs-button
+                cssClass="e-small e-outline e-danger"
+                type="button"
+                [disabled]="!canEdit() || cycleBusy()"
+                (click)="deleteCycle(cycle.id)"
+              >
+                ลบ
+              </button>
+            </div>
+          </div>
+        </app-section-card>
+      } @empty {
+        <p class="kpi-note m-0">ยังไม่มีรอบ — กดเปิดรอบใหม่ด้านบน</p>
+      }
+    </div>
+  </app-section-card>
+
+  <app-section-card
     title="คน ระดับ และสิทธิ์ (Role Matrix)"
     subtitle="งานหลักของหน้านี้ — ปรับ access และระดับโควตาของแต่ละคน"
     badge="สำคัญ"

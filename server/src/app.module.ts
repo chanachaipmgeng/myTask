@@ -8,6 +8,7 @@ import { IntegrationsController } from './api/integrations.controller';
 import { KpiSnapshotsController } from './api/kpi-snapshots.controller';
 import { OrgController } from './api/org.controller';
 import { RubricsController } from './api/rubrics.controller';
+import { ScorecardCyclesController } from './api/scorecard-cycles.controller';
 import { SettingsController } from './api/settings.controller';
 import { V2EnterpriseController } from './api/v2-enterprise.controller';
 import { WorkItemsController } from './api/work-items.controller';
@@ -23,6 +24,7 @@ import { KpiSnapshotService } from './kpi/kpi-snapshot.service';
     BootstrapController,
     WorkItemsController,
     SettingsController,
+    ScorecardCyclesController,
     RubricsController,
     IntegrationsController,
     OrgController,

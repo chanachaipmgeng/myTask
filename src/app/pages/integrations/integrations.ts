@@ -102,7 +102,7 @@ export class IntegrationsPage {
   protected readonly enabled = signal(true);
   protected readonly hoursPerMd = signal(6);
   protected readonly projectsText = signal('');
-  protected readonly teamStaging = signal<'rd' | 'all'>('rd');
+  protected readonly teamStaging = signal<'rd' | 'all'>('all');
   protected readonly projectCatalog = signal<
     { id: number; identifier: string; name: string; active: boolean }[]
   >([]);
@@ -179,7 +179,7 @@ export class IntegrationsPage {
       this.baseUrl.set(info.baseUrl);
       this.enabled.set(info.enabled);
       this.hoursPerMd.set(info.hoursPerMd);
-      this.teamStaging.set(info.teamStaging ?? 'rd');
+      this.teamStaging.set(info.teamStaging ?? 'all');
       this.projectCatalog.set(info.projectCatalog ?? []);
       const mappedProjects = Array.isArray(info.mapping['projects'])
         ? (info.mapping['projects'] as string[])
@@ -209,7 +209,7 @@ export class IntegrationsPage {
 
       this.message.set(
         info.configured
-          ? `เชื่อมต่อได้ · writeback ${info.writeback ? 'เปิด' : 'ปิด'} · staging ${info.teamStaging ?? 'rd'}`
+          ? `เชื่อมต่อได้ · writeback ${info.writeback ? 'เปิด' : 'ปิด'} · staging ${info.teamStaging ?? 'all'}`
           : 'ยังไม่ได้ตั้ง URL/token ของ OpenProject',
       );
     } catch (err) {

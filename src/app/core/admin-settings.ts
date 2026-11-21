@@ -219,7 +219,7 @@ export interface OpenProjectCatalogEntry {
 }
 
 export const openprojectProjectCatalog = signal<OpenProjectCatalogEntry[]>([]);
-export const teamStagingMode = signal<'rd' | 'all'>('rd');
+export const teamStagingMode = signal<'rd' | 'all'>('all');
 
 export function applyRemoteSettings(settings: {
   weeklyQuotas?: Record<string, number>;

@@ -1,7 +1,7 @@
 <section class="page team-dashboard flex flex-col gap-4">
   <app-page-head
     title="แดชบอร์ดทีม"
-    description="ตัวเลขปี {{ context.yearLabel }} เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง เส้นรายเดือน และแท่งโควตา เป้า {{ target }} อยู่บนเส้นรายเดือน · เลือก snapshot เพื่อดูดัชนีที่แช่แข็งตามเดือน/ไตรมาส"
+    [description]="(filterHint() ? filterHint() + ' · ' : '') + 'ตัวเลขปี ' + context.yearLabel + ' เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง เส้นรายเดือน และแท่งโควตา เป้า ' + target + ' อยู่บนเส้นรายเดือน · คลิกโดนัท/ปุ่มด้านขวาเพื่อเจาะไปหน้างาน'"
     [metrics]="[
       { label: 'งานทั้งปี', value: tasksLabel, hint: 'งานในรายงาน ' + context.yearLabel },
       { label: 'ส่งตรงเวลา', value: context.onTimePct, unit: '%', hint: 'ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว', tone: context.onTimePct >= 75 ? 'good' : 'bad' },
@@ -26,6 +26,18 @@
       ></app-filter-chips>
     </div>
   </app-page-head>
+
+  <div class="flex flex-wrap gap-2">
+    <button ejs-button cssClass="e-outline" type="button" (click)="drillToWork()" title="ไปฮับงานพร้อมฟิลเตอร์ทีมปัจจุบัน">
+      ดูงาน
+    </button>
+    <button ejs-button cssClass="e-outline" type="button" (click)="drillToTickets()" title="ไปใบงานพร้อมฟิลเตอร์ทีม/สาย">
+      ดูใบงาน
+    </button>
+    <button ejs-button cssClass="e-outline" type="button" (click)="drillToPeople()" title="ไปผังคนพร้อมฟิลเตอร์ทีม">
+      ดูคน
+    </button>
+  </div>
 
   @if (canCapture()) {
     <app-section-card [showHead]="false">
@@ -126,7 +138,7 @@
       </ejs-accumulationchart>
     </app-section-card>
 
-    <app-section-card title="Bug / Custom / Enhancement แยกสาย" [subtitle]="sampleSummary() + ' จากใบตัวอย่าง ไม่ใช่ 1,319 งาน'">
+    <app-section-card title="Bug / Custom / Enhancement แยกสาย" [subtitle]="sampleSummary() + ' · คลิกชิ้นโดนัทเพื่อไปใบงานตามสาย'">
       <ejs-accumulationchart
         id="team-sample-donut"
         style="display: block; height: 250px; width: 100%"
@@ -135,6 +147,7 @@
         [tooltip]="sampleTooltip"
         [centerLabel]="sampleCenter()"
         [enableAnimation]="false"
+        (pointClick)="onSamplePointClick($event)"
       >
         <e-accumulation-series-collection>
           <e-accumulation-series

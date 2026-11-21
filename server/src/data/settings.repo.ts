@@ -6,6 +6,10 @@ import {
 } from '../../../shared/domain/scoring';
 import { Level } from '../../../shared/domain/models';
 import {
+  defaultCycleSettings,
+  normalizeCycleSettings,
+} from '../../../shared/domain/scorecard-cycle';
+import {
   DEFAULT_OPENPROJECT_MAPPING,
   OpenProjectMapping,
   validateMapping,
@@ -34,6 +38,7 @@ export function defaultSettings(): AppSettings {
     hoursPerMd: FOCUS_HOURS_PER_MD,
     openprojectMapping: { ...DEFAULT_OPENPROJECT_MAPPING, customFields: { ...DEFAULT_OPENPROJECT_MAPPING.customFields } },
     openprojectProjectCatalog: [],
+    scorecardCycles: defaultCycleSettings(),
   };
 }
 
@@ -101,6 +106,12 @@ export function mergeSettings(raw: Partial<AppSettings> | null | undefined): App
             };
           })
       : base.openprojectProjectCatalog,
+    scorecardCycles: (() => {
+      const normalized = normalizeCycleSettings(
+        (raw as { scorecardCycles?: Parameters<typeof normalizeCycleSettings>[0] }).scorecardCycles,
+      );
+      return normalized.cycles.length > 0 ? normalized : base.scorecardCycles;
+    })(),
   };
 }
 

@@ -97,7 +97,7 @@ export class LoginPage {
   }
 
   protected async quickLogin(personId: string): Promise<void> {
-    const person = this.roster().find((p) => p.id === personId);
+    const person = this.resolveQuickLoginPerson(personId);
     if (!person) {
       this.error.set(`ไม่พบบัญชี ${personId} ในระบบ`);
       return;
@@ -105,6 +105,25 @@ export class LoginPage {
     this.username.set(person.id);
     this.password.set('••••••••••••');
     await this.loginAs(person);
+  }
+
+  /** Seed shortcut ids → คนจริงจาก sync OpenProject (เช่น chanachai → chanachaiomyhrcoth) */
+  private resolveQuickLoginPerson(personId: string): Person | undefined {
+    const roster = this.roster();
+    const direct = roster.find((p) => p.id === personId);
+    if (direct) {
+      return direct;
+    }
+    const key = personId.trim().toLowerCase();
+    const byEmail = roster.find((p) => p.email?.toLowerCase().startsWith(`${key}.`) || p.email?.toLowerCase().startsWith(`${key}@`));
+    if (byEmail) {
+      return byEmail;
+    }
+    const byIdPrefix = roster.find((p) => p.id.toLowerCase().startsWith(key));
+    if (byIdPrefix) {
+      return byIdPrefix;
+    }
+    return roster.find((p) => p.nickname.toLowerCase().includes(key) || p.fullName.toLowerCase().includes(key));
   }
 
   protected async loginAs(person: Person): Promise<void> {
