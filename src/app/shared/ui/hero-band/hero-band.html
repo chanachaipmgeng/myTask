@@ -51,7 +51,11 @@
             }
           </div>
           <span class="hero-band__value">
-            {{ metric.value }}
+            <span
+              class="hero-band__value-num"
+              [appCountUp]="metric.value"
+              [countUpDelay]="metricCountDelay($index)"
+            ></span>
             @if (metric.unit) {
               <span class="hero-band__unit">{{ metric.unit }}</span>
             }

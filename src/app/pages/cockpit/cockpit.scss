@@ -4,13 +4,17 @@
 }
 
 @keyframes cardReveal {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px) rotate(-0.35deg);
   }
-  to {
+  62% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(-2px) rotate(0.2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
   }
 }
 
@@ -621,25 +625,25 @@
   }
 }
 
-/* Stagger enter — Brisko-like cascade, no hover transform */
+/* Stagger enter — Soft Cascade, no hover transform */
 .ov-main .bento-card:nth-child(1),
 .ov-main .bento-mid-grid .bento-card:nth-child(1) {
-  animation-delay: 40ms;
+  animation-delay: 60ms;
 }
 .ov-main .bento-card:nth-child(2),
 .ov-main .bento-mid-grid .bento-card:nth-child(2),
 .ov-low .bento-card:nth-child(1) {
-  animation-delay: 85ms;
+  animation-delay: 115ms;
 }
 .ov-low .bento-card:nth-child(2) {
-  animation-delay: 130ms;
+  animation-delay: 170ms;
 }
 .ov-side .bento-card:nth-child(1),
 .ov-side .bento-pace {
-  animation-delay: 70ms;
+  animation-delay: 90ms;
 }
 .ov-side .bento-card:nth-child(2) {
-  animation-delay: 115ms;
+  animation-delay: 145ms;
 }
 
 /* Dark-anchor pace card (Brisko month-end / health) */
