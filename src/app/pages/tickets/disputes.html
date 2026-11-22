@@ -1,7 +1,7 @@
 <section class="page disputes-page">
   <app-page-head
     breadcrumb="ตารางคะแนนใบงาน > ศูนย์ทบทวนและอุทธรณ์คะแนน (/tickets/disputes)"
-    title="ระบบยื่นอุทธรณ์และขอปรับปรุงคะแนนใบงาน (Score Dispute Center)"
+    title="ศูนย์อุทธรณ์และทบทวนคะแนนใบงาน"
     description="พนักงานสามารถยื่นขอติดป้ายยกเว้น (BLK, ENV, REQ) และหัวหน้างานสามารถจำลองผลคะแนนก่อนกดอนุมัติ · คลิกแถวเพื่อดูรายละเอียดทางขวา"
   >
     <div actions>
@@ -17,272 +17,241 @@
     (valueChange)="setStatus($event)"
   ></app-filter-chips>
 
-  <ejs-splitter
-    cssClass="disputes-splitter"
-    width="100%"
-    [height]="splitterHeight()"
-    [orientation]="splitterOrientation()"
-    separatorSize="5"
-  >
-    <e-panes>
-      <e-pane size="58%" min="280px" [collapsible]="true">
-        <ng-template #content>
-          <div class="disputes-pane">
-            <app-section-card
-              title="รายการคำขอทบทวนคะแนน"
-              subtitle="คลิกแถวเพื่อดูรายละเอียดและผลจำลองคะแนน · ลากแถบกลางเพื่อปรับความกว้าง"
-              [badge]="filteredDisputes().length + ' รายการ'"
-              badgeTone="info"
-            >
-              <div class="overflow-x-auto w-full">
-                <ejs-grid
-                  [dataSource]="filteredDisputes()"
-                  [allowSorting]="true"
-                  width="100%"
-                  height="380"
-                  (recordClick)="onRecordClick($event)"
-                >
-                  <e-columns>
-                    <e-column field="disputeCode" headerText="รหัสคำขอ" width="105">
-                      <ng-template #template let-data>
-                        <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.disputeCode }}</span>
-                      </ng-template>
-                    </e-column>
-                    <e-column field="ticketId" headerText="ใบงาน" width="90">
-                      <ng-template #template let-data>
-                        <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
-                          {{ data.ticketId }}
-                        </button>
-                      </ng-template>
-                    </e-column>
-                    <e-column field="requesterId" headerText="ผู้ยื่น" width="95"></e-column>
-                    <e-column field="requestedFlag" headerText="ประเภท" width="105">
-                      <ng-template #template let-data>
-                        <app-status-badge [label]="'ขอป้าย ' + data.requestedFlag" tone="warning"></app-status-badge>
-                      </ng-template>
-                    </e-column>
-                    <e-column headerText="คะแนนเดิม > ใหม่" width="120" textAlign="Right">
-                      <ng-template #template let-data>
-                        <span class="text-xs font-mono">
-                          {{ data.scoreBefore }} → <strong class="text-emerald-600">{{ data.scoreProjected }}</strong>
-                        </span>
-                      </ng-template>
-                    </e-column>
-                    <e-column field="status" headerText="สถานะ" width="110">
-                      <ng-template #template let-data>
-                        <app-status-badge
-                          [label]="data.status === 'PENDING' ? 'รอพิจารณา' : data.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธ'"
-                          [value]="data.status"
-                          [toneMap]="statusToneMap"
-                        ></app-status-badge>
-                      </ng-template>
-                    </e-column>
-                  </e-columns>
-                </ejs-grid>
-              </div>
-            </app-section-card>
-          </div>
+  <ng-template #listPaneTpl>
+    <div class="disputes-pane">
+      <app-section-card
+        title="รายการคำขอทบทวนคะแนน"
+        subtitle="คลิกแถวเพื่อดูรายละเอียดและผลจำลองคะแนน · ลากแถบกลางเพื่อปรับความกว้าง"
+        [badge]="filteredDisputes().length + ' รายการ'"
+        badgeTone="info"
+      >
+        <ng-template #codeTpl let-data>
+          <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.disputeCode }}</span>
         </ng-template>
-      </e-pane>
-      <e-pane size="42%" min="260px" [collapsible]="true">
-        <ng-template #content>
-          <div class="disputes-pane disputes-pane--detail">
-            <app-section-card
-              [title]="selectedDispute() ? 'ใบงาน: ' + selectedDispute()!.ticketId : 'รายละเอียดคำขอ'"
-              [subtitle]="selectedDispute()?.disputeCode ?? 'เลือกแถวจากตารางทางซ้าย'"
-              [badge]="
-                selectedDispute()?.status === 'PENDING'
-                  ? 'รอพิจารณา'
-                  : selectedDispute()?.status === 'APPROVED'
-                    ? 'อนุมัติแล้ว'
-                    : selectedDispute()?.status === 'REJECTED'
-                      ? 'ปฏิเสธ'
-                      : ''
-              "
-              [badgeTone]="
-                selectedDispute()?.status === 'APPROVED'
-                  ? 'success'
-                  : selectedDispute()?.status === 'REJECTED'
-                    ? 'danger'
-                    : 'warning'
-              "
-              [showHead]="true"
+        <ng-template #ticketTpl let-data>
+          <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
+            {{ data.ticketId }}
+          </button>
+        </ng-template>
+        <ng-template #flagTpl let-data>
+          <app-status-badge [label]="'ขอป้าย ' + data.requestedFlag" tone="warning"></app-status-badge>
+        </ng-template>
+        <ng-template #scoreDiffTpl let-data>
+          <span class="text-xs font-mono">
+            {{ data.scoreBefore }} → <strong class="text-emerald-600">{{ data.scoreProjected }}</strong>
+          </span>
+        </ng-template>
+        <ng-template #statusTpl let-data>
+          <app-status-badge
+            [label]="data.status === 'PENDING' ? 'รอพิจารณา' : data.status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ปฏิเสธ'"
+            [value]="data.status"
+            [toneMap]="statusToneMap"
+          ></app-status-badge>
+        </ng-template>
+        <app-sf-grid
+          [data]="filteredDisputes()"
+          [columns]="disputeColumns"
+          [options]="disputeGridOptions"
+          [cellTemplates]="{
+            disputeCode: codeTpl,
+            ticketId: ticketTpl,
+            requestedFlag: flagTpl,
+            scoreDiff: scoreDiffTpl,
+            status: statusTpl
+          }"
+          (rowSelected)="onRowSelected($event)"
+        />
+      </app-section-card>
+    </div>
+  </ng-template>
+
+  <ng-template #detailPaneTpl>
+    <div class="disputes-pane disputes-pane--detail">
+      <app-section-card
+        [title]="selectedDispute() ? 'ใบงาน: ' + selectedDispute()!.ticketId : 'รายละเอียดคำขอ'"
+        [subtitle]="selectedDispute()?.disputeCode ?? 'เลือกแถวจากตารางทางซ้าย'"
+        [badge]="
+          selectedDispute()?.status === 'PENDING'
+            ? 'รอพิจารณา'
+            : selectedDispute()?.status === 'APPROVED'
+              ? 'อนุมัติแล้ว'
+              : selectedDispute()?.status === 'REJECTED'
+                ? 'ปฏิเสธ'
+                : ''
+        "
+        [badgeTone]="
+          selectedDispute()?.status === 'APPROVED'
+            ? 'success'
+            : selectedDispute()?.status === 'REJECTED'
+              ? 'danger'
+              : 'warning'
+        "
+        [showHead]="true"
+      >
+        <div actions>
+          @if (selectedDispute()?.ticketId) {
+            <button
+              ejs-button
+              cssClass="e-small e-outline e-primary"
+              iconCss="e-icons e-search"
+              type="button"
+              (click)="openTicket(selectedDispute()!.ticketId)"
             >
-              <div actions>
-                @if (selectedDispute()?.ticketId) {
-                  <button
-                    ejs-button
-                    cssClass="e-small e-outline e-primary"
-                    iconCss="e-icons e-search"
-                    type="button"
-                    (click)="openTicket(selectedDispute()!.ticketId)"
-                  >
-                    ดูใบงาน 360°
-                  </button>
-                }
+              ดูใบงาน 360°
+            </button>
+          }
+        </div>
+        @if (selectedDispute(); as sel) {
+          <div class="flex flex-col gap-3 text-sm">
+            <app-section-card variant="nested" title="เหตุผลที่ยื่นขอ">
+              <p class="m-0 text-xs leading-relaxed">{{ sel.reason }}</p>
+            </app-section-card>
+
+            @if (sel.evidenceUrl) {
+              <div>
+                <span class="kpi-note m-0 block mb-1">ลิงก์หลักฐานแนบ</span>
+                <a
+                  [href]="sel.evidenceUrl"
+                  target="_blank"
+                  class="text-xs text-blue-600 dark:text-blue-400 underline break-all"
+                >
+                  {{ sel.evidenceUrl }}
+                </a>
               </div>
-              @if (selectedDispute(); as sel) {
-                <div class="flex flex-col gap-3 text-sm">
-                  <app-section-card variant="nested" title="เหตุผลที่ยื่นขอ">
-                    <p class="m-0 text-xs leading-relaxed">{{ sel.reason }}</p>
-                  </app-section-card>
+            }
 
-                  @if (sel.evidenceUrl) {
-                    <div>
-                      <span class="kpi-note m-0 block mb-1">ลิงก์หลักฐานแนบ</span>
-                      <a
-                        [href]="sel.evidenceUrl"
-                        target="_blank"
-                        class="text-xs text-blue-600 dark:text-blue-400 underline break-all"
-                      >
-                        {{ sel.evidenceUrl }}
-                      </a>
-                    </div>
-                  }
+            <app-kpi-stat
+              title="จำลองผลคะแนนหากอนุมัติ"
+              [value]="sel.scoreBefore + ' → ' + sel.scoreProjected"
+              accent="info"
+              [hint]="
+                'ดัชนีรายคนของผู้ยื่น +' +
+                ((sel.scoreProjected - sel.scoreBefore) * 0.15).toFixed(1) +
+                ' (ใบนี้ +' +
+                (sel.scoreProjected - sel.scoreBefore) +
+                ')'
+              "
+            ></app-kpi-stat>
 
-                  <app-kpi-stat
-                    title="จำลองผลคะแนนหากอนุมัติ"
-                    [value]="sel.scoreBefore + ' → ' + sel.scoreProjected"
-                    accent="info"
-                    [hint]="
-                      'ดัชนีรายคนของผู้ยื่น +' +
-                      ((sel.scoreProjected - sel.scoreBefore) * 0.15).toFixed(1) +
-                      ' (ใบนี้ +' +
-                      (sel.scoreProjected - sel.scoreBefore) +
-                      ')'
-                    "
-                  ></app-kpi-stat>
+            @if (sel.status === 'PENDING') {
+              @if (role() === 'admin' || role() === 'lead') {
+                <div class="flex flex-col gap-2">
+                  <app-form-field label="หมายเหตุผู้อนุมัติ">
+                    <app-sf-textbox
+                      placeholder="ระบุเหตุผลหรือเงื่อนไขในการพิจารณา..."
+                      [value]="reviewerComment()"
+                      (valueChange)="reviewerComment.set($event)"
+                    />
+                  </app-form-field>
 
-                  @if (sel.status === 'PENDING') {
-                    @if (role() === 'admin' || role() === 'lead') {
-                      <div class="flex flex-col gap-2">
-                        <app-form-field label="หมายเหตุผู้อนุมัติ">
-                          <ejs-textbox
-                            placeholder="ระบุเหตุผลหรือเงื่อนไขในการพิจารณา..."
-                            [value]="reviewerComment()"
-                            (change)="reviewerComment.set($event.value ?? '')"
-                          ></ejs-textbox>
-                        </app-form-field>
-
-                        <div class="flex gap-2 mt-1">
-                          <button
-                            ejs-button
-                            cssClass="e-primary flex-1"
-                            iconCss="e-icons e-check"
-                            (click)="resolve('APPROVED')"
-                          >
-                            อนุมัติและคำนวณใหม่
-                          </button>
-                          <button
-                            ejs-button
-                            cssClass="e-outline e-danger"
-                            iconCss="e-icons e-close"
-                            (click)="resolve('REJECTED')"
-                          >
-                            ปฏิเสธคำขอ
-                          </button>
-                        </div>
-                      </div>
-                    } @else {
-                      <ejs-message
-                        severity="Info"
-                        variant="Outlined"
-                        content="คำขอนี้กำลังรอการพิจารณาจาก Lead หรือ Admin"
-                      ></ejs-message>
-                    }
-                  } @else {
-                    <ejs-message
-                      [severity]="sel.status === 'APPROVED' ? 'Success' : 'Error'"
-                      variant="Outlined"
-                      [content]="'บันทึกของผู้อนุมัติ: ' + (sel.reviewerComment || 'ไม่มีบันทึกเพิ่มเติม')"
-                    ></ejs-message>
-                  }
+                  <div class="flex gap-2 mt-1">
+                    <button
+                      ejs-button
+                      cssClass="e-primary flex-1"
+                      iconCss="e-icons e-check"
+                      (click)="resolve('APPROVED')"
+                    >
+                      อนุมัติและคำนวณใหม่
+                    </button>
+                    <button
+                      ejs-button
+                      cssClass="e-outline e-danger"
+                      iconCss="e-icons e-close"
+                      (click)="resolve('REJECTED')"
+                    >
+                      ปฏิเสธคำขอ
+                    </button>
+                  </div>
                 </div>
               } @else {
-                <ejs-message
+                <app-sf-message
                   severity="Info"
-                  variant="Outlined"
-                  content="เลือกคำขอจากตารางทางซ้ายเพื่อดูรายละเอียด"
-                ></ejs-message>
+                  content="คำขอนี้กำลังรอการพิจารณาจาก Lead หรือ Admin"
+                />
               }
-            </app-section-card>
+            } @else {
+              <app-sf-message
+                [severity]="sel.status === 'APPROVED' ? 'Success' : 'Error'"
+                [content]="'บันทึกของผู้อนุมัติ: ' + (sel.reviewerComment || 'ไม่มีบันทึกเพิ่มเติม')"
+              />
+            }
           </div>
-        </ng-template>
-      </e-pane>
-    </e-panes>
-  </ejs-splitter>
+        } @else {
+          <app-sf-message
+            severity="Info"
+            content="เลือกคำขอจากตารางทางซ้ายเพื่อดูรายละเอียด"
+          />
+        }
+      </app-section-card>
+    </div>
+  </ng-template>
 
-  @if (showCreateDialog()) {
-    <ejs-dialog
-      header="ยื่นขอทบทวนคะแนนใบงาน"
-      cssClass="app-modal"
-      [visible]="true"
-      [isModal]="true"
-      [showCloseIcon]="true"
-      width="520px"
-      (close)="closeCreateDialog()"
-    >
-      <ng-template #content>
-        <div class="flex flex-col gap-4">
-          <p class="fine m-0">กรอกใบงานและเหตุผลให้ครบ แล้วกดส่งคำขอ — หัวหน้าจะจำลองคะแนนก่อนอนุมัติ</p>
-          <app-form-field label="เลือกใบงานที่ต้องการขอทบทวน">
-            <ejs-dropdownlist
-              [dataSource]="ticketOptions()"
-              [fields]="{ text: 'text', value: 'value' }"
-              [value]="newTicketId()"
-              (change)="newTicketId.set($event.value ?? '')"
-            ></ejs-dropdownlist>
-          </app-form-field>
+  <app-sf-splitter
+    [panes]="splitterPanes"
+    [paneTemplates]="{ list: listPaneTpl, detail: detailPaneTpl }"
+    [options]="splitterOptions()"
+  />
 
-          <app-form-field label="ประเภทการยกเว้นที่ขอ">
-            <ejs-dropdownlist
-              [dataSource]="varianceOptions"
-              [fields]="{ text: 'text', value: 'value' }"
-              [value]="newRequestedFlag()"
-              (change)="newRequestedFlag.set($event.value ?? 'BLK')"
-            ></ejs-dropdownlist>
-          </app-form-field>
+  <app-sf-dialog
+    header="ยื่นขอทบทวนคะแนนใบงาน"
+    [visible]="showCreateDialog()"
+    [options]="{ width: '520px', isModal: true, showCloseIcon: true, animationEffect: 'Fade' }"
+    (closed)="closeCreateDialog()"
+  >
+    <div class="flex flex-col gap-4">
+      <p class="fine m-0">กรอกใบงานและเหตุผลให้ครบ แล้วกดส่งคำขอ — หัวหน้าจะจำลองคะแนนก่อนอนุมัติ</p>
+      <app-form-field label="เลือกใบงานที่ต้องการขอทบทวน">
+        <app-sf-dropdown
+          [items]="ticketOptions()"
+          [value]="newTicketId()"
+          [options]="{ allowFiltering: true }"
+          (valueChange)="newTicketId.set($event)"
+        />
+      </app-form-field>
 
-          <app-form-field label="เหตุผลประกอบการยื่นขอ">
-            <div class="speech-prompt-row speech-prompt-row--stack">
-              <ejs-textbox
-                [multiline]="true"
-                [htmlAttributes]="{ rows: '3' }"
-                placeholder="พิมพ์หรือพูดอธิบายเหตุการณ์ เช่น รอ API ข้ามทีม หรือเซิร์ฟเวอร์มีปัญหา..."
-                [value]="newReason()"
-                (input)="newReason.set($event.value ?? '')"
-                (change)="newReason.set($event.value ?? '')"
-              ></ejs-textbox>
-              <button
-                ejs-speechtotext
-                lang="th-TH"
-                cssClass="e-outline e-small"
-                [buttonSettings]="speechButtonSettings"
-                [tooltipSettings]="speechTooltipSettings"
-                [allowInterimResults]="true"
-                [showTooltip]="true"
-                (onStart)="onReasonSpeechStart()"
-                (transcriptChanged)="onReasonSpeechTranscript($event)"
-                (onError)="onReasonSpeechError($event)"
-              ></button>
-            </div>
-          </app-form-field>
+      <app-form-field label="ประเภทการยกเว้นที่ขอ">
+        <app-sf-dropdown
+          [items]="varianceOptions"
+          [value]="newRequestedFlag()"
+          (valueChange)="setNewRequestedFlag($event)"
+        />
+      </app-form-field>
 
-          <app-form-field label="ลิงก์หลักฐานแนบ (เช่น แชท Teams หรือ Ticket อ้างอิง)" hint="ไม่บังคับ แต่ช่วยให้ผู้อนุมัติตรวจเร็วขึ้น">
-            <ejs-textbox
-              placeholder="https://teams.microsoft.com/..."
-              [value]="newEvidenceUrl()"
-              (change)="newEvidenceUrl.set($event.value ?? '')"
-            ></ejs-textbox>
-          </app-form-field>
+      <app-form-field label="เหตุผลประกอบการยื่นขอ">
+        <div class="speech-prompt-row speech-prompt-row--stack">
+          <app-sf-textbox
+            [multiline]="true"
+            [rows]="3"
+            placeholder="พิมพ์หรือพูดอธิบายเหตุการณ์ เช่น รอ API ข้ามทีม หรือเซิร์ฟเวอร์มีปัญหา..."
+            [value]="newReason()"
+            (valueChange)="newReason.set($event)"
+          />
+          <button
+            ejs-speechtotext
+            lang="th-TH"
+            cssClass="e-outline e-small"
+            [buttonSettings]="speechButtonSettings"
+            [tooltipSettings]="speechTooltipSettings"
+            [allowInterimResults]="true"
+            [showTooltip]="true"
+            (onStart)="onReasonSpeechStart()"
+            (transcriptChanged)="onReasonSpeechTranscript($event)"
+            (onError)="onReasonSpeechError($event)"
+          ></button>
         </div>
-      </ng-template>
-      <ng-template #footerTemplate>
-        <div class="app-modal__footer">
-          <button ejs-button cssClass="e-outline" type="button" (click)="closeCreateDialog()">ยกเลิก</button>
-          <button ejs-button cssClass="e-primary" type="button" (click)="submitNewDispute()">ส่งคำขอ</button>
-        </div>
-      </ng-template>
-    </ejs-dialog>
-  }
+      </app-form-field>
+
+      <app-form-field label="ลิงก์หลักฐานแนบ (เช่น แชท Teams หรือ Ticket อ้างอิง)" hint="ไม่บังคับ แต่ช่วยให้ผู้อนุมัติตรวจเร็วขึ้น">
+        <app-sf-textbox
+          placeholder="https://teams.microsoft.com/..."
+          [value]="newEvidenceUrl()"
+          (valueChange)="newEvidenceUrl.set($event)"
+        />
+      </app-form-field>
+    </div>
+    <div sf-dialog-footer>
+      <button ejs-button cssClass="e-outline" type="button" (click)="closeCreateDialog()">ยกเลิก</button>
+      <button ejs-button cssClass="e-primary" type="button" (click)="submitNewDispute()">ส่งคำขอ</button>
+    </div>
+  </app-sf-dialog>
 </section>

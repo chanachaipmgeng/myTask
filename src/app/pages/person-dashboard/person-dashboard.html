@@ -70,10 +70,10 @@
     <app-section-card [showHead]="false">
       <div class="flex flex-col justify-between gap-2">
         <p class="kpi-note m-0">เป้า {{ view().target }} ของคนนี้ ไม่ได้เรียงอันดับกับคนอื่น</p>
-        <ejs-message [attr.data-formula]="view().formulaId" [content]="view().formula" severity="Info" variant="Outlined"></ejs-message>
+        <app-sf-message [attr.data-formula]="view().formulaId" [content]="view().formula" severity="Info" />
         <p class="fine m-0">{{ view().calculation }}</p>
       </div>
-      <ejs-message [content]="view().quarterText" severity="Info" variant="Outlined"></ejs-message>
+      <app-sf-message [content]="view().quarterText" severity="Info" />
     </app-section-card>
 
     <app-section-card
@@ -95,110 +95,39 @@
 
     <div class="card-grid-2">
       <app-section-card
-        title="แนวโน้มดัชนีรายเดือน (OLS Trendline)"
+        title="แนวโน้มดัชนีรายเดือน OLS"
         subtitle="เส้นทึบ = ดัชนีของตัวเอง · เส้นประเพชร = เป้า 75 · เส้นประม่วง = OLS Slope"
       >
         @if (olsSummary(); as ols) {
           <span
             actions
             class="e-badge {{ ols.badgeClass }} e-badge-pill"
-            title="ความชัน OLS Regression (Least-Squares Slope)"
+            title="ความชันแนวโน้ม OLS"
           >
             Slope: {{ ols.text }}
           </span>
         }
         <div class="chart-frame m-0">
-          <ejs-chart
-            id="self-trend"
-            style="display: block; height: 300px; width: 100%"
-            [theme]="theme.sfTheme()"
+          <app-sf-chart
+            [series]="selfTrendSeries()"
             [primaryXAxis]="categoryAxis"
             [primaryYAxis]="indexAxis"
-            [tooltip]="tooltip"
-            [legendSettings]="legend"
-            [chartArea]="chartArea"
-            [enableAnimation]="true"
-          >
-            <e-series-collection>
-              <e-series
-                type="Line"
-                [dataSource]="view().trend"
-                xName="month"
-                yName="index"
-                name="ดัชนีของตัวเอง"
-                width="2.5"
-                fill="#4c68e5"
-                [marker]="marker"
-              ></e-series>
-              <e-series
-                type="Line"
-                [dataSource]="view().trend"
-                xName="month"
-                yName="target"
-                name="เป้า 75"
-                width="2"
-                fill="#f0b429"
-                dashArray="6,4"
-                legendShape="Diamond"
-                [marker]="targetMarker"
-              ></e-series>
-              <e-series
-                type="Line"
-                [dataSource]="olsTrendData()"
-                xName="month"
-                yName="ols"
-                name="แนวโน้ม OLS (Slope)"
-                width="2"
-                dashArray="5,5"
-                fill="#a855f7"
-                legendShape="HorizontalLine"
-              ></e-series>
-            </e-series-collection>
-          </ejs-chart>
+            [options]="commonChartOptions"
+          />
         </div>
       </app-section-card>
 
       <app-section-card title="แผน vs จริง (ใบที่ปิด)" subtitle="Grouped Column เทียบ Estimate MD กับ Actual MD ของแต่ละใบงาน">
         @if (view().effortBars.length === 0) {
-          <ejs-message content="ยังไม่มีใบที่ปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
+          <app-sf-message content="ยังไม่มีใบที่ปิดของคนนี้" severity="Info" />
         } @else {
           <div class="chart-frame m-0">
-            <ejs-chart
-              id="effort-bars"
-              style="display: block; height: 300px; width: 100%"
-              [theme]="theme.sfTheme()"
+            <app-sf-chart
+              [series]="effortSeries()"
               [primaryXAxis]="categoryAxis"
               [primaryYAxis]="mdAxis"
-              [tooltip]="tooltip"
-              [legendSettings]="legend"
-              [chartArea]="chartArea"
-              [enableAnimation]="true"
-            >
-              <e-series-collection>
-                <e-series
-                  type="Column"
-                  [dataSource]="view().effortBars"
-                  xName="label"
-                  yName="estimateMd"
-                  name="Estimate MD"
-                  fill="#4c68e5"
-                  columnWidth="0.45"
-                  columnSpacing="0.2"
-                  [cornerRadius]="columnCorner"
-                ></e-series>
-                <e-series
-                  type="Column"
-                  [dataSource]="view().effortBars"
-                  xName="label"
-                  yName="actualMd"
-                  name="Actual MD"
-                  fill="#3ec6e0"
-                  columnWidth="0.45"
-                  columnSpacing="0.2"
-                  [cornerRadius]="columnCorner"
-                ></e-series>
-              </e-series-collection>
-            </ejs-chart>
+              [options]="commonChartOptions"
+            />
           </div>
         }
       </app-section-card>
@@ -207,109 +136,45 @@
     <div class="card-grid-3">
       <app-section-card title="ส่งตรง / เลื่อนสัปดาห์">
         @if (view().slipShare.length === 0) {
-          <ejs-message content="ยังไม่มีข้อมูล weekOffset" severity="Info" variant="Outlined"></ejs-message>
+          <app-sf-message content="ยังไม่มีข้อมูล weekOffset" severity="Info" />
         } @else {
           <div class="chart-frame m-0">
-            <ejs-accumulationchart
-              id="slip-share"
-              style="display: block; height: 280px; width: 100%"
-              [theme]="theme.sfTheme()"
-              [legendSettings]="pieLegend"
-              [tooltip]="pieTooltip"
-              [centerLabel]="slipCenter()"
-              [enableAnimation]="true"
-            >
-              <e-accumulation-series-collection>
-                <e-accumulation-series
-                  type="Pie"
-                  [dataSource]="view().slipShare"
-                  xName="x"
-                  yName="y"
-                  [dataLabel]="donutLabel"
-                  [palettes]="piePalette"
-                  innerRadius="62%"
-                  radius="80%"
-                  legendShape="Circle"
-                ></e-accumulation-series>
-              </e-accumulation-series-collection>
-            </ejs-accumulationchart>
+            <app-sf-donut-chart
+              [data]="view().slipShare"
+              xName="x"
+              yName="y"
+              [options]="slipDonutOptions()"
+            />
           </div>
         }
       </app-section-card>
 
       <app-section-card title="สัดส่วนประเภทงาน">
         @if (view().categoryShare.length === 0) {
-          <ejs-message content="ยังไม่มีใบปิดสำหรับสัดส่วนประเภท" severity="Info" variant="Outlined"></ejs-message>
+          <app-sf-message content="ยังไม่มีใบปิดสำหรับสัดส่วนประเภท" severity="Info" />
         } @else {
           <div class="chart-frame m-0">
-            <ejs-accumulationchart
-              id="category-share"
-              style="display: block; height: 280px; width: 100%"
-              [theme]="theme.sfTheme()"
-              [legendSettings]="pieLegend"
-              [tooltip]="pieTooltip"
-              [centerLabel]="categoryCenter()"
-              [enableAnimation]="true"
-            >
-              <e-accumulation-series-collection>
-                <e-accumulation-series
-                  type="Pie"
-                  [dataSource]="view().categoryShare"
-                  xName="x"
-                  yName="y"
-                  [dataLabel]="donutLabel"
-                  [palettes]="piePalette"
-                  innerRadius="62%"
-                  radius="80%"
-                  legendShape="Circle"
-                ></e-accumulation-series>
-              </e-accumulation-series-collection>
-            </ejs-accumulationchart>
+            <app-sf-donut-chart
+              [data]="view().categoryShare"
+              xName="x"
+              yName="y"
+              [options]="categoryDonutOptions()"
+            />
           </div>
         }
       </app-section-card>
 
       <app-section-card title="คุณภาพส่งมอบ (รีวิว / reopen)">
         @if (view().qualityBars.length === 0) {
-          <ejs-message content="ยังไม่มีใบปิดสำหรับคุณภาพส่งมอบ" severity="Info" variant="Outlined"></ejs-message>
+          <app-sf-message content="ยังไม่มีใบปิดสำหรับคุณภาพส่งมอบ" severity="Info" />
         } @else {
           <div class="chart-frame m-0">
-            <ejs-chart
-              id="quality-bars"
-              style="display: block; height: 280px; width: 100%"
-              [theme]="theme.sfTheme()"
+            <app-sf-chart
+              [series]="qualitySeries()"
               [primaryXAxis]="categoryAxis"
               [primaryYAxis]="countAxis"
-              [tooltip]="tooltip"
-              [legendSettings]="legend"
-              [chartArea]="chartArea"
-              [enableAnimation]="true"
-            >
-              <e-series-collection>
-                <e-series
-                  type="Column"
-                  [dataSource]="view().qualityBars"
-                  xName="label"
-                  yName="reviewRounds"
-                  name="รอบรีวิว"
-                  fill="#7465e8"
-                  columnWidth="0.45"
-                  columnSpacing="0.2"
-                  [cornerRadius]="columnCorner"
-                ></e-series>
-                <e-series
-                  type="Column"
-                  [dataSource]="view().qualityBars"
-                  xName="label"
-                  yName="reopenCount"
-                  name="Reopen"
-                  fill="#e35d6a"
-                  columnWidth="0.45"
-                  columnSpacing="0.2"
-                  [cornerRadius]="columnCorner"
-                ></e-series>
-              </e-series-collection>
-            </ejs-chart>
+              [options]="qualityChartOptions"
+            />
           </div>
         }
       </app-section-card>
@@ -317,103 +182,34 @@
 
     <div class="card-grid-2">
       <app-section-card
-        title="สัดส่วนภาระงาน (Planned vs Unplanned vs งานสั่งตรงจาก MD)"
+        title="สัดส่วนภาระงานตามแผน นอกแผน และงานด่วน MD"
         subtitle="กราฟพื้นที่ซ้อน (Stacked Area) แสดงแนวโน้ม Man-day รวมของพนักงาน"
       >
         @if (mdComposition().length === 0) {
-          <ejs-message content="ยังไม่มีประวัติใบงานปิดสำหรับแสดงสัดส่วนภาระงาน" severity="Info" variant="Outlined"></ejs-message>
+          <app-sf-message content="ยังไม่มีประวัติใบงานปิดสำหรับแสดงสัดส่วนภาระงาน" severity="Info" />
         } @else {
           <div class="chart-frame m-0">
-            <ejs-chart
-              id="person-md-composition-chart"
-              style="display: block; height: 300px; width: 100%"
-              [theme]="theme.sfTheme()"
+            <app-sf-chart
+              [series]="mdCompSeries()"
               [primaryXAxis]="categoryAxis"
               [primaryYAxis]="mdAxis"
-              [tooltip]="tooltip"
-              [legendSettings]="legend"
-              [chartArea]="chartArea"
-              [enableAnimation]="true"
-            >
-              <e-series-collection>
-                <e-series
-                  type="StackingArea"
-                  [dataSource]="mdComposition()"
-                  xName="month"
-                  yName="plannedMd"
-                  name="Planned (ในแผน)"
-                  fill="#4c68e5"
-                  opacity="0.85"
-                  [border]="{ width: 1.5, color: '#2e4fc8' }"
-                ></e-series>
-                <e-series
-                  type="StackingArea"
-                  [dataSource]="mdComposition()"
-                  xName="month"
-                  yName="unplannedGeneralMd"
-                  name="Unplanned ทั่วไป"
-                  fill="#3ec6e0"
-                  opacity="0.85"
-                  [border]="{ width: 1.5, color: '#0891b2' }"
-                ></e-series>
-                <e-series
-                  type="StackingArea"
-                  [dataSource]="mdComposition()"
-                  xName="month"
-                  yName="mdMandateMd"
-                  name="⚡ MD Mandate (สั่งตรง)"
-                  fill="#f59e0b"
-                  opacity="0.9"
-                  [border]="{ width: 1.5, color: '#d97706' }"
-                ></e-series>
-              </e-series-collection>
-            </ejs-chart>
+              [options]="commonChartOptions"
+            />
           </div>
         }
       </app-section-card>
 
       <app-section-card
-        title="เรดาร์สมรรถนะ 6 มิติ (Competency Radar)"
+        title="เรดาร์สมรรถนะ 6 มิติ"
         subtitle="เปรียบเทียบผลงาน 6 ด้านของพนักงานกับค่าเฉลี่ยทีม"
       >
         <div class="chart-frame m-0">
-          <ejs-chart
-            id="competency-radar-chart"
-            style="display: block; height: 300px; width: 100%"
-            [theme]="theme.sfTheme()"
+          <app-sf-chart
+            [series]="radarSeries()"
             [primaryXAxis]="radarXAxis"
             [primaryYAxis]="radarYAxis"
-            [tooltip]="tooltip"
-            [legendSettings]="legend"
-            [chartArea]="chartArea"
-            [enableAnimation]="true"
-          >
-            <e-series-collection>
-              <e-series
-                type="Radar"
-                drawType="Line"
-                [dataSource]="competencyRadarData()"
-                xName="dimension"
-                yName="personScore"
-                name="ผลงานตนเอง"
-                width="2.5"
-                fill="#4c68e5"
-                [marker]="{ visible: true, width: 6, height: 6, fill: '#4c68e5' }"
-              ></e-series>
-              <e-series
-                type="Radar"
-                drawType="Line"
-                [dataSource]="competencyRadarData()"
-                xName="dimension"
-                yName="teamAvg"
-                name="ค่าเฉลี่ยทีม"
-                width="2"
-                dashArray="4,4"
-                fill="#a855f7"
-                [marker]="{ visible: true, width: 5, height: 5, fill: '#a855f7' }"
-              ></e-series>
-            </e-series-collection>
-          </ejs-chart>
+            [options]="commonChartOptions"
+          />
         </div>
       </app-section-card>
     </div>
@@ -424,32 +220,14 @@
       badgeTone="info"
     >
       @if (view().openWork.length === 0) {
-        <ejs-message content="ไม่มีใบเปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
+        <app-sf-message content="ไม่มีใบเปิดของคนนี้" severity="Info" />
       } @else {
-        <ejs-grid [dataSource]="view().openWork" [allowPaging]="true" [allowSorting]="true" [allowResizing]="true" [pageSettings]="pageSettings">
-          <e-columns>
-            <e-column field="id" headerText="ใบ" width="110"></e-column>
-            <e-column field="title" headerText="เรื่อง" width="180"></e-column>
-            <e-column field="type" headerText="ประเภท" width="100"></e-column>
-            <e-column field="size" headerText="ขนาด" width="75"></e-column>
-            <e-column field="status" headerText="สถานะ" width="110"></e-column>
-            <e-column field="estimateMd" headerText="Est" width="75" textAlign="Right" format="N2"></e-column>
-            <e-column field="dueOnLabel" headerText="วันส่ง" width="105"></e-column>
-            <e-column field="unplannedLabel" headerText="แผน" width="85"></e-column>
-          </e-columns>
-          <e-aggregates>
-            <e-aggregate>
-              <e-columns>
-                <e-column type="Count" field="id">
-                  <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
-                </e-column>
-                <e-column type="Sum" field="estimateMd" format="N2">
-                  <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
-                </e-column>
-              </e-columns>
-            </e-aggregate>
-          </e-aggregates>
-        </ejs-grid>
+        <app-sf-grid
+          [data]="view().openWork"
+          [columns]="openWorkColumns"
+          [aggregates]="openWorkAggregates"
+          [options]="workGridOptions"
+        />
       }
     </app-section-card>
 
@@ -459,37 +237,14 @@
       badgeTone="success"
     >
       @if (view().closedWork.length === 0) {
-        <ejs-message content="ยังไม่มีใบปิดของคนนี้" severity="Info" variant="Outlined"></ejs-message>
+        <app-sf-message content="ยังไม่มีใบปิดของคนนี้" severity="Info" />
       } @else {
-        <ejs-grid [dataSource]="view().closedWork" [allowPaging]="true" [allowSorting]="true" [allowResizing]="true" [pageSettings]="pageSettings">
-          <e-columns>
-            <e-column field="id" headerText="ใบ" width="110"></e-column>
-            <e-column field="title" headerText="เรื่อง" width="170"></e-column>
-            <e-column field="type" headerText="ประเภท" width="100"></e-column>
-            <e-column field="size" headerText="ขนาด" width="75"></e-column>
-            <e-column field="estimateMd" headerText="Est" width="75" textAlign="Right" format="N2"></e-column>
-            <e-column field="actualMd" headerText="Actual" width="80" textAlign="Right" format="N2"></e-column>
-            <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="100"></e-column>
-            <e-column field="reviewRounds" headerText="รีวิว" width="75" textAlign="Right"></e-column>
-            <e-column field="reopenCount" headerText="Reopen" width="75" textAlign="Right"></e-column>
-            <e-column field="score" headerText="คะแนน" width="75" textAlign="Right"></e-column>
-          </e-columns>
-          <e-aggregates>
-            <e-aggregate>
-              <e-columns>
-                <e-column type="Count" field="id">
-                  <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
-                </e-column>
-                <e-column type="Sum" field="actualMd" format="N2">
-                  <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
-                </e-column>
-                <e-column type="Average" field="score" format="N1">
-                  <ng-template #footerTemplate let-data>เฉลี่ย {{ data.Average }}</ng-template>
-                </e-column>
-              </e-columns>
-            </e-aggregate>
-          </e-aggregates>
-        </ejs-grid>
+        <app-sf-grid
+          [data]="view().closedWork"
+          [columns]="closedWorkColumns"
+          [aggregates]="closedWorkAggregates"
+          [options]="workGridOptions"
+        />
       }
     </app-section-card>
 
@@ -552,15 +307,13 @@
 
       <!-- Custom Prompt Input (+ Speech-to-Text ภาษาไทย) -->
       <div class="flex flex-wrap gap-2 items-center my-3 speech-prompt-row">
-        <ejs-textbox
-          cssClass="flex-1 speech-prompt-row__input"
-          width="100%"
+        <app-sf-textbox
+          class="flex-1 speech-prompt-row__input"
           placeholder="พิมพ์หรือพูดคำถาม/หัวข้อที่ต้องการปรึกษา AI Coach..."
           [value]="aiInputText()"
-          [enabled]="!aiLoading()"
-          (input)="aiInputText.set($event.value ?? '')"
-          (change)="aiInputText.set($event.value ?? '')"
-        ></ejs-textbox>
+          [disabled]="aiLoading()"
+          (valueChange)="aiInputText.set($event)"
+        />
         <button
           ejs-speechtotext
           lang="th-TH"
@@ -595,7 +348,7 @@
 
       <!-- AI Error Message -->
       @if (aiError(); as err) {
-        <ejs-message [content]="err" severity="Error" variant="Outlined"></ejs-message>
+        <app-sf-message [content]="err" severity="Error" />
       }
 
       @if (aiResponse(); as resp) {

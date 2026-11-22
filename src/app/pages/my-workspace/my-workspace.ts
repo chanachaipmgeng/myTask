@@ -1,47 +1,38 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  CategoryService,
-  ChartModule,
-  LegendService,
-  LineSeriesService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
-import { AggregateService, GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { currentViewer, effectiveRole, trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { buildAnalyticsReport } from '../../core/analytics';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  PageHeadComponent,
+  SectionCardComponent,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
+  SfGridAggregate,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-my-workspace',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    ChartModule,
-    GridModule,
-    MessageModule,
     RouterLink,
     PageHeadComponent,
     SectionCardComponent,
     StatusBadgeComponent,
-  ],
-  providers: [
-    CategoryService,
-    LineSeriesService,
-    LegendService,
-    TooltipService,
-    PageService,
-    SortService,
-    ResizeService,
-    AggregateService,
+    SfChartComponent,
+    SfGridComponent,
+    SfMessageComponent,
   ],
   templateUrl: './my-workspace.html',
 })
@@ -50,10 +41,9 @@ export class MyWorkspacePage {
   protected readonly theme = inject(ThemeService);
 
   protected readonly role = effectiveRole;
-  protected readonly pageSettings = { pageSize: 6 };
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     majorGridLines: { width: 0 },
     labelStyle: this.axisFont,
   };
@@ -66,35 +56,85 @@ export class MyWorkspacePage {
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
-  protected readonly tooltip = {
-    enable: true,
-    shared: true,
-    enableMarker: true,
-    header: '${point.x}',
-    format: '${series.name}: <b>${point.y}</b>',
+  protected readonly trendSeries = computed<SfChartSeriesConfig[]>(() => [
+    {
+      type: 'Line',
+      dataSource: this.view().trend,
+      xName: 'month',
+      yName: 'index',
+      name: 'ดัชนีของฉัน',
+      width: 2.5,
+      fill: '#4c68e5',
+      marker: { visible: true, width: 7, height: 7, shape: 'Circle', isFilled: true },
+    },
+    {
+      type: 'Line',
+      dataSource: this.view().trend,
+      xName: 'month',
+      yName: 'target',
+      name: 'เป้ามาตรฐาน 75',
+      width: 2,
+      fill: '#f59e0b',
+      dashArray: '6,4',
+      marker: { visible: true, width: 8, height: 8, shape: 'Diamond', isFilled: true, fill: '#f59e0b', border: { width: 1, color: '#f59e0b' } },
+    },
+  ]);
+  protected readonly trendChartOptions: SfChartOptions = {
+    height: '260px',
+    exportable: true,
+    fullscreenable: true,
+    exportFileName: 'my-self-trend',
+    enableAnimation: true,
+    legend: { visible: true, position: 'Top', alignment: 'Center', textStyle: this.axisFont },
+    tooltip: { enable: true, shared: true, enableMarker: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b>' },
   };
-  protected readonly legend = {
-    visible: true,
-    position: 'Top',
-    alignment: 'Center',
-    textStyle: this.axisFont,
+  protected readonly openWorkColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'รหัสใบงาน', width: 120 },
+    { field: 'title', headerText: 'ชื่องาน / โมดูล', width: 200 },
+    { field: 'type', headerText: 'ประเภท', width: 115 },
+    { field: 'size', headerText: 'ขนาด', width: 75 },
+    { field: 'status', headerText: 'สถานะ', width: 125 },
+    { field: 'estimateMd', headerText: 'Est MD', width: 90, textAlign: 'Right', format: 'N2' },
+    { field: 'dueOnLabel', headerText: 'กำหนดส่ง', width: 115 },
+    { field: 'unplannedLabel', headerText: 'แผน', width: 95 },
+    { field: 'actions', headerText: 'จัดการ', width: 180, allowSorting: false },
+  ];
+  protected readonly openWorkGridOptions: SfGridOptions = {
+    id: 'my-open-work-grid',
+    height: '260',
+    paging: true,
+    pageSize: 6,
+    sorting: true,
+    resizable: true,
+    search: true,
   };
-  protected readonly chartArea = { border: { width: 0 } };
-  protected readonly marker = {
-    visible: true,
-    width: 7,
-    height: 7,
-    shape: 'Circle',
-    isFilled: true,
-  };
-  protected readonly targetMarker = {
-    visible: true,
-    width: 8,
-    height: 8,
-    shape: 'Diamond',
-    isFilled: true,
-    fill: '#f59e0b',
-    border: { width: 1, color: '#f59e0b' },
+  protected readonly closedWorkColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'ใบงาน', width: 110 },
+    { field: 'title', headerText: 'เรื่อง', width: 'auto', minWidth: 150 },
+    { field: 'type', headerText: 'ประเภท', width: 100 },
+    { field: 'size', headerText: 'ขนาด', width: 68 },
+    { field: 'estimateMd', headerText: 'Est', width: 76, textAlign: 'Right', format: 'N2' },
+    { field: 'actualMd', headerText: 'Actual', width: 78, textAlign: 'Right', format: 'N2' },
+    { field: 'weekOffsetLabel', headerText: 'สัปดาห์', width: 100 },
+    { field: 'reviewRounds', headerText: 'รีวิว', width: 72, textAlign: 'Right' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 78, textAlign: 'Right' },
+    { field: 'score', headerText: 'คะแนน', width: 88, textAlign: 'Right' },
+  ];
+  protected readonly closedWorkAggregates: SfGridAggregate[] = [
+    { field: 'id', type: 'Count', prefix: 'รวม ', suffix: ' ใบ' },
+    { field: 'actualMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
+    { field: 'score', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
+  ];
+  protected readonly closedWorkGridOptions: SfGridOptions = {
+    id: 'my-closed-work-grid',
+    height: '280',
+    paging: true,
+    pageSize: 6,
+    sorting: true,
+    resizable: true,
+    search: true,
+    excelExport: true,
+    exportFileName: 'my-closed-work',
   };
 
   protected readonly activePerson = computed(() => {

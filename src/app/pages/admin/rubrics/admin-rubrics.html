@@ -1,7 +1,7 @@
 <section class="page">
   <app-page-head
     breadcrumb="Admin Hub > ทะเบียนเกณฑ์มาตรฐาน"
-    title="ทะเบียนเกณฑ์มาตรฐาน (Rubric Registry)"
+    title="ทะเบียนเกณฑ์มาตรฐาน Rubric"
     description="ปรับแต่งเกณฑ์ประเมินขนาดงาน (Sizing), น้ำหนักคะแนนใบงาน (Ticket Score), และสูตรดัชนีชี้วัด (Person Index) แบบไดนามิกโดยไม่ต้องแก้ไขโค้ด"
     periodBadge="v2026.4"
     [metrics]="[
@@ -31,69 +31,12 @@
     subtitle="ดับเบิลคลิกที่แถวเพื่อแก้ไขแบบ Inline — รองรับปุ่ม Edit, Update, Cancel บน Toolbar"
   >
     <div class="overflow-x-auto w-full">
-      <ejs-grid
-        #rubricGrid
-        [dataSource]="rubrics()"
-        [editSettings]="editSettings"
-        [toolbar]="toolbar"
-        [allowSorting]="true"
-        [allowResizing]="true"
-        [allowTextWrap]="true"
+      <app-sf-grid
+        [data]="rubrics()"
+        [columns]="columns"
+        [options]="gridOptions"
         (actionComplete)="onActionComplete($event)"
-        gridLines="Both"
-        width="100%"
-      >
-        <e-columns>
-          <e-column
-            field="rubric_id"
-            headerText="รหัส Rubric"
-            width="115"
-            [isPrimaryKey]="true"
-            textAlign="Left"
-          ></e-column>
-          <e-column
-            field="category"
-            headerText="หมวดหมู่"
-            width="100"
-            [allowEditing]="false"
-            textAlign="Center"
-          ></e-column>
-          <e-column
-            field="title"
-            headerText="ชื่อเกณฑ์"
-            width="160"
-            textAlign="Left"
-          ></e-column>
-          <e-column
-            field="paramsSummary"
-            headerText="สรุปพารามิเตอร์คำนวณ"
-            width="200"
-            [allowEditing]="false"
-            textAlign="Left"
-          ></e-column>
-          <e-column
-            field="paramsJson"
-            headerText="พารามิเตอร์ JSON (แก้ไขได้)"
-            width="200"
-            textAlign="Left"
-          ></e-column>
-          <e-column
-            field="is_active"
-            headerText="เปิดใช้งาน"
-            width="85"
-            displayAsCheckBox="true"
-            type="boolean"
-            textAlign="Center"
-          ></e-column>
-          <e-column
-            field="version"
-            headerText="เวอร์ชัน"
-            width="75"
-            [allowEditing]="false"
-            textAlign="Center"
-          ></e-column>
-        </e-columns>
-      </ejs-grid>
+      />
     </div>
   </app-section-card>
 </section>

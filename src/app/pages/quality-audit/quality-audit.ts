@@ -1,23 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  CategoryService,
-  ChartModule,
-  ColumnSeriesService,
-  LegendService,
-  LineSeriesService,
-  StripLineService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
-import {
-  FilterService,
-  GridComponent,
-  GridModule,
-  PageService,
-  SortService,
-} from '@syncfusion/ej2-angular-grids';
-import { TabModule } from '@syncfusion/ej2-angular-navigations';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { effectiveRole } from '../../core/admin-settings';
 import { computeQualityAuditSummary } from '../../core/multi-team';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -25,9 +7,20 @@ import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  PageHeadComponent,
+  SectionCardComponent,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfTabItem,
+  SfTabsComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 
 export interface ParetoCausePoint {
   cause: string;
@@ -41,24 +34,13 @@ export interface ParetoCausePoint {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    ChartModule,
-    GridModule,
     PageHeadComponent,
-    TabModule,
-    MessageModule,
     SectionCardComponent,
     StatusBadgeComponent,
-  ],
-  providers: [
-    PageService,
-    SortService,
-    FilterService,
-    CategoryService,
-    ColumnSeriesService,
-    LineSeriesService,
-    TooltipService,
-    LegendService,
-    StripLineService,
+    SfChartComponent,
+    SfGridComponent,
+    SfMessageComponent,
+    SfTabsComponent,
   ],
   templateUrl: './quality-audit.html',
 })
@@ -142,11 +124,54 @@ export class QualityAuditPage {
     };
   });
 
-  protected readonly chartArea = { border: { width: 0 } };
+  protected readonly qualityTabs = computed<SfTabItem[]>(() => [
+    { id: 'dod', header: `ตรวจสอบหลักฐาน DoD ก่อนเข้า QA (${this.dodChecklist().length})` },
+    { id: 'reopen', header: `วิเคราะห์สาเหตุ Reopen & Bug Escape (${this.reopenEscapes().length})` },
+  ]);
+
+  protected readonly dodColumns: SfGridColumn[] = [
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 110, textAlign: 'Left' },
+    { field: 'devName', headerText: 'ผู้พัฒนา (Dev)', width: 130 },
+    { field: 'qaName', headerText: 'ผู้ตรวจ QA', width: 130 },
+    { field: 'mrLink', headerText: 'ลิงก์ MR', width: 110 },
+    { field: 'unitTestLabel', headerText: 'Unit Test', width: 110 },
+    { field: 'ciStatusLabel', headerText: 'CI Pipeline', width: 120 },
+    { field: 'stagingVerified', headerText: 'ผล Staging', width: 110 },
+    { field: 'dodStatus', headerText: 'สถานะหลักฐาน DoD', width: 130 },
+    { field: 'action', headerText: 'การจัดการ', width: 110, textAlign: 'Center' },
+  ];
+  protected readonly dodGridOptions: SfGridOptions = {
+    id: 'quality-dod-grid',
+    sorting: true,
+    resizable: true,
+    search: true,
+    excelExport: true,
+    exportFileName: 'dod-checklist',
+  };
+
+  protected readonly reopenColumns: SfGridColumn[] = [
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 110 },
+    { field: 'title', headerText: 'ชื่องาน', width: 180 },
+    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 130 },
+    { field: 'reopenCount', headerText: 'Reopen', width: 100, textAlign: 'Right' },
+    { field: 'bugCause', headerText: 'สาเหตุของบั๊ก', width: 150 },
+    { field: 'isBugEscape', headerText: 'หลุด Prod', width: 120, textAlign: 'Center' },
+    { field: 'notes', headerText: 'บันทึกเพิ่มเติม', width: 160 },
+  ];
+  protected readonly reopenGridOptions: SfGridOptions = {
+    id: 'quality-reopen-grid',
+    sorting: true,
+    filtering: 'Excel',
+    resizable: true,
+    search: true,
+    excelExport: true,
+    exportFileName: 'reopen-escapes',
+  };
+
   protected readonly paretoXAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     majorGridLines: { width: 0 },
-    labelIntersectAction: 'Rotate45',
+    labelIntersectAction: 'Rotate45' as const,
     labelStyle: { color: 'var(--muted)', fontStyle: 'bold' },
   };
   protected readonly paretoCountAxis = {
@@ -167,9 +192,10 @@ export class QualityAuditPage {
     labelStyle: { color: 'var(--muted)' },
     stripLines: [
       {
-        value: 80,
+        start: 80,
+        size: 2,
+        sizeType: 'Pixel' as const,
         color: 'rgba(249, 115, 22, 0.7)',
-        width: 2,
         dashArray: '4,4',
         text: 'เกณฑ์ 80% (Vital Few)',
         horizontalAlignment: 'Start' as const,
@@ -177,8 +203,42 @@ export class QualityAuditPage {
       },
     ],
   };
-  protected readonly tooltip = { enable: true };
-  protected readonly legend = { visible: true, position: 'Top' };
+
+  protected readonly paretoSeries = computed<SfChartSeriesConfig[]>(() => {
+    const pts = this.paretoReport().points;
+    return [
+      {
+        type: 'Column',
+        dataSource: pts,
+        xName: 'cause',
+        yName: 'count',
+        name: 'ความถี่ที่เกิด (ครั้ง)',
+        fill: '#6366f1',
+        cornerRadius: { topLeft: 4, topRight: 4 },
+      },
+      {
+        type: 'Line',
+        yAxisName: 'cumPctAxis',
+        dataSource: pts,
+        xName: 'cause',
+        yName: 'cumPct',
+        name: 'เปอร์เซ็นต์สะสม (%)',
+        width: 2.5,
+        fill: '#f97316',
+        marker: { visible: true, width: 7, height: 7, fill: '#f97316' },
+      },
+    ];
+  });
+
+  protected readonly paretoChartOptions: SfChartOptions = {
+    height: '260px',
+    exportable: true,
+    fullscreenable: true,
+    exportFileName: 'pareto-reopen-causes',
+    axes: [this.paretoCumAxis],
+    legend: { visible: true, position: 'Top' },
+    tooltip: { enable: true },
+  };
 
   protected rejectToDev(ticketId: string, devName: string): void {
     const ticket = this.scorecard.tickets().find((item) => item.id === ticketId);

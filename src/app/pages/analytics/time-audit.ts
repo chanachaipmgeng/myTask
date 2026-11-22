@@ -1,15 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  ExcelExportService,
-  FilterService,
-  GridComponent,
-  GridModule,
-  PageService,
-  SortService,
-} from '@syncfusion/ej2-angular-grids';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { currentViewer } from '../../core/admin-settings';
 import { computeThreeWayTimeAudit } from '../../core/multi-team';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -17,11 +8,18 @@ import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
-import { BadgeTone } from '../../shared/ui/badge';
-import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  BadgeTone,
+  FilterChipOption,
+  FilterChipsComponent,
+  PageHeadComponent,
+  PersonAvatarComponent,
+  SectionCardComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-time-audit',
@@ -29,18 +27,12 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
   imports: [
     RouterLink,
     ButtonModule,
-    GridModule,
-    MessageModule,
     PageHeadComponent,
+    PersonAvatarComponent,
     SectionCardComponent,
     FilterChipsComponent,
     StatusBadgeComponent,
-  ],
-  providers: [
-    PageService,
-    SortService,
-    FilterService,
-    ExcelExportService,
+    SfGridComponent,
   ],
   templateUrl: './time-audit.html',
 })
@@ -50,6 +42,31 @@ export class TimeAuditPage {
   private readonly workspace = inject(WorkspaceFilter);
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
+
+  protected readonly gridColumns: SfGridColumn[] = [
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 115 },
+    { field: 'title', headerText: 'ชื่องาน', width: 185 },
+    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 145 },
+    { field: 'estimateMd', headerText: 'Est (1)', width: 100, textAlign: 'Right' },
+    { field: 'openProjectActualMd', headerText: 'OP Act (2)', width: 100, textAlign: 'Right' },
+    { field: 'gitlabSpanMd', headerText: 'GitLab Span (3)', width: 145, textAlign: 'Right' },
+    { field: 'ratio', headerText: 'สัดส่วน', width: 85, textAlign: 'Right' },
+    { field: 'anomalyLabel', headerText: 'ความผิดปกติ', width: 165 },
+  ];
+
+  protected readonly gridOptions: SfGridOptions = {
+    id: 'time-audit-grid',
+    paging: true,
+    pageSize: 12,
+    sorting: true,
+    filtering: 'Excel',
+    search: true,
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    height: '380px',
+    exportFileName: 'three-way-time-audit',
+  };
 
   protected openTicket(id: string): void {
     if (id) {
@@ -143,9 +160,5 @@ export class TimeAuditPage {
   protected rerunAudit(): void {
     this.notice.info('กำลังเรียกเครื่องยนต์ Python Analytics เพื่อคำนวณและตรวจสอบเวลา 3 ทางใหม่...');
     void this.scorecard.reloadFromApi();
-  }
-
-  protected exportGrid(grid: GridComponent): void {
-    void grid.excelExport();
   }
 }

@@ -19,12 +19,12 @@
       <p class="muted">กำลังโหลดตารางเวลา…</p>
     } @else if (data(); as matrix) {
       @if (isEmptyWeek()) {
-        <ejs-message
+        <app-sf-message
           class="empty-week"
           severity="Info"
           variant="Outlined"
           content="สัปดาห์นี้ยังไม่มีชั่วโมงลงเวลา — กดเซลล์แล้วเปิดใบงานเพื่อ Log Time หรือรอซิงก์จาก myProject (เซลล์เทา = ว่าง · ส้ม = ยังไม่ครบเป้า · เขียว = ครบ)"
-        ></ejs-message>
+        />
       }
       <div class="matrix-wrap">
         <table class="matrix">

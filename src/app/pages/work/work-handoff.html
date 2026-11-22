@@ -1,7 +1,7 @@
 <section class="page">
   <app-page-head
     breadcrumb="ฮับบริหารงาน > ตรวจสอบการส่งต่อ &amp; SLA ข้ามทีม (/work/handoff)"
-    title="ศูนย์ตรวจสอบการส่งต่อและคอขวดข้ามทีม (Handoff &amp; SLA Inspector)"
+    title="ติดตามการส่งต่อและคอขวดข้ามทีม"
     description="วิเคราะห์ระยะเวลาค้างส่งต่องานระหว่าง Dev, Reviewer, QA และ Infra เพื่อแก้ปัญหาคอขวดก่อนหลุดกำหนดส่ง"
     [metrics]="[
       { label: 'ค้างรอ Code Review', value: kpis().waitingReviewCount, unit: 'ใบ', hint: 'เกิน 24 ชม. ' + kpis().waitingReviewOverdue + ' ใบ', tone: kpis().waitingReviewOverdue > 0 ? 'bad' : 'good' },
@@ -12,13 +12,12 @@
   >
     <div actions class="flex flex-wrap gap-3 items-end">
       <app-form-field label="สายงาน" variant="filter">
-        <ejs-dropdownlist
-          [dataSource]="trackOptions"
-          [fields]="{ text: 'text', value: 'value' }"
+        <app-sf-dropdown
+          [items]="trackOptions"
           [value]="trackFilter()"
-          (change)="setTrack($event)"
-          width="180px"
-        ></ejs-dropdownlist>
+          [options]="{ width: '180px', allowFiltering: false }"
+          (valueChange)="setTrack($event)"
+        />
       </app-form-field>
       <button ejs-button cssClass="e-outline" iconCss="e-icons e-refresh" (click)="scorecard.reloadFromApi()">
         ซิงก์ข้อมูล
@@ -38,60 +37,12 @@
       title="Stage Aging by Track"
       subtitle="เปรียบเทียบชั่วโมงเฉลี่ยที่การ์ดค้างในแต่ละสถานะแยกตามทีม"
     >
-      <ejs-chart
+      <app-sf-chart
+        [series]="stageAgingSeries()"
         [primaryXAxis]="primaryXAxis"
         [primaryYAxis]="primaryYAxis"
-        [tooltip]="chartTooltip"
-        [legendSettings]="chartLegend"
-        [chartArea]="chartArea"
-        [theme]="theme.sfTheme()"
-        height="280px"
-        [enableAnimation]="true"
-      >
-        <e-series-collection>
-          <e-series
-            [dataSource]="stageAgingData()"
-            type="StackingBar"
-            xName="track"
-            yName="inProgressHours"
-            name="In Progress"
-            fill="#4c68e5"
-            columnWidth="0.6"
-            [border]="{ width: 0 }"
-          ></e-series>
-          <e-series
-            [dataSource]="stageAgingData()"
-            type="StackingBar"
-            xName="track"
-            yName="reviewHours"
-            name="Code Review"
-            fill="#f59e0b"
-            columnWidth="0.6"
-            [border]="{ width: 0 }"
-          ></e-series>
-          <e-series
-            [dataSource]="stageAgingData()"
-            type="StackingBar"
-            xName="track"
-            yName="qaHours"
-            name="In QA"
-            fill="#3ec6e0"
-            columnWidth="0.6"
-            [border]="{ width: 0 }"
-          ></e-series>
-          <e-series
-            [dataSource]="stageAgingData()"
-            type="StackingBar"
-            xName="track"
-            yName="blockedHours"
-            name="Blocked"
-            fill="#e35d6a"
-            columnWidth="0.6"
-            [border]="{ width: 0 }"
-            [cornerRadius]="barEndCorner"
-          ></e-series>
-        </e-series-collection>
-      </ejs-chart>
+        [options]="stageAgingOptions"
+      />
     </app-section-card>
 
     <app-section-card
@@ -122,11 +73,10 @@
         }
       </div>
 
-      <ejs-message
+      <app-sf-message
         severity="Info"
-        variant="Outlined"
         content="Fair Cutoff Rule: Dev ส่งงานตรงสัปดาห์วัดจากวันที่การ์ดย้ายเข้า Ready for QA ครั้งแรกเทียบกับ first_due_on — เวลาที่รอคิวใน QA ไม่หักคะแนน Dev"
-      ></ejs-message>
+      />
     </app-section-card>
   </div>
 
@@ -134,71 +84,45 @@
     title="ตารางตรวจสอบใบงานค้างส่งต่อและ SLA รายใบ"
     subtitle="ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล"
   >
-    <div actions class="flex flex-wrap gap-2 items-center">
-      <button ejs-button cssClass="e-outline" iconCss="e-icons e-export-excel" (click)="exportGrid(handoffGrid)">
-        ส่งออก Excel
-      </button>
-    </div>
-
-    <div class="overflow-x-auto w-full">
-      <ejs-grid
-        #handoffGrid
-        [dataSource]="filteredTickets()"
-        [allowSorting]="true"
-        [allowFiltering]="true"
-        [frozenColumns]="2"
-        width="100%"
-      >
-        <e-columns>
-          <e-column field="ticketId" headerText="รหัสใบงาน" width="105" textAlign="Left">
-            <ng-template #template let-data>
-              <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
-            </ng-template>
-          </e-column>
-          <e-column field="status" headerText="สถานะค้าง" width="125" textAlign="Left">
-            <ng-template #template let-data>
-              <app-status-badge
-                [label]="data.blockerFlag ? data.status + ' (' + data.blockerFlag + ')' : data.status"
-                [value]="data.blockerFlag ? 'blocked' : data.status"
-                [toneMap]="statusToneMap"
-              ></app-status-badge>
-            </ng-template>
-          </e-column>
-          <e-column field="title" headerText="ชื่องาน / รายละเอียด" width="190" textAlign="Left"></e-column>
-          <e-column field="owner" headerText="เจ้าของงานหลัก" width="140" textAlign="Left"></e-column>
-          <e-column field="reviewerOrQa" headerText="ผู้ตรวจ/ผู้รับช่วง" width="140" textAlign="Left"></e-column>
-          <e-column field="hoursSpent" headerText="เวลาค้างสะสม" width="110" textAlign="Right">
-            <ng-template #template let-data>
-              <span [class.text-rose-600]="data.isOverSla" [class.font-bold]="data.isOverSla">
-                {{ data.hoursSpent }} ชม.
-                @if (data.isOverSla) {
-                  !
-                }
-              </span>
-            </ng-template>
-          </e-column>
-          <e-column field="slaHours" headerText="เกณฑ์ SLA" width="95" textAlign="Right">
-            <ng-template #template let-data>
-              <span>≤ {{ data.slaHours }} ชม.</span>
-            </ng-template>
-          </e-column>
-          <e-column headerText="การจัดการ" width="110" textAlign="Center">
-            <ng-template #template let-data>
-              @if (data.canPing && (role() === 'admin' || role() === 'lead')) {
-                <button
-                  ejs-button
-                  cssClass="e-small e-outline e-primary"
-                  (click)="pingTarget(data.ticketId, data.reviewerOrQa)"
-                >
-                  Ping MR
-                </button>
-              } @else {
-                <span class="text-xs text-muted">—</span>
-              }
-            </ng-template>
-          </e-column>
-        </e-columns>
-      </ejs-grid>
-    </div>
+    <ng-template #ticketIdTpl let-data>
+      <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
+    </ng-template>
+    <ng-template #statusTpl let-data>
+      <app-status-badge
+        [label]="data.blockerFlag ? data.status + ' (' + data.blockerFlag + ')' : data.status"
+        [value]="data.blockerFlag ? 'blocked' : data.status"
+        [toneMap]="statusToneMap"
+      ></app-status-badge>
+    </ng-template>
+    <ng-template #hoursTpl let-data>
+      <span [class.text-rose-600]="data.isOverSla" [class.font-bold]="data.isOverSla">
+        {{ data.hoursSpent }} ชม.
+        @if (data.isOverSla) {
+          !
+        }
+      </span>
+    </ng-template>
+    <ng-template #slaTpl let-data>
+      <span>≤ {{ data.slaHours }} ชม.</span>
+    </ng-template>
+    <ng-template #actionTpl let-data>
+      @if (data.canPing && (role() === 'admin' || role() === 'lead')) {
+        <button
+          ejs-button
+          cssClass="e-small e-outline e-primary"
+          (click)="pingTarget(data.ticketId, data.reviewerOrQa)"
+        >
+          Ping MR
+        </button>
+      } @else {
+        <span class="text-xs text-muted">—</span>
+      }
+    </ng-template>
+    <app-sf-grid
+      [data]="filteredTickets()"
+      [columns]="gridColumns"
+      [options]="gridOptions"
+      [cellTemplates]="{ ticketId: ticketIdTpl, status: statusTpl, hoursSpent: hoursTpl, slaHours: slaTpl, action: actionTpl }"
+    />
   </app-section-card>
 </section>

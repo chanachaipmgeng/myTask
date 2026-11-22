@@ -1,8 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
-import { ButtonModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
-import { FilterService, GridModule, PageService, SortService } from '@syncfusion/ej2-angular-grids';
-import { ToolbarModule } from '@syncfusion/ej2-angular-navigations';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { canAssignWork, weeklyQuotas } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
 import { planNewWork, QueuePlan } from '../../core/capacity';
@@ -10,26 +7,33 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
-import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
-import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import {
+  ConfirmDialogComponent,
+  FlashMessagesComponent,
+  PageHeadComponent,
+  PersonAvatarComponent,
+  SectionCardComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-queue',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    GridModule,
-    ToolbarModule,
     ButtonModule,
-    ChipListModule,
-    MessageModule,
     PageHeadComponent,
+    PersonAvatarComponent,
     SectionCardComponent,
+    StatusBadgeComponent,
     FlashMessagesComponent,
     ConfirmDialogComponent,
+    SfGridComponent,
+    SfMessageComponent,
   ],
-  providers: [PageService, SortService, FilterService],
   templateUrl: './queue.html',
 })
 export class QueuePage {
@@ -42,7 +46,45 @@ export class QueuePage {
   @ViewChild('writebackConfirm') private writebackConfirm?: ConfirmDialogComponent;
 
   protected readonly canAssign = canAssignWork;
-  protected readonly pageSettings = { pageSize: 8 };
+  protected readonly capacityColumns: SfGridColumn[] = [
+    { field: 'personLabel', headerText: 'พนักงาน', width: 220, cellType: 'person', personIdField: 'id' },
+    { field: 'trackLabel', headerText: 'สาย', width: 120, cellType: 'badge' },
+    { field: 'level', headerText: 'ระดับ', width: 105, cellType: 'badge' },
+    { field: 'quota', headerText: 'โควต้า', width: 95, textAlign: 'Right', format: 'N1', cellType: 'metric' },
+    { field: 'openMd', headerText: 'MD ที่เปิดอยู่', width: 120, textAlign: 'Right', format: 'N2', cellType: 'metric' },
+    { field: 'freeMd', headerText: 'ว่างหลังกัน 1 MD', width: 145, textAlign: 'Right', format: 'N2', cellType: 'metric', suffix: ' MD' },
+    { field: 'wipLabel', headerText: 'WIP', width: 85, textAlign: 'Center' },
+    { field: 'xlLabel', headerText: 'XL', width: 75, textAlign: 'Center' },
+    { field: 'status', headerText: 'สถานะ', width: 110, cellType: 'badge' },
+  ];
+  protected readonly capacityGridOptions: SfGridOptions = {
+    id: 'queue-capacity-grid',
+    height: '340',
+    paging: true,
+    pageSize: 8,
+    sorting: true,
+    resizable: true,
+    search: true,
+    excelExport: true,
+    csvExport: true,
+    autoFreezeDesktop: 1,
+    exportFileName: 'team-capacity',
+  };
+  protected readonly queueColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'รหัส', width: 125, cellType: 'ticket-link' },
+    { field: 'type', headerText: 'ชนิด', width: 135, cellType: 'badge', badgeTone: 'secondary' },
+    { field: 'module', headerText: 'โมดูล', width: 'auto', minWidth: 120 },
+    { field: 'size', headerText: 'ขนาด', width: 80, cellType: 'badge', badgeTone: 'info' },
+    { field: 'estimateMd', headerText: 'Est', width: 90, textAlign: 'Right', format: 'N2', cellType: 'metric', suffix: ' MD' },
+    { field: 'assignee', headerText: 'ผู้รับ', width: 150 },
+  ];
+  protected readonly queueGridOptions: SfGridOptions = {
+    height: '240',
+    paging: true,
+    pageSize: 8,
+    sorting: true,
+    resizable: true,
+  };
   protected readonly message = signal('');
   protected readonly error = signal('');
   protected readonly writebackEnabled = signal(false);

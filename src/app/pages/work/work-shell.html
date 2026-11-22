@@ -6,18 +6,20 @@
       } @else {
         <a ejs-button cssClass="e-outline" routerLink="/me">ผลงานของฉัน (/me)</a>
       }
-      <button ejs-button cssClass="e-flat e-small" type="button" (click)="clearContext()">ล้างกรองสัปดาห์</button>
+      <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearContext()">ล้างกรองสัปดาห์</button>
     </div>
   </app-page-head>
 
-  <div class="work-context-bar" aria-label="บริบทสัปดาห์และค้นหาใบ">
-    <p class="work-context-bar__line">{{ contextLine() }}</p>
-    <div class="work-context-bar__filters">
+  <div class="work-context-bar flex flex-wrap items-center justify-between gap-3" aria-label="บริบทสัปดาห์และค้นหาใบ">
+    <div class="flex flex-wrap items-center gap-3">
       <app-form-field label="ค้นหา" variant="filter">
-        <ejs-textbox placeholder="รหัสหรือชื่อใบ" [value]="filter.query()" (change)="setQuery($event)" width="200px"></ejs-textbox>
+        <app-sf-textbox
+          placeholder="รหัสหรือชื่อใบ"
+          [value]="filter.query()"
+          width="196px"
+          (valueChange)="filter.query.set($event)"
+        />
       </app-form-field>
-    </div>
-    <div class="work-context-bar__chips">
       <app-filter-chips
         [options]="weekChipOptions"
         [value]="'' + filter.weekOffset()"
@@ -29,6 +31,7 @@
         (valueChange)="setDueBucketChip($event)"
       ></app-filter-chips>
     </div>
+    <p class="work-context-bar__line m-0 text-xs text-muted">{{ contextLine() }}</p>
   </div>
 
   <nav class="hub-underline-tabs" role="tablist" [attr.aria-label]="heading()">

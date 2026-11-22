@@ -20,62 +20,56 @@
   >
     <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
       <app-form-field label="ปี พ.ศ.">
-        <ejs-numerictextbox
+        <app-sf-number
+          preset="yearBe"
           [value]="cycleYearBe()"
-          [enabled]="canEdit()"
+          [disabled]="!canEdit()"
           [min]="2560"
           [max]="2600"
-          [step]="1"
-          format="####"
-          (change)="onCycleYearBe($event)"
-        ></ejs-numerictextbox>
+          (valueChange)="onCycleYearBe($event)"
+        />
       </app-form-field>
       <app-form-field label="ชื่อรอบ">
-        <ejs-textbox
+        <app-sf-textbox
           [value]="cycleLabel()"
-          [enabled]="canEdit()"
+          [disabled]="!canEdit()"
           placeholder="ปี 2569"
-          (change)="onCycleLabel($event)"
-        ></ejs-textbox>
+          (valueChange)="onCycleLabel($event)"
+        />
       </app-form-field>
       <app-form-field label="วันเริ่ม">
-        <input
-          class="workspace-filter-date w-full"
-          type="date"
+        <app-sf-datepicker
           [value]="cycleStartOn()"
           [disabled]="!canEdit()"
-          (change)="onCycleStart($event)"
+          [options]="{ format: 'dd/MM/yyyy', placeholder: 'เลือกวันเริ่ม', width: '100%' }"
+          (valueChange)="onCycleStart($event)"
         />
       </app-form-field>
       <app-form-field label="วันสิ้นสุด">
-        <input
-          class="workspace-filter-date w-full"
-          type="date"
+        <app-sf-datepicker
           [value]="cycleEndOn()"
           [disabled]="!canEdit()"
-          (change)="onCycleEnd($event)"
+          [options]="{ format: 'dd/MM/yyyy', placeholder: 'เลือกวันสิ้นสุด', width: '100%' }"
+          (valueChange)="onCycleEnd($event)"
         />
       </app-form-field>
       <app-form-field label="ขอบเขตทีม (ว่าง = ทุกทีม)">
-        <ejs-multiselect
-          [dataSource]="cycleTeamOptions()"
-          [fields]="fields"
+        <app-sf-multiselect
+          [items]="cycleTeamOptions()"
           [value]="cycleTeamIds()"
-          [enabled]="canEdit()"
+          [disabled]="!canEdit()"
           placeholder="ทุกทีม"
-          mode="CheckBox"
-          [showDropDownIcon]="true"
-          (change)="onCycleTeams($event)"
-        ></ejs-multiselect>
+          [options]="{ mode: 'CheckBox', showDropDownIcon: true }"
+          (valueChange)="onCycleTeams($event)"
+        />
       </app-form-field>
       <app-form-field label="สถานะ">
-        <ejs-dropdownlist
-          [dataSource]="cycleStatusOptions"
-          [fields]="fields"
+        <app-sf-dropdown
+          [items]="cycleStatusOptions"
           [value]="cycleStatus()"
-          [enabled]="canEdit()"
-          (change)="onCycleStatus($event)"
-        ></ejs-dropdownlist>
+          [disabled]="!canEdit()"
+          (valueChange)="onCycleStatus($event)"
+        />
       </app-form-field>
       <div class="flex flex-wrap items-end gap-2 md:col-span-2">
         <button ejs-button cssClass="e-primary" type="button" [disabled]="!canEdit() || cycleBusy()" (click)="createCycle()">
@@ -88,10 +82,10 @@
     </div>
 
     @if (cycleMessage()) {
-      <ejs-message [content]="cycleMessage()" severity="Success" variant="Outlined"></ejs-message>
+      <app-sf-message [content]="cycleMessage()" severity="Success" />
     }
     @if (cycleError()) {
-      <ejs-message [content]="cycleError()" severity="Error" variant="Outlined"></ejs-message>
+      <app-sf-message [content]="cycleError()" severity="Error" />
     }
 
     <div class="grid grid-cols-1 gap-2">
@@ -140,52 +134,56 @@
   </app-section-card>
 
   <app-section-card
-    title="คน ระดับ และสิทธิ์ (Role Matrix)"
+    title="จัดการสิทธิ์และระดับโควตาทีม"
     subtitle="งานหลักของหน้านี้ — ปรับ access และระดับโควตาของแต่ละคน"
     badge="สำคัญ"
     badgeTone="danger"
   >
     <div actions class="w-full sm:w-64">
-      <ejs-textbox
+      <app-sf-textbox
         placeholder="ค้นหาชื่อ / สายงาน / สิทธิ์..."
         [value]="personQuery()"
-        (input)="personQuery.set($any($event).value ?? '')"
-        width="100%"
-      ></ejs-textbox>
+        [clearButton]="true"
+        (valueChange)="personQuery.set($event)"
+      />
     </div>
 
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
       @for (person of filteredRoster(); track person.id) {
         <app-section-card variant="nested" [showHead]="false">
-          <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div class="flex items-center gap-3">
-              <div class="avatar-badge">{{ person.nickname.slice(0, 2) }}</div>
-              <div class="flex flex-col gap-0.5">
-                <span class="font-bold">{{ person.nickname }} · {{ person.track === 'RD' ? 'R&D' : 'Implement' }}</span>
-                <span class="fine m-0">{{ person.role }} · @{{ person.gitlabUsername || person.id }}</span>
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-3 min-w-0">
+                <app-person-avatar [personId]="person.id" [name]="person.nickname" size="md" />
+                <div class="flex flex-col gap-0.5 min-w-0">
+                  <span class="font-bold text-sm truncate">{{ person.nickname }}</span>
+                  <span class="fine m-0 truncate">{{ person.role }} · @{{ person.gitlabUsername || person.id }}</span>
+                </div>
               </div>
+              <app-status-badge
+                [label]="person.track === 'RD' ? 'R&D' : 'Implement'"
+                [tone]="person.track === 'RD' ? 'info' : 'primary'"
+              />
             </div>
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:w-auto">
-              <ejs-dropdownlist
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-[color:var(--line)]">
+              <app-sf-dropdown
                 cssClass="access-list"
                 [attr.data-person-access]="person.id"
-                [dataSource]="accessOptions"
-                [fields]="fields"
+                [items]="accessOptions"
                 [value]="person.access ?? 'member'"
-                [enabled]="canEdit()"
-                (change)="onAccess(person.id, $event)"
-                width="175px"
-              ></ejs-dropdownlist>
-              <ejs-dropdownlist
+                [disabled]="!canEdit()"
+                [options]="{ width: '100%' }"
+                (valueChange)="onAccess(person.id, $event)"
+              />
+              <app-sf-dropdown
                 cssClass="level-list"
                 [attr.data-person]="person.id"
-                [dataSource]="levelOptions"
-                [fields]="fields"
+                [items]="levelOptions"
                 [value]="person.level"
-                [enabled]="canEdit()"
-                (change)="onLevel(person.id, $event)"
-                width="135px"
-              ></ejs-dropdownlist>
+                [disabled]="!canEdit()"
+                [options]="{ width: '100%' }"
+                (valueChange)="onLevel(person.id, $event)"
+              />
             </div>
           </div>
         </app-section-card>
@@ -202,16 +200,16 @@
     >
       <div class="form-grid grid grid-cols-1 sm:grid-cols-2">
         <app-form-field label="Senior">
-          <ejs-numerictextbox id="quota-senior" [value]="quotas().Senior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Senior', $event)"></ejs-numerictextbox>
+          <app-sf-number [value]="quotas().Senior" [disabled]="!canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (valueChange)="onQuota('Senior', $event)" />
         </app-form-field>
         <app-form-field label="Mid">
-          <ejs-numerictextbox id="quota-mid" [value]="quotas().Mid" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Mid', $event)"></ejs-numerictextbox>
+          <app-sf-number [value]="quotas().Mid" [disabled]="!canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (valueChange)="onQuota('Mid', $event)" />
         </app-form-field>
         <app-form-field label="Junior">
-          <ejs-numerictextbox id="quota-junior" [attr.data-quota]="quotas().Junior" [value]="quotas().Junior" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('Junior', $event)"></ejs-numerictextbox>
+          <app-sf-number [attr.data-quota]="quotas().Junior" [value]="quotas().Junior" [disabled]="!canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (valueChange)="onQuota('Junior', $event)" />
         </app-form-field>
         <app-form-field label="เดือนแรก">
-          <ejs-numerictextbox id="quota-first" [value]="quotas().FirstMonth" [enabled]="canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (change)="onQuota('FirstMonth', $event)"></ejs-numerictextbox>
+          <app-sf-number [value]="quotas().FirstMonth" [disabled]="!canEdit()" [min]="0" [max]="40" [step]="0.5" format="n1" (valueChange)="onQuota('FirstMonth', $event)" />
         </app-form-field>
       </div>
     </app-section-card>
@@ -224,11 +222,11 @@
     >
       <div class="flex flex-col gap-3">
         <div class="flex flex-wrap gap-4">
-          <ejs-checkbox id="rule-deadline" label="สัปดาห์ที่ commit ใกล้หมด" [checked]="rules().deadline" [disabled]="!canEdit()" (change)="onDeadline($event)"></ejs-checkbox>
-          <ejs-checkbox id="rule-overrun" label="actual มีแนวโน้มเกิน estimate" [checked]="rules().overrun" [disabled]="!canEdit()" (change)="onOverrun($event)"></ejs-checkbox>
+          <app-sf-checkbox label="สัปดาห์ที่ commit ใกล้หมด" [checked]="rules().deadline" [disabled]="!canEdit()" (checkedChange)="onDeadline($event)" />
+          <app-sf-checkbox label="actual มีแนวโน้มเกิน estimate" [checked]="rules().overrun" [disabled]="!canEdit()" (checkedChange)="onOverrun($event)" />
         </div>
         <app-form-field label="เกณฑ์เกิน (เท่าของ estimate)">
-          <ejs-numerictextbox id="rule-overrun-limit" [value]="rules().overrunLimit" [enabled]="canEdit()" [min]="1.1" [max]="5" [step]="0.1" format="n1" (change)="onOverrunLimit($event)"></ejs-numerictextbox>
+          <app-sf-number [value]="rules().overrunLimit" [disabled]="!canEdit()" [min]="1.1" [max]="5" [step]="0.1" format="n1" (valueChange)="onOverrunLimit($event)" />
         </app-form-field>
       </div>
     </app-section-card>
@@ -252,7 +250,7 @@
             [tone]="implementWeightSum() === 100 ? 'success' : 'warning'"
           ></app-status-badge>
         </div>
-        <ejs-progressbar id="imp-weight-progress" type="Linear" [theme]="theme.sfTheme()" height="12" [minimum]="0" [maximum]="100" [value]="implementWeightSum()"></ejs-progressbar>
+        <app-sf-progress id="imp-weight-progress" [value]="implementWeightSum()" [options]="{ height: '12' }" />
         </div>
       </app-section-card>
       <app-section-card variant="nested" [showHead]="false">
@@ -264,33 +262,32 @@
             [tone]="researchWeightSum() === 100 ? 'success' : 'warning'"
           ></app-status-badge>
         </div>
-        <ejs-progressbar id="rd-weight-progress" type="Linear" [theme]="theme.sfTheme()" height="12" [minimum]="0" [maximum]="100" [value]="researchWeightSum()"></ejs-progressbar>
+        <app-sf-progress id="rd-weight-progress" [value]="researchWeightSum()" [options]="{ height: '12' }" />
         </div>
       </app-section-card>
     </div>
 
     @if (implementWeightSum() !== 100 || researchWeightSum() !== 100) {
-      <ejs-message
+      <app-sf-message
         content="คำเตือน: ผลรวมน้ำหนักคะแนนไม่เท่ากับ 100% คะแนนรวมรายบุคคลจะถูกถ่วงน้ำหนักตามสัดส่วนที่ตั้งไว้"
         severity="Warning"
-        variant="Outlined"
-      ></ejs-message>
+      />
     }
 
     <div class="form-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-      <app-form-field label="Implement คะแนนใบ"><ejs-numerictextbox id="weight-imp-ticket" [value]="weights().implementTicket" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'ticket' }, $event)"></ejs-numerictextbox></app-form-field>
-      <app-form-field label="Implement แผน"><ejs-numerictextbox id="weight-imp-plan" [value]="weights().implementPlan" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'plan' }, $event)"></ejs-numerictextbox></app-form-field>
-      <app-form-field label="Implement ความแม่น"><ejs-numerictextbox id="weight-imp-accuracy" [value]="weights().implementAccuracy" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'accuracy' }, $event)"></ejs-numerictextbox></app-form-field>
-      <app-form-field label="Implement คุณภาพ"><ejs-numerictextbox id="weight-imp-quality" [value]="weights().implementQuality" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'implement', part: 'quality' }, $event)"></ejs-numerictextbox></app-form-field>
-      <app-form-field label="R&amp;D DoD"><ejs-numerictextbox id="weight-rd-dod" [value]="weights().researchDod" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'dod' }, $event)"></ejs-numerictextbox></app-form-field>
-      <app-form-field label="R&amp;D Spike"><ejs-numerictextbox id="weight-rd-spike" [value]="weights().researchSpike" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'spike' }, $event)"></ejs-numerictextbox></app-form-field>
-      <app-form-field label="R&amp;D รับเข้า"><ejs-numerictextbox id="weight-rd-outcome" [value]="weights().researchOutcome" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'outcome' }, $event)"></ejs-numerictextbox></app-form-field>
-      <app-form-field label="R&amp;D รีวิว"><ejs-numerictextbox id="weight-rd-review" [value]="weights().researchReview" [enabled]="canEdit()" [min]="0" [max]="100" [step]="1" format="n0" (change)="onWeight({ track: 'research', part: 'review' }, $event)"></ejs-numerictextbox></app-form-field>
+      <app-form-field label="Implement คะแนนใบ"><app-sf-number preset="percent" [value]="weights().implementTicket" [disabled]="!canEdit()" [min]="0" [max]="100" (valueChange)="onWeight({ track: 'implement', part: 'ticket' }, $event)" /></app-form-field>
+      <app-form-field label="Implement แผน"><app-sf-number preset="percent" [value]="weights().implementPlan" [disabled]="!canEdit()" [min]="0" [max]="100" (valueChange)="onWeight({ track: 'implement', part: 'plan' }, $event)" /></app-form-field>
+      <app-form-field label="Implement ความแม่น"><app-sf-number preset="percent" [value]="weights().implementAccuracy" [disabled]="!canEdit()" [min]="0" [max]="100" (valueChange)="onWeight({ track: 'implement', part: 'accuracy' }, $event)" /></app-form-field>
+      <app-form-field label="Implement คุณภาพ"><app-sf-number preset="percent" [value]="weights().implementQuality" [disabled]="!canEdit()" [min]="0" [max]="100" (valueChange)="onWeight({ track: 'implement', part: 'quality' }, $event)" /></app-form-field>
+      <app-form-field label="R&amp;D DoD"><app-sf-number preset="percent" [value]="weights().researchDod" [disabled]="!canEdit()" [min]="0" [max]="100" (valueChange)="onWeight({ track: 'research', part: 'dod' }, $event)" /></app-form-field>
+      <app-form-field label="R&amp;D Spike"><app-sf-number preset="percent" [value]="weights().researchSpike" [disabled]="!canEdit()" [min]="0" [max]="100" (valueChange)="onWeight({ track: 'research', part: 'spike' }, $event)" /></app-form-field>
+      <app-form-field label="R&amp;D รับเข้า"><app-sf-number preset="percent" [value]="weights().researchOutcome" [disabled]="!canEdit()" [min]="0" [max]="100" (valueChange)="onWeight({ track: 'research', part: 'outcome' }, $event)" /></app-form-field>
+      <app-form-field label="R&amp;D รีวิว"><app-sf-number preset="percent" [value]="weights().researchReview" [disabled]="!canEdit()" [min]="0" [max]="100" (valueChange)="onWeight({ track: 'research', part: 'review' }, $event)" /></app-form-field>
     </div>
   </app-section-card>
 
   <app-section-card
-    title="ทดสอบสิทธิ์ (Session &amp; Persona)"
+    title="สลับสิทธิ์ทดสอบ"
     subtitle="สลับบัญชีจำลองเพื่อตรวจมุมมอง — ไม่ใช่งานประจำของแอดมิน"
     badge="Dev"
     badgeTone="secondary"
@@ -304,17 +301,14 @@
 
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-end">
       <app-form-field label="ผู้ที่กำลังดู (ตัวอย่างออฟไลน์)">
-        <ejs-dropdownlist
-          id="viewer-role"
-          [dataSource]="viewerOptions"
-          [fields]="fields"
+        <app-sf-dropdown
+          [items]="viewerOptions"
           [value]="viewer().id"
-          [enabled]="!session()"
-          (change)="onViewer($event)"
-          width="100%"
-        ></ejs-dropdownlist>
+          [disabled]="!!session()"
+          (valueChange)="onViewer($event)"
+        />
       </app-form-field>
-      <ejs-message id="access-flag" [content]="accessBanner()" severity="Info" variant="Outlined"></ejs-message>
+      <app-sf-message [content]="accessBanner()" severity="Info" />
     </div>
     <app-flash-messages [info]="status() || null"></app-flash-messages>
   </app-section-card>
@@ -329,15 +323,13 @@
         <app-section-card variant="nested" [showHead]="false">
           <div class="flex flex-wrap items-center justify-between gap-3">
             <span>{{ link.label }} · {{ link.detail }}</span>
-            <ejs-dropdownlist
-              [id]="'connection-' + link.id"
-              [dataSource]="connectionOptions"
-              [fields]="fields"
+            <app-sf-dropdown
+              [items]="connectionOptions"
               [value]="link.state"
-              [enabled]="canEdit()"
-              (change)="onConnection(link.id, $event)"
-              width="180px"
-            ></ejs-dropdownlist>
+              [disabled]="!canEdit()"
+              [options]="{ width: '180px' }"
+              (valueChange)="onConnection(link.id, $event)"
+            />
           </div>
         </app-section-card>
       }
@@ -345,28 +337,15 @@
   </app-section-card>
 
   <app-section-card
-    title="ประวัติตรวจสอบระบบ (Audit Log)"
+    title="ประวัติการทำงานระบบ"
     subtitle="แก้ไขสิทธิ์ การตั้งค่า และการสั่งรันวิเคราะห์"
     [badge]="auditLogs().length + ' รายการล่าสุด'"
     badgeTone="secondary"
   >
-    <ejs-grid
-      id="admin-audit-grid"
-      [dataSource]="auditLogs()"
-      [allowPaging]="true"
-      [allowSorting]="true"
-      [allowResizing]="true"
-      [pageSettings]="{ pageSize: 8 }"
-      height="260"
-    >
-      <e-columns>
-        <e-column field="id" headerText="ID" width="80" textAlign="Right"></e-column>
-        <e-column field="actorName" headerText="ผู้ดำเนินการ" width="130"></e-column>
-        <e-column field="action" headerText="การกระทำ" width="180"></e-column>
-        <e-column field="target" headerText="เป้าหมาย" width="140"></e-column>
-        <e-column field="detail" headerText="รายละเอียด" width="280"></e-column>
-        <e-column field="createdAt" headerText="เวลา" width="190"></e-column>
-      </e-columns>
-    </ejs-grid>
+    <app-sf-grid
+      [data]="auditLogs()"
+      [columns]="auditColumns"
+      [options]="auditGridOptions"
+    />
   </app-section-card>
 </section>

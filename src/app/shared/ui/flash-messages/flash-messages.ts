@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { SfMessageComponent } from '../../sf';
 
 @Component({
   selector: 'app-flash-messages',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MessageModule],
+  imports: [SfMessageComponent],
   templateUrl: './flash-messages.html',
   styleUrl: './flash-messages.scss',
 })

@@ -1,16 +1,16 @@
 @if (success || error || info || warning) {
   <div class="app-flash">
     @if (success) {
-      <ejs-message severity="Success" [content]="success"></ejs-message>
+      <app-sf-message severity="Success" [content]="success" />
     }
     @if (error) {
-      <ejs-message severity="Error" [content]="error"></ejs-message>
+      <app-sf-message severity="Error" [content]="error" />
     }
     @if (info) {
-      <ejs-message severity="Info" [content]="info"></ejs-message>
+      <app-sf-message severity="Info" [content]="info" />
     }
     @if (warning) {
-      <ejs-message severity="Warning" [content]="warning"></ejs-message>
+      <app-sf-message severity="Warning" [content]="warning" />
     }
   </div>
 }

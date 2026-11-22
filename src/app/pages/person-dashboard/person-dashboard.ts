@@ -2,30 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  AccumulationChartModule,
-  AccumulationDataLabelService,
-  AccumulationLegendService,
-  AccumulationTooltipService,
-  CategoryService,
-  ChartModule,
-  ColumnSeriesService,
-  StackingAreaSeriesService,
-  StackingColumnSeriesService,
-  LegendService,
-  LineSeriesService,
-  PieSeriesService,
-  PolarSeriesService,
-  RadarSeriesService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
-import { AggregateService, GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
-import {
-  SpeechToTextModule,
-  TextBoxModule,
-  TranscriptChangedEventArgs,
-} from '@syncfusion/ej2-angular-inputs';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { SpeechToTextModule, TranscriptChangedEventArgs } from '@syncfusion/ej2-angular-inputs';
 import { map } from 'rxjs';
 import { ApiClient } from '../../core/api-client';
 import { currentViewer, trackWeights, weeklyQuotas } from '../../core/admin-settings';
@@ -34,7 +11,21 @@ import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
-import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
+import {
+  PageHeadComponent,
+  SectionCardComponent,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
+  SfDonutChartComponent,
+  SfDonutChartOptions,
+  SfGridAggregate,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfTextBoxComponent,
+} from '../../shared/ui';
 import {
   defaultThaiSpeechButtonSettings,
   mergeSpeechTranscript,
@@ -56,35 +47,16 @@ interface OlsSummaryInfo {
   selector: 'app-person-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    ChartModule,
-    AccumulationChartModule,
     ButtonModule,
-    MessageModule,
-    GridModule,
     PageHeadComponent,
-    TextBoxModule,
     SpeechToTextModule,
     RouterLink,
     SectionCardComponent,
-  ],
-  providers: [
-    CategoryService,
-    LineSeriesService,
-    ColumnSeriesService,
-    PolarSeriesService,
-    RadarSeriesService,
-    StackingAreaSeriesService,
-    StackingColumnSeriesService,
-    LegendService,
-    TooltipService,
-    PieSeriesService,
-    AccumulationLegendService,
-    AccumulationTooltipService,
-    AccumulationDataLabelService,
-    PageService,
-    SortService,
-    ResizeService,
-    AggregateService,
+    SfChartComponent,
+    SfDonutChartComponent,
+    SfGridComponent,
+    SfMessageComponent,
+    SfTextBoxComponent,
   ],
   templateUrl: './person-dashboard.html',
 })
@@ -105,10 +77,9 @@ export class PersonDashboard {
     return this.routePersonId();
   });
 
-  protected readonly pageSettings = { pageSize: 8 };
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     majorGridLines: { width: 0 },
     labelStyle: this.axisFont,
     labelRotation: -35,
@@ -137,7 +108,7 @@ export class PersonDashboard {
     lineStyle: { width: 0 },
   };
   protected readonly radarXAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     labelStyle: this.axisFont,
   };
   protected readonly radarYAxis = {
@@ -147,56 +118,128 @@ export class PersonDashboard {
     labelStyle: this.axisFont,
     lineStyle: { width: 0 },
   };
-  protected readonly tooltip = {
-    enable: true,
-    shared: true,
-    enableMarker: true,
-    header: '${point.x}',
-    format: '${series.name}: <b>${point.y}</b>',
-  };
-  protected readonly legend = {
-    visible: true,
-    position: 'Top',
-    alignment: 'Center',
-    textStyle: this.axisFont,
-  };
-  protected readonly chartArea = { border: { width: 0 } };
-  protected readonly marker = {
-    visible: true,
-    width: 7,
-    height: 7,
-    shape: 'Circle',
-    isFilled: true,
-  };
-  protected readonly targetMarker = {
-    visible: true,
-    width: 8,
-    height: 8,
-    shape: 'Diamond',
-    isFilled: true,
-    fill: '#f0b429',
-    border: { width: 1, color: '#f0b429' },
-  };
-  protected readonly columnCorner = { topLeft: 4, topRight: 4 };
-  protected readonly pieLegend = {
-    visible: true,
-    position: 'Bottom' as const,
-    alignment: 'Center' as const,
-    shape: 'Circle' as const,
-    textStyle: this.axisFont,
-  };
-  protected readonly pieTooltip = {
-    enable: true,
-    format: '${point.x}: <b>${point.y}</b>',
-  };
-  protected readonly donutLabel = { visible: false };
   protected readonly piePalette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6'];
-  protected readonly centerTextStyle = computed(() => ({
-    fontFamily: 'Sarabun, Tahoma, sans-serif',
-    fontWeight: '700',
-    size: '15px',
-    color: this.theme.isDark() ? '#e2e8f0' : '#1e293b',
-  }));
+
+  protected readonly commonChartOptions: SfChartOptions = {
+    height: '300px',
+    exportable: true,
+    fullscreenable: true,
+    enableAnimation: true,
+    legend: { visible: true, position: 'Top', alignment: 'Center', textStyle: this.axisFont },
+    tooltip: { enable: true, shared: true, enableMarker: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b>' },
+  };
+  protected readonly qualityChartOptions: SfChartOptions = { ...this.commonChartOptions, height: '280px' };
+
+  protected readonly selfTrendSeries = computed<SfChartSeriesConfig[]>(() => {
+    const trend = this.view().trend;
+    return [
+      { type: 'Line', dataSource: trend, xName: 'month', yName: 'index', name: 'ดัชนีของตัวเอง', width: 2.5, fill: '#4c68e5', marker: { visible: true, width: 7, height: 7, shape: 'Circle', isFilled: true } },
+      { type: 'Line', dataSource: trend, xName: 'month', yName: 'target', name: 'เป้า 75', width: 2, fill: '#f0b429', dashArray: '6,4', marker: { visible: true, width: 8, height: 8, shape: 'Diamond', isFilled: true, fill: '#f0b429', border: { width: 1, color: '#f0b429' } } },
+      { type: 'Line', dataSource: this.olsTrendData(), xName: 'month', yName: 'ols', name: 'แนวโน้ม OLS (Slope)', width: 2, dashArray: '5,5', fill: '#a855f7' },
+    ];
+  });
+
+  protected readonly effortSeries = computed<SfChartSeriesConfig[]>(() => {
+    const bars = this.view().effortBars;
+    return [
+      { type: 'Column', dataSource: bars, xName: 'label', yName: 'estimateMd', name: 'Estimate MD', fill: '#4c68e5', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+      { type: 'Column', dataSource: bars, xName: 'label', yName: 'actualMd', name: 'Actual MD', fill: '#3ec6e0', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+    ];
+  });
+
+  protected readonly qualitySeries = computed<SfChartSeriesConfig[]>(() => {
+    const bars = this.view().qualityBars;
+    return [
+      { type: 'Column', dataSource: bars, xName: 'label', yName: 'reviewRounds', name: 'รอบรีวิว', fill: '#7465e8', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+      { type: 'Column', dataSource: bars, xName: 'label', yName: 'reopenCount', name: 'Reopen', fill: '#e35d6a', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+    ];
+  });
+
+  protected readonly mdCompSeries = computed<SfChartSeriesConfig[]>(() => {
+    const pts = this.mdComposition();
+    return [
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'plannedMd', name: 'Planned (ในแผน)', fill: '#4c68e5', opacity: 0.85 },
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#3ec6e0', opacity: 0.85 },
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'mdMandateMd', name: '⚡ MD Mandate (สั่งตรง)', fill: '#f59e0b', opacity: 0.9 },
+    ];
+  });
+
+  protected readonly radarSeries = computed<SfChartSeriesConfig[]>(() => {
+    const data = this.competencyRadarData();
+    return [
+      { type: 'Radar', drawType: 'Line', dataSource: data, xName: 'dimension', yName: 'personScore', name: 'ผลงานตนเอง', width: 2.5, fill: '#4c68e5', marker: { visible: true, width: 6, height: 6, fill: '#4c68e5' } },
+      { type: 'Radar', drawType: 'Line', dataSource: data, xName: 'dimension', yName: 'teamAvg', name: 'ค่าเฉลี่ยทีม', width: 2, dashArray: '4,4', fill: '#a855f7', marker: { visible: true, width: 5, height: 5, fill: '#a855f7' } },
+    ];
+  });
+
+  protected readonly slipDonutOptions = computed<SfDonutChartOptions>(() => {
+    const total = this.view().slipShare.reduce((sum, row) => sum + row.y, 0);
+    return {
+      height: '280px',
+      innerRadius: '62%',
+      radius: '80%',
+      centerLabel: `${total}<br>ใบ`,
+      palettes: this.piePalette,
+      legend: { visible: true, position: 'Bottom', alignment: 'Center', textStyle: this.axisFont },
+      tooltip: { enable: true, format: '${point.x}: <b>${point.y}</b>' },
+      exportable: true,
+    };
+  });
+
+  protected readonly categoryDonutOptions = computed<SfDonutChartOptions>(() => {
+    const total = this.view().categoryShare.reduce((sum, row) => sum + row.y, 0);
+    const rounded = Math.round(total * 10) / 10;
+    return {
+      height: '280px',
+      innerRadius: '62%',
+      radius: '80%',
+      centerLabel: `${rounded}<br>MD`,
+      palettes: this.piePalette,
+      legend: { visible: true, position: 'Bottom', alignment: 'Center', textStyle: this.axisFont },
+      tooltip: { enable: true, format: '${point.x}: <b>${point.y}</b>' },
+      exportable: true,
+    };
+  });
+
+  protected readonly openWorkColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'ใบ', width: 110 },
+    { field: 'title', headerText: 'เรื่อง', width: 180 },
+    { field: 'type', headerText: 'ประเภท', width: 100 },
+    { field: 'size', headerText: 'ขนาด', width: 75 },
+    { field: 'status', headerText: 'สถานะ', width: 110 },
+    { field: 'estimateMd', headerText: 'Est', width: 75, textAlign: 'Right', format: 'N2' },
+    { field: 'dueOnLabel', headerText: 'วันส่ง', width: 105 },
+    { field: 'unplannedLabel', headerText: 'แผน', width: 85 },
+  ];
+  protected readonly openWorkAggregates: SfGridAggregate[] = [
+    { field: 'id', type: 'Count', prefix: 'รวม ', suffix: ' ใบ' },
+    { field: 'estimateMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
+  ];
+  protected readonly closedWorkColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'ใบ', width: 110 },
+    { field: 'title', headerText: 'เรื่อง', width: 170 },
+    { field: 'type', headerText: 'ประเภท', width: 100 },
+    { field: 'size', headerText: 'ขนาด', width: 75 },
+    { field: 'estimateMd', headerText: 'Est', width: 75, textAlign: 'Right', format: 'N2' },
+    { field: 'actualMd', headerText: 'Actual', width: 80, textAlign: 'Right', format: 'N2' },
+    { field: 'weekOffsetLabel', headerText: 'สัปดาห์', width: 100 },
+    { field: 'reviewRounds', headerText: 'รีวิว', width: 75, textAlign: 'Right' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 75, textAlign: 'Right' },
+    { field: 'score', headerText: 'คะแนน', width: 75, textAlign: 'Right' },
+  ];
+  protected readonly closedWorkAggregates: SfGridAggregate[] = [
+    { field: 'id', type: 'Count', prefix: 'รวม ', suffix: ' ใบ' },
+    { field: 'actualMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
+    { field: 'score', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
+  ];
+  protected readonly workGridOptions: SfGridOptions = {
+    paging: true,
+    pageSize: 8,
+    sorting: true,
+    resizable: true,
+    search: true,
+    excelExport: true,
+  };
 
   protected readonly view = computed(() => {
     const person = this.scorecard.roster().find((item) => item.id === this.personId());
@@ -209,17 +252,6 @@ export class PersonDashboard {
   protected readonly mdComposition = computed(() =>
     mdCompositionTrend(this.scorecard.tickets(), this.personId()),
   );
-
-  protected readonly slipCenter = computed(() => {
-    const total = this.view().slipShare.reduce((sum, row) => sum + row.y, 0);
-    return { text: `${total}<br>ใบ`, textStyle: this.centerTextStyle() };
-  });
-
-  protected readonly categoryCenter = computed(() => {
-    const total = this.view().categoryShare.reduce((sum, row) => sum + row.y, 0);
-    const rounded = Math.round(total * 10) / 10;
-    return { text: `${rounded}<br>MD`, textStyle: this.centerTextStyle() };
-  });
 
   // ==========================================
   // 6-Dimensional Competency Radar Data

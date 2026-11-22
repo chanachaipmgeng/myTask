@@ -20,7 +20,14 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { workGanttTasks } from '../../core/work-views';
-import { FilterChipOption, FilterChipsComponent, SectionCardComponent } from '../../shared/ui';
+import {
+  FilterChipOption,
+  FilterChipsComponent,
+  SectionCardComponent,
+  SfGanttComponent,
+  SfGanttOptions,
+  SfMessageComponent,
+} from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
 
 type GanttViewMode = 'project' | 'resource';
@@ -28,8 +35,7 @@ type GanttViewMode = 'project' | 'resource';
 @Component({
   selector: 'app-work-timeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GanttAllModule, MessageModule, SectionCardComponent, FilterChipsComponent],
-  providers: [SelectionService, DayMarkersService, EditService, ToolbarService],
+  imports: [SectionCardComponent, FilterChipsComponent, SfGanttComponent, SfMessageComponent],
   templateUrl: './work-timeline.html',
 })
 export class WorkTimeline {
@@ -38,7 +44,26 @@ export class WorkTimeline {
   private readonly notice = inject(ShellNotice);
   protected readonly theme = inject(ThemeService);
 
-  @ViewChild('workGantt') private workGantt?: GanttComponent;
+  @ViewChild('workGantt') private workGantt?: SfGanttComponent;
+
+  protected readonly ganttOptions = computed<SfGanttOptions>(() => ({
+    id: 'work-gantt',
+    height: '580px',
+    viewType: this.ganttViewType(),
+    renderBaseline: this.viewMode() === 'project',
+    allowSelection: true,
+    enableVirtualization: false,
+    treeColumnIndex: 1,
+    gridLines: 'Horizontal',
+    toolbar: this.toolbar as any,
+    editSettings: this.editSettings(),
+    labelSettings: this.labelSettings,
+    timelineSettings: this.timelineSettings,
+    projectStartDate: this.projectStartDate(),
+    workWeek: this.workWeek,
+    splitterSettings: this.splitterSettings,
+    resourceFields: this.resourceFields,
+  }));
 
   protected readonly isMine = computed(() => this.hub.scope() === 'mine');
   /** Date edits only on team timeline for admin/lead — personal hub stays read-only. */
@@ -82,7 +107,7 @@ export class WorkTimeline {
       {
         field: 'TaskID',
         headerText: 'รหัส',
-        width: 110,
+        width: 140,
         isPrimaryKey: !resourceMode,
         allowEditing: false,
         visible: !resourceMode,
@@ -90,12 +115,12 @@ export class WorkTimeline {
       {
         field: 'TaskName',
         headerText: resourceMode ? 'ผู้รับ / งาน' : 'งาน (Epic / Story / Task)',
-        width: resourceMode ? 280 : 250,
+        width: resourceMode ? 240 : 210,
         allowEditing: false,
       },
-      { field: 'StartDate', headerText: 'เริ่ม', width: 110, editType: 'datepickeredit' },
-      { field: 'EndDate', headerText: 'กำหนดส่ง (Due)', width: 135, editType: 'datepickeredit' },
-      { field: 'Duration', headerText: 'วัน', width: 75, allowEditing: false },
+      { field: 'StartDate', headerText: 'เริ่ม', width: 105, editType: 'datepickeredit' },
+      { field: 'EndDate', headerText: 'กำหนดส่ง (Due)', width: 120, editType: 'datepickeredit' },
+      { field: 'Duration', headerText: 'วัน', width: 65, allowEditing: false },
     ];
   });
 
@@ -183,8 +208,9 @@ export class WorkTimeline {
       return;
     }
     queueMicrotask(() => {
-      this.workGantt?.treeGrid?.refresh();
-      this.workGantt?.expandAll();
+      const gantt = this.workGantt?.instance();
+      gantt?.treeGrid?.refresh();
+      gantt?.expandAll();
     });
   }
 

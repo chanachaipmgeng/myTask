@@ -8,15 +8,16 @@ import {
 } from '@angular/core';
 import { SlicePipe } from '@angular/common';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { NumericTextBoxModule, TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { TabModule } from '@syncfusion/ej2-angular-navigations';
-import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { ApiClient, TicketDetailResponse } from '../../../core/api-client';
 import { ScorecardService } from '../../../core/scorecard.service';
 import { ShellNotice } from '../../../core/shell-notice';
 import { TicketDetailService } from '../../../core/ticket-detail.service';
 import { scoreTicket } from '../../../../../shared/domain/scoring';
 import { workflowStatusOf } from '../../../../../shared/domain/workflow';
+import { SfDialogComponent } from '../../sf/sf-dialog/sf-dialog';
+import { SfNumberComponent } from '../../sf/sf-number/sf-number';
+import { SfTabItem, SfTabsComponent } from '../../sf/sf-tabs/sf-tabs';
+import { SfTextBoxComponent } from '../../sf/sf-textbox/sf-textbox';
 import { BadgeTone, workflowStatusToneMap } from '../badge';
 import { FormFieldComponent } from '../form-field/form-field';
 import { PersonAvatarComponent } from '../person-avatar/person-avatar';
@@ -26,15 +27,15 @@ import { StatusBadgeComponent } from '../status-badge/status-badge';
   selector: 'app-ticket-detail-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    DialogModule,
-    TabModule,
     ButtonModule,
-    TextBoxModule,
-    NumericTextBoxModule,
     FormFieldComponent,
     PersonAvatarComponent,
     StatusBadgeComponent,
     SlicePipe,
+    SfDialogComponent,
+    SfNumberComponent,
+    SfTabsComponent,
+    SfTextBoxComponent,
   ],
   templateUrl: './ticket-detail-dialog.html',
   styleUrl: './ticket-detail-dialog.scss',
@@ -45,7 +46,14 @@ export class TicketDetailDialogComponent {
   private readonly notice = inject(ShellNotice);
   private readonly detail = inject(TicketDetailService);
 
-  @ViewChild('dialog') private dialog?: DialogComponent;
+  @ViewChild('dialog') private dialog?: SfDialogComponent;
+
+  protected readonly detailTabs: SfTabItem[] = [
+    { id: 'info', header: 'รายละเอียด' },
+    { id: 'time', header: 'เวลาที่ลง' },
+    { id: 'mr', header: 'โค้ด & MR' },
+    { id: 'activity', header: 'ประวัติ & คอมเมนต์' },
+  ];
 
   protected readonly loading = signal(false);
   protected readonly data = signal<TicketDetailResponse | null>(null);
@@ -54,16 +62,15 @@ export class TicketDetailDialogComponent {
   protected readonly logComment = signal('');
   protected readonly replyComment = signal('');
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
-  protected readonly animationSettings = { effect: 'Fade' as const, duration: 280, delay: 0 };
 
   constructor() {
     effect(() => {
       const id = this.detail.ticketId();
       if (id) {
         void this.load(id);
-        queueMicrotask(() => this.dialog?.show());
+        queueMicrotask(() => this.dialog?.open());
       } else {
-        queueMicrotask(() => this.dialog?.hide());
+        queueMicrotask(() => this.dialog?.close());
       }
     });
   }

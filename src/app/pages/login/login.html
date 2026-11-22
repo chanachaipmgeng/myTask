@@ -150,11 +150,11 @@
 
         <!-- Options Row -->
         <div class="form-options">
-          <ejs-checkbox
+          <app-sf-checkbox
             label="จดจำการเข้าสู่ระบบ 30 วัน"
             [checked]="rememberMe()"
-            (change)="onRememberMeChange($event)"
-          ></ejs-checkbox>
+            (checkedChange)="rememberMe.set($event)"
+          />
         </div>
 
         <!-- Submit Button -->

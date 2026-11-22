@@ -29,158 +29,142 @@
   </app-page-head>
 
   @if (error()) {
-    <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
+    <app-sf-message [content]="error()" severity="Error" />
   }
   @if (message()) {
-    <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
+    <app-sf-message [content]="message()" severity="Success" />
   }
 
-  <ejs-accordion id="tickets-accordion" expandMode="Multiple">
-    <e-accordionitems>
-      @if (!isMine) {
-      <e-accordionitem [expanded]="false">
-        <ng-template #header>
-          <div>นำเข้าไฟล์ CSV/JSON และซิงก์ myProject</div>
-        </ng-template>
-        <ng-template #content>
-          <div class="flex flex-col gap-3 p-2">
-            <p class="fine m-0">
-              นำเข้าใบที่ปิดแล้วจาก CSV หรือ JSON แล้วคะแนนถูกคิดใหม่จากสูตรเดียวกัน. ปุ่มซิงก์ดึงจาก API
-              (หรืออ่านไฟล์ตัวอย่างในเครื่องเมื่อออฟไลน์) และไม่เขียนคะแนนกลับ.
-            </p>
-            <div class="form-actions flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
-              <button ejs-button type="button" (click)="downloadSample('csv')">ดาวน์โหลดตัวอย่าง CSV</button>
-              <button ejs-button type="button" (click)="downloadSample('json')">ดาวน์โหลดตัวอย่าง JSON</button>
-              <ejs-uploader
-                id="ticket-import"
-                [autoUpload]="false"
-                [multiple]="false"
-                allowedExtensions=".csv,.json"
-                (selected)="onImport($event)"
-              ></ejs-uploader>
-              <button ejs-button [isPrimary]="true" type="button" (click)="syncMyProject()">
-                ซิงก์ myProject / ตัวอย่าง
-              </button>
-            </div>
-          </div>
-        </ng-template>
-      </e-accordionitem>
+  <ng-template #importAccTpl>
+    <div class="flex flex-col gap-3 p-2">
+      <p class="fine m-0">
+        นำเข้าใบที่ปิดแล้วจาก CSV หรือ JSON แล้วคะแนนถูกคิดใหม่จากสูตรเดียวกัน. ปุ่มซิงก์ดึงจาก API
+        (หรืออ่านไฟล์ตัวอย่างในเครื่องเมื่อออฟไลน์) และไม่เขียนคะแนนกลับ.
+      </p>
+      <div class="form-actions flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
+        <button ejs-button type="button" (click)="downloadSample('csv')">ดาวน์โหลดตัวอย่าง CSV</button>
+        <button ejs-button type="button" (click)="downloadSample('json')">ดาวน์โหลดตัวอย่าง JSON</button>
+        <app-sf-uploader
+          id="ticket-import"
+          allowedExtensions=".csv,.json"
+          [options]="{ autoUpload: false, multiple: false }"
+          (selected)="onImport($event)"
+        />
+        <button ejs-button [isPrimary]="true" type="button" (click)="syncMyProject()">
+          ซิงก์ myProject / ตัวอย่าง
+        </button>
+      </div>
+    </div>
+  </ng-template>
 
-      <e-accordionitem [expanded]="false">
-        <ng-template #header>
-          <div>เพิ่มใบงานใหม่ / จำลองคำนวณคะแนนใบงาน</div>
-        </ng-template>
-        <ng-template #content>
-          <form class="ticket-form p-2" (submit)="$event.preventDefault(); add()">
-            <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-              <label class="field">
-                <span>สาย</span>
-                <ejs-dropdownlist [dataSource]="trackOptions" [fields]="fields" [value]="track()" (change)="setChoice('track', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>ชนิด</span>
-                <ejs-dropdownlist [dataSource]="typeOptions" [fields]="fields" [value]="type()" (change)="setChoice('type', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>โมดูล</span>
-                <ejs-textbox [value]="moduleName()" (change)="onModule($event)" placeholder="เช่น Billing" width="100%"></ejs-textbox>
-              </label>
-              <label class="field">
-                <span>ขนาด</span>
-                <ejs-dropdownlist [dataSource]="sizeOptions" [fields]="fields" [value]="size()" (change)="setChoice('size', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>ประมาณ MD</span>
-                <ejs-numerictextbox [value]="estimateMd()" (change)="setNumber('estimateMd', $event)" [min]="0" [step]="0.25" format="n2" [decimals]="2" width="100%"></ejs-numerictextbox>
-              </label>
-              <label class="field">
-                <span>ใช้จริง MD</span>
-                <ejs-numerictextbox [value]="actualMd()" (change)="setNumber('actualMd', $event)" [min]="0" [step]="0.25" format="n2" [decimals]="2" width="100%"></ejs-numerictextbox>
-              </label>
-              <label class="field">
-                <span>สัปดาห์ที่ commit</span>
-                <ejs-dropdownlist [dataSource]="weekOptions" [fields]="fields" [value]="weekOffset()" (change)="setChoice('weekOffset', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>รอบรีวิว</span>
-                <ejs-numerictextbox [value]="reviewRounds()" (change)="setNumber('reviewRounds', $event)" [min]="0" [step]="1" format="n0" [decimals]="0" width="100%"></ejs-numerictextbox>
-              </label>
-              <label class="field">
-                <span>Blocker</span>
-                <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="blocker()" (change)="setChoice('blocker', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>จำนวน reopen</span>
-                <ejs-numerictextbox [value]="reopenCount()" (change)="setNumber('reopenCount', $event)" [min]="0" [step]="1" format="n0" [decimals]="0" width="100%"></ejs-numerictextbox>
-              </label>
-              <label class="field">
-                <span>Variance</span>
-                <ejs-dropdownlist [dataSource]="varianceOptions" [fields]="fields" [value]="variance()" (change)="setChoice('variance', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>ปิดใบแล้ว</span>
-                <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="closed()" (change)="setChoice('closed', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>ผ่าน DoD</span>
-                <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="dodPassed()" (change)="setChoice('dodPassed', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>นอกแผน</span>
-                <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="unplanned()" (change)="setChoice('unplanned', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>Spike ใน time-box</span>
-                <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="inTimeBox()" [enabled]="type() === 'Spike'" (change)="setChoice('inTimeBox', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>ใบลูกตีขนาดแล้ว</span>
-                <ejs-dropdownlist [dataSource]="yesNoOptions" [fields]="fields" [value]="childTicketsSized()" [enabled]="type() === 'Spike'" (change)="setChoice('childTicketsSized', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>ผู้รับผิดชอบ</span>
-                <ejs-dropdownlist [dataSource]="assigneeOptions()" [fields]="fields" [value]="assigneeId()" [allowFiltering]="true" (change)="setChoice('assigneeId', $event)" width="100%"></ejs-dropdownlist>
-              </label>
-              <label class="field">
-                <span>วันที่ปิด</span>
-                <ejs-datepicker [value]="closedOn()" (change)="setClosedOn($event)" format="dd/MM/yyyy" width="100%"></ejs-datepicker>
-              </label>
-            </div>
-            <div class="form-actions mt-3">
-              <button ejs-button [isPrimary]="true" type="submit">เพิ่มใบงาน</button>
-              @if (preview().total === null) {
-                <p class="m-0">ยังไม่ปิดใบ — ยังไม่คิดคะแนน</p>
-              } @else {
-                <p class="m-0">
-                  คะแนน {{ preview().total }} = {{ previewNotes() }}
-                  @if (type() === 'Spike') {
-                    <span> · คะแนน Spike {{ preview().spikeScore }}</span>
-                  }
-                </p>
-              }
-            </div>
-          </form>
-        </ng-template>
-      </e-accordionitem>
-      }
+  <ng-template #addAccTpl>
+    <form class="ticket-form p-2" (submit)="$event.preventDefault(); add()">
+      <div class="form-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+        <label class="field">
+          <span>สาย</span>
+          <app-sf-dropdown [items]="trackOptions" [value]="track()" (valueChange)="setChoice('track', $event)" />
+        </label>
+        <label class="field">
+          <span>ชนิด</span>
+          <app-sf-dropdown [items]="typeOptions" [value]="type()" (valueChange)="setChoice('type', $event)" />
+        </label>
+        <label class="field">
+          <span>โมดูล</span>
+          <app-sf-textbox [value]="moduleName()" (valueChange)="onModule($event)" placeholder="เช่น Billing" />
+        </label>
+        <label class="field">
+          <span>ขนาด</span>
+          <app-sf-dropdown [items]="sizeOptions" [value]="size()" (valueChange)="setChoice('size', $event)" />
+        </label>
+        <label class="field">
+          <span>ประมาณ MD</span>
+          <app-sf-number preset="md" [value]="estimateMd()" (valueChange)="setNumber('estimateMd', $event)" />
+        </label>
+        <label class="field">
+          <span>ใช้จริง MD</span>
+          <app-sf-number preset="md" [value]="actualMd()" (valueChange)="setNumber('actualMd', $event)" />
+        </label>
+        <label class="field">
+          <span>สัปดาห์ที่ commit</span>
+          <app-sf-dropdown [items]="weekOptions" [value]="weekOffset()" (valueChange)="setChoice('weekOffset', $event)" />
+        </label>
+        <label class="field">
+          <span>รอบรีวิว</span>
+          <app-sf-number preset="int" [value]="reviewRounds()" (valueChange)="setNumber('reviewRounds', $event)" />
+        </label>
+        <label class="field">
+          <span>Blocker</span>
+          <app-sf-dropdown [items]="yesNoOptions" [value]="blocker()" (valueChange)="setChoice('blocker', $event)" />
+        </label>
+        <label class="field">
+          <span>จำนวน reopen</span>
+          <app-sf-number preset="int" [value]="reopenCount()" (valueChange)="setNumber('reopenCount', $event)" />
+        </label>
+        <label class="field">
+          <span>Variance</span>
+          <app-sf-dropdown [items]="varianceOptions" [value]="variance()" (valueChange)="setChoice('variance', $event)" />
+        </label>
+        <label class="field">
+          <span>ปิดใบแล้ว</span>
+          <app-sf-dropdown [items]="yesNoOptions" [value]="closed()" (valueChange)="setChoice('closed', $event)" />
+        </label>
+        <label class="field">
+          <span>ผ่าน DoD</span>
+          <app-sf-dropdown [items]="yesNoOptions" [value]="dodPassed()" (valueChange)="setChoice('dodPassed', $event)" />
+        </label>
+        <label class="field">
+          <span>นอกแผน</span>
+          <app-sf-dropdown [items]="yesNoOptions" [value]="unplanned()" (valueChange)="setChoice('unplanned', $event)" />
+        </label>
+        <label class="field">
+          <span>Spike ใน time-box</span>
+          <app-sf-dropdown [items]="yesNoOptions" [value]="inTimeBox()" [disabled]="type() !== 'Spike'" (valueChange)="setChoice('inTimeBox', $event)" />
+        </label>
+        <label class="field">
+          <span>ใบลูกตีขนาดแล้ว</span>
+          <app-sf-dropdown [items]="yesNoOptions" [value]="childTicketsSized()" [disabled]="type() !== 'Spike'" (valueChange)="setChoice('childTicketsSized', $event)" />
+        </label>
+        <label class="field">
+          <span>ผู้รับผิดชอบ</span>
+          <app-sf-dropdown [items]="assigneeOptions()" [value]="assigneeId()" [allowFiltering]="true" (valueChange)="setChoice('assigneeId', $event)" />
+        </label>
+        <label class="field">
+          <span>วันที่ปิด</span>
+          <app-sf-datepicker [value]="closedOn()" (valueChange)="setClosedOnIso($event)" [options]="{ format: 'dd/MM/yyyy' }" />
+        </label>
+      </div>
+      <div class="form-actions mt-3">
+        <button ejs-button [isPrimary]="true" type="submit">เพิ่มใบงาน</button>
+        @if (preview().total === null) {
+          <p class="m-0">ยังไม่ปิดใบ — ยังไม่คิดคะแนน</p>
+        } @else {
+          <p class="m-0">
+            คะแนน {{ preview().total }} = {{ previewNotes() }}
+            @if (type() === 'Spike') {
+              <span> · คะแนน Spike {{ preview().spikeScore }}</span>
+            }
+          </p>
+        }
+      </div>
+    </form>
+  </ng-template>
 
-      <e-accordionitem [expanded]="false">
-        <ng-template #header>
-          <div>เกณฑ์การให้คะแนน 100 คะแนน และตารางขนาดมาตรฐาน (XS–XL)</div>
-        </ng-template>
-        <ng-template #content>
-          <div class="flex flex-col gap-3 p-2">
-            <ejs-chiplist [chips]="sizeChips" selection="None" cssClass="legend-chips"></ejs-chiplist>
-            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-              @for (text of scoreMeaningCards; track text) {
-                <app-section-card variant="nested" [showHead]="false">{{ text }}</app-section-card>
-              }
-            </div>
-          </div>
-        </ng-template>
-      </e-accordionitem>
-    </e-accordionitems>
-  </ejs-accordion>
+  <ng-template #rubricAccTpl>
+    <div class="flex flex-col gap-3 p-2">
+      <app-sf-chiplist [chips]="sizeChips" cssClass="legend-chips" />
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+        @for (text of scoreMeaningCards; track text) {
+          <app-section-card variant="nested" [showHead]="false">{{ text }}</app-section-card>
+        }
+      </div>
+    </div>
+  </ng-template>
+
+  <app-sf-accordion
+    [items]="accordionItems"
+    [itemTemplates]="{ import: importAccTpl, add: addAccTpl, rubric: rubricAccTpl }"
+    [options]="{ id: 'tickets-accordion', expandMode: 'Multiple' }"
+  />
 
   <app-section-card
     title="รายการใบงานและผลคะแนน"
@@ -188,310 +172,214 @@
     [badge]="rows().length + ' ใบ'"
     badgeTone="info"
   >
-    <ejs-toolbar id="ticket-toolbar" cssClass="page-toolbar m-0" overflowMode="Scroll" width="100%">
-      <e-items>
-        <e-item [template]="searchTemplate"></e-item>
-        <e-item [template]="trackTemplate"></e-item>
-        <e-item [template]="typeTemplate"></e-item>
-      </e-items>
-    </ejs-toolbar>
     <ng-template #searchTemplate>
       <label class="toolbar-field">
         <span>ค้นหา</span>
-        <ejs-textbox id="ticket-search" placeholder="รหัส โมดูล หรือผู้รับ" width="220px" (input)="onSearch($event)"></ejs-textbox>
+        <app-sf-textbox placeholder="รหัส โมดูล หรือผู้รับ" width="220px" [clearButton]="true" [value]="query()" (valueChange)="onSearch($event)" />
       </label>
     </ng-template>
     <ng-template #trackTemplate>
       <label class="toolbar-field">
         <span>สาย</span>
-        <ejs-dropdownlist id="ticket-track-filter" [dataSource]="trackFilters" [fields]="fields" [value]="trackFilter()" (change)="setTrackFilter($event)" width="160px"></ejs-dropdownlist>
+        <app-sf-dropdown [items]="trackFilters" [value]="trackFilter()" [options]="{ width: '160px' }" (valueChange)="setTrackFilter($event)" />
       </label>
     </ng-template>
     <ng-template #typeTemplate>
       <label class="toolbar-field">
         <span>ชนิด</span>
-        <ejs-dropdownlist id="ticket-type-filter" [dataSource]="typeFilters" [fields]="fields" [value]="typeFilter()" (change)="setTypeFilter($event)" width="180px"></ejs-dropdownlist>
+        <app-sf-dropdown [items]="typeFilters" [value]="typeFilter()" [options]="{ width: '180px' }" (valueChange)="setTypeFilter($event)" />
       </label>
     </ng-template>
+    <app-sf-toolbar
+      [items]="[{ template: searchTemplate }, { template: trackTemplate }, { template: typeTemplate }]"
+      [options]="{ id: 'ticket-toolbar', cssClass: 'page-toolbar m-0', overflowMode: 'Scrollable' }"
+    />
 
-    <ejs-grid
-      #ticketGrid
-      [id]="isMine ? 'my-tickets-score-grid-v2' : 'tickets-score-grid-v2'"
-      [dataSource]="rows()"
-      [enablePersistence]="true"
-      [allowPaging]="true"
-      [allowSorting]="true"
-      [allowFiltering]="true"
-      [allowResizing]="true"
-      [showColumnChooser]="true"
-      [allowExcelExport]="true"
-      [frozenColumns]="viewport.frozenColumns()"
-      [toolbar]="gridToolbar"
-      [pageSettings]="pageSettings"
-      [filterSettings]="filterSettings"
-      [sortSettings]="sortSettings"
-      (toolbarClick)="onGridToolbarClick($event)"
+    <ng-template #idTpl let-data>
+      <button ejs-button cssClass="e-link e-small" type="button" (click)="openTicketDetail(data.id)">
+        {{ data.id }}
+      </button>
+    </ng-template>
+    <ng-template #wfStatusTpl let-data>
+      <app-status-badge [value]="data.workflowStatus" [toneMap]="workflowStatusToneMap"></app-status-badge>
+    </ng-template>
+    <ng-template #manageTpl let-data>
+      <div class="flex flex-wrap items-center gap-1.5">
+        <button ejs-button cssClass="e-primary e-small" iconCss="e-icons e-edit" type="button" (click)="openSelfUpdate(data.id)">
+          อัปเดตงาน
+        </button>
+        <button ejs-button cssClass="e-outline e-small" iconCss="e-icons e-warning" type="button" (click)="goToDispute(data.id)">
+          ยื่นอุทธรณ์
+        </button>
+      </div>
+    </ng-template>
+    <ng-template #trackTpl let-data>
+      <app-status-badge [value]="data.trackLabel" [toneMap]="trackToneMap"></app-status-badge>
+    </ng-template>
+    <ng-template #assigneeTpl let-data>
+      <app-person-avatar [name]="data.assignee" [showName]="true" size="xs"></app-person-avatar>
+    </ng-template>
+    <ng-template #weekTpl let-data>
+      <app-status-badge [value]="data.weekOffsetLabel" [toneMap]="weekToneMap"></app-status-badge>
+    </ng-template>
+    <ng-template #blockerTpl let-data>
+      <app-status-badge [value]="data.blockerLabel" [toneMap]="blockerToneMap"></app-status-badge>
+    </ng-template>
+    <ng-template #closedTpl let-data>
+      <app-status-badge [value]="data.closedLabel" [toneMap]="closedToneMap"></app-status-badge>
+    </ng-template>
+    <ng-template #dodTpl let-data>
+      <app-status-badge [value]="data.dodLabel" [toneMap]="dodToneMap"></app-status-badge>
+    </ng-template>
+    <ng-template #spikeTpl let-data>
+      <app-status-badge [label]="data.spikeLabel" [tone]="data.spikeLabel === '—' ? 'secondary' : 'info'"></app-status-badge>
+    </ng-template>
+    <ng-template #unplannedTpl let-data>
+      <app-status-badge [value]="data.unplannedLabel" [toneMap]="unplannedYesNoToneMap"></app-status-badge>
+    </ng-template>
+    <ng-template #alertTpl let-data>
+      <app-status-badge [label]="data.alertLabel" [tone]="alertTone(data.alertLabel)"></app-status-badge>
+    </ng-template>
+
+    <app-sf-grid
+      [data]="rows()"
+      [columns]="ticketColumns"
+      [aggregates]="ticketAggregates"
+      [options]="ticketGridOptions"
+      [cellTemplates]="{
+        id: idTpl,
+        workflowStatus: wfStatusTpl,
+        manage: manageTpl,
+        trackLabel: trackTpl,
+        assignee: assigneeTpl,
+        weekOffsetLabel: weekTpl,
+        blockerLabel: blockerTpl,
+        closedLabel: closedTpl,
+        dodLabel: dodTpl,
+        spikeLabel: spikeTpl,
+        unplannedLabel: unplannedTpl,
+        alertLabel: alertTpl
+      }"
       (rowDataBound)="markReference($event)"
-      height="auto"
-    >
-      <e-columns>
-        <e-column field="id" headerText="รหัส" width="120">
-          <ng-template #template let-data>
-            <button ejs-button cssClass="e-link e-small" type="button" (click)="openTicketDetail(data.id)">
-              {{ data.id }}
-            </button>
-          </ng-template>
-        </e-column>
-        <e-column field="workflowStatus" headerText="สถานะงาน" width="140">
-          <ng-template #template let-data>
-            <app-status-badge [value]="data.workflowStatus" [toneMap]="workflowStatusToneMap"></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column headerText="จัดการใบงาน" width="215" [allowFiltering]="false" [allowSorting]="false">
-          <ng-template #template let-data>
-            <div class="flex flex-wrap items-center gap-1.5">
-              <button
-                ejs-button
-                cssClass="e-primary e-small"
-                iconCss="e-icons e-edit"
-                type="button"
-                (click)="openSelfUpdate(data.id)"
-              >
-                อัปเดตงาน
-              </button>
-              <button
-                ejs-button
-                cssClass="e-outline e-small"
-                iconCss="e-icons e-warning"
-                type="button"
-                (click)="goToDispute(data.id)"
-              >
-                ยื่นอุทธรณ์
-              </button>
-            </div>
-          </ng-template>
-        </e-column>
-        <e-column field="trackLabel" headerText="สาย" width="110">
-          <ng-template #template let-data>
-            <app-status-badge [value]="data.trackLabel" [toneMap]="trackToneMap"></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column field="type" headerText="ชนิด" width="140"></e-column>
-        <e-column field="module" headerText="โมดูล" width="120"></e-column>
-        <e-column field="size" headerText="ขนาด" width="80"></e-column>
-        <e-column field="points" headerText="Points" width="90" textAlign="Right"></e-column>
-        <e-column field="assignee" headerText="ผู้รับ" width="185">
-          <ng-template #template let-data>
-            <app-person-avatar [name]="data.assignee" [showName]="true" size="xs"></app-person-avatar>
-          </ng-template>
-        </e-column>
-        <e-column field="estimateMd" headerText="Est" width="95" textAlign="Right" format="N2"></e-column>
-        <e-column field="actualMd" headerText="Actual" width="95" textAlign="Right" format="N2"></e-column>
-        <e-column field="ratioLabel" headerText="อัตราส่วน" width="110"></e-column>
-        <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="120">
-          <ng-template #template let-data>
-            <app-status-badge [value]="data.weekOffsetLabel" [toneMap]="weekToneMap"></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column field="weekPoints" headerText="คะแนนสัปดาห์" width="130" textAlign="Right"></e-column>
-        <e-column field="accuracyPoints" headerText="คะแนนแม่น" width="120" textAlign="Right"></e-column>
-        <e-column field="reviewRounds" headerText="รอบรีวิว" width="110" textAlign="Right"></e-column>
-        <e-column field="blockerLabel" headerText="Blocker" width="100">
-          <ng-template #template let-data>
-            <app-status-badge [value]="data.blockerLabel" [toneMap]="blockerToneMap"></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column field="reviewPoints" headerText="คะแนนรีวิว" width="120" textAlign="Right"></e-column>
-        <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right"></e-column>
-        <e-column field="reopenPoints" headerText="คะแนนเปิดซ้ำ" width="130" textAlign="Right"></e-column>
-        <e-column field="varianceCode" headerText="Variance" width="110"></e-column>
-        <e-column field="closedLabel" headerText="ปิด" width="90">
-          <ng-template #template let-data>
-            <app-status-badge [value]="data.closedLabel" [toneMap]="closedToneMap"></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column field="dodLabel" headerText="DoD" width="90">
-          <ng-template #template let-data>
-            <app-status-badge [value]="data.dodLabel" [toneMap]="dodToneMap"></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column field="spikeLabel" headerText="Spike" width="90">
-          <ng-template #template let-data>
-            <app-status-badge
-              [label]="data.spikeLabel"
-              [tone]="data.spikeLabel === '—' ? 'secondary' : 'info'"
-            ></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column field="unplannedLabel" headerText="นอกแผน" width="100">
-          <ng-template #template let-data>
-            <app-status-badge [value]="data.unplannedLabel" [toneMap]="unplannedYesNoToneMap"></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column field="score" headerText="คะแนน" width="100" textAlign="Right"></e-column>
-        <e-column field="scoreMeaning" headerText="ที่มาของคะแนน" width="420"></e-column>
-        <e-column field="alertLabel" headerText="แจ้งเตือน" width="180">
-          <ng-template #template let-data>
-            <app-status-badge [label]="data.alertLabel" [tone]="alertTone(data.alertLabel)"></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column field="closedOnLabel" headerText="วันที่ปิด" width="120"></e-column>
-        <e-column field="note" headerText="หมายเหตุ" width="260"></e-column>
-      </e-columns>
-      <e-aggregates>
-        <e-aggregate>
-          <e-columns>
-            <e-column type="Count" field="id">
-              <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
-            </e-column>
-            <e-column type="Sum" field="estimateMd" format="N2">
-              <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
-            </e-column>
-            <e-column type="Sum" field="actualMd" format="N2">
-              <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
-            </e-column>
-            <e-column type="Average" field="score" format="N1">
-              <ng-template #footerTemplate let-data>เฉลี่ย {{ data.Average }}</ng-template>
-            </e-column>
-          </e-columns>
-        </e-aggregate>
-      </e-aggregates>
-    </ejs-grid>
+    />
   </app-section-card>
 
-  <ejs-dialog
+  <app-sf-dialog
     #selfUpdateDialog
     [header]="'อัปเดตใบงาน · ' + (editingTicketId() || '')"
     [visible]="false"
-    [isModal]="true"
-    [showCloseIcon]="true"
-    width="560px"
-    (close)="closeSelfUpdate()"
+    [options]="{ width: '560px', isModal: true, showCloseIcon: true, animationEffect: 'Fade' }"
+    (closed)="closeSelfUpdate()"
   >
-    <ng-template #content>
-      <div class="flex flex-col gap-3 p-1">
+    <div class="flex flex-col gap-3 p-1">
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <label class="field">
+          <span>สถานะการทำงาน (Workflow Status)</span>
+          <app-sf-dropdown
+            [items]="workflowStatusOptions()"
+            [value]="editWorkflowStatus()"
+            (valueChange)="onEditStatusChange($event)"
+          />
+        </label>
+        <label class="field">
+          <span>เวลาใช้จริงสะสม (Actual MD)</span>
+          <app-sf-number
+            preset="md"
+            [value]="editActualMd()"
+            (valueChange)="editActualMd.set($event)"
+          />
+        </label>
+      </div>
+
+      <label class="field">
+        <span>ลิงก์ Merge Request (GitLab MR URL)</span>
+        <app-sf-textbox
+          [value]="editMrLink()"
+          (valueChange)="editMrLink.set($event)"
+          placeholder="https://gitlab.example.com/.../-/merge_requests/..."
+        />
+      </label>
+
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <label class="field">
+          <span>ผลลัพธ์ POC (สำหรับงาน Spike/R&D)</span>
+          <app-sf-dropdown
+            [items]="pocResultOptions"
+            [value]="editPocResult()"
+            (valueChange)="onEditPocResultChange($event)"
+          />
+        </label>
+        <label class="field">
+          <span>สาเหตุบั๊ก (สำหรับงาน Bug-Fix)</span>
+          <app-sf-dropdown
+            [items]="bugCauseOptions"
+            [value]="editBugCause()"
+            (valueChange)="onEditBugCauseChange($event)"
+          />
+        </label>
+      </div>
+
+      <app-section-card variant="nested" title="แจ้งพักงาน & Self-DoD Pre-check">
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div class="flex flex-col gap-2">
+            <app-sf-checkbox
+              label="พักงานชั่วคราว / ติดบล็อก (Paused / Blocked)"
+              [checked]="editIsPaused()"
+              (checkedChange)="editIsPaused.set($event)"
+            />
+            <app-sf-checkbox
+              label="เขียนและรัน Unit Test ผ่านแล้ว"
+              [checked]="editUnitTestDone()"
+              (checkedChange)="editUnitTestDone.set($event)"
+            />
+            <app-sf-checkbox
+              label="แนบ MR พร้อมส่งรีวิวแล้ว"
+              [checked]="editMrAttached()"
+              (checkedChange)="editMrAttached.set($event)"
+            />
+          </div>
           <label class="field">
-            <span>สถานะการทำงาน (Workflow Status)</span>
-            <ejs-dropdownlist
-              [dataSource]="workflowStatusOptions()"
-              [fields]="fields"
-              [value]="editWorkflowStatus()"
-              (change)="onEditStatusChange($event)"
-              width="100%"
-            ></ejs-dropdownlist>
-          </label>
-          <label class="field">
-            <span>เวลาใช้จริงสะสม (Actual MD)</span>
-            <ejs-numerictextbox
-              [value]="editActualMd()"
-              (change)="editActualMd.set($event.value ?? 0)"
+            <span>จำนวนวันที่พักงาน / รอทีมอื่น (Paused Days)</span>
+            <app-sf-number
+              [value]="editPausedDays()"
+              (valueChange)="editPausedDays.set($event)"
               [min]="0"
-              [step]="0.25"
-              format="n2"
-              [decimals]="2"
-              width="100%"
-            ></ejs-numerictextbox>
+              [step]="0.5"
+              format="n1"
+              [options]="{ decimals: 1 }"
+            />
           </label>
         </div>
+      </app-section-card>
 
-        <label class="field">
-          <span>ลิงก์ Merge Request (GitLab MR URL)</span>
-          <ejs-textbox
-            [value]="editMrLink()"
-            (change)="editMrLink.set($event.value ?? '')"
-            placeholder="https://gitlab.example.com/.../-/merge_requests/..."
-            width="100%"
-          ></ejs-textbox>
-        </label>
+      <label class="field">
+        <span>หมายเหตุการส่งมอบ (Note)</span>
+        <app-sf-textbox
+          [value]="editNote()"
+          (valueChange)="editNote.set($event)"
+          placeholder="บันทึกรายละเอียดเพิ่มเติมสำหรับหัวหน้าทีมหรือ QA..."
+        />
+      </label>
 
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <label class="field">
-            <span>ผลลัพธ์ POC (สำหรับงาน Spike/R&D)</span>
-            <ejs-dropdownlist
-              [dataSource]="pocResultOptions"
-              [fields]="fields"
-              [value]="editPocResult()"
-              (change)="onEditPocResultChange($event)"
-              width="100%"
-            ></ejs-dropdownlist>
-          </label>
-          <label class="field">
-            <span>สาเหตุบั๊ก (สำหรับงาน Bug-Fix)</span>
-            <ejs-dropdownlist
-              [dataSource]="bugCauseOptions"
-              [fields]="fields"
-              [value]="editBugCause()"
-              (change)="onEditBugCauseChange($event)"
-              width="100%"
-            ></ejs-dropdownlist>
-          </label>
-        </div>
-
-        <app-section-card variant="nested" title="แจ้งพักงาน & Self-DoD Pre-check">
-          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div class="flex flex-col gap-2">
-              <ejs-checkbox
-                label="พักงานชั่วคราว / ติดบล็อก (Paused / Blocked)"
-                [checked]="editIsPaused()"
-                (change)="editIsPaused.set(!!$event.checked)"
-              ></ejs-checkbox>
-              <ejs-checkbox
-                label="เขียนและรัน Unit Test ผ่านแล้ว"
-                [checked]="editUnitTestDone()"
-                (change)="editUnitTestDone.set(!!$event.checked)"
-              ></ejs-checkbox>
-              <ejs-checkbox
-                label="แนบ MR พร้อมส่งรีวิวแล้ว"
-                [checked]="editMrAttached()"
-                (change)="editMrAttached.set(!!$event.checked)"
-              ></ejs-checkbox>
-            </div>
-            <label class="field">
-              <span>จำนวนวันที่พักงาน / รอทีมอื่น (Paused Days)</span>
-              <ejs-numerictextbox
-                [value]="editPausedDays()"
-                (change)="editPausedDays.set($event.value ?? 0)"
-                [min]="0"
-                [step]="0.5"
-                format="n1"
-                [decimals]="1"
-                width="100%"
-              ></ejs-numerictextbox>
-            </label>
-          </div>
-        </app-section-card>
-
-        <label class="field">
-          <span>หมายเหตุการส่งมอบ (Note)</span>
-          <ejs-textbox
-            [value]="editNote()"
-            (change)="editNote.set($event.value ?? '')"
-            placeholder="บันทึกรายละเอียดเพิ่มเติมสำหรับหัวหน้าทีมหรือ QA..."
-            width="100%"
-          ></ejs-textbox>
-        </label>
-
-        <div class="mt-2 flex flex-wrap justify-between gap-2">
-          @if (editingTicketId(); as tid) {
-            <button
-              ejs-button
-              cssClass="e-outline"
-              iconCss="e-icons e-warning"
-              type="button"
-              (click)="closeSelfUpdate(); goToDispute(tid)"
-            >
-              ยื่นอุทธรณ์ / ขอพักเวลาใบนี้
-            </button>
-          }
-          <div class="flex gap-2">
-            <button ejs-button cssClass="e-flat" type="button" (click)="closeSelfUpdate()">ยกเลิก</button>
-            <button ejs-button cssClass="e-primary" iconCss="e-icons e-check" type="button" (click)="saveSelfUpdate()">
-              บันทึกการอัปเดต
-            </button>
-          </div>
+      <div class="mt-2 flex flex-wrap justify-between gap-2">
+        @if (editingTicketId(); as tid) {
+          <button
+            ejs-button
+            cssClass="e-outline"
+            iconCss="e-icons e-warning"
+            type="button"
+            (click)="closeSelfUpdate(); goToDispute(tid)"
+          >
+            ยื่นอุทธรณ์ / ขอพักเวลาใบนี้
+          </button>
+        }
+        <div class="flex gap-2">
+          <button ejs-button cssClass="e-flat" type="button" (click)="closeSelfUpdate()">ยกเลิก</button>
+          <button ejs-button cssClass="e-primary" iconCss="e-icons e-check" type="button" (click)="saveSelfUpdate()">
+            บันทึกการอัปเดต
+          </button>
         </div>
       </div>
-    </ng-template>
-  </ejs-dialog>
+    </div>
+  </app-sf-dialog>
 </section>

@@ -1,10 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { NumericTextBoxModule, TextAreaModule, TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { GridModule, PageService } from '@syncfusion/ej2-angular-grids';
-import { TabModule } from '@syncfusion/ej2-angular-navigations';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import {
   ApiClient,
   GitLabIntegration,
@@ -15,9 +10,21 @@ import { canEditAdmin } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { WORKFLOW_STATUSES } from '../../core/models';
-import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton/loading-skeleton';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import {
+  LoadingSkeletonComponent,
+  PageHeadComponent,
+  SectionCardComponent,
+  SfCheckboxComponent,
+  SfDropdownComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfNumberComponent,
+  SfTabItem,
+  SfTabsComponent,
+  SfTextBoxComponent,
+} from '../../shared/ui';
 
 type CustomFieldKey =
   | 'size'
@@ -67,19 +74,17 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    CheckBoxModule,
-    DropDownListModule,
-    NumericTextBoxModule,
-    TextAreaModule,
-    TextBoxModule,
-    GridModule,
-    TabModule,
-    MessageModule,
     PageHeadComponent,
     SectionCardComponent,
     LoadingSkeletonComponent,
+    SfCheckboxComponent,
+    SfDropdownComponent,
+    SfGridComponent,
+    SfMessageComponent,
+    SfNumberComponent,
+    SfTabsComponent,
+    SfTextBoxComponent,
   ],
-  providers: [PageService],
   templateUrl: './integrations.html',
 })
 export class IntegrationsPage {
@@ -145,6 +150,34 @@ export class IntegrationsPage {
   protected readonly teamsChannel = signal('scorecard-alerts');
   protected readonly teamsWebhookUrl = signal('');
   protected readonly teamsEnabled = signal(true);
+
+  protected readonly integrationTabs: SfTabItem[] = [
+    { id: 'op', header: 'OpenProject (myProject)' },
+    { id: 'gitlab', header: 'GitLab (mygit MR)' },
+    { id: 'teams', header: 'Microsoft Teams' },
+  ];
+  protected readonly opRunColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'ID', width: 80 },
+    { field: 'status', headerText: 'สถานะ', width: 100 },
+    { field: 'started_at', headerText: 'เริ่ม', width: 180 },
+    { field: 'added', headerText: 'เพิ่ม', width: 80 },
+    { field: 'updated', headerText: 'อัปเดต', width: 80 },
+    { field: 'unchanged', headerText: 'ไม่เปลี่ยน', width: 100 },
+  ];
+  protected readonly gitlabRunColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'ID', width: 80 },
+    { field: 'status', headerText: 'สถานะ', width: 100 },
+    { field: 'started_at', headerText: 'เริ่ม', width: 180 },
+    { field: 'updated', headerText: 'จับคู่ใบงาน', width: 110 },
+    { field: 'unchanged', headerText: 'ไม่ตรงรหัส', width: 110 },
+  ];
+  protected readonly teamsRunColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'ID', width: 80 },
+    { field: 'status', headerText: 'สถานะ', width: 100 },
+    { field: 'started_at', headerText: 'เวลาส่ง', width: 180 },
+    { field: 'added', headerText: 'จำนวนข้อความ', width: 130 },
+  ];
+  protected readonly runGridOptions: SfGridOptions = { paging: true, pageSize: 8, sorting: true, resizable: true };
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly workflowHint = WORKFLOW_STATUSES.join(', ');
@@ -553,41 +586,41 @@ export class IntegrationsPage {
     }
   }
 
-  protected onBaseUrl(event: { value?: string | null }): void {
-    this.baseUrl.set(event.value ?? '');
+  protected onBaseUrl(value: string): void {
+    this.baseUrl.set(value ?? '');
   }
 
-  protected onToken(event: { value?: string | null }): void {
-    this.token.set(event.value ?? '');
+  protected onToken(value: string): void {
+    this.token.set(value ?? '');
   }
 
-  protected onHoursPerMd(event: { value?: number | null }): void {
-    this.hoursPerMd.set(typeof event.value === 'number' ? event.value : 6);
+  protected onHoursPerMd(value: number): void {
+    this.hoursPerMd.set(Number.isFinite(value) ? value : 6);
   }
 
-  protected onStatusMapText(event: { value?: string | null }): void {
-    this.statusMapText.set(event.value ?? '');
+  protected onStatusMapText(value: string): void {
+    this.statusMapText.set(value ?? '');
   }
 
-  protected onTypeMapText(event: { value?: string | null }): void {
-    this.typeMapText.set(event.value ?? '');
+  protected onTypeMapText(value: string): void {
+    this.typeMapText.set(value ?? '');
   }
 
-  protected setCustomField(key: CustomFieldKey, event: { value?: string | null }): void {
-    const value = event.value ?? '';
-    this.customFields.update((fields) => ({ ...fields, [key]: value }));
+  protected setCustomField(key: CustomFieldKey, value: string): void {
+    this.customFields.update((fields) => ({ ...fields, [key]: value ?? '' }));
   }
 
-  protected onEnabled(event: { checked?: boolean }): void {
-    this.enabled.set(!!event.checked);
+  protected onEnabled(checked: boolean): void {
+    this.enabled.set(!!checked);
   }
 
-  protected onPerson(event: { value?: string | null }): void {
-    this.mapPersonId.set(event.value ?? '');
+  protected onPerson(value: string): void {
+    this.mapPersonId.set(value ?? '');
   }
 
-  protected onOpUser(event: { value?: number | null }): void {
-    this.mapOpUserId.set(event.value ?? null);
+  protected onOpUser(value: string): void {
+    const num = Number(value);
+    this.mapOpUserId.set(value && Number.isFinite(num) ? num : null);
   }
 
   protected runErrors(errors: unknown): string {

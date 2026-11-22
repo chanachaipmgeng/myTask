@@ -3,8 +3,6 @@ import {
   Component,
   ElementRef,
   OnInit,
-  AfterViewInit,
-  DestroyRef,
   ViewChild,
   computed,
   inject,
@@ -13,38 +11,21 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  AccumulationChartModule,
-  AccumulationDataLabelService,
-  AccumulationLegendService,
-  AccumulationTooltipService,
-  CategoryService,
-  ChartModule,
-  ColumnSeriesService,
-  DataLabelService,
-  LegendService,
-  LineSeriesService,
-  PieSeriesService,
-  SplineSeriesService,
-  StackingAreaSeriesService,
-  StackingBarSeriesService,
-  StackingColumnSeriesService,
-  StripLineService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
-import { DialogModule } from '@syncfusion/ej2-angular-popups';
 import { TooltipModule } from '@syncfusion/ej2-angular-popups';
 import { currentViewer, effectiveRole } from '../../core/admin-settings';
-import { HeroBandComponent, HeroBandMetric } from '../../shared/ui/hero-band/hero-band';
-import { mdCompositionTrend, MdCompositionPoint } from '../../core/dashboard-charts';
 import {
-  computeHandoffSlaSummary,
-  computeQualityAuditSummary,
-  HandoffSlaReport,
-  QualityAuditReport,
-} from '../../core/multi-team';
+  HeroBandComponent,
+  HeroBandMetric,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
+  SfDialogComponent,
+  SfDonutChartComponent,
+  SfDonutChartOptions,
+} from '../../shared/ui';
+import { mdCompositionTrend, MdCompositionPoint } from '../../core/dashboard-charts';
+import { computeHandoffSlaSummary, computeQualityAuditSummary } from '../../core/multi-team';
 import { Ticket } from '../../core/models';
-import { scoreTicket } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
@@ -72,35 +53,17 @@ interface QualityPiePoint {
   imports: [
     RouterLink,
     ButtonModule,
-    DialogModule,
     TooltipModule,
     HeroBandComponent,
-    ChartModule,
-    AccumulationChartModule,
-  ],
-  providers: [
-    CategoryService,
-    ColumnSeriesService,
-    StackingAreaSeriesService,
-    StackingColumnSeriesService,
-    StackingBarSeriesService,
-    LineSeriesService,
-    SplineSeriesService,
-    StripLineService,
-    TooltipService,
-    LegendService,
-    DataLabelService,
-    AccumulationTooltipService,
-    AccumulationLegendService,
-    AccumulationDataLabelService,
-    PieSeriesService,
+    SfChartComponent,
+    SfDonutChartComponent,
+    SfDialogComponent,
   ],
   templateUrl: './cockpit.html',
   styleUrl: './cockpit.scss',
 })
-export class CockpitPage implements OnInit, AfterViewInit {
+export class CockpitPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly destroyRef = inject(DestroyRef);
   protected readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
   private readonly workspace = inject(WorkspaceFilter);
@@ -438,9 +401,8 @@ export class CockpitPage implements OnInit, AfterViewInit {
   // ==========================================
   // Chart Visual Layout Configurations
   // ==========================================
-  protected readonly chartArea = { border: { width: 0 } };
   protected readonly categoryAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     majorGridLines: { width: 0 },
     labelStyle: { color: 'var(--muted)', fontStyle: 'bold' },
   };
@@ -459,9 +421,10 @@ export class CockpitPage implements OnInit, AfterViewInit {
     labelStyle: { color: 'var(--muted)' },
     stripLines: [
       {
-        value: 80,
+        start: 80,
+        size: 1.5,
+        sizeType: 'Pixel' as const,
         color: 'rgba(59, 130, 246, 0.5)',
-        width: 1.5,
         dashArray: '3,3',
         text: 'เป้า 80 จุด',
         horizontalAlignment: 'End' as const,
@@ -481,9 +444,10 @@ export class CockpitPage implements OnInit, AfterViewInit {
     labelStyle: { color: 'var(--muted)' },
     stripLines: [
       {
-        value: 90,
+        start: 90,
+        size: 2,
+        sizeType: 'Pixel' as const,
         color: 'rgba(34, 197, 94, 0.6)',
-        width: 2,
         dashArray: '4,4',
         text: 'เป้า On-Time 90%',
         horizontalAlignment: 'Start' as const,
@@ -492,7 +456,7 @@ export class CockpitPage implements OnInit, AfterViewInit {
     ],
   };
   protected readonly horizontalCategoryAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     majorGridLines: { width: 0 },
     lineStyle: { width: 0 },
     labelStyle: { color: 'var(--muted)' },
@@ -504,9 +468,117 @@ export class CockpitPage implements OnInit, AfterViewInit {
     labelStyle: { color: 'var(--muted)' },
   };
 
-  protected readonly legend = { visible: true, position: 'Bottom', textStyle: { color: 'var(--muted)' } };
-  protected readonly tooltip = { enable: true };
-  protected readonly pieLegend = { visible: false };
+  protected readonly comboSeries = computed<SfChartSeriesConfig[]>(() => {
+    const data = this.comboOverviewData();
+    return [
+      { type: 'StackingColumn', dataSource: data, xName: 'month', yName: 'plannedMd', name: 'Planned MD (ในแผน)', fill: '#3b82f6' },
+      { type: 'StackingColumn', dataSource: data, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#06b6d4' },
+      { type: 'StackingColumn', dataSource: data, xName: 'month', yName: 'mdMandateMd', name: '⚡ งานสั่งตรงจาก MD', fill: '#f59e0b' },
+      { type: 'Line', yAxisName: 'rateAxis', dataSource: data, xName: 'month', yName: 'onTimeRate', name: 'ส่งมอบตรงเวลา (%)', width: 2.5, fill: '#10b981', marker: { visible: true, width: 6, height: 6, fill: '#10b981' } },
+      { type: 'Line', yAxisName: 'rateAxis', dataSource: data, xName: 'month', yName: 'avgIndex', name: 'ดัชนีคะแนนจริง', width: 2, dashArray: '4,4', fill: '#a855f7', marker: { visible: true, width: 5, height: 5, fill: '#a855f7' } },
+    ];
+  });
+  protected readonly comboChartOptions: SfChartOptions = {
+    height: '100%',
+    axes: [this.rateAxis],
+    legend: { visible: true, position: 'Bottom', textStyle: { color: 'var(--muted)' } },
+    tooltip: { enable: true },
+    enableAnimation: true,
+    exportable: true,
+    exportFileName: 'cockpit-overview-combo',
+  };
+  protected readonly comboMaxOptions: SfChartOptions = { ...this.comboChartOptions, height: '380px', legend: { visible: true, position: 'Top' } };
+
+  protected readonly workloadSeries = computed<SfChartSeriesConfig[]>(() => {
+    const data = this.workloadData();
+    return [
+      { type: 'StackingArea', dataSource: data, xName: 'month', yName: 'plannedMd', name: 'Planned (ในแผน)', fill: '#3b82f6', opacity: 0.85 },
+      { type: 'StackingArea', dataSource: data, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#06b6d4', opacity: 0.85 },
+      { type: 'StackingArea', dataSource: data, xName: 'month', yName: 'mdMandateMd', name: '⚡ งานสั่งตรงจาก MD', fill: '#f59e0b', opacity: 0.95 },
+    ];
+  });
+  protected readonly workloadChartOptions: SfChartOptions = {
+    height: '100%',
+    legend: { visible: true, position: 'Bottom', textStyle: { color: 'var(--muted)' } },
+    tooltip: { enable: true },
+    enableAnimation: true,
+    exportable: true,
+    exportFileName: 'cockpit-workload',
+  };
+  protected readonly workloadMaxOptions: SfChartOptions = { ...this.workloadChartOptions, height: '380px', legend: { visible: true, position: 'Top' } };
+
+  protected readonly trendSeries = computed<SfChartSeriesConfig[]>(() => {
+    const pts = this.olsTrend().points;
+    return [
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'actual', name: 'ดัชนีคะแนนจริง', width: 2.5, fill: '#3b82f6', marker: { visible: true, width: 6, height: 6, fill: '#3b82f6' } },
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'ols', name: 'เส้นแนวโน้ม OLS', width: 2.2, dashArray: '4,4', fill: '#a855f7' },
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'target', name: 'เป้า 80 จุด', width: 1.5, dashArray: '2,2', fill: '#ef4444' },
+    ];
+  });
+  protected readonly trendChartOptions: SfChartOptions = {
+    height: '100%',
+    legend: { visible: true, position: 'Bottom', textStyle: { color: 'var(--muted)' } },
+    tooltip: { enable: true },
+    enableAnimation: true,
+    exportable: true,
+    exportFileName: 'cockpit-ols-trend',
+  };
+  protected readonly trendMaxOptions: SfChartOptions = { ...this.trendChartOptions, height: '380px', legend: { visible: true, position: 'Top' } };
+
+  protected readonly qualityDonutOptions: SfDonutChartOptions = {
+    height: '100%',
+    innerRadius: '68%',
+    radius: '88%',
+    palettes: ['#10b981', '#f59e0b', '#f43f5e'],
+    legend: { visible: false },
+    tooltip: { enable: true },
+  };
+  protected readonly qualityMaxDonutOptions: SfDonutChartOptions = {
+    height: '340px',
+    innerRadius: '64%',
+    radius: '86%',
+    palettes: ['#10b981', '#f59e0b', '#f43f5e'],
+    legend: { visible: true, position: 'Bottom' },
+    tooltip: { enable: true },
+    exportable: true,
+    exportFileName: 'cockpit-dod-quality',
+  };
+
+  protected readonly stageSeries = computed<SfChartSeriesConfig[]>(() => {
+    const data = this.stageAgingData();
+    return [
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'devHours', name: 'Dev ทำงาน', fill: '#3b82f6' },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'reviewHours', name: 'รอ/ตรวจ MR', fill: '#f59e0b' },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'qaHours', name: 'รอ/ตรวจ QA', fill: '#10b981' },
+    ];
+  });
+  protected readonly stageChartOptions: SfChartOptions = {
+    height: '100%',
+    legend: { visible: true, position: 'Bottom', textStyle: { color: 'var(--muted)' } },
+    tooltip: { enable: true },
+    enableAnimation: true,
+    exportable: true,
+    exportFileName: 'cockpit-stage-aging',
+  };
+
+  protected readonly maximizeHeader = computed(() => {
+    switch (this.maximizedCard()) {
+      case 'combo':
+        return 'เจาะลึก: ภาพรวมภาระงานและอัตราความสำเร็จ (Dual-Axis Overview Combo)';
+      case 'workload':
+        return 'เจาะลึก: สัดส่วนภาระงาน (Planned vs Unplanned vs MD Mandate)';
+      case 'trend':
+        return 'เจาะลึก: แนวโน้มดัชนีคะแนนและการถดถอยเชิงเส้น (OLS Regression)';
+      case 'quality':
+        return 'เจาะลึก: คุณภาพการส่งมอบรอบแรกและสาเหตุ Reopen (DoD Gate)';
+      case 'stage':
+        return 'เจาะลึก: เวลาค้างแต่ละขั้นตอนแยกตามสายงาน (Stage Aging SLA)';
+      case 'bottlenecks':
+        return 'เจาะลึก: รายการงานที่ติดบล็อกและข้อเสนอแนะ AI Coach';
+      default:
+        return 'รายละเอียดเจาะลึก';
+    }
+  });
 
   ngOnInit(): void {
     // Handle Esc key to exit presentation mode
@@ -520,23 +592,6 @@ export class CockpitPage implements OnInit, AfterViewInit {
             this.isTvMode.set(false);
           }
         }
-      });
-    }
-  }
-
-  ngAfterViewInit(): void {
-    if (typeof window !== 'undefined' && typeof ResizeObserver !== 'undefined' && this.cockpitRoot?.nativeElement) {
-      let timer: ReturnType<typeof setTimeout> | null = null;
-      const ro = new ResizeObserver(() => {
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => {
-          window.dispatchEvent(new Event('resize'));
-        }, 150);
-      });
-      ro.observe(this.cockpitRoot.nativeElement);
-      this.destroyRef.onDestroy(() => {
-        if (timer) clearTimeout(timer);
-        ro.disconnect();
       });
     }
   }

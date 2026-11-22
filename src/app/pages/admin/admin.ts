@@ -1,11 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
-import { CheckBoxSelectionService, DropDownListModule, MultiSelectModule } from '@syncfusion/ej2-angular-dropdowns';
-import { GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
-import { NumericTextBoxModule, TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { SAMPLE_VIEWERS } from '../../data/seed';
 import {
   alertRules,
@@ -33,39 +28,74 @@ import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { beToCe, ceToBe, createYearCycle, type ScorecardCycleStatus } from '../../../../shared/domain/scorecard-cycle';
 import { listOrgTeamOptions } from '../../../../shared/domain/workspace-scope';
-import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
-import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  FlashMessagesComponent,
+  FormFieldComponent,
+  PageHeadComponent,
+  PersonAvatarComponent,
+  SectionCardComponent,
+  SfCheckboxComponent,
+  SfDatePickerComponent,
+  SfDropdownComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfMultiSelectComponent,
+  SfNumberComponent,
+  SfProgressComponent,
+  SfTextBoxComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-admin',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    DropDownListModule,
-    MultiSelectModule,
-    NumericTextBoxModule,
-    TextBoxModule,
-    CheckBoxModule,
     ButtonModule,
-    GridModule,
-    MessageModule,
-    ProgressBarModule,
     RouterLink,
     PageHeadComponent,
+    PersonAvatarComponent,
     SectionCardComponent,
     FormFieldComponent,
     FlashMessagesComponent,
     StatusBadgeComponent,
+    SfCheckboxComponent,
+    SfDatePickerComponent,
+    SfDropdownComponent,
+    SfGridComponent,
+    SfMessageComponent,
+    SfMultiSelectComponent,
+    SfNumberComponent,
+    SfProgressComponent,
+    SfTextBoxComponent,
   ],
-  providers: [PageService, SortService, ResizeService, CheckBoxSelectionService],
   templateUrl: './admin.html',
 })
 export class AdminPage {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
   protected readonly theme = inject(ThemeService);
+
+  protected readonly auditColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'ID', width: 80, textAlign: 'Right' },
+    { field: 'actorName', headerText: 'ผู้ดำเนินการ', width: 130 },
+    { field: 'action', headerText: 'การกระทำ', width: 180 },
+    { field: 'target', headerText: 'เป้าหมาย', width: 140 },
+    { field: 'detail', headerText: 'รายละเอียด', width: 280 },
+    { field: 'createdAt', headerText: 'เวลา', width: 190 },
+  ];
+  protected readonly auditGridOptions: SfGridOptions = {
+    id: 'admin-audit-grid',
+    height: '260',
+    paging: true,
+    pageSize: 8,
+    sorting: true,
+    resizable: true,
+    search: true,
+    excelExport: true,
+    exportFileName: 'admin-audit-log',
+  };
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly viewers = SAMPLE_VIEWERS;
@@ -186,8 +216,8 @@ export class AdminPage {
     void this.loadAuditLogs();
   }
 
-  protected onCycleYearBe(event: { value?: number | null }): void {
-    const yearBe = Math.trunc(Number(event.value ?? this.nowBe));
+  protected onCycleYearBe(value: number): void {
+    const yearBe = Math.trunc(Number(value || this.nowBe));
     this.cycleYearBe.set(yearBe);
     const yearCe = beToCe(yearBe);
     this.cycleLabel.set(`ปี ${yearBe}`);
@@ -195,24 +225,23 @@ export class AdminPage {
     this.cycleEndOn.set(`${yearCe}-12-31`);
   }
 
-  protected onCycleLabel(event: { value?: string | null }): void {
-    this.cycleLabel.set(event.value ?? '');
+  protected onCycleLabel(value: string): void {
+    this.cycleLabel.set(value ?? '');
   }
 
-  protected onCycleStart(event: Event): void {
-    this.cycleStartOn.set((event.target as HTMLInputElement | null)?.value ?? '');
+  protected onCycleStart(iso: string): void {
+    this.cycleStartOn.set(iso ?? '');
   }
 
-  protected onCycleEnd(event: Event): void {
-    this.cycleEndOn.set((event.target as HTMLInputElement | null)?.value ?? '');
+  protected onCycleEnd(iso: string): void {
+    this.cycleEndOn.set(iso ?? '');
   }
 
-  protected onCycleTeams(event: { value?: string[] | null }): void {
-    this.cycleTeamIds.set([...(event.value ?? [])]);
+  protected onCycleTeams(values: string[]): void {
+    this.cycleTeamIds.set([...(values ?? [])]);
   }
 
-  protected onCycleStatus(event: { value?: string | null }): void {
-    const value = event.value;
+  protected onCycleStatus(value: string): void {
     if (value === 'open' || value === 'draft' || value === 'closed') {
       this.cycleStatus.set(value);
     }
@@ -328,31 +357,30 @@ export class AdminPage {
     void this.persistSettings();
   }
 
-  protected onViewer(event: { value?: string | null }): void {
-    if (event.value) {
-      setViewer(event.value);
+  protected onViewer(value: string): void {
+    if (value) {
+      setViewer(value);
     }
   }
 
-  protected onQuota(level: Level, event: { value?: number | null }): void {
-    if (event.value === undefined || event.value === null) {
+  protected onQuota(level: Level, value: number): void {
+    if (!Number.isFinite(value)) {
       return;
     }
-    setWeeklyQuota(level, event.value);
+    setWeeklyQuota(level, value);
     void this.persistSettings();
   }
 
-  protected onLevel(personId: string, event: { value?: string | null }): void {
-    if (!event.value || !this.levels.includes(event.value as Level)) {
+  protected onLevel(personId: string, value: string): void {
+    if (!value || !this.levels.includes(value as Level)) {
       return;
     }
-    setPersonLevel(personId, event.value as Level);
-    this.appendLocalAudit('person.update_level', personId, `level=${event.value}`);
+    setPersonLevel(personId, value as Level);
+    this.appendLocalAudit('person.update_level', personId, `level=${value}`);
     void this.persistSettings();
   }
 
-  protected async onAccess(personId: string, event: { value?: string | null }): Promise<void> {
-    const val = event.value;
+  protected async onAccess(personId: string, val: string): Promise<void> {
     if (val !== 'admin' && val !== 'lead' && val !== 'member') {
       return;
     }
@@ -371,8 +399,8 @@ export class AdminPage {
     }
   }
 
-  protected onWeight(key: WeightKey, event: { value?: number | null }): void {
-    if (event.value === undefined || event.value === null) {
+  protected onWeight(key: WeightKey, raw: number): void {
+    if (!Number.isFinite(raw)) {
       return;
     }
     const current = trackWeights();
@@ -380,7 +408,7 @@ export class AdminPage {
       implement: { ...current.implement },
       research: { ...current.research },
     };
-    const value = event.value / 100;
+    const value = raw / 100;
     if (key.track === 'implement') {
       next.implement[key.part] = value;
     } else {
@@ -390,27 +418,27 @@ export class AdminPage {
     void this.persistSettings();
   }
 
-  protected onDeadline(event: { checked?: boolean }): void {
-    setAlertRules({ ...alertRules(), deadline: !!event.checked });
+  protected onDeadline(checked: boolean): void {
+    setAlertRules({ ...alertRules(), deadline: !!checked });
     void this.persistSettings();
   }
 
-  protected onOverrun(event: { checked?: boolean }): void {
-    setAlertRules({ ...alertRules(), overrun: !!event.checked });
+  protected onOverrun(checked: boolean): void {
+    setAlertRules({ ...alertRules(), overrun: !!checked });
     void this.persistSettings();
   }
 
-  protected onOverrunLimit(event: { value?: number | null }): void {
-    if (event.value === undefined || event.value === null) {
+  protected onOverrunLimit(value: number): void {
+    if (!Number.isFinite(value)) {
       return;
     }
-    setAlertRules({ ...alertRules(), overrunLimit: event.value });
+    setAlertRules({ ...alertRules(), overrunLimit: value });
     void this.persistSettings();
   }
 
-  protected onConnection(id: ConnectionId, event: { value?: string | null }): void {
-    if (event.value === 'local-fixture' || event.value === 'off' || event.value === 'api') {
-      setConnectionState(id, event.value as ConnectionState);
+  protected onConnection(id: ConnectionId, value: string): void {
+    if (value === 'local-fixture' || value === 'off' || value === 'api') {
+      setConnectionState(id, value as ConnectionState);
     }
   }
 

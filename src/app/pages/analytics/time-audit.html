@@ -31,62 +31,57 @@
       ejs-button
       cssClass="e-outline"
       iconCss="e-icons e-export-excel"
-      (click)="exportGrid(timeGrid)"
+      (click)="timeGrid.exportExcel()"
     >
       ส่งออก Excel
     </button>
 
-    <ejs-grid
+    <ng-template #ticketIdTpl let-data>
+      <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
+        {{ data.ticketId }}
+      </button>
+    </ng-template>
+    <ng-template #assigneeTpl let-data>
+      <app-person-avatar [name]="data.assignee" [showName]="true" size="xs" />
+    </ng-template>
+    <ng-template #estTpl let-data>
+      <span>{{ data.size }} ({{ data.estimateMd }})</span>
+    </ng-template>
+    <ng-template #actTpl let-data>
+      <span [class.text-rose-600]="data.openProjectActualMd === 0" [class.font-bold]="data.openProjectActualMd === 0">
+        {{ data.openProjectActualMd }} MD
+      </span>
+    </ng-template>
+    <ng-template #gitTpl let-data>
+      <span>{{ data.gitlabSpanMd > 0 ? data.gitlabSpanMd + ' MD (ช่วง commit)' : 'ไม่มี Commit!' }}</span>
+    </ng-template>
+    <ng-template #ratioTpl let-data>
+      <span [class.text-rose-600]="data.ratio > 1.5" [class.font-bold]="data.ratio > 1.5">
+        {{ data.ratio }}x
+      </span>
+    </ng-template>
+    <ng-template #anomalyTpl let-data>
+      <app-status-badge
+        [label]="data.anomalyLabel"
+        [value]="data.isAnomaly ? data.anomalyType : 'OK'"
+        [toneMap]="anomalyToneMap"
+      ></app-status-badge>
+    </ng-template>
+
+    <app-sf-grid
       #timeGrid
-      [dataSource]="filteredRows()"
-      [allowSorting]="true"
-      [allowFiltering]="true"
-      height="380px"
-    >
-      <e-columns>
-        <e-column field="ticketId" headerText="รหัสใบงาน" width="110" textAlign="Left">
-          <ng-template #template let-data>
-            <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
-              {{ data.ticketId }}
-            </button>
-          </ng-template>
-        </e-column>
-        <e-column field="title" headerText="ชื่องาน" width="170" textAlign="Left"></e-column>
-        <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="110" textAlign="Left"></e-column>
-        <e-column field="estimateMd" headerText="Est (1)" width="95" textAlign="Right">
-          <ng-template #template let-data>
-            <span>{{ data.size }} ({{ data.estimateMd }})</span>
-          </ng-template>
-        </e-column>
-        <e-column field="openProjectActualMd" headerText="OP Act (2)" width="95" textAlign="Right">
-          <ng-template #template let-data>
-            <span [class.text-rose-600]="data.openProjectActualMd === 0" [class.font-bold]="data.openProjectActualMd === 0">
-              {{ data.openProjectActualMd }} MD
-            </span>
-          </ng-template>
-        </e-column>
-        <e-column field="gitlabSpanMd" headerText="GitLab Commit Span (3)" width="150" textAlign="Right">
-          <ng-template #template let-data>
-            <span>{{ data.gitlabSpanMd > 0 ? data.gitlabSpanMd + ' MD (ช่วง commit)' : 'ไม่มี Commit!' }}</span>
-          </ng-template>
-        </e-column>
-        <e-column field="ratio" headerText="สัดส่วน" width="85" textAlign="Right">
-          <ng-template #template let-data>
-            <span [class.text-rose-600]="data.ratio > 1.5" [class.font-bold]="data.ratio > 1.5">
-              {{ data.ratio }}x
-            </span>
-          </ng-template>
-        </e-column>
-        <e-column field="anomalyLabel" headerText="ความผิดปกติ" width="150">
-          <ng-template #template let-data>
-            <app-status-badge
-              [label]="data.anomalyLabel"
-              [value]="data.isAnomaly ? data.anomalyType : 'OK'"
-              [toneMap]="anomalyToneMap"
-            ></app-status-badge>
-          </ng-template>
-        </e-column>
-      </e-columns>
-    </ejs-grid>
+      [data]="filteredRows()"
+      [columns]="gridColumns"
+      [cellTemplates]="{
+        ticketId: ticketIdTpl,
+        assignee: assigneeTpl,
+        estimateMd: estTpl,
+        openProjectActualMd: actTpl,
+        gitlabSpanMd: gitTpl,
+        ratio: ratioTpl,
+        anomalyLabel: anomalyTpl
+      }"
+      [options]="gridOptions"
+    />
   </app-section-card>
 </section>

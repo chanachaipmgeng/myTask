@@ -2,10 +2,8 @@ import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, E
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { AppBarModule, SidebarModule } from '@syncfusion/ej2-angular-navigations';
-import { MessageModule, ToastComponent, ToastModule } from '@syncfusion/ej2-angular-notifications';
-import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
+import { ToastComponent, ToastModule } from '@syncfusion/ej2-angular-notifications';
 import { filter, map, startWith } from 'rxjs';
 import {
   actualRole,
@@ -23,9 +21,16 @@ import { ScorecardService } from './core/scorecard.service';
 import { currentSession, setSessionUser } from './core/session';
 import { ThemeService } from './core/theme.service';
 import { WorkspaceFilter } from './core/workspace-filter';
-import { FilterChipsComponent, PersonAvatarComponent, SectionCardComponent, TicketDetailDialogComponent } from './shared/ui';
+import { FilterChipsComponent } from './shared/ui/filter-chips/filter-chips';
+import { PersonAvatarComponent } from './shared/ui/person-avatar/person-avatar';
+import { SectionCardComponent } from './shared/ui/section-card/section-card';
+import { TicketDetailDialogComponent } from './shared/ui/ticket-detail-dialog/ticket-detail-dialog';
+import { SfDatePickerComponent } from './shared/sf/sf-datepicker/sf-datepicker';
+import { SfDialogComponent } from './shared/sf/sf-dialog/sf-dialog';
+import { SfDropdownComponent } from './shared/sf/sf-dropdown/sf-dropdown';
+import { SfMessageComponent } from './shared/sf/sf-message/sf-message';
+import { SfTextBoxComponent } from './shared/sf/sf-textbox/sf-textbox';
 import { TicketDetailService } from './core/ticket-detail.service';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
 
 type NavLeaf = {
   id: string;
@@ -72,14 +77,15 @@ type ContextualTab = {
     AppBarModule,
     ToastModule,
     ButtonModule,
-    MessageModule,
-    DialogModule,
-    TextBoxModule,
-    DropDownListModule,
     FilterChipsComponent,
     PersonAvatarComponent,
     SectionCardComponent,
     TicketDetailDialogComponent,
+    SfDatePickerComponent,
+    SfDialogComponent,
+    SfDropdownComponent,
+    SfMessageComponent,
+    SfTextBoxComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -98,11 +104,15 @@ export class App implements AfterViewInit {
   protected readonly filterFields = { text: 'text', value: 'value' };
 
   @ViewChild('toast') private toast?: ToastComponent;
-  @ViewChild('alertDialog') private alertDialog?: DialogComponent;
+  @ViewChild('alertDialog') private alertDialog?: SfDialogComponent;
   @ViewChild('globalSearchInput') private globalSearchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('saasNav') private saasNav?: ElementRef<HTMLElement>;
 
-  protected readonly activePill = signal({ top: 0, height: 38, visible: false });
+  protected readonly activePill = signal({ top: 0, height: 36, visible: false });
+  protected readonly scrollProgress = signal(0);
+  protected readonly showScrollTop = signal(false);
+  protected readonly routeAnimParity = signal(false);
+  private navResizeObserver?: ResizeObserver;
 
   protected readonly globalSearch = signal('');
   protected readonly searchOpen = signal(false);
@@ -154,34 +164,32 @@ export class App implements AfterViewInit {
     this.searchOpen.set(false);
   }
 
-  protected onWorkspaceTeam(event: { value?: string | null }): void {
-    this.workspaceFilter.setTeam(event.value ?? '');
+  protected onWorkspaceTeam(value: string): void {
+    this.workspaceFilter.setTeam(value ?? '');
   }
 
-  protected onWorkspaceProject(event: { value?: string | null }): void {
-    this.workspaceFilter.setProject(event.value ?? '');
+  protected onWorkspaceProject(value: string): void {
+    this.workspaceFilter.setProject(value ?? '');
   }
 
   protected onWorkspaceTrack(value: string): void {
     this.workspaceFilter.setTrack(value);
   }
 
-  protected onWorkspaceCycle(event: { value?: string | null }): void {
-    this.workspaceFilter.setCycle(event.value ?? '');
+  protected onWorkspaceCycle(value: string): void {
+    this.workspaceFilter.setCycle(value ?? '');
   }
 
-  protected onWorkspaceYear(event: { value?: string | null }): void {
-    this.workspaceFilter.setYear(event.value ?? '');
+  protected onWorkspaceYear(value: string): void {
+    this.workspaceFilter.setYear(value ?? '');
   }
 
-  protected onWorkspaceFrom(event: Event): void {
-    const value = (event.target as HTMLInputElement | null)?.value ?? '';
-    this.workspaceFilter.setFromDate(value);
+  protected onWorkspaceFrom(iso: string): void {
+    this.workspaceFilter.setFromDate(iso ?? '');
   }
 
-  protected onWorkspaceTo(event: Event): void {
-    const value = (event.target as HTMLInputElement | null)?.value ?? '';
-    this.workspaceFilter.setToDate(value);
+  protected onWorkspaceTo(iso: string): void {
+    this.workspaceFilter.setToDate(iso ?? '');
   }
 
   protected applySystemCycle(): void {
@@ -199,16 +207,19 @@ export class App implements AfterViewInit {
 
   protected readonly showGlobalFilterBar = computed(() => {
     const path = this.url().split('?')[0] || '/';
-    if (
-      path === '/login' ||
-      path === '/admin' ||
-      path.startsWith('/admin/') ||
-      path.startsWith('/integrations') ||
-      path === '/teams'
-    ) {
+    if (path.startsWith('/insights/mockup')) {
       return false;
     }
-    return true;
+    return (
+      path === '/cockpit' ||
+      path === '/team' ||
+      path === '/people' ||
+      path.startsWith('/work') ||
+      path.startsWith('/quality') ||
+      path.startsWith('/tickets') ||
+      path.startsWith('/analytics') ||
+      path.startsWith('/insights')
+    );
   });
 
   protected readonly extraFilterCount = computed(() => {
@@ -467,13 +478,14 @@ export class App implements AfterViewInit {
       }
       this.keepNavOpen = false;
       this.filterPopoverOpen.set(false);
-      // Reset scroll position to top on every navigation
+      // Smooth scroll back to top and re-trigger friendly route glide animation
+      this.routeAnimParity.update((v) => !v);
       if (typeof window !== 'undefined') {
-        window.scrollTo({ top: 0, left: 0 });
-        document.documentElement.scrollTop = 0;
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
         const mainEl = document.querySelector<HTMLElement>('.shell-main');
-        if (mainEl) mainEl.scrollTop = 0;
+        if (mainEl) mainEl.scrollTo?.({ top: 0, left: 0, behavior: 'smooth' });
       }
+      this.scheduleSyncActivePill();
       const path = event.urlAfterRedirects.split('?')[0] || '/';
       const actual = this.trueRole();
       // หากกำลังพรีวิวมุม Member แล้วกดเข้าหน้าทีม/แอดมิน ให้กลับสิทธิ์จริงอัตโนมัติ
@@ -509,6 +521,14 @@ export class App implements AfterViewInit {
     effect(() => {
       this.selectedNodes.set([matchNavId(this.url(), this.role())]);
     });
+    effect(() => {
+      // Re-measure sliding sidebar active pill whenever active item, collapse, or sections change
+      this.selectedNodes();
+      this.collapsed();
+      this.narrow();
+      this.sidebarSections();
+      this.scheduleSyncActivePill();
+    });
     window.addEventListener('keydown', (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
@@ -532,15 +552,8 @@ export class App implements AfterViewInit {
     }
   }
 
-  protected onAlertSearch(event: { value?: string } | Event): void {
-    if ('value' in event && typeof event.value === 'string') {
-      this.alertSearch.set(event.value);
-    } else if ('target' in event) {
-      const target = (event as Event).target as HTMLInputElement | null;
-      this.alertSearch.set(target?.value ?? '');
-    } else {
-      this.alertSearch.set('');
-    }
+  protected onAlertSearch(value: string): void {
+    this.alertSearch.set(value ?? '');
   }
 
   protected onNavClose(): void {
@@ -550,20 +563,20 @@ export class App implements AfterViewInit {
   }
 
   protected openAlerts(): void {
-    this.alertDialog?.show();
+    this.alertDialog?.open();
   }
 
   protected closeAlerts(): void {
-    this.alertDialog?.hide();
+    this.alertDialog?.close();
   }
 
   protected goToTicketBoard(): void {
-    this.alertDialog?.hide();
+    this.alertDialog?.close();
     void this.router.navigate([this.role() === 'member' ? '/me/work/board' : '/work/board']);
   }
 
   protected goToTicketScores(): void {
-    this.alertDialog?.hide();
+    this.alertDialog?.close();
     void this.router.navigate([this.role() === 'member' ? '/me' : '/tickets']);
   }
 
@@ -652,8 +665,70 @@ export class App implements AfterViewInit {
         this.narrow.set(isNarrowNow);
         this.navOpen.set(!isNarrowNow);
       }
+      this.scheduleSyncActivePill();
       this.cdr.markForCheck();
     });
+
+    if (typeof window !== 'undefined') {
+      const navEl = this.saasNav?.nativeElement;
+      if (navEl && typeof ResizeObserver !== 'undefined') {
+        this.navResizeObserver = new ResizeObserver(() => this.syncActivePill());
+        this.navResizeObserver.observe(navEl);
+      }
+      this.zone.runOutsideAngular(() => {
+        let ticking = false;
+        const onScroll = () => {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(() => {
+            ticking = false;
+            const doc = document.documentElement;
+            const max = Math.max(1, doc.scrollHeight - window.innerHeight);
+            const ratio = Math.min(1, Math.max(0, window.scrollY / max));
+            const shouldShow = window.scrollY > 240;
+            if (Math.abs(ratio - this.scrollProgress()) > 0.005 || shouldShow !== this.showScrollTop()) {
+              this.zone.run(() => {
+                this.scrollProgress.set(ratio);
+                this.showScrollTop.set(shouldShow);
+              });
+            }
+          });
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+      });
+    }
+  }
+
+  protected scrollToTop(): void {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  private scheduleSyncActivePill(): void {
+    if (typeof requestAnimationFrame === 'undefined') return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => this.syncActivePill());
+    });
+  }
+
+  private syncActivePill(): void {
+    const nav = this.saasNav?.nativeElement;
+    if (!nav) return;
+    const active = nav.querySelector<HTMLElement>('.saas-nav__item.is-active');
+    if (!active) {
+      this.activePill.update((p) => (p.visible ? { ...p, visible: false } : p));
+      return;
+    }
+    const navRect = nav.getBoundingClientRect();
+    const itemRect = active.getBoundingClientRect();
+    const top = Math.round(itemRect.top - navRect.top + nav.scrollTop);
+    const height = Math.round(itemRect.height);
+    const prev = this.activePill();
+    if (!prev.visible || prev.top !== top || prev.height !== height) {
+      this.activePill.set({ top, height, visible: true });
+      this.cdr.markForCheck();
+    }
   }
 }
 

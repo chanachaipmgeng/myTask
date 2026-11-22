@@ -1,61 +1,41 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  CategoryService,
-  ChartModule,
-  LegendService,
-  StackingBarSeriesService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import {
-  ExcelExportService,
-  FilterService,
-  FreezeService,
-  GridComponent,
-  GridModule,
-  PageService,
-  SortService,
-  ToolbarService,
-} from '@syncfusion/ej2-angular-grids';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { effectiveRole } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { BadgeTone } from '../../shared/ui/badge';
-import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
-import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  BadgeTone,
+  FilterChipOption,
+  FilterChipsComponent,
+  FormFieldComponent,
+  PageHeadComponent,
+  SectionCardComponent,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
+  SfDropdownComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-work-handoff',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    ChartModule,
-    GridModule,
-    DropDownListModule,
     PageHeadComponent,
-    MessageModule,
     SectionCardComponent,
     StatusBadgeComponent,
     FormFieldComponent,
     FilterChipsComponent,
-  ],
-  providers: [
-    CategoryService,
-    StackingBarSeriesService,
-    LegendService,
-    TooltipService,
-    PageService,
-    SortService,
-    FilterService,
-    FreezeService,
-    ToolbarService,
-    ExcelExportService,
+    SfChartComponent,
+    SfDropdownComponent,
+    SfGridComponent,
+    SfMessageComponent,
   ],
   templateUrl: './work-handoff.html',
 })
@@ -100,7 +80,7 @@ export class WorkHandoffPage {
   });
 
   protected readonly primaryXAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     title: 'สายงาน',
     majorGridLines: { width: 0 },
   };
@@ -111,20 +91,49 @@ export class WorkHandoffPage {
     majorTickLines: { width: 0 },
   };
 
-  protected readonly chartTooltip = {
-    enable: true,
-    shared: true,
-    header: '${point.x}',
-    format: '${series.name}: <b>${point.y}</b> ชม.',
+  protected readonly stageAgingSeries = computed<SfChartSeriesConfig[]>(() => {
+    const data = this.stageAgingData();
+    return [
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'inProgressHours', name: 'In Progress', fill: '#4c68e5', columnWidth: 0.6 },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'reviewHours', name: 'Code Review', fill: '#f59e0b', columnWidth: 0.6 },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'qaHours', name: 'In QA', fill: '#3ec6e0', columnWidth: 0.6 },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'blockedHours', name: 'Blocked', fill: '#e35d6a', columnWidth: 0.6, cornerRadius: { topRight: 4, bottomRight: 4 } },
+    ];
+  });
+
+  protected readonly stageAgingOptions: SfChartOptions = {
+    height: '280px',
+    exportable: true,
+    fullscreenable: true,
+    exportFileName: 'stage-aging-by-track',
+    enableAnimation: true,
+    legend: { visible: true, position: 'Top', alignment: 'Center' },
+    tooltip: { enable: true, shared: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b> ชม.' },
   };
-  protected readonly chartLegend = {
-    visible: true,
-    position: 'Top',
-    alignment: 'Center',
+
+  protected readonly gridColumns: SfGridColumn[] = [
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 105, textAlign: 'Left' },
+    { field: 'status', headerText: 'สถานะค้าง', width: 140, textAlign: 'Left' },
+    { field: 'title', headerText: 'ชื่องาน / รายละเอียด', width: 190, textAlign: 'Left' },
+    { field: 'owner', headerText: 'เจ้าของงานหลัก', width: 140, textAlign: 'Left' },
+    { field: 'reviewerOrQa', headerText: 'ผู้ตรวจ/ผู้รับช่วง', width: 140, textAlign: 'Left' },
+    { field: 'hoursSpent', headerText: 'เวลาค้างสะสม', width: 110, textAlign: 'Right' },
+    { field: 'slaHours', headerText: 'เกณฑ์ SLA', width: 95, textAlign: 'Right' },
+    { field: 'action', headerText: 'การจัดการ', width: 110, textAlign: 'Center' },
+  ];
+
+  protected readonly gridOptions: SfGridOptions = {
+    id: 'work-handoff-grid',
+    sorting: true,
+    filtering: 'Excel',
+    search: true,
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    resizable: true,
+    autoFreezeDesktop: 2,
+    exportFileName: 'handoff-sla',
   };
-  protected readonly chartArea = { border: { width: 0 } };
-  /** มุมปลายแท่ง StackingBar (ชั้นนอกสุด) */
-  protected readonly barEndCorner = { topRight: 4, bottomRight: 4 };
 
   protected readonly statusToneMap: Record<string, BadgeTone> = {
     'Code Review': 'warning',
@@ -133,8 +142,8 @@ export class WorkHandoffPage {
     blocked: 'danger',
   };
 
-  protected setTrack(event: { value?: string }): void {
-    this.trackFilter.set(event.value ?? 'All');
+  protected setTrack(value: unknown): void {
+    this.trackFilter.set(String(value ?? 'All'));
   }
 
   protected toggleOverSla(): void {
@@ -151,9 +160,5 @@ export class WorkHandoffPage {
       .then((result) => {
         this.notice.success(result.message || `แจ้งเตือนใบงาน ${ticketId} ถึง ${targetName}`);
       });
-  }
-
-  protected exportGrid(grid: GridComponent): void {
-    void grid.excelExport();
   }
 }

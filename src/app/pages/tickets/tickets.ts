@@ -1,25 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
-import { ButtonModule, CheckBoxModule, ChipListModule } from '@syncfusion/ej2-angular-buttons';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import {
-  AggregateService,
-  ColumnChooserService,
-  ExcelExportService,
-  FilterService,
-  FreezeService,
-  GridComponent,
-  GridModule,
-  PageService,
-  ResizeService,
-  SortService,
-  ToolbarService,
-} from '@syncfusion/ej2-angular-grids';
-import { NumericTextBoxModule, TextBoxModule, UploaderModule } from '@syncfusion/ej2-angular-inputs';
-import { AccordionModule, ToolbarModule } from '@syncfusion/ej2-angular-navigations';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { scorePartNotes } from '../../core/kpi-meaning';
 import { MyProjectSyncAdapter } from '../../core/myproject-sync';
@@ -33,9 +14,26 @@ import { TicketDetailService } from '../../core/ticket-detail.service';
 import { ViewportService } from '../../core/viewport.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID } from '../../data/seed';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import {
+  PageHeadComponent,
   PersonAvatarComponent,
+  SectionCardComponent,
+  SfAccordionComponent,
+  SfAccordionItem,
+  SfCheckboxComponent,
+  SfChipListComponent,
+  SfDatePickerComponent,
+  SfDialogComponent,
+  SfDropdownComponent,
+  SfGridAggregate,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfNumberComponent,
+  SfTextBoxComponent,
+  SfToolbarComponent,
+  SfUploaderComponent,
   StatusBadgeComponent,
   blockerToneMap,
   closedToneMap,
@@ -47,7 +45,6 @@ import {
   workflowStatusToneMap,
   type BadgeTone,
 } from '../../shared/ui';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
 import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 import { listWorkspaceTrackChipOptions, parseWorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
@@ -59,34 +56,23 @@ type TypeFilter = TicketType | 'All';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
-    GridModule,
-    PersonAvatarComponent,
-    DropDownListModule,
-    NumericTextBoxModule,
-    TextBoxModule,
-    UploaderModule,
-    DatePickerModule,
-    AccordionModule,
-    ToolbarModule,
     ButtonModule,
-    CheckBoxModule,
-    ChipListModule,
-    MessageModule,
-    DialogModule,
+    PersonAvatarComponent,
     PageHeadComponent,
     StatusBadgeComponent,
     SectionCardComponent,
-  ],
-  providers: [
-    PageService,
-    SortService,
-    FilterService,
-    FreezeService,
-    ResizeService,
-    ColumnChooserService,
-    ExcelExportService,
-    AggregateService,
-    ToolbarService,
+    SfAccordionComponent,
+    SfCheckboxComponent,
+    SfChipListComponent,
+    SfDatePickerComponent,
+    SfDialogComponent,
+    SfDropdownComponent,
+    SfGridComponent,
+    SfMessageComponent,
+    SfNumberComponent,
+    SfTextBoxComponent,
+    SfToolbarComponent,
+    SfUploaderComponent,
   ],
   templateUrl: './tickets.html',
 })
@@ -100,8 +86,7 @@ export class TicketsPage {
   private readonly workspace = inject(WorkspaceFilter);
   protected readonly viewport = inject(ViewportService);
 
-  @ViewChild('ticketGrid') private ticketGrid?: GridComponent;
-  @ViewChild('selfUpdateDialog') private selfUpdateDialog?: DialogComponent;
+  @ViewChild('selfUpdateDialog') private selfUpdateDialog?: SfDialogComponent;
 
   protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
   protected readonly role = effectiveRole;
@@ -112,11 +97,69 @@ export class TicketsPage {
     () => this.scorecard.roster().find((p) => p.id === this.activePersonId()) ?? null,
   );
 
-  protected readonly fields = { text: 'text', value: 'value' };
-  protected readonly pageSettings = { pageSize: 10 };
-  protected readonly filterSettings = { type: 'Menu' };
-  protected readonly sortSettings = { columns: [{ field: 'score', direction: 'Descending' }] };
-  protected readonly gridToolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
+  protected readonly accordionItems: SfAccordionItem[] = this.isMine
+    ? [{ id: 'rubric', header: 'เกณฑ์การให้คะแนน 100 คะแนน และตารางขนาดมาตรฐาน (XS–XL)', expanded: false }]
+    : [
+        { id: 'import', header: 'นำเข้าไฟล์ CSV/JSON และซิงก์ myProject', expanded: false },
+        { id: 'add', header: 'เพิ่มใบงานใหม่ / จำลองคำนวณคะแนนใบงาน', expanded: false },
+        { id: 'rubric', header: 'เกณฑ์การให้คะแนน 100 คะแนน และตารางขนาดมาตรฐาน (XS–XL)', expanded: false },
+      ];
+
+  protected readonly ticketColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'รหัส', width: 120 },
+    { field: 'workflowStatus', headerText: 'สถานะงาน', width: 140 },
+    { field: 'manage', headerText: 'จัดการใบงาน', width: 215, allowFiltering: false, allowSorting: false },
+    { field: 'trackLabel', headerText: 'สาย', width: 110 },
+    { field: 'type', headerText: 'ชนิด', width: 140 },
+    { field: 'module', headerText: 'โมดูล', width: 120 },
+    { field: 'size', headerText: 'ขนาด', width: 80 },
+    { field: 'points', headerText: 'Points', width: 90, textAlign: 'Right' },
+    { field: 'assignee', headerText: 'ผู้รับ', width: 185 },
+    { field: 'estimateMd', headerText: 'Est', width: 95, textAlign: 'Right', format: 'N2' },
+    { field: 'actualMd', headerText: 'Actual', width: 95, textAlign: 'Right', format: 'N2' },
+    { field: 'ratioLabel', headerText: 'อัตราส่วน', width: 110 },
+    { field: 'weekOffsetLabel', headerText: 'สัปดาห์', width: 120 },
+    { field: 'weekPoints', headerText: 'คะแนนสัปดาห์', width: 130, textAlign: 'Right' },
+    { field: 'accuracyPoints', headerText: 'คะแนนแม่น', width: 120, textAlign: 'Right' },
+    { field: 'reviewRounds', headerText: 'รอบรีวิว', width: 110, textAlign: 'Right' },
+    { field: 'blockerLabel', headerText: 'Blocker', width: 100 },
+    { field: 'reviewPoints', headerText: 'คะแนนรีวิว', width: 120, textAlign: 'Right' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 100, textAlign: 'Right' },
+    { field: 'reopenPoints', headerText: 'คะแนนเปิดซ้ำ', width: 130, textAlign: 'Right' },
+    { field: 'varianceCode', headerText: 'Variance', width: 110 },
+    { field: 'closedLabel', headerText: 'ปิด', width: 90 },
+    { field: 'dodLabel', headerText: 'DoD', width: 90 },
+    { field: 'spikeLabel', headerText: 'Spike', width: 90 },
+    { field: 'unplannedLabel', headerText: 'นอกแผน', width: 100 },
+    { field: 'score', headerText: 'คะแนน', width: 100, textAlign: 'Right' },
+    { field: 'scoreMeaning', headerText: 'ที่มาของคะแนน', width: 420 },
+    { field: 'alertLabel', headerText: 'แจ้งเตือน', width: 180 },
+    { field: 'closedOnLabel', headerText: 'วันที่ปิด', width: 120 },
+    { field: 'note', headerText: 'หมายเหตุ', width: 260 },
+  ];
+
+  protected readonly ticketAggregates: SfGridAggregate[] = [
+    { field: 'id', type: 'Count', prefix: 'รวม ', suffix: ' ใบ' },
+    { field: 'estimateMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
+    { field: 'actualMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
+    { field: 'score', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
+  ];
+
+  protected readonly ticketGridOptions: SfGridOptions = {
+    id: this.isMine ? 'my-tickets-score-grid-v3' : 'tickets-score-grid-v3',
+    enablePersistence: true,
+    paging: true,
+    pageSize: 10,
+    sorting: true,
+    sortSettings: { columns: [{ field: 'score', direction: 'Descending' }] },
+    filtering: 'Menu',
+    resizable: true,
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    autoFreezeDesktop: 2,
+    exportFileName: this.isMine ? 'my-tickets-scorecard' : 'team-tickets-scorecard',
+  };
   protected readonly trackToneMap = trackToneMap;
   protected readonly blockerToneMap = blockerToneMap;
   protected readonly closedToneMap = closedToneMap;
@@ -317,27 +360,26 @@ export class TicketsPage {
     this.editUnitTestDone.set(!!ticket.dodChecklist?.unitTest);
     this.editMrAttached.set(!!ticket.dodChecklist?.mrLinked || !!ticket.mrLink?.trim());
     this.editNote.set(ticket.note ?? '');
-    this.selfUpdateDialog?.show();
+    this.selfUpdateDialog?.open();
   }
 
   protected closeSelfUpdate(): void {
-    this.selfUpdateDialog?.hide();
+    this.selfUpdateDialog?.close();
     this.editingTicketId.set(null);
   }
 
-  protected onEditStatusChange(event: { value?: string | null }): void {
-    const v = event.value as WorkflowStatus | undefined;
-    if (v) {
-      this.editWorkflowStatus.set(v);
+  protected onEditStatusChange(value: string): void {
+    if (value) {
+      this.editWorkflowStatus.set(value as WorkflowStatus);
     }
   }
 
-  protected onEditPocResultChange(event: { value?: string | null }): void {
-    this.editPocResult.set((event.value ?? '') as PocResult | '');
+  protected onEditPocResultChange(value: string): void {
+    this.editPocResult.set((value ?? '') as PocResult | '');
   }
 
-  protected onEditBugCauseChange(event: { value?: string | null }): void {
-    this.editBugCause.set((event.value ?? '') as BugCause | '');
+  protected onEditBugCauseChange(value: string): void {
+    this.editBugCause.set((value ?? '') as BugCause | '');
   }
 
   protected saveSelfUpdate(): void {
@@ -386,25 +428,23 @@ export class TicketsPage {
     return scorePartNotes(this.preview());
   }
 
-  protected onSearch(event: { value?: string | null }): void {
-    this.query.set((event.value ?? '').trim().toLowerCase());
+  protected onSearch(value: string): void {
+    this.query.set((value ?? '').trim().toLowerCase());
   }
 
-  protected setTrackFilter(event: { value?: string | null }): void {
-    const value = parseWorkspaceTrackFilter(event.value);
+  protected setTrackFilter(raw: string): void {
+    const value = parseWorkspaceTrackFilter(raw);
     this.trackFilter.set(value);
     this.workspace.setTrack(value);
   }
 
-  protected setTypeFilter(event: { value?: string | null }): void {
-    const value = event.value;
+  protected setTypeFilter(value: string): void {
     if (value === 'All' || this.typeOptions.some((option) => option.value === value)) {
       this.typeFilter.set(value as TypeFilter);
     }
   }
 
-  protected setChoice(field: 'track' | 'type' | 'size' | 'weekOffset' | 'variance' | 'blocker' | 'closed' | 'dodPassed' | 'inTimeBox' | 'childTicketsSized' | 'unplanned' | 'assigneeId', event: { value?: string | null }): void {
-    const value = event.value;
+  protected setChoice(field: 'track' | 'type' | 'size' | 'weekOffset' | 'variance' | 'blocker' | 'closed' | 'dodPassed' | 'inTimeBox' | 'childTicketsSized' | 'unplanned' | 'assigneeId', value: string): void {
     if (typeof value !== 'string') {
       return;
     }
@@ -458,8 +498,8 @@ export class TicketsPage {
     }
   }
 
-  protected setNumber(field: 'estimateMd' | 'actualMd' | 'reviewRounds' | 'reopenCount', event: { value?: number | null }): void {
-    const next = typeof event.value === 'number' ? event.value : 0;
+  protected setNumber(field: 'estimateMd' | 'actualMd' | 'reviewRounds' | 'reopenCount', raw: number): void {
+    const next = Number.isFinite(raw) ? raw : 0;
     switch (field) {
       case 'estimateMd':
         this.estimateMd.set(next);
@@ -476,12 +516,17 @@ export class TicketsPage {
     }
   }
 
-  protected setClosedOn(event: { value?: Date | null }): void {
-    this.closedOn.set(event.value ?? null);
+  protected setClosedOnIso(iso: string): void {
+    if (!iso) {
+      this.closedOn.set(null);
+      return;
+    }
+    const [y, m, d] = iso.split('-').map(Number);
+    this.closedOn.set(y && m && d ? new Date(y, m - 1, d) : null);
   }
 
-  protected onModule(event: { value?: string | null }): void {
-    this.moduleName.set(event.value ?? '');
+  protected onModule(value: string): void {
+    this.moduleName.set(value ?? '');
   }
 
   protected alertTone(label: string): BadgeTone {
@@ -499,15 +544,6 @@ export class TicketsPage {
     }
     if (data && 'alertLabel' in data && data.alertLabel !== '—') {
       args.row.classList.add('alert-row');
-    }
-  }
-
-  protected onGridToolbarClick(args: { item?: { id?: string } }): void {
-    const id = args.item?.id ?? '';
-    if (id.endsWith('_excelexport')) {
-      void this.ticketGrid?.excelExport();
-    } else if (id.endsWith('_csvexport')) {
-      void this.ticketGrid?.csvExport();
     }
   }
 

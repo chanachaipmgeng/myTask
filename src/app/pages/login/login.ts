@@ -1,24 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { currentViewer, effectiveRole, setViewer, setWorkspaceMode } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
 import { AccessRole, Person } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession, setSessionUser } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
-import { FlashMessagesComponent } from '../../shared/ui/flash-messages/flash-messages';
+import { FlashMessagesComponent, SfCheckboxComponent } from '../../shared/ui';
 
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    CheckBoxModule,
-    TextBoxModule,
-    MessageModule,
+    SfCheckboxComponent,
     FlashMessagesComponent,
   ],
   templateUrl: './login.html',

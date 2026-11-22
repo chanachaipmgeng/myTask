@@ -2,19 +2,18 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { map } from 'rxjs';
 import { ApiClient, TeamTimeResponse } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { currentSession } from '../../core/session';
-import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
+import { PageHeadComponent, SectionCardComponent, SfMessageComponent } from '../../shared/ui';
 
 @Component({
   selector: 'app-team-time',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, MessageModule, PageHeadComponent, SectionCardComponent],
+  imports: [ButtonModule, SfMessageComponent, PageHeadComponent, SectionCardComponent],
   templateUrl: './team-time.html',
   styleUrl: './team-time.scss',
 })

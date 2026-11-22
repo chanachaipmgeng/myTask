@@ -1,24 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  EditService,
-  GridComponent,
-  GridModule,
-  PageService,
-  ResizeService,
-  SortService,
-  ToolbarService,
-  EditSettingsModel,
-  ToolbarItems,
-} from '@syncfusion/ej2-angular-grids';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { ApiClient } from '../../../core/api-client';
 import { DEFAULT_RUBRICS, RubricDefinition } from '../../../core/rubrics';
 import { ThemeService } from '../../../core/theme.service';
-import { PageHeadComponent } from '../../../shared/ui/page-head/page-head';
-import { FlashMessagesComponent } from '../../../shared/ui/flash-messages/flash-messages';
-import { SectionCardComponent } from '../../../shared/ui/section-card/section-card';
+import {
+  FlashMessagesComponent,
+  PageHeadComponent,
+  SectionCardComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+} from '../../../shared/ui';
 
 interface RubricGridRow {
   rubric_id: string;
@@ -36,14 +29,12 @@ interface RubricGridRow {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    GridModule,
     PageHeadComponent,
-    MessageModule,
     RouterLink,
     SectionCardComponent,
     FlashMessagesComponent,
+    SfGridComponent,
   ],
-  providers: [PageService, SortService, ResizeService, EditService, ToolbarService],
   templateUrl: './admin-rubrics.html',
 })
 export class AdminRubricsPage implements OnInit {
@@ -54,13 +45,28 @@ export class AdminRubricsPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly saveNotice = signal<string | null>(null);
 
-  protected readonly editSettings: EditSettingsModel = {
-    allowEditing: true,
-    mode: 'Normal',
-    allowEditOnDblClick: true,
-  };
+  protected readonly columns: SfGridColumn[] = [
+    { field: 'rubric_id', headerText: 'รหัส Rubric', width: 120, isPrimaryKey: true },
+    { field: 'category', headerText: 'หมวดหมู่', width: 105, allowEditing: false, textAlign: 'Center' },
+    { field: 'title', headerText: 'ชื่อเกณฑ์', width: 170 },
+    { field: 'paramsSummary', headerText: 'สรุปพารามิเตอร์คำนวณ', width: 210, allowEditing: false },
+    { field: 'paramsJson', headerText: 'พารามิเตอร์ JSON (แก้ไขได้)', width: 210 },
+    { field: 'is_active', headerText: 'เปิดใช้งาน', width: 90, displayAsCheckBox: true, type: 'boolean', textAlign: 'Center' },
+    { field: 'version', headerText: 'เวอร์ชัน', width: 90, allowEditing: false, textAlign: 'Center' },
+  ];
 
-  protected readonly toolbar: ToolbarItems[] = ['Edit', 'Update', 'Cancel'];
+  protected readonly gridOptions: SfGridOptions = {
+    id: 'admin-rubrics-grid',
+    paging: false,
+    sorting: true,
+    resizable: true,
+    allowTextWrap: true,
+    excelExport: true,
+    gridLines: 'Both',
+    exportFileName: 'rubric-registry',
+    editSettings: { allowEditing: true, mode: 'Normal', allowEditOnDblClick: true },
+    extraToolbar: ['Edit', 'Update', 'Cancel'],
+  };
 
   async ngOnInit(): Promise<void> {
     await this.loadRubrics();

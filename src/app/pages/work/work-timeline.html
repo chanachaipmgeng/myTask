@@ -1,5 +1,5 @@
 <app-section-card
-  title="ไทม์ไลน์แผนงานและโครงสร้างแม่-ลูก (Gantt Timeline)"
+  title="ไทม์ไลน์แผนงาน Gantt"
   [badge]="tasks().length + ' รายการ'"
   badgeTone="info"
 >
@@ -30,41 +30,26 @@
   </div>
 
   @if (statusMessage()) {
-    <ejs-message [content]="statusMessage()" severity="Success" variant="Outlined"></ejs-message>
+    <app-sf-message [content]="statusMessage()" severity="Success" />
   }
   @if (errorMessage()) {
-    <ejs-message [content]="errorMessage()" severity="Error" variant="Outlined"></ejs-message>
+    <app-sf-message [content]="errorMessage()" severity="Error" />
   }
 
   @if (tasks().length === 0) {
     <p class="fine">ไม่พบใบงานที่มีช่วงวันที่ตามตัวกรองปัจจุบัน</p>
   } @else {
     @for (mode of [viewMode()]; track mode) {
-      <ejs-gantt
+      <app-sf-gantt
         #workGantt
-        id="work-gantt"
-        height="580px"
-        [dataSource]="ganttTasks()"
+        [data]="ganttTasks()"
+        [resources]="resources()"
         [taskFields]="taskFields"
         [columns]="columns()"
-        [toolbar]="toolbar"
-        [editSettings]="editSettings()"
-        [labelSettings]="labelSettings"
-        [timelineSettings]="timelineSettings"
-        [projectStartDate]="projectStartDate()"
-        [workWeek]="workWeek"
-        [splitterSettings]="splitterSettings"
-        [resources]="resources()"
-        [resourceFields]="resourceFields"
-        [viewType]="ganttViewType()"
-        [renderBaseline]="viewMode() === 'project'"
-        [allowSelection]="true"
-        [enableVirtualization]="false"
-        [treeColumnIndex]="1"
-        gridLines="Horizontal"
+        [options]="ganttOptions()"
         (created)="onGanttCreated()"
         (actionComplete)="onActionComplete($event)"
-      ></ejs-gantt>
+      />
     }
   }
 </app-section-card>

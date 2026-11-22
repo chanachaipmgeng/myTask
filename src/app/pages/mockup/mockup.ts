@@ -1,20 +1,34 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { GridModule, PageService, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
-import { StepperModule } from '@syncfusion/ej2-angular-navigations';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { MockSession, mockPersonIndexes } from '../../core/mock-session';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
+import {
+  PageHeadComponent,
+  SectionCardComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfProgressComponent,
+  SfStepperComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-mockup',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonModule, GridModule, MessageModule, ProgressBarModule, StepperModule, RouterLink],
-  providers: [PageService, SortService, ResizeService],
+  imports: [
+    ButtonModule,
+    RouterLink,
+    PageHeadComponent,
+    SectionCardComponent,
+    SfGridComponent,
+    SfMessageComponent,
+    SfProgressComponent,
+    SfStepperComponent,
+  ],
   templateUrl: './mockup.html',
   styleUrl: './mockup.scss',
 })
@@ -24,7 +38,45 @@ export class MockupPage {
   private readonly notice = inject(ShellNotice);
   protected readonly theme = inject(ThemeService);
 
-  protected readonly pageSettings = { pageSize: 8 };
+  protected readonly draftColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'ใบ', width: 140 },
+    { field: 'title', headerText: 'เรื่อง', width: 200 },
+    { field: 'size', headerText: 'ขนาด', width: 80 },
+    { field: 'estimateMd', headerText: 'Est MD', width: 90, textAlign: 'Right', format: 'N2' },
+    { field: 'rubricTotal', headerText: 'รูบริก', width: 90, textAlign: 'Right' },
+    { field: 'late', headerText: 'แผน', width: 90 },
+    { field: 'note', headerText: 'หมายเหตุ', width: 180 },
+  ];
+  protected readonly capacityColumns: SfGridColumn[] = [
+    { field: 'personLabel', headerText: 'คน', width: 180 },
+    { field: 'trackLabel', headerText: 'สาย', width: 110 },
+    { field: 'quota', headerText: 'โควต้า', width: 90, textAlign: 'Right', format: 'N1' },
+    { field: 'openMd', headerText: 'เปิดอยู่', width: 100, textAlign: 'Right', format: 'N2' },
+    { field: 'freeMd', headerText: 'ว่าง', width: 90, textAlign: 'Right', format: 'N2' },
+    { field: 'wipLabel', headerText: 'WIP', width: 80 },
+    { field: 'status', headerText: 'สถานะ', width: 90 },
+  ];
+  protected readonly scoreColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'ใบ', width: 140 },
+    { field: 'title', headerText: 'เรื่อง', width: 180 },
+    { field: 'assignee', headerText: 'ผู้รับ', width: 110 },
+    { field: 'size', headerText: 'ขนาด', width: 80 },
+    { field: 'estimateMd', headerText: 'Est', width: 80, textAlign: 'Right', format: 'N2' },
+    { field: 'actualMd', headerText: 'Actual', width: 90, textAlign: 'Right', format: 'N2' },
+    { field: 'weekOffset', headerText: 'เลื่อน', width: 80, textAlign: 'Right' },
+    { field: 'score', headerText: 'คะแนน', width: 90, textAlign: 'Right' },
+    { field: 'spikeScore', headerText: 'Spike', width: 80, textAlign: 'Right' },
+  ];
+  protected readonly personIndexColumns: SfGridColumn[] = [
+    { field: 'name', headerText: 'คน', width: 140 },
+    { field: 'index', headerText: 'ดัชนี', width: 100, textAlign: 'Right', format: 'N1' },
+  ];
+  protected readonly logColumns: SfGridColumn[] = [
+    { field: 'stepNo', headerText: 'ลำดับ', width: 90, textAlign: 'Right' },
+    { field: 'entry', headerText: 'รายละเอียดขั้นที่จำลอง', width: 520 },
+  ];
+  protected readonly pagedGridOptions: SfGridOptions = { paging: true, pageSize: 8, sorting: true, resizable: true, height: '260' };
+  protected readonly compactGridOptions: SfGridOptions = { paging: false, sorting: true, resizable: true, height: '220' };
   protected readonly active = this.session.active;
   protected readonly step = this.session.step;
   protected readonly steps = this.session.steps;
@@ -44,7 +96,8 @@ export class MockupPage {
   protected readonly stepperSteps = computed(() => {
     const current = this.step();
     return this.steps.map((item, idx) => ({
-      label: `${idx + 1}. ${item.title}`,
+      text: String(idx + 1),
+      label: item.title,
       status: current > idx ? 'Completed' : current === idx && this.active() ? 'InProgress' : 'NotStarted',
     }));
   });

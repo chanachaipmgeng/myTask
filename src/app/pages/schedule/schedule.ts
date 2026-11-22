@@ -11,29 +11,12 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { CalendarModule } from '@syncfusion/ej2-angular-calendars';
-import {
-  CategoryService,
-  ChartComponent,
-  ChartModule,
-  LegendService,
-  StackingColumnSeriesService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import {
   ActionEventArgs,
-  AgendaService,
   EventClickArgs,
   EventRenderedArgs,
   NavigatingEventArgs,
   PopupOpenEventArgs,
-  ScheduleComponent,
-  ScheduleModule,
-  TimelineMonthService,
-  TimelineViewsService,
   ToolbarActionArgs,
 } from '@syncfusion/ej2-angular-schedule';
 import { ItemModel } from '@syncfusion/ej2-navigations';
@@ -44,11 +27,29 @@ import { ThemeService } from '../../core/theme.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { Person, Ticket, WorkflowStatus, normalizeTrack, trackDisplayLabel } from '../../core/models';
 import { workflowStatusOf } from '../../core/workflow';
-import { BadgeTone, FilterChipOption, FilterChipsComponent, workflowStatusToneMap } from '../../shared/ui';
-import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  BadgeTone,
+  FilterChipOption,
+  FilterChipsComponent,
+  FormFieldComponent,
+  LivePulseComponent,
+  PageHeadComponent,
+  PersonAvatarComponent,
+  SectionCardComponent,
+  SfCalendarComponent,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
+  SfDialogComponent,
+  SfDropdownComponent,
+  SfMessageComponent,
+  SfScheduleComponent,
+  SfScheduleOptions,
+  SfScheduleResource,
+  StaggerDirective,
+  StatusBadgeComponent,
+  workflowStatusToneMap,
+} from '../../shared/ui';
 import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
 interface LoadChartRow {
@@ -120,28 +121,22 @@ const COLORS = [
   selector: 'app-schedule',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    ScheduleModule,
-    CalendarModule,
-    ChartModule,
-    DialogModule,
-    DropDownListModule,
     ButtonModule,
-    MessageModule,
     RouterLink,
     PageHeadComponent,
+    PersonAvatarComponent,
+    LivePulseComponent,
+    StaggerDirective,
     SectionCardComponent,
     FormFieldComponent,
     FilterChipsComponent,
     StatusBadgeComponent,
-  ],
-  providers: [
-    TimelineViewsService,
-    TimelineMonthService,
-    AgendaService,
-    CategoryService,
-    StackingColumnSeriesService,
-    LegendService,
-    TooltipService,
+    SfCalendarComponent,
+    SfChartComponent,
+    SfDialogComponent,
+    SfDropdownComponent,
+    SfMessageComponent,
+    SfScheduleComponent,
   ],
   templateUrl: './schedule.html',
   styleUrl: './schedule.scss',
@@ -169,16 +164,36 @@ export class SchedulePage {
     }
     return this.workspace.applyToTickets(tickets);
   });
-  private readonly board = viewChild<ScheduleComponent>('board');
+  private readonly board = viewChild<SfScheduleComponent>('board');
   private readonly boardHost = viewChild<ElementRef<HTMLElement>>('boardHost');
-  private readonly loadChartDialog = viewChild<DialogComponent>('loadChartDialog');
-  private readonly loadChart = viewChild<ChartComponent>('loadChart');
+  private readonly loadChartDialog = viewChild<SfDialogComponent>('loadChartDialog');
+  private readonly loadChart = viewChild<SfChartComponent>('loadChart');
   private pinned = false;
   private hostObserver: ResizeObserver | null = null;
 
-  protected readonly fields = { text: 'text', value: 'value' };
-  protected readonly group = { resources: ['People'] };
-  protected readonly chartDialogAnimation = { effect: 'Fade' as const };
+  protected readonly scheduleOptions = computed<SfScheduleOptions>(() => ({
+    id: 'team-schedule',
+    cssClass: 'team-schedule',
+    readonly: true,
+    currentView: 'TimelineMonth',
+    views: ['TimelineMonth', 'TimelineWeek', 'Agenda'],
+    firstDayOfWeek: 1,
+    group: { resources: ['People'] },
+    rowAutoHeight: true,
+    height: this.scheduleHeight(),
+  }));
+  protected readonly scheduleResources = computed<SfScheduleResource[]>(() => [
+    {
+      field: 'OwnerId',
+      title: 'คน',
+      name: 'People',
+      dataSource: this.boardModel().people,
+      textField: 'Text',
+      idField: 'Id',
+      colorField: 'Color',
+    },
+  ]);
+
   protected readonly chartPrimaryX = {
     valueType: 'Category' as const,
     majorGridLines: { width: 0 },
@@ -191,10 +206,21 @@ export class SchedulePage {
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
-  protected readonly chartTooltip = { enable: true, shared: true };
-  protected readonly chartLegend = { visible: true, position: 'Bottom' as const };
-  protected readonly chartArea = { border: { width: 0 } };
-  protected readonly chartCorner = { topLeft: 4, topRight: 4 };
+  protected readonly loadChartSeries = computed<SfChartSeriesConfig[]>(() => {
+    const rows = this.loadChartRows();
+    return [
+      { type: 'StackingColumn', dataSource: rows, xName: 'name', yName: 'onTrack', name: 'ตรงสัปดาห์', fill: '#54b054', columnWidth: 0.55 },
+      { type: 'StackingColumn', dataSource: rows, xName: 'name', yName: 'slipped', name: 'หลุดสัปดาห์', fill: '#d83b01', columnWidth: 0.55, cornerRadius: { topLeft: 4, topRight: 4 } },
+    ];
+  });
+  protected readonly loadChartOptions: SfChartOptions = {
+    height: '360px',
+    enableAnimation: false,
+    exportable: true,
+    exportFileName: 'schedule-load-chart',
+    legend: { visible: true, position: 'Bottom' },
+    tooltip: { enable: true, shared: true },
+  };
   /** สายงานจาก Global Filter */
   protected readonly track = computed<TrackFilter>(() => this.workspace.track());
   /** All = ทุกคนในสายที่กรอง · หรือ person.id รายคน */
@@ -287,7 +313,7 @@ export class SchedulePage {
   constructor() {
     effect(() => {
       const ready = this.scorecard.apiReady();
-      const board = this.board();
+      const board = this.board()?.instance();
       const events = buildTeamSchedule(this.scopedPeople(), this.scopedTickets(), 'All', 'All').events;
       if (!ready || !board || this.pinned) {
         return;
@@ -309,13 +335,13 @@ export class SchedulePage {
     // เปลี่ยนสาย/คนแล้ว refresh resource rows ของ Schedule
     effect(() => {
       const model = this.boardModel();
-      const board = this.board();
+      const board = this.board()?.instance();
       if (!board) {
         return;
       }
       void model.shown;
       queueMicrotask(() => {
-        const live = this.board();
+        const live = this.board()?.instance();
         if (!live) {
           return;
         }
@@ -342,8 +368,8 @@ export class SchedulePage {
     }
   });
 
-  protected setPerson(event: { value?: string | null }): void {
-    const value = event.value?.trim() || 'All';
+  protected setPerson(raw: string): void {
+    const value = raw?.trim() || 'All';
     this.personId.set(value);
   }
 
@@ -353,7 +379,7 @@ export class SchedulePage {
 
   protected onScheduleCreated(): void {
     this.syncScheduleHeight();
-    queueMicrotask(() => this.board()?.refresh());
+    queueMicrotask(() => this.board()?.instance()?.refresh());
   }
 
   protected onActionBegin(args: ActionEventArgs): void {
@@ -375,11 +401,11 @@ export class SchedulePage {
   }
 
   protected openLoadChart(): void {
-    this.loadChartDialog()?.show();
+    this.loadChartDialog()?.open();
   }
 
   protected onLoadChartDialogOpen(): void {
-    queueMicrotask(() => this.loadChart()?.refresh());
+    queueMicrotask(() => this.loadChart()?.instance()?.refresh());
   }
 
   private bindBoardHostResize(host: HTMLElement): void {
@@ -404,7 +430,7 @@ export class SchedulePage {
       return;
     }
     this.scheduleHeight.set(value);
-    queueMicrotask(() => this.board()?.refresh());
+    queueMicrotask(() => this.board()?.instance()?.refresh());
   }
 
   protected onCalendarChange(event: { value?: Date | null }): void {
@@ -436,14 +462,14 @@ export class SchedulePage {
       return;
     }
     this.selectedDay.set(day);
-    const board = this.board();
+    const board = this.board()?.instance();
     if (!board) {
       return;
     }
     board.selectedDate = day;
     // Timeline Week + resources: หลังเปลี่ยนวันที่ ต้อง refreshEvents ไม่งั้นแถบงานว่าง
     setTimeout(() => {
-      const live = this.board();
+      const live = this.board()?.instance();
       if (!live) {
         return;
       }

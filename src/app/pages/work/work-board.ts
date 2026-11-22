@@ -1,12 +1,5 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
-import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
-import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
-import { DropDownListModule, MultiSelectModule } from '@syncfusion/ej2-angular-dropdowns';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { KanbanModule } from '@syncfusion/ej2-angular-kanban';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { TimelineAllModule, TimelineModule } from '@syncfusion/ej2-angular-layouts';
-import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { DragEventArgs, SwimlaneSettingsModel } from '@syncfusion/ej2-kanban';
 import { effectiveRole } from '../../core/admin-settings';
 import { buildDeliveryTimeline } from '../../core/delivery-timeline';
@@ -14,11 +7,22 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
-import { HeroBandComponent } from '../../shared/ui/hero-band/hero-band';
-import { ConfirmDialogComponent } from '../../shared/ui/confirm-dialog/confirm-dialog';
-import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { PersonAvatarComponent } from '../../shared/ui/person-avatar/person-avatar';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import {
+  ConfirmDialogComponent,
+  FormFieldComponent,
+  HeroBandComponent,
+  PersonAvatarComponent,
+  SectionCardComponent,
+  SfCheckboxComponent,
+  SfDatePickerComponent,
+  SfDialogComponent,
+  SfDropdownComponent,
+  SfKanbanComponent,
+  SfMessageComponent,
+  SfMultiSelectComponent,
+  SfTextBoxComponent,
+  SfTimelineComponent,
+} from '../../shared/ui';
 import {
   BUG_CAUSES,
   BugCause,
@@ -55,22 +59,21 @@ type SwimlaneMode = 'none' | 'assignee' | 'track' | 'project';
   selector: 'app-work-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    KanbanModule,
-    DialogModule,
-    DropDownListModule,
-    MultiSelectModule,
-    DatePickerModule,
-    TextBoxModule,
     ButtonModule,
-    CheckBoxModule,
-    MessageModule,
-    TimelineModule,
-    TimelineAllModule,
     HeroBandComponent,
     ConfirmDialogComponent,
     FormFieldComponent,
     PersonAvatarComponent,
     SectionCardComponent,
+    SfCheckboxComponent,
+    SfDatePickerComponent,
+    SfDialogComponent,
+    SfDropdownComponent,
+    SfKanbanComponent,
+    SfMessageComponent,
+    SfMultiSelectComponent,
+    SfTextBoxComponent,
+    SfTimelineComponent,
   ],
   templateUrl: './work-board.html',
 })
@@ -84,8 +87,8 @@ export class WorkBoard {
   private readonly boardRevision = signal(0);
 
   @ViewChild('blockDialog') private blockDialog?: ConfirmDialogComponent;
-  @ViewChild('editDialog') private editDialog?: DialogComponent;
-  @ViewChild('mdShiftDialog') private mdShiftDialog?: DialogComponent;
+  @ViewChild('editDialog') private editDialog?: SfDialogComponent;
+  @ViewChild('mdShiftDialog') private mdShiftDialog?: SfDialogComponent;
 
   // MD-DIRECT Auto-Shift Dialog State
   protected readonly pendingMdTicket = signal<Ticket | null>(null);
@@ -238,6 +241,15 @@ export class WorkBoard {
     }
     return buildDeliveryTimeline(ticket, this.scorecard.stageLogs());
   });
+  protected readonly deliveryTimelineItems = computed(() =>
+    this.deliveryTimeline().map((step) => ({
+      content: step.title,
+      oppositeContent: step.atLabel,
+      dotCss: `e-icons ${step.dotCss}`,
+      cssClass: `delivery-timeline__item is-${step.tone}`,
+      disabled: step.tone === 'pending',
+    })),
+  );
 
   constructor() {
     effect(() => {
@@ -245,8 +257,7 @@ export class WorkBoard {
     });
   }
 
-  protected setSwimlane(event: { value?: string | null }): void {
-    const val = event.value;
+  protected setSwimlane(val: string): void {
     if (val === 'assignee' && this.isMine()) {
       this.swimlaneMode.set('none');
       return;
@@ -262,16 +273,16 @@ export class WorkBoard {
     }
   }
 
-  protected onCardClick(args: { data?: { id?: string } }): void {
-    const id = args.data?.id;
-    if (id) {
+  protected onCardClick(args: { data?: Record<string, any> }): void {
+    const id = args.data?.['id'];
+    if (typeof id === 'string' && id) {
       this.selectedId.set(id);
-      this.editDialog?.show();
+      this.editDialog?.open();
     }
   }
 
   protected closeEditDialog(): void {
-    this.editDialog?.hide();
+    this.editDialog?.close();
   }
 
   protected onDialogOpen(args: { cancel?: boolean }): void {
@@ -335,7 +346,7 @@ export class WorkBoard {
         this.conflictingWipTickets.set(activeWips);
         const shiftDays = Math.max(1, Math.ceil(result.ticket.estimateMd || 1));
         this.mdShiftDays.set(shiftDays);
-        this.mdShiftDialog?.show();
+        this.mdShiftDialog?.open();
       }
     }
   }
@@ -353,13 +364,13 @@ export class WorkBoard {
         }
       });
     }
-    this.mdShiftDialog?.hide();
+    this.mdShiftDialog?.close();
     this.pendingMdTicket.set(null);
     this.conflictingWipTickets.set([]);
   }
 
   protected skipMdShift(): void {
-    this.mdShiftDialog?.hide();
+    this.mdShiftDialog?.close();
     this.pendingMdTicket.set(null);
     this.conflictingWipTickets.set([]);
     this.notice.info('ดำเนินการต่อแบบทำคู่ขนาน (ไม่พักงานเดิม)');
@@ -373,18 +384,17 @@ export class WorkBoard {
     });
   }
 
-  protected setDiscipline(event: { value?: string | null }): void {
+  protected setDiscipline(val: string): void {
     this.discipline.set(
-      event.value && this.disciplineOptions.some((option) => option.value === event.value)
-        ? (event.value as Discipline | '')
+      val && this.disciplineOptions.some((option) => option.value === val)
+        ? (val as Discipline | '')
         : '',
     );
   }
 
-  protected setCategory(event: { value?: string | null }): void {
-    const value = event.value;
+  protected setCategory(val: string): void {
     const next =
-      value && this.categoryOptions.some((option) => option.value === value) ? (value as WorkCategory | '') : '';
+      val && this.categoryOptions.some((option) => option.value === val) ? (val as WorkCategory | '') : '';
     this.workCategory.set(next);
     if (next !== 'R&D-PoC') {
       this.pocResult.set('');
@@ -394,28 +404,26 @@ export class WorkBoard {
     }
   }
 
-  protected setStory(event: { value?: string | null }): void {
-    this.storyValue.set(event.value ?? '');
+  protected setStory(val: string): void {
+    this.storyValue.set(val ?? '');
   }
 
-  protected setDue(event: { value?: Date | null }): void {
+  protected setDueIso(iso: string): void {
     if (!this.dueLocked()) {
-      this.due.set(event.value ?? null);
+      this.due.set(toDate(iso));
     }
   }
 
-  protected setMr(event: { value?: string | null }): void {
-    this.mrLink.set(event.value ?? '');
+  protected setMr(val: string): void {
+    this.mrLink.set(val ?? '');
   }
 
-  protected setPoc(event: { value?: string | null }): void {
-    const value = event.value ?? '';
-    this.pocResult.set(this.pocOptions.some((option) => option.value === value) ? (value as PocResult | '') : '');
+  protected setPoc(val: string): void {
+    this.pocResult.set(this.pocOptions.some((option) => option.value === val) ? (val as PocResult | '') : '');
   }
 
-  protected setCause(event: { value?: string | null }): void {
-    const value = event.value ?? '';
-    this.bugCause.set(this.causeOptions.some((option) => option.value === value) ? (value as BugCause | '') : '');
+  protected setCause(val: string): void {
+    this.bugCause.set(this.causeOptions.some((option) => option.value === val) ? (val as BugCause | '') : '');
   }
 
   protected saveFields(): void {
@@ -457,7 +465,7 @@ export class WorkBoard {
       });
     }
 
-    this.editDialog?.hide();
+    this.editDialog?.close();
     this.notice.success(`บันทึกฟิลด์ ${ticket.id} แล้ว`);
   }
 

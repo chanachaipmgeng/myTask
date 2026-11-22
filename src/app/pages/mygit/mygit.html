@@ -22,7 +22,7 @@
   </app-page-head>
 
   <app-section-card
-    title="คิวรอรีวิว (Open MRs)"
+    title="คิวรอรีวิว MR"
     [subtitle]="
       openMrSource() === 'live'
         ? 'MR ที่เปิดค้างจาก mygitplus พร้อมสถานะ CI'
@@ -32,49 +32,41 @@
     badgeTone="warning"
   >
     <div actions class="flex flex-wrap items-center gap-3">
-      <ejs-checkbox
+      <app-sf-checkbox
         label="รอฉันรีวิว (Assigned to Me)"
         [checked]="assignedToMe()"
-        (change)="onAssignedFilter(!!$event.checked)"
-      ></ejs-checkbox>
+        (checkedChange)="onAssignedFilter($event)"
+      />
       <button ejs-button cssClass="e-outline e-small" type="button" [disabled]="loadingOpenMrs()" (click)="loadOpenMrs()">
         {{ loadingOpenMrs() ? 'กำลังโหลด…' : 'รีเฟรชคิว' }}
       </button>
     </div>
-    <ejs-grid [dataSource]="openMrs()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
-      <e-columns>
-        <e-column field="title" headerText="Merge Request" width="260"></e-column>
-        <e-column field="ticketId" headerText="ใบงาน" width="120">
-          <ng-template #template let-data>
-            @if (data.ticketId) {
-              <button ejs-button cssClass="e-link e-small" type="button" (click)="openTicket(data.ticketId)">
-                {{ data.ticketId }}
-              </button>
-            } @else {
-              —
-            }
-          </ng-template>
-        </e-column>
-        <e-column field="ageHours" headerText="ค้าง (ชม.)" width="100" textAlign="Right"></e-column>
-        <e-column field="ciStatus" headerText="CI" width="110">
-          <ng-template #template let-data>
-            <app-status-badge [label]="data.ciStatus" [tone]="ciTone(data.ciStatus)"></app-status-badge>
-          </ng-template>
-        </e-column>
-        <e-column field="reviewers" headerText="Reviewers" width="160">
-          <ng-template #template let-data>
-            {{ (data.reviewers || []).join(', ') || '—' }}
-          </ng-template>
-        </e-column>
-        <e-column field="webUrl" headerText="ลิงก์" width="180">
-          <ng-template #template let-data>
-            @if (data.webUrl) {
-              <a [href]="data.webUrl" target="_blank" rel="noopener">เปิด MR</a>
-            }
-          </ng-template>
-        </e-column>
-      </e-columns>
-    </ejs-grid>
+    <ng-template #mrTicketTpl let-data>
+      @if (data.ticketId) {
+        <button ejs-button cssClass="e-link e-small" type="button" (click)="openTicket(data.ticketId)">
+          {{ data.ticketId }}
+        </button>
+      } @else {
+        —
+      }
+    </ng-template>
+    <ng-template #mrCiTpl let-data>
+      <app-status-badge [label]="data.ciStatus" [tone]="ciTone(data.ciStatus)"></app-status-badge>
+    </ng-template>
+    <ng-template #mrRevTpl let-data>
+      {{ (data.reviewers || []).join(', ') || '—' }}
+    </ng-template>
+    <ng-template #mrUrlTpl let-data>
+      @if (data.webUrl) {
+        <a [href]="data.webUrl" target="_blank" rel="noopener">เปิด MR</a>
+      }
+    </ng-template>
+    <app-sf-grid
+      [data]="openMrs()"
+      [columns]="openMrColumns"
+      [options]="openMrGridOptions"
+      [cellTemplates]="{ ticketId: mrTicketTpl, ciStatus: mrCiTpl, reviewers: mrRevTpl, webUrl: mrUrlTpl }"
+    />
   </app-section-card>
 
   @if (isMine) {
@@ -84,29 +76,18 @@
       [badge]="myTicketsWithMr().length + ' ใบ'"
       badgeTone="info"
     >
-      <ejs-grid
-        [dataSource]="myTicketsWithMr()"
-        [allowPaging]="true"
-        [allowResizing]="true"
-        [pageSettings]="pageSettings"
-        height="240"
-      >
-        <e-columns>
-          <e-column field="id" headerText="รหัสใบงาน" width="120"></e-column>
-          <e-column field="title" headerText="ชื่องาน / โมดูล" width="220"></e-column>
-          <e-column field="status" headerText="สถานะงาน" width="140"></e-column>
-          <e-column field="mrLink" headerText="ลิงก์ Merge Request" width="260">
-            <ng-template #template let-data>
-              <app-status-badge
-                [label]="data.mrLink"
-                [tone]="data.hasMr ? 'success' : 'warning'"
-              ></app-status-badge>
-            </ng-template>
-          </e-column>
-          <e-column field="reviewRounds" headerText="รอบรีวิว" width="85" textAlign="Right"></e-column>
-          <e-column field="reopenCount" headerText="Reopen" width="85" textAlign="Right"></e-column>
-        </e-columns>
-      </ejs-grid>
+      <ng-template #myMrLinkTpl let-data>
+        <app-status-badge
+          [label]="data.mrLink"
+          [tone]="data.hasMr ? 'success' : 'warning'"
+        ></app-status-badge>
+      </ng-template>
+      <app-sf-grid
+        [data]="myTicketsWithMr()"
+        [columns]="myTicketsMrColumns"
+        [options]="myTicketsMrGridOptions"
+        [cellTemplates]="{ mrLink: myMrLinkTpl }"
+      />
     </app-section-card>
   }
 
@@ -124,14 +105,14 @@
     </div>
 
     @if (message()) {
-      <ejs-message [content]="message()" severity="Success" variant="Outlined"></ejs-message>
+      <app-sf-message [content]="message()" severity="Success" />
     }
     @if (error()) {
-      <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
+      <app-sf-message [content]="error()" severity="Error" />
     }
 
     @if (!synced()) {
-      <ejs-message content="ยังไม่ได้ซิงก์ กดปุ่มด้านบนเพื่ออ่านไฟล์ตัวอย่างในเครื่อง หรือดึงจาก GitLab API" severity="Info" variant="Outlined"></ejs-message>
+      <app-sf-message content="ยังไม่ได้ซิงก์ กดปุ่มด้านบนเพื่ออ่านไฟล์ตัวอย่างในเครื่อง หรือดึงจาก GitLab API" severity="Info" />
     }
   </app-section-card>
 
@@ -142,19 +123,11 @@
       [badge]="matched().length + ' รายการ'"
       badgeTone="success"
     >
-      <ejs-grid [dataSource]="matched()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="220">
-        <e-columns>
-          <e-column field="sha" headerText="Commit / MR" width="120"></e-column>
-          <e-column field="ticketId" headerText="ใบงาน" width="140"></e-column>
-          <e-column field="reviewRounds" headerText="รอบรีวิว" width="110" textAlign="Right"></e-column>
-          <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right"></e-column>
-          <e-column field="reviewBefore" headerText="คะแนนรีวิวก่อน" width="140" textAlign="Right"></e-column>
-          <e-column field="reviewAfter" headerText="คะแนนรีวิวหลัง" width="140" textAlign="Right"></e-column>
-          <e-column field="mrLink" headerText="ลิงก์ MR" width="220"></e-column>
-          <e-column field="mergedAt" headerText="เวลา merge" width="190"></e-column>
-          <e-column field="message" headerText="ข้อความ" width="260"></e-column>
-        </e-columns>
-      </ejs-grid>
+      <app-sf-grid
+        [data]="matched()"
+        [columns]="matchedColumns"
+        [options]="matchedGridOptions"
+      />
     </app-section-card>
 
     <app-section-card
@@ -163,14 +136,11 @@
       [badge]="unmatched().length + ' รายการ'"
       badgeTone="warning"
     >
-      <ejs-grid [dataSource]="unmatched()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="180">
-        <e-columns>
-          <e-column field="sha" headerText="Commit / MR" width="120"></e-column>
-          <e-column field="ticketId" headerText="รหัสที่อ้าง" width="140"></e-column>
-          <e-column field="mergedAt" headerText="เวลา merge" width="200"></e-column>
-          <e-column field="message" headerText="ข้อความ" width="320"></e-column>
-        </e-columns>
-      </ejs-grid>
+      <app-sf-grid
+        [data]="unmatched()"
+        [columns]="unmatchedColumns"
+        [options]="unmatchedGridOptions"
+      />
     </app-section-card>
   }
 </section>

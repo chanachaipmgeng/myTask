@@ -1,58 +1,115 @@
 <section class="page person-ws flex flex-col gap-4">
-  <app-page-head
-    title="ทีม · Workspace คน"
-    [avatarPersonId]="selectedPersonId()"
-    description="เลือกลูกทีมด้านซ้าย แล้วดูงาน คะแนน และสรุปของคนนั้น — กรองทีมได้จากแถบ Global Filter"
-    [metrics]="[
-      { label: 'ในรายการ', value: filteredPeople().length },
-      { label: 'ใบเปิด (คนที่เลือก)', value: openTickets().length },
-    ]"
-  >
-    <div actions class="flex flex-wrap gap-2">
-      <a ejs-button cssClass="e-outline e-small" routerLink="/org/teams" queryParamsHandling="preserve">ทีมการ์ด</a>
-      @if (selectedPersonId()) {
-        <button ejs-button cssClass="e-primary e-small" type="button" (click)="openFullProfile()">โปรไฟล์เต็ม</button>
-      }
-    </div>
-  </app-page-head>
+  @if (!selectedPerson()) {
+    <!-- Stage 1: Employee Directory Cards -->
+    <app-page-head
+      title="ทีมและพนักงาน"
+      description="เลือกการ์ดพนักงานเพื่อเปิด Workspace งาน คะแนน ปฏิทิน และบทวิเคราะห์รายบุคคล"
+      [metrics]="[
+        { label: 'พนักงานในรายการ', value: personCards().length, unit: 'คน' },
+      ]"
+    >
+      <div actions class="flex flex-wrap items-center gap-2">
+        <app-sf-textbox
+          placeholder="ค้นหาชื่อหรือตำแหน่ง..."
+          [value]="query()"
+          [clearButton]="true"
+          width="220px"
+          (valueInput)="query.set($event)"
+          (valueChange)="query.set($event)"
+        />
+        <app-filter-chips
+          [options]="trackChipOptions"
+          [value]="trackFilter()"
+          (valueChange)="setTrackFilter($event)"
+        />
+        <a ejs-button cssClass="e-outline e-small" routerLink="/org/teams" queryParamsHandling="preserve">ดูตามแผนก</a>
+      </div>
+    </app-page-head>
 
-  <div class="person-ws__layout">
-    <!-- Left: people list -->
-    <aside class="person-ws__list" aria-label="รายชื่อในทีม">
-      <app-form-field label="ค้นหา" variant="filter">
-        <ejs-textbox placeholder="ชื่อหรือบทบาท" (change)="setQuery($event)" width="100%"></ejs-textbox>
-      </app-form-field>
-      <div class="person-ws__list-scroll" role="listbox">
-        @for (person of filteredPeople(); track person.id) {
+    @if (personCards().length === 0) {
+      <app-section-card [showHead]="false">
+        <p class="person-ws__empty m-0 py-8 text-center">ไม่พบพนักงานตามคำค้นหาหรือสายงานที่เลือก</p>
+      </app-section-card>
+    } @else {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" appStagger [staggerStep]="40">
+        @for (card of personCards(); track card.person.id) {
           <button
             type="button"
-            class="person-ws__row"
-            role="option"
-            [class.is-active]="selectedPersonId() === person.id"
-            [attr.aria-selected]="selectedPersonId() === person.id"
-            (click)="selectPerson(person.id)"
+            class="person-dir-card"
+            (click)="selectPerson(card.person.id)"
           >
-            <span class="person-ws__avatar" aria-hidden="true">
-              @if (showAvatar(person)) {
-                <img [src]="person.avatarUrl!" [alt]="" loading="lazy" referrerpolicy="no-referrer" (error)="onAvatarError(person.id)" />
-              } @else {
-                <span>{{ initials(person) }}</span>
-              }
-            </span>
-            <span class="person-ws__row-meta">
-              <span class="person-ws__row-name">{{ person.nickname }}</span>
-              <span class="person-ws__row-sub">{{ person.jobTitle || person.role }} · {{ trackLabel(person) }}</span>
-            </span>
+            <div class="person-dir-card__top">
+              <app-person-avatar [personId]="card.person.id" [name]="card.person.nickname" size="lg" />
+              <div class="person-dir-card__meta">
+                <span class="person-dir-card__name">{{ card.person.nickname }}</span>
+                <span class="person-dir-card__role">{{ card.person.jobTitle || card.person.role }}</span>
+                <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                  <app-status-badge [label]="card.trackLabel" [tone]="card.person.track === 'RD' ? 'info' : 'primary'" />
+                  <app-status-badge [label]="card.person.level" tone="secondary" />
+                </div>
+              </div>
+            </div>
+
+            <div class="person-dir-card__kpi">
+              <div class="person-dir-card__kpi-row">
+                <span class="text-xs text-muted">ดัชนีพัฒนาการ</span>
+                <span
+                  class="text-sm font-bold tabular-nums"
+                  [class.text-emerald-600]="card.onTarget"
+                  [class.text-amber-600]="!card.onTarget"
+                >
+                  {{ card.indexLabel }}
+                </span>
+              </div>
+              <div class="person-dir-card__bar">
+                <span [style.width.%]="card.index > 100 ? 100 : card.index"></span>
+              </div>
+            </div>
+
+            <div class="person-dir-card__footer">
+              <span>ใบเปิด <strong>{{ card.openCount }}</strong></span>
+              <span>ปิดแล้ว <strong>{{ card.closedCount }}</strong></span>
+              <span class="person-dir-card__cta">เปิด Workspace →</span>
+            </div>
           </button>
-        } @empty {
-          <p class="person-ws__empty">ไม่พบคนในขอบเขตทีม/ตัวกรองปัจจุบัน</p>
         }
       </div>
-    </aside>
+    }
+  } @else if (selectedPerson(); as person) {
+    <!-- Stage 2: Person Workspace with Quick Switcher -->
+    <app-page-head
+      [title]="'Workspace · ' + person.nickname"
+      [avatarPersonId]="person.id"
+      [description]="(person.jobTitle || person.role) + ' · ' + trackLabel(person)"
+      [metrics]="[
+        { label: 'ดัชนีพัฒนาการ', value: (personRow()?.index ?? 0).toFixed(1), hint: 'เป้า ' + (personRow()?.target ?? 75) },
+        { label: 'ใบเปิด', value: openTickets().length, unit: 'ใบ' },
+        { label: 'ปิดแล้ว', value: closedTickets().length, unit: 'ใบ' },
+      ]"
+    >
+      <div actions class="flex flex-wrap items-center gap-2">
+        <button
+          ejs-button
+          cssClass="e-outline e-small"
+          iconCss="e-icons e-chevron-left"
+          type="button"
+          (click)="clearSelectedPerson()"
+        >
+          การ์ดทุกคน
+        </button>
+        <app-sf-dropdown
+          [items]="personSwitcherOptions()"
+          [value]="person.id"
+          [options]="{ allowFiltering: true, filterBarPlaceholder: 'พิมพ์ชื่อเพื่อสลับคน...', width: '250px' }"
+          (valueChange)="selectPerson($event)"
+        />
+        <button ejs-button cssClass="e-primary e-small" type="button" (click)="openFullProfile()">โปรไฟล์เต็ม</button>
+      </div>
+    </app-page-head>
 
-    <!-- Center: tabs + content -->
-    <div class="person-ws__main">
-      @if (selectedPerson(); as person) {
+    <div class="person-ws__detail-layout">
+      <!-- Main: tabs + content -->
+      <div class="person-ws__main">
         <nav class="hub-underline-tabs" role="tablist" aria-label="มุมมองคน">
           @for (tab of tabs; track tab.id) {
             <button
@@ -70,16 +127,16 @@
         </nav>
 
         @if (activeTab() === 'overview') {
-          <div class="person-ws__kpi-grid">
+          <div class="person-ws__kpi-grid" appStagger [staggerStep]="45">
             <app-kpi-stat
               title="ดัชนีพัฒนาการ"
-              [value]="personRow()?.index ?? 0"
+              [value]="(personRow()?.index ?? 0).toFixed(1)"
               [progress]="personRow()?.index ?? 0"
               layout="stack"
             ></app-kpi-stat>
             <app-kpi-stat
               title="แผนส่งมอบ"
-              [value]="(personRow()?.planRawPct ?? 0) + '%'"
+              [value]="(personRow()?.planRawPct ?? 0).toFixed(1) + '%'"
               layout="stack"
             ></app-kpi-stat>
             <app-kpi-stat title="ใบเปิด" [value]="openTickets().length" layout="stack"></app-kpi-stat>
@@ -105,7 +162,7 @@
 
         @if (activeTab() === 'work') {
           <app-section-card title="งานของคนนี้" subtitle="กำลังเปิดรายการงานที่กรองตามคนนี้">
-            <p class="person-ws__hint">ใบเปิด {{ openTickets().length }} ใบ · กดเพื่อไปฮับงานพร้อม person ใน URL</p>
+            <p class="person-ws__hint">ใบเปิด {{ openTickets().length }} ใบ · กดเพื่อไปฮับงานพร้อมตัวกรองคนนี้</p>
             <div class="flex flex-wrap gap-2">
               <button ejs-button cssClass="e-primary" type="button" (click)="openWorkList()">ไปรายการงาน</button>
               <a ejs-button cssClass="e-outline" routerLink="/work/board" queryParamsHandling="preserve">บอร์ดทีม</a>
@@ -118,40 +175,28 @@
                   <span>{{ ticket.title || ticket.module }}</span>
                   <span class="person-ws__muted">{{ ticket.estimateMd }} MD</span>
                 </li>
+              } @empty {
+                <li class="person-ws__empty">ไม่มีใบเปิด</li>
               }
             </ul>
           </app-section-card>
         }
 
         @if (activeTab() === 'tickets') {
-          <app-section-card title="คะแนนใบงาน" subtitle="สรุปรายใบของคนนี้">
-            <ul class="person-ws__ticket-list">
-              @for (ticket of personTickets().slice(0, 20); track ticket.id) {
-                <li>
-                  <span class="person-ws__ticket-id">{{ ticket.id }}</span>
-                  <span>{{ ticket.title || ticket.module }}</span>
-                  <span class="person-ws__muted">{{ ticket.closed ? 'ปิด' : 'เปิด' }} · {{ ticket.actualMd }}/{{ ticket.estimateMd }} MD</span>
-                </li>
-              } @empty {
-                <li class="person-ws__empty">ยังไม่มีใบงาน</li>
-              }
-            </ul>
-            <a ejs-button cssClass="e-outline e-small" routerLink="/quality/tickets" queryParamsHandling="preserve">ตารางคะแนนทีม</a>
+          <app-section-card title="คะแนนใบงาน" subtitle="ใบงานของคนนี้ทั้งหมด">
+            <p class="person-ws__hint">ปิดแล้ว {{ closedTickets().length }} ใบ · เปิด {{ openTickets().length }} ใบ</p>
+            <div class="flex flex-wrap gap-2">
+              <a ejs-button cssClass="e-primary" routerLink="/quality/tickets" queryParamsHandling="preserve">เปิดตารางใบงาน</a>
+              <button ejs-button cssClass="e-outline" type="button" (click)="openFullProfile()">แดชบอร์ดคะแนนเต็ม</button>
+            </div>
           </app-section-card>
         }
 
         @if (activeTab() === 'schedule' || activeTab() === 'analytics') {
           <app-section-card
-            [title]="activeTab() === 'schedule' ? 'ปฏิทิน / เวลา' : 'วิเคราะห์รายบุคคล'"
-            subtitle="รายละเอียดเต็มอยู่บนโปรไฟล์พนักงาน"
+            [title]="activeTab() === 'schedule' ? 'ปฏิทินและเวลาของคนนี้' : 'วิเคราะห์แนวโน้มของคนนี้'"
+            subtitle="เปิดหน้าเต็มเพื่อดูกราฟและรายละเอียดทั้งหมด"
           >
-            <p class="person-ws__hint">
-              @if (activeTab() === 'analytics') {
-                ดัชนี {{ personRow()?.index ?? '—' }} · เป้า {{ personRow()?.target ?? 80 }}
-              } @else {
-                ปฏิทินทีมและกราฟโหลดงานอยู่บนโปรไฟล์เต็ม
-              }
-            </p>
             <div class="flex flex-wrap gap-2">
               <button ejs-button cssClass="e-primary" type="button" (click)="openFullProfile()">โปรไฟล์เต็ม</button>
               @if (activeTab() === 'schedule') {
@@ -160,26 +205,14 @@
             </div>
           </app-section-card>
         }
-      } @else {
-        <app-section-card title="ยังไม่ได้เลือกคน" subtitle="เลือกรายชื่อด้านซ้าย">
-          <p class="person-ws__empty">หรือปรับตัวกรองทีมบนแถบ Global Filter</p>
-        </app-section-card>
-      }
-    </div>
+      </div>
 
-    <!-- Right: profile card -->
-    <aside class="person-ws__profile" aria-label="โปรไฟล์สั้น">
-      @if (selectedPerson(); as person) {
+      <!-- Right: profile card -->
+      <aside class="person-ws__profile" aria-label="โปรไฟล์สั้น">
         <app-section-card [showHead]="false" variant="nested">
           <div class="person-ws__profile-head">
-            <span class="person-ws__avatar person-ws__avatar--lg" aria-hidden="true">
-              @if (showAvatar(person)) {
-                <img [src]="person.avatarUrl!" [alt]="" loading="lazy" referrerpolicy="no-referrer" (error)="onAvatarError(person.id)" />
-              } @else {
-                <span>{{ initials(person) }}</span>
-              }
-            </span>
-            <div>
+            <app-person-avatar [personId]="person.id" [name]="person.fullName || person.nickname" size="lg" />
+            <div class="min-w-0">
               <h2 class="person-ws__profile-name">{{ person.fullName || person.nickname }}</h2>
               <p class="person-ws__profile-role">{{ person.jobTitle || person.role }} · {{ trackLabel(person) }}</p>
             </div>
@@ -194,36 +227,30 @@
             <div>
               <div class="person-ws__bar-label">
                 <span>ดัชนี vs เป้า</span>
-                <span>{{ personRow()?.index ?? 0 }} / {{ personRow()?.target ?? 80 }}</span>
+                <span class="tabular-nums font-semibold">{{ (personRow()?.index ?? 0).toFixed(1) }} / {{ personRow()?.target ?? 80 }}</span>
               </div>
-              <ejs-progressbar
+              <app-sf-progress
                 id="pw-index"
-                type="Linear"
                 height="10"
                 [value]="personRow()?.index ?? 0"
-                [maximum]="100"
-                trackThickness="10"
-                progressThickness="10"
-              ></ejs-progressbar>
+                [options]="{ trackThickness: 10, progressThickness: 10, tone: 'auto' }"
+              />
             </div>
             <div>
               <div class="person-ws__bar-label">
                 <span>โควตาสัปดาห์ (MD)</span>
                 <span>{{ personRow()?.quota ?? '—' }}</span>
               </div>
-              <ejs-progressbar
+              <app-sf-progress
                 id="pw-quota"
-                type="Linear"
                 height="10"
                 [value]="quotaProgress()"
-                [maximum]="100"
-                trackThickness="10"
-                progressThickness="10"
-              ></ejs-progressbar>
+                [options]="{ trackThickness: 10, progressThickness: 10 }"
+              />
             </div>
           </div>
         </app-section-card>
-      }
-    </aside>
-  </div>
+      </aside>
+    </div>
+  }
 </section>

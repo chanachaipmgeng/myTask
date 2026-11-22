@@ -2,19 +2,24 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { map } from 'rxjs';
 import { filterPeopleByWorkspace } from '../../../../shared/domain/workspace-scope';
 import { ScorecardService } from '../../core/scorecard.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { Person, trackDisplayLabel } from '../../core/models';
-import { workflowStatusToneMap } from '../../shared/ui/badge';
-import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  FilterChipsComponent,
+  KpiStatCardComponent,
+  PageHeadComponent,
+  PersonAvatarComponent,
+  SectionCardComponent,
+  SfDropdownComponent,
+  SfProgressComponent,
+  SfTextBoxComponent,
+  StaggerDirective,
+  StatusBadgeComponent,
+  workflowStatusToneMap,
+} from '../../shared/ui';
 
 type PersonWsTab = 'overview' | 'work' | 'tickets' | 'schedule' | 'analytics';
 
@@ -31,13 +36,16 @@ const TABS: { id: PersonWsTab; text: string; icon: string }[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    TextBoxModule,
-    ProgressBarModule,
+    SfDropdownComponent,
+    SfTextBoxComponent,
+    SfProgressComponent,
     RouterLink,
-    FormFieldComponent,
+    FilterChipsComponent,
     PageHeadComponent,
+    PersonAvatarComponent,
     SectionCardComponent,
     KpiStatCardComponent,
+    StaggerDirective,
     StatusBadgeComponent,
   ],
   templateUrl: './person-workspace.html',
@@ -52,6 +60,12 @@ export class PersonWorkspacePage {
   protected readonly tabs = TABS;
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
   protected readonly query = signal('');
+  protected readonly trackFilter = signal<'All' | 'Implement' | 'RD'>('All');
+  protected readonly trackChipOptions = [
+    { id: 'All', label: 'ทุกสาย' },
+    { id: 'Implement', label: 'Implement' },
+    { id: 'RD', label: 'R&D' },
+  ];
   protected readonly activeTab = signal<PersonWsTab>('overview');
   protected readonly avatarErrorIds = signal<Set<string>>(new Set());
   /** เลือกทันทีตอนคลิก — ไม่รอ route เพื่อให้ไฮไลต์สลับได้ */
@@ -76,14 +90,16 @@ export class PersonWorkspacePage {
     });
   }
 
-  /** รายชื่อซ้าย: กรองทีม/สาย/รอบได้ แต่ห้ามตัดด้วย personId (ไม่งั้นเหลือคนเดียวกดเปลี่ยนไม่ได้) */
+  /** รายชื่อในหน้าการ์ดและตัวสลับคน: กรองตามคำค้นหาและสายงาน */
   protected readonly filteredPeople = computed(() => {
     const q = this.query().trim().toLowerCase();
+    const tf = this.trackFilter();
     const scope = { ...this.workspace.scope(), personId: '' };
     return filterPeopleByWorkspace(this.scorecard.people(), scope, this.workspace.activeCycle())
       .slice()
       .sort((a, b) => a.nickname.localeCompare(b.nickname, 'th'))
       .filter((person) => {
+        if (tf !== 'All' && person.track !== tf) return false;
         if (!q) return true;
         return (
           person.nickname.toLowerCase().includes(q) ||
@@ -94,14 +110,55 @@ export class PersonWorkspacePage {
       });
   });
 
-  protected readonly selectedPersonId = computed(
-    () =>
-      this.pickedPersonId() ||
-      this.routePersonId() ||
-      this.workspace.personId() ||
-      this.filteredPeople()[0]?.id ||
-      '',
+  protected readonly personCards = computed(() => {
+    const rowsById = new Map(this.scorecard.personRows().map((r) => [r.id, r]));
+    const tickets = this.scorecard.tickets();
+    return this.filteredPeople().map((person) => {
+      const row = rowsById.get(person.id);
+      const mine = tickets.filter((t) => t.assigneeId === person.id);
+      const openCount = mine.filter((t) => !t.closed).length;
+      const closedCount = mine.length - openCount;
+      const index = row?.index ?? 0;
+      const target = row?.target ?? 75;
+      return {
+        person,
+        index,
+        indexLabel: index.toFixed(1),
+        target,
+        onTarget: index >= target,
+        openCount,
+        closedCount,
+        trackLabel: this.trackLabel(person),
+      };
+    });
+  });
+
+  protected readonly personSwitcherOptions = computed(() =>
+    this.scorecard
+      .people()
+      .slice()
+      .sort((a, b) => a.nickname.localeCompare(b.nickname, 'th'))
+      .map((p) => ({
+        value: p.id,
+        text: `${p.nickname} · ${p.jobTitle || p.role} (${this.trackLabel(p)})`,
+      })),
   );
+
+  protected readonly selectedPersonId = computed(
+    () => this.pickedPersonId() || this.routePersonId() || '',
+  );
+
+  protected clearSelectedPerson(): void {
+    this.pickedPersonId.set('');
+    this.workspace.setPerson('');
+    void this.workspace.navigateWithFilter(['/workspace/people']);
+  }
+
+  protected setTrackFilter(value: string): void {
+    if (value === 'All' || value === 'Implement' || value === 'RD') {
+      this.trackFilter.set(value);
+    }
+  }
 
   protected readonly selectedPerson = computed(() => {
     const id = this.selectedPersonId();

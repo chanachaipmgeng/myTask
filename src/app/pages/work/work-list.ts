@@ -1,26 +1,16 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  ColumnChooserService,
-  ExcelExportService,
-  FilterService,
-  GridComponent,
-  GridModule,
-  GroupService,
-  PageService,
-  ResizeService,
-  SearchService,
-  SortService,
-  ToolbarService,
-} from '@syncfusion/ej2-angular-grids';
-import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
 import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { workListRows } from '../../core/work-views';
 import {
   PersonAvatarComponent,
   SectionCardComponent,
+  SfDialogComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
   StatusBadgeComponent,
   planToneMap,
   toneForWeekLabel,
@@ -32,17 +22,13 @@ import { WorkHubFilter } from './work-hub-filter';
 @Component({
   selector: 'app-work-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, DialogModule, ButtonModule, StatusBadgeComponent, SectionCardComponent, PersonAvatarComponent],
-  providers: [
-    PageService,
-    SortService,
-    FilterService,
-    SearchService,
-    ResizeService,
-    ColumnChooserService,
-    ExcelExportService,
-    ToolbarService,
-    GroupService,
+  imports: [
+    ButtonModule,
+    StatusBadgeComponent,
+    SectionCardComponent,
+    PersonAvatarComponent,
+    SfGridComponent,
+    SfDialogComponent,
   ],
   templateUrl: './work-list.html',
 })
@@ -52,26 +38,45 @@ export class WorkList {
   private readonly router = inject(Router);
   private readonly ticketDetail = inject(TicketDetailService);
 
-  @ViewChild('detailDialog') private detailDialog?: DialogComponent;
-  @ViewChild('listGrid') private listGrid?: GridComponent;
+  @ViewChild('detailDialog') private detailDialog?: SfDialogComponent;
 
-  protected readonly pageSettings = { pageSize: 15 };
-  protected readonly toolbar = ['Search', 'ColumnChooser', 'ExcelExport', 'CsvExport'];
   protected readonly selectedId = signal<string | null>(null);
   protected readonly groupByProject = signal(true);
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
   protected readonly planToneMap = planToneMap;
   protected readonly isMine = computed(() => this.hub.scope() === 'mine');
-  /** bump id เมื่อเพิ่มคอลัมน์โปรเจกต์/ทีม — persistence จะไม่กลืนคอลัมน์ใหม่ */
-  protected readonly gridId = computed(() =>
-    this.isMine() ? 'my-work-operational-list-grid-v3' : 'work-operational-list-grid-v3',
-  );
 
-  protected readonly groupSettings = computed(() =>
-    this.groupByProject()
-      ? { showDropArea: false, columns: ['projectLabel'] as string[] }
-      : { showDropArea: false, columns: [] as string[] },
-  );
+  protected readonly columns: SfGridColumn[] = [
+    { field: 'workLabel', headerText: 'Work', width: 280 },
+    { field: 'projectLabel', headerText: 'โปรเจกต์', width: 140 },
+    { field: 'teamLabel', headerText: 'ทีม', width: 130 },
+    { field: 'type', headerText: 'Type', width: 110 },
+    { field: 'assignee', headerText: 'Assignee', width: 165 },
+    { field: 'status', headerText: 'Status', width: 130 },
+    { field: 'size', headerText: 'Size', width: 80 },
+    { field: 'dueOnLabel', headerText: 'Due', width: 110 },
+    { field: 'closedOnLabel', headerText: 'Closed', width: 110 },
+    { field: 'weekOffsetLabel', headerText: 'สัปดาห์', width: 130 },
+    { field: 'unplannedLabel', headerText: 'แผน', width: 110 },
+    { field: 'action', headerText: 'Action', width: 110, textAlign: 'Center', allowFiltering: false, allowSorting: false },
+  ];
+
+  protected readonly gridOptions = computed<SfGridOptions>(() => ({
+    id: this.isMine() ? 'my-work-operational-list-grid-v4' : 'work-operational-list-grid-v4',
+    enablePersistence: true,
+    paging: true,
+    pageSize: 15,
+    sorting: true,
+    filtering: 'Excel',
+    grouping: this.groupByProject(),
+    groupColumns: this.groupByProject() ? ['projectLabel'] : [],
+    search: true,
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    resizable: true,
+    exportFileName: this.isMine() ? 'my-work-list' : 'team-work-list',
+  }));
 
   protected readonly rows = computed(() =>
     workListRows(
@@ -87,9 +92,7 @@ export class WorkList {
 
   protected readonly detail = computed(() => {
     const id = this.selectedId();
-    if (!id) {
-      return null;
-    }
+    if (!id) return null;
     return this.rows().find((row) => row.id === id) ?? null;
   });
 
@@ -99,32 +102,18 @@ export class WorkList {
 
   protected openDetail(id: string, event?: Event): void {
     event?.stopPropagation();
-    if (!id) {
-      return;
-    }
+    if (!id) return;
     this.selectedId.set(id);
     this.ticketDetail.open(id);
   }
 
-  protected onRowSelected(event: { data?: { id?: string } }): void {
-    const id = event.data?.id;
-    if (!id) {
-      return;
-    }
-    this.openDetail(id);
-  }
-
-  protected onToolbarClick(args: { item?: { id?: string } }): void {
-    const id = args.item?.id ?? '';
-    if (id.endsWith('_excelexport')) {
-      void this.listGrid?.excelExport();
-    } else if (id.endsWith('_csvexport')) {
-      void this.listGrid?.csvExport();
-    }
+  protected onRowSelected(event: { data?: unknown }): void {
+    const id = (event.data as { id?: string } | undefined)?.id;
+    if (id) this.openDetail(id);
   }
 
   protected goToBoard(): void {
-    this.detailDialog?.hide();
+    this.detailDialog?.close();
     void this.router.navigate([this.isMine() ? '/me/work/board' : '/work/board']);
   }
 }

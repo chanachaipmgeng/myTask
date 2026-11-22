@@ -1,15 +1,17 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { DatePickerModule } from '@syncfusion/ej2-angular-calendars';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { KanbanModule } from '@syncfusion/ej2-angular-kanban';
-import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { DragEventArgs } from '@syncfusion/ej2-kanban';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
+import {
+  SfDatePickerComponent,
+  SfDialogComponent,
+  SfDropdownComponent,
+  SfKanbanComponent,
+  SfProgressComponent,
+  SfTextBoxComponent,
+} from '../../shared/ui';
 import {
   BUG_CAUSES,
   BugCause,
@@ -42,13 +44,13 @@ type TrackFilter = Track | 'All';
   selector: 'app-pipeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    KanbanModule,
-    ProgressBarModule,
-    DialogModule,
-    DropDownListModule,
-    DatePickerModule,
-    TextBoxModule,
     ButtonModule,
+    SfDatePickerComponent,
+    SfDialogComponent,
+    SfDropdownComponent,
+    SfKanbanComponent,
+    SfProgressComponent,
+    SfTextBoxComponent,
   ],
   templateUrl: './pipeline.html',
 })
@@ -58,7 +60,7 @@ export class PipelinePage {
   protected readonly theme = inject(ThemeService);
   private readonly boardRevision = signal(0);
 
-  @ViewChild('blockDialog') private blockDialog?: DialogComponent;
+  @ViewChild('blockDialog') private blockDialog?: SfDialogComponent;
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly columns = WORKFLOW_STATUSES.map((status) => ({
@@ -136,16 +138,15 @@ export class PipelinePage {
     });
   }
 
-  protected setTrack(event: { value?: string | null }): void {
-    const value = event.value;
+  protected setTrack(value: string): void {
     if (value === 'All' || value === 'Implement' || value === 'RD') {
       this.trackFilter.set(value);
     }
   }
 
-  protected onCardClick(args: { data?: { id?: string } }): void {
-    const id = args.data?.id;
-    if (id) {
+  protected onCardClick(args: { data?: Record<string, any> }): void {
+    const id = args.data?.['id'];
+    if (typeof id === 'string' && id) {
       this.selectedId.set(id);
     }
   }
@@ -172,7 +173,7 @@ export class PipelinePage {
       args.cancel = true;
       this.blockMessage.set(result.message);
       this.boardRevision.update((value) => value + 1);
-      this.blockDialog?.show();
+      this.blockDialog?.open();
       return;
     }
     this.scorecard.replaceTicket(result.ticket);
@@ -185,18 +186,17 @@ export class PipelinePage {
     }
   }
 
-  protected setDiscipline(event: { value?: string | null }): void {
+  protected setDiscipline(val: string): void {
     this.discipline.set(
-      event.value && this.disciplineOptions.some((option) => option.value === event.value)
-        ? (event.value as Discipline | '')
+      val && this.disciplineOptions.some((option) => option.value === val)
+        ? (val as Discipline | '')
         : '',
     );
   }
 
-  protected setCategory(event: { value?: string | null }): void {
-    const value = event.value;
+  protected setCategory(val: string): void {
     const next =
-      value && this.categoryOptions.some((option) => option.value === value) ? (value as WorkCategory | '') : '';
+      val && this.categoryOptions.some((option) => option.value === val) ? (val as WorkCategory | '') : '';
     this.workCategory.set(next);
     if (next !== 'R&D-PoC') {
       this.pocResult.set('');
@@ -206,28 +206,26 @@ export class PipelinePage {
     }
   }
 
-  protected setStory(event: { value?: string | null }): void {
-    this.storyValue.set(event.value ?? '');
+  protected setStory(val: string): void {
+    this.storyValue.set(val ?? '');
   }
 
-  protected setDue(event: { value?: Date | null }): void {
+  protected setDueIso(iso: string): void {
     if (!this.dueLocked()) {
-      this.due.set(event.value ?? null);
+      this.due.set(toDate(iso));
     }
   }
 
-  protected setMr(event: { value?: string | null }): void {
-    this.mrLink.set(event.value ?? '');
+  protected setMr(val: string): void {
+    this.mrLink.set(val ?? '');
   }
 
-  protected setPoc(event: { value?: string | null }): void {
-    const value = event.value ?? '';
-    this.pocResult.set(this.pocOptions.some((option) => option.value === value) ? (value as PocResult | '') : '');
+  protected setPoc(val: string): void {
+    this.pocResult.set(this.pocOptions.some((option) => option.value === val) ? (val as PocResult | '') : '');
   }
 
-  protected setCause(event: { value?: string | null }): void {
-    const value = event.value ?? '';
-    this.bugCause.set(this.causeOptions.some((option) => option.value === value) ? (value as BugCause | '') : '');
+  protected setCause(val: string): void {
+    this.bugCause.set(this.causeOptions.some((option) => option.value === val) ? (val as BugCause | '') : '');
   }
 
   protected saveFields(): void {
@@ -247,7 +245,7 @@ export class PipelinePage {
     });
     if (!result.ok) {
       this.blockMessage.set(result.message);
-      this.blockDialog?.show();
+      this.blockDialog?.open();
       return;
     }
     this.scorecard.replaceTicket(result.ticket);

@@ -1,20 +1,17 @@
 <div class="flex flex-col gap-4">
   <div class="flex flex-wrap items-center justify-between gap-3">
-    <ejs-message
+    <app-sf-message
+      class="grow"
       [content]="roleBanner()"
       [severity]="canEditPlanning() ? 'Info' : 'Warning'"
-      variant="Outlined"
-      cssClass="grow"
-    ></ejs-message>
+    />
     <app-form-field label="จัดกลุ่มบอร์ด (Swimlane)" variant="filter">
-      <ejs-dropdownlist
-        id="board-swimlane-select"
-        [dataSource]="swimlaneOptions()"
-        [fields]="fields"
+      <app-sf-dropdown
+        [items]="swimlaneOptions()"
         [value]="swimlaneMode()"
-        (change)="setSwimlane($event)"
-        width="220px"
-      ></ejs-dropdownlist>
+        [options]="{ width: '220px' }"
+        (valueChange)="setSwimlane($event)"
+      />
     </app-form-field>
   </div>
 
@@ -28,246 +25,213 @@
     ]"
   ></app-hero-band>
 
-  <ejs-kanban
-    id="work-board"
-    cssClass="pipeline-board"
-    keyField="status"
-    height="auto"
-    width="100%"
+  <ng-template #kanbanCardTpl let-data>
+    <div class="flex flex-col gap-1.5 p-1" [attr.data-ticket]="data.id" [class.opacity-60]="data.isPaused">
+      <div class="flex items-center justify-between gap-1">
+        <div class="flex items-center gap-1.5">
+          <span class="text-sm font-bold text-cyan">{{ data.id }}</span>
+          @if (data.isMdDirect) {
+            <span class="e-badge e-badge-warning e-badge-pill">MD-DIRECT</span>
+          }
+          @if (data.isPaused) {
+            <span class="e-badge e-badge-danger e-badge-pill">PAUSED</span>
+          }
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="e-badge e-badge-info e-badge-pill">{{ data.size }}</span>
+          <span class="e-badge e-badge-secondary e-badge-pill">{{ data.trackLabel }}</span>
+        </div>
+      </div>
+      <p class="m-0 text-xs font-medium line-clamp-2">{{ data.title }}</p>
+      <div class="flex flex-wrap items-center justify-between gap-1 text-xs text-muted">
+        <app-person-avatar [personId]="data.assigneeId" [name]="data.assigneeLabel" [showName]="true" size="xs"></app-person-avatar>
+        <span>{{ data.storyPoints }} pts</span>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-1 text-xs">
+        <span class="text-muted">ส่ง: {{ data.dueLabel }}</span>
+        <div class="flex items-center gap-1">
+          @if (data.hasMr) {
+            <span class="e-badge e-badge-success e-badge-pill">MR</span>
+          }
+          @if (data.reopenCount > 0) {
+            <span class="e-badge e-badge-danger e-badge-pill">Reopen {{ data.reopenCount }}</span>
+          }
+        </div>
+      </div>
+    </div>
+  </ng-template>
+  <app-sf-kanban
+    [data]="cards()"
     [columns]="columns"
-    [dataSource]="cards()"
     [cardSettings]="cardSettings"
     [swimlaneSettings]="swimlaneSettings()"
-    [allowDragAndDrop]="true"
-    [allowColumnDragAndDrop]="false"
-    [showEmptyColumn]="true"
+    [cardTemplate]="kanbanCardTpl"
+    [options]="{ id: 'work-board', keyField: 'status', height: 'auto', allowDragAndDrop: true }"
     (dragStop)="onDragStop($event)"
     (cardClick)="onCardClick($event)"
     (dialogOpen)="onDialogOpen($event)"
-  >
-    <ng-template #cardSettingsTemplate let-data>
-      <div class="flex flex-col gap-1.5 p-1" [attr.data-ticket]="data.id" [class.opacity-60]="data.isPaused">
-        <div class="flex items-center justify-between gap-1">
-          <div class="flex items-center gap-1.5">
-            <span class="text-sm font-bold text-cyan">{{ data.id }}</span>
-            @if (data.isMdDirect) {
-              <span class="e-badge e-badge-warning e-badge-pill">MD-DIRECT</span>
-            }
-            @if (data.isPaused) {
-              <span class="e-badge e-badge-danger e-badge-pill">PAUSED</span>
-            }
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="e-badge e-badge-info e-badge-pill">{{ data.size }}</span>
-            <span class="e-badge e-badge-secondary e-badge-pill">{{ data.trackLabel }}</span>
-          </div>
-        </div>
-        <p class="m-0 text-xs font-medium line-clamp-2">{{ data.title }}</p>
-        <div class="flex flex-wrap items-center justify-between gap-1 text-xs text-muted">
-          <app-person-avatar [personId]="data.assigneeId" [name]="data.assigneeLabel" [showName]="true" size="xs"></app-person-avatar>
-          <span>{{ data.storyPoints }} pts</span>
-        </div>
-        <div class="flex flex-wrap items-center justify-between gap-1 text-xs">
-          <span class="text-muted">ส่ง: {{ data.dueLabel }}</span>
-          <div class="flex items-center gap-1">
-            @if (data.hasMr) {
-              <span class="e-badge e-badge-success e-badge-pill">MR</span>
-            }
-            @if (data.reopenCount > 0) {
-              <span class="e-badge e-badge-danger e-badge-pill">Reopen {{ data.reopenCount }}</span>
-            }
-          </div>
-        </div>
-      </div>
-    </ng-template>
-  </ejs-kanban>
+  />
 </div>
 
-<ejs-dialog
+<app-sf-dialog
   #editDialog
   id="board-edit-dialog"
   header="แก้ไขรายละเอียดใบงานบนกระดาน"
-  cssClass="app-modal"
-  width="680px"
   [visible]="false"
-  [isModal]="true"
-  [showCloseIcon]="true"
-  (close)="closeEditDialog()"
+  [options]="{ width: '680px', isModal: true, showCloseIcon: true, animationEffect: 'Fade' }"
+  (closed)="closeEditDialog()"
 >
-  <ng-template #content>
-    @if (selected(); as ticket) {
-      <form id="board-edit-form" class="grid grid-cols-1 gap-3 md:grid-cols-2" (submit)="$event.preventDefault(); saveFields()">
-        <div class="app-modal__intro md:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <p class="app-modal__intro-title">{{ ticket.id }} · {{ ticket.title || ticket.module }}</p>
-            <p class="app-modal__intro-meta">
-              สถานะ: {{ ticket.workflowStatus }} · เริ่ม: {{ ticket.actualStartOn || '—' }} · Reopen: {{ ticket.reopenCount }}
-            </p>
-          </div>
-          <button
-            ejs-button
-            cssClass="e-small e-outline e-primary self-start sm:self-center"
-            iconCss="e-icons e-search"
-            type="button"
-            (click)="openTicket360(ticket.id)"
-          >
-            ดูรายละเอียด 360°
-          </button>
+  @if (selected(); as ticket) {
+    <form id="board-edit-form" class="grid grid-cols-1 gap-3 md:grid-cols-2" (submit)="$event.preventDefault(); saveFields()">
+      <div class="app-modal__intro md:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <p class="app-modal__intro-title">{{ ticket.id }} · {{ ticket.title || ticket.module }}</p>
+          <p class="app-modal__intro-meta">
+            สถานะ: {{ ticket.workflowStatus }} · เริ่ม: {{ ticket.actualStartOn || '—' }} · Reopen: {{ ticket.reopenCount }}
+          </p>
         </div>
-        <app-section-card
-          variant="nested"
-          class="md:col-span-2"
-          title="เส้นเหตุการณ์ส่งมอบ"
-          subtitle="ลำดับ milestone จากฟิลด์ใบงาน + stage log · จุด Ready for QA คือ Fair Cutoff ของ Dev"
-          [badge]="'Reopen ' + (ticket.reopenCount || 0)"
-          [badgeTone]="ticket.reopenCount > 0 ? 'warning' : 'info'"
+        <button
+          ejs-button
+          cssClass="e-small e-outline e-primary self-start sm:self-center"
+          iconCss="e-icons e-search"
+          type="button"
+          (click)="openTicket360(ticket.id)"
         >
-          @if (ticket.isPaused) {
-            <div class="mb-3 flex items-center justify-between gap-2">
-              <ejs-message
-                severity="Error"
-                variant="Outlined"
-                [content]="'สถานะพักงาน (By MD Mandate): กำหนดส่งเดิม ' + (ticket.originalFirstDueOn || '—') + ' (เลื่อนชดเชยแล้ว +' + (ticket.pausedDays || 0) + ' วัน)'"
-                cssClass="grow"
-              ></ejs-message>
-              <button ejs-button cssClass="e-small e-outline e-success" type="button" (click)="resumePaused(ticket.id)">
-                ปลดพักงาน (Resume)
-              </button>
+          ดูรายละเอียด 360°
+        </button>
+      </div>
+      <app-section-card
+        variant="nested"
+        class="md:col-span-2"
+        title="เส้นเหตุการณ์ส่งมอบ"
+        subtitle="ลำดับ milestone จากฟิลด์ใบงาน + stage log · จุด Ready for QA คือ Fair Cutoff ของ Dev"
+        [badge]="'Reopen ' + (ticket.reopenCount || 0)"
+        [badgeTone]="ticket.reopenCount > 0 ? 'warning' : 'info'"
+      >
+        @if (ticket.isPaused) {
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <app-sf-message
+              class="grow"
+              severity="Error"
+              [content]="'สถานะพักงาน (By MD Mandate): กำหนดส่งเดิม ' + (ticket.originalFirstDueOn || '—') + ' (เลื่อนชดเชยแล้ว +' + (ticket.pausedDays || 0) + ' วัน)'"
+            />
+            <button ejs-button cssClass="e-small e-outline e-success" type="button" (click)="resumePaused(ticket.id)">
+              ปลดพักงาน (Resume)
+            </button>
+          </div>
+        }
+
+        <ng-template #timelineStepTpl let-data>
+          @if (deliveryTimeline()[data.itemIndex]; as step) {
+            <div class="delivery-timeline__card" [attr.data-tone]="step.tone">
+              <div class="delivery-timeline__dot" aria-hidden="true">
+                <span class="e-icons" [class]="step.dotCss"></span>
+              </div>
+              <div class="delivery-timeline__body">
+                <p class="delivery-timeline__title m-0">{{ step.title }}</p>
+                <p class="delivery-timeline__detail fine m-0">{{ step.detail }}</p>
+              </div>
+              <div class="delivery-timeline__when">{{ step.atLabel }}</div>
             </div>
           }
+        </ng-template>
+        <app-sf-timeline
+          [items]="deliveryTimelineItems()"
+          [itemTemplate]="timelineStepTpl"
+          [options]="{ cssClass: 'delivery-timeline', orientation: 'Vertical', align: 'Before' }"
+        />
+      </app-section-card>
+      <app-form-field label="สายงาน (Discipline)">
+        <app-sf-dropdown
+          [items]="disciplineOptions"
+          [value]="discipline()"
+          [disabled]="!canEditPlanning()"
+          (valueChange)="setDiscipline($event)"
+        />
+      </app-form-field>
+      <app-form-field label="หมวด (Work Category)">
+        <app-sf-dropdown
+          [items]="categoryOptions"
+          [value]="workCategory()"
+          [disabled]="!canEditPlanning()"
+          (valueChange)="setCategory($event)"
+        />
+      </app-form-field>
+      <app-form-field label="Story points" hint="แก้ได้เฉพาะ lead/admin">
+        <app-sf-dropdown
+          [items]="storyOptions"
+          [value]="storyValue()"
+          [disabled]="!canEditPlanning()"
+          (valueChange)="setStory($event)"
+        />
+      </app-form-field>
+      <app-form-field label="วันส่งครั้งแรก" hint="ล็อกเมื่อบันทึกแล้ว">
+        <app-sf-datepicker
+          [value]="due()"
+          [disabled]="!canEditPlanning() || dueLocked()"
+          [options]="{ format: 'dd/MM/yyyy' }"
+          (valueChange)="setDueIso($event)"
+        />
+      </app-form-field>
+      <app-section-card variant="nested" [showHead]="false" class="md:col-span-2">
+        <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-2">
+          <app-sf-checkbox
+            label="งานสั่งตรงจาก MD (MD Mandate) — ได้รับสิทธิ์ Auto-Pause คุ้มครองคะแนนงานเดิม"
+            [checked]="isMdDirect()"
+            [disabled]="!canEditPlanning()"
+            (checkedChange)="onMdDirectToggle($event)"
+          />
+          <span class="e-badge e-badge-warning e-badge-pill">MD-DIRECT</span>
+        </div>
 
-          <ejs-timeline
-            cssClass="delivery-timeline"
-            orientation="Vertical"
-            align="Before"
-          >
-            <e-items>
-              @for (step of deliveryTimeline(); track step.id) {
-                <e-item
-                  [content]="step.title"
-                  [oppositeContent]="step.atLabel"
-                  [dotCss]="'e-icons ' + step.dotCss"
-                  [cssClass]="'delivery-timeline__item is-' + step.tone"
-                  [disabled]="step.tone === 'pending'"
-                ></e-item>
-              }
-            </e-items>
-            <ng-template #template let-data>
-              @if (deliveryTimeline()[data.itemIndex]; as step) {
-                <div class="delivery-timeline__card" [attr.data-tone]="step.tone">
-                  <div class="delivery-timeline__dot" aria-hidden="true">
-                    <span class="e-icons" [class]="step.dotCss"></span>
-                  </div>
-                  <div class="delivery-timeline__body">
-                    <p class="delivery-timeline__title m-0">{{ step.title }}</p>
-                    <p class="delivery-timeline__detail fine m-0">{{ step.detail }}</p>
-                  </div>
-                  <div class="delivery-timeline__when">{{ step.atLabel }}</div>
-                </div>
-              }
-            </ng-template>
-          </ejs-timeline>
-        </app-section-card>
-        <app-form-field label="สายงาน (Discipline)">
-          <ejs-dropdownlist
-            [dataSource]="disciplineOptions"
-            [fields]="fields"
-            [value]="discipline()"
-            [enabled]="canEditPlanning()"
-            (change)="setDiscipline($event)"
-          ></ejs-dropdownlist>
-        </app-form-field>
-        <app-form-field label="หมวด (Work Category)">
-          <ejs-dropdownlist
-            [dataSource]="categoryOptions"
-            [fields]="fields"
-            [value]="workCategory()"
-            [enabled]="canEditPlanning()"
-            (change)="setCategory($event)"
-          ></ejs-dropdownlist>
-        </app-form-field>
-        <app-form-field label="Story points" hint="แก้ได้เฉพาะ lead/admin">
-          <ejs-dropdownlist
-            [dataSource]="storyOptions"
-            [fields]="fields"
-            [value]="storyValue()"
-            [enabled]="canEditPlanning()"
-            (change)="setStory($event)"
-          ></ejs-dropdownlist>
-        </app-form-field>
-        <app-form-field label="วันส่งครั้งแรก" hint="ล็อกเมื่อบันทึกแล้ว">
-          <ejs-datepicker
-            format="dd/MM/yyyy"
-            [value]="due()"
-            [enabled]="canEditPlanning() && !dueLocked()"
-            (change)="setDue($event)"
-          ></ejs-datepicker>
-        </app-form-field>
-        <app-section-card variant="nested" [showHead]="false" class="md:col-span-2">
-          <div class="flex flex-col gap-2">
-          <div class="flex items-center justify-between gap-2">
-            <ejs-checkbox
-              label="งานสั่งตรงจาก MD (MD Mandate) — ได้รับสิทธิ์ Auto-Pause คุ้มครองคะแนนงานเดิม"
-              [checked]="isMdDirect()"
-              [disabled]="!canEditPlanning()"
-              (change)="onMdDirectToggle($event.checked ?? false)"
-            ></ejs-checkbox>
-            <span class="e-badge e-badge-warning e-badge-pill">MD-DIRECT</span>
+        @if (isMdDirect() && assigneeWipOptions().length > 0) {
+          <div class="mt-1 flex flex-col gap-1 border-t border-[color:var(--line)] pt-2">
+            <app-form-field
+              label="งาน In Progress ที่จะ Auto-Shift"
+              [hint]="'ขยับ +' + Math.max(1, Math.ceil(ticket.estimateMd || 1)) + ' วันทำงานเมื่อบันทึก'"
+            >
+              <app-sf-multiselect
+                [items]="assigneeWipOptions()"
+                [fields]="{ text: 'text', value: 'id' }"
+                [value]="selectedShiftTargetIds()"
+                placeholder="เลือกใบงานที่ต้องการพักเวลา..."
+                [options]="{ mode: 'Box' }"
+                (valueChange)="selectedShiftTargetIds.set($event)"
+              />
+            </app-form-field>
           </div>
-
-          @if (isMdDirect() && assigneeWipOptions().length > 0) {
-            <div class="mt-1 flex flex-col gap-1 border-t border-[color:var(--line)] pt-2">
-              <app-form-field
-                label="งาน In Progress ที่จะ Auto-Shift"
-                [hint]="'ขยับ +' + Math.max(1, Math.ceil(ticket.estimateMd || 1)) + ' วันทำงานเมื่อบันทึก'"
-              >
-                <ejs-multiselect
-                  id="md-shift-multiselect"
-                  [dataSource]="assigneeWipOptions()"
-                  [fields]="{ text: 'text', value: 'id' }"
-                  [value]="selectedShiftTargetIds()"
-                  placeholder="เลือกใบงานที่ต้องการพักเวลา..."
-                  mode="Box"
-                  (change)="selectedShiftTargetIds.set($event.value ?? [])"
-                ></ejs-multiselect>
-              </app-form-field>
-            </div>
-          }
-          </div>
-        </app-section-card>
-        <app-form-field class="md:col-span-2" label="ลิงก์ MR" hint="จำเป็นก่อนเข้า Code Review">
-          <ejs-textbox [value]="mrLink()" (change)="setMr($event)" placeholder="https://git.local/mr/..."></ejs-textbox>
+        }
+        </div>
+      </app-section-card>
+      <app-form-field class="md:col-span-2" label="ลิงก์ MR" hint="จำเป็นก่อนเข้า Code Review">
+        <app-sf-textbox [value]="mrLink()" (valueChange)="setMr($event)" placeholder="https://git.local/mr/..." />
+      </app-form-field>
+      @if (workCategory() === 'R&D-PoC') {
+        <app-form-field label="ผล PoC">
+          <app-sf-dropdown
+            [items]="pocOptions"
+            [value]="pocResult()"
+            (valueChange)="setPoc($event)"
+          />
         </app-form-field>
-        @if (workCategory() === 'R&D-PoC') {
-          <app-form-field label="ผล PoC">
-            <ejs-dropdownlist
-              [dataSource]="pocOptions"
-              [fields]="fields"
-              [value]="pocResult()"
-              (change)="setPoc($event)"
-            ></ejs-dropdownlist>
-          </app-form-field>
-        }
-        @if (bugCategory()) {
-          <app-form-field label="สาเหตุ Bug" hint="จำเป็นก่อนปิด Done">
-            <ejs-dropdownlist
-              [dataSource]="causeOptions"
-              [fields]="fields"
-              [value]="bugCause()"
-              (change)="setCause($event)"
-            ></ejs-dropdownlist>
-          </app-form-field>
-        }
-      </form>
-    }
-  </ng-template>
-  <ng-template #footerTemplate>
-    <div class="app-modal__footer">
-      <button ejs-button cssClass="e-outline" type="button" (click)="closeEditDialog()">ยกเลิก</button>
-      <button ejs-button cssClass="e-primary" type="submit" form="board-edit-form">บันทึกฟิลด์</button>
-    </div>
-  </ng-template>
-</ejs-dialog>
+      }
+      @if (bugCategory()) {
+        <app-form-field label="สาเหตุ Bug" hint="จำเป็นก่อนปิด Done">
+          <app-sf-dropdown
+            [items]="causeOptions"
+            [value]="bugCause()"
+            (valueChange)="setCause($event)"
+          />
+        </app-form-field>
+      }
+    </form>
+  }
+  <div sf-dialog-footer>
+    <button ejs-button cssClass="e-outline" type="button" (click)="closeEditDialog()">ยกเลิก</button>
+    <button ejs-button cssClass="e-primary" type="submit" form="board-edit-form">บันทึกฟิลด์</button>
+  </div>
+</app-sf-dialog>
 
 <app-confirm-dialog
   #blockDialog
@@ -279,54 +243,45 @@
   width="440px"
 ></app-confirm-dialog>
 
-<ejs-dialog
+<app-sf-dialog
   #mdShiftDialog
   id="board-md-shift-dialog"
   header="งานสั่งตรงจาก MD: ตรวจพบงานที่ค้างอยู่ในมือ (Active WIP)"
-  cssClass="app-modal"
-  width="560px"
   [visible]="false"
-  [isModal]="true"
-  [showCloseIcon]="false"
+  [options]="{ width: '560px', isModal: true, showCloseIcon: false, animationEffect: 'Fade' }"
 >
-  <ng-template #content>
-    <div class="flex flex-col gap-3">
-      <ejs-message
-        severity="Warning"
-        variant="Outlined"
-        [content]="'ใบงานด่วนสั่งตรงจาก MD: ' + (pendingMdTicket()?.id ?? '') + ' (ประมาณการ ' + (pendingMdTicket()?.estimateMd ?? 1) + ' MD) — พบงาน In Progress / Reopened ในมือ ' + conflictingWipTickets().length + ' ใบ'"
-      ></ejs-message>
-      <app-section-card variant="nested" [showHead]="false">
-          <ul class="m-0 pl-4 text-xs list-disc space-y-1">
-            @for (ticket of conflictingWipTickets(); track ticket.id) {
-              <li>
-                <strong class="text-cyan">{{ ticket.id }}</strong> · {{ ticket.title || ticket.module }}
-                <span class="text-muted">(ส่งเดิม: {{ ticket.firstDueOn || '—' }})</span>
-              </li>
-            }
-          </ul>
-      </app-section-card>
+  <div class="flex flex-col gap-3">
+    <app-sf-message
+      severity="Warning"
+      [content]="'ใบงานด่วนสั่งตรงจาก MD: ' + (pendingMdTicket()?.id ?? '') + ' (ประมาณการ ' + (pendingMdTicket()?.estimateMd ?? 1) + ' MD) — พบงาน In Progress / Reopened ในมือ ' + conflictingWipTickets().length + ' ใบ'"
+    />
+    <app-section-card variant="nested" [showHead]="false">
+        <ul class="m-0 pl-4 text-xs list-disc space-y-1">
+          @for (ticket of conflictingWipTickets(); track ticket.id) {
+            <li>
+              <strong class="text-cyan">{{ ticket.id }}</strong> · {{ ticket.title || ticket.module }}
+              <span class="text-muted">(ส่งเดิม: {{ ticket.firstDueOn || '—' }})</span>
+            </li>
+          }
+        </ul>
+    </app-section-card>
 
-      <p class="text-sm font-medium m-0">
-        ต้องการพักเวลา (Pause Clock) และเลื่อนกำหนดส่งแรก (firstDueOn) ของงานเดิมออกไปอีก
-        <span class="text-emerald-600 dark:text-emerald-400 font-bold">+{{ mdShiftDays() }} วันทำงาน</span>
-        ตามขนาดงานด่วนของ MD หรือไม่?
-      </p>
-      <ejs-message
-        severity="Info"
-        variant="Outlined"
-        content="งานเดิมไม่โดนตัดคะแนน On-time · เวลาพักไม่คิดเป็น Actual MD · บันทึก Audit Log อัตโนมัติ"
-      ></ejs-message>
-    </div>
-  </ng-template>
-  <ng-template #footerTemplate>
-    <div class="app-modal__footer">
-      <button ejs-button cssClass="e-outline" type="button" (click)="skipMdShift()">
-        ทำคู่ขนาน (ไม่พักงานเดิม)
-      </button>
-      <button ejs-button cssClass="e-primary" type="button" (click)="confirmMdShift()">
-        ยืนยันพักงานและเลื่อนวันส่ง (+{{ mdShiftDays() }} วัน)
-      </button>
-    </div>
-  </ng-template>
-</ejs-dialog>
+    <p class="text-sm font-medium m-0">
+      ต้องการพักเวลา (Pause Clock) และเลื่อนกำหนดส่งแรก (firstDueOn) ของงานเดิมออกไปอีก
+      <span class="text-emerald-600 dark:text-emerald-400 font-bold">+{{ mdShiftDays() }} วันทำงาน</span>
+      ตามขนาดงานด่วนของ MD หรือไม่?
+    </p>
+    <app-sf-message
+      severity="Info"
+      content="งานเดิมไม่โดนตัดคะแนน On-time · เวลาพักไม่คิดเป็น Actual MD · บันทึก Audit Log อัตโนมัติ"
+    />
+  </div>
+  <div sf-dialog-footer>
+    <button ejs-button cssClass="e-outline" type="button" (click)="skipMdShift()">
+      ทำคู่ขนาน (ไม่พักงานเดิม)
+    </button>
+    <button ejs-button cssClass="e-primary" type="button" (click)="confirmMdShift()">
+      ยืนยันพักงานและเลื่อนวันส่ง (+{{ mdShiftDays() }} วัน)
+    </button>
+  </div>
+</app-sf-dialog>

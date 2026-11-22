@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
-import { GridModule, PageService } from '@syncfusion/ej2-angular-grids';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { canAssignWork, currentViewer } from '../../core/admin-settings';
 import { ApiClient, GitLabIntegration, OpenMrItem } from '../../core/api-client';
 import { currentSession } from '../../core/session';
@@ -11,25 +9,31 @@ import { MyGitMatch, MyGitSyncAdapter, MyGitUnmatched } from '../../core/mygit-s
 import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
-import { BadgeTone } from '../../shared/ui/badge';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  BadgeTone,
+  PageHeadComponent,
+  SectionCardComponent,
+  SfCheckboxComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-mygit',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
-    GridModule,
     ButtonModule,
-    CheckBoxModule,
-    MessageModule,
     PageHeadComponent,
     SectionCardComponent,
     StatusBadgeComponent,
+    SfCheckboxComponent,
+    SfGridComponent,
+    SfMessageComponent,
   ],
-  providers: [PageService],
   templateUrl: './mygit.html',
 })
 export class MyGitPage {
@@ -66,7 +70,78 @@ export class MyGitPage {
   });
 
   protected readonly canSyncApi = canAssignWork;
-  protected readonly pageSettings = { pageSize: 8 };
+  protected readonly openMrColumns: SfGridColumn[] = [
+    { field: 'title', headerText: 'Merge Request', width: 260 },
+    { field: 'ticketId', headerText: 'ใบงาน', width: 120 },
+    { field: 'ageHours', headerText: 'ค้าง (ชม.)', width: 100, textAlign: 'Right' },
+    { field: 'ciStatus', headerText: 'CI', width: 110 },
+    { field: 'reviewers', headerText: 'Reviewers', width: 160 },
+    { field: 'webUrl', headerText: 'ลิงก์', width: 180 },
+  ];
+  protected readonly openMrGridOptions: SfGridOptions = {
+    id: 'mygit-open-mrs-grid',
+    height: '240',
+    paging: true,
+    pageSize: 8,
+    sorting: true,
+    resizable: true,
+    search: true,
+    excelExport: true,
+    csvExport: true,
+    exportFileName: 'open-mrs',
+  };
+  protected readonly myTicketsMrColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'รหัสใบงาน', width: 120 },
+    { field: 'title', headerText: 'ชื่องาน / โมดูล', width: 220 },
+    { field: 'status', headerText: 'สถานะงาน', width: 140 },
+    { field: 'mrLink', headerText: 'ลิงก์ Merge Request', width: 260 },
+    { field: 'reviewRounds', headerText: 'รอบรีวิว', width: 85, textAlign: 'Right' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 85, textAlign: 'Right' },
+  ];
+  protected readonly myTicketsMrGridOptions: SfGridOptions = {
+    id: 'mygit-my-tickets-grid',
+    height: '240',
+    paging: true,
+    pageSize: 8,
+    sorting: true,
+    resizable: true,
+    search: true,
+  };
+  protected readonly matchedColumns: SfGridColumn[] = [
+    { field: 'sha', headerText: 'Commit / MR', width: 120 },
+    { field: 'ticketId', headerText: 'ใบงาน', width: 140 },
+    { field: 'reviewRounds', headerText: 'รอบรีวิว', width: 110, textAlign: 'Right' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 100, textAlign: 'Right' },
+    { field: 'reviewBefore', headerText: 'คะแนนรีวิวก่อน', width: 140, textAlign: 'Right' },
+    { field: 'reviewAfter', headerText: 'คะแนนรีวิวหลัง', width: 140, textAlign: 'Right' },
+    { field: 'mrLink', headerText: 'ลิงก์ MR', width: 220 },
+    { field: 'mergedAt', headerText: 'เวลา merge', width: 190 },
+    { field: 'message', headerText: 'ข้อความ', width: 260 },
+  ];
+  protected readonly matchedGridOptions: SfGridOptions = {
+    id: 'mygit-matched-grid',
+    height: '220',
+    paging: true,
+    pageSize: 8,
+    sorting: true,
+    resizable: true,
+    excelExport: true,
+    exportFileName: 'mygit-matched',
+  };
+  protected readonly unmatchedColumns: SfGridColumn[] = [
+    { field: 'sha', headerText: 'Commit / MR', width: 120 },
+    { field: 'ticketId', headerText: 'รหัสที่อ้าง', width: 140 },
+    { field: 'mergedAt', headerText: 'เวลา merge', width: 200 },
+    { field: 'message', headerText: 'ข้อความ', width: 320 },
+  ];
+  protected readonly unmatchedGridOptions: SfGridOptions = {
+    id: 'mygit-unmatched-grid',
+    height: '180',
+    paging: true,
+    pageSize: 8,
+    sorting: true,
+    resizable: true,
+  };
   protected readonly matched = signal<MyGitMatch[]>([]);
   protected readonly unmatched = signal<MyGitUnmatched[]>([]);
   protected readonly gitlabInfo = signal<GitLabIntegration | null>(null);

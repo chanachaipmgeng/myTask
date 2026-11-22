@@ -1,48 +1,55 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  ExcelExportService,
-  FilterService,
-  GridComponent,
-  GridModule,
-  PageService,
-  SortService,
-} from '@syncfusion/ej2-angular-grids';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  KpiStatCardComponent,
+  PageHeadComponent,
+  PersonAvatarComponent,
+  SectionCardComponent,
+  SfCheckboxComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-snapshot-check',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    CheckBoxModule,
-    GridModule,
-    ProgressBarModule,
-    MessageModule,
     PageHeadComponent,
+    PersonAvatarComponent,
     SectionCardComponent,
     StatusBadgeComponent,
     KpiStatCardComponent,
-  ],
-  providers: [
-    PageService,
-    SortService,
-    FilterService,
-    ExcelExportService,
+    SfGridComponent,
+    SfCheckboxComponent,
   ],
   templateUrl: './snapshot-check.html',
 })
 export class SnapshotCheckPage {
+  protected readonly gridColumns: SfGridColumn[] = [
+    { field: 'nickname', headerText: 'พนักงาน', width: 175 },
+    { field: 'trackLabel', headerText: 'สายงาน', width: 145 },
+    { field: 'previousIndex', headerText: 'ดัชนีงวดก่อน', width: 130, textAlign: 'Right' },
+    { field: 'currentIndex', headerText: 'ดัชนีงวดนี้ (สด)', width: 145, textAlign: 'Right' },
+    { field: 'diff', headerText: 'ส่วนต่าง (Diff)', width: 130, textAlign: 'Right' },
+    { field: 'statusLabel', headerText: 'สถานะเทียบเป้า', width: 145, textAlign: 'Center' },
+  ];
+
+  protected readonly gridOptions: SfGridOptions = {
+    id: 'snapshot-preview-diff-grid',
+    paging: false,
+    sorting: true,
+    excelExport: true,
+    csvExport: true,
+    exportFileName: 'snapshot-preview-diff',
+  };
   protected readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
@@ -55,7 +62,23 @@ export class SnapshotCheckPage {
 
   protected readonly report = this.scorecard.preflightReport;
   protected readonly readinessScore = computed(() => this.report().overallReadinessScore);
-  protected readonly checks = computed(() => this.report().checks);
+  protected readonly checks = computed(() =>
+    this.report().checks.map((item) => {
+      const numMatch = item.summary.match(/\d+/);
+      const shortValue =
+        item.status === 'PASS'
+          ? 'ผ่าน'
+          : numMatch
+            ? `${numMatch[0]} รายการ`
+            : 'ต้องตรวจ';
+      return {
+        ...item,
+        shortTitle: `ด่านที่ ${item.stage} · ${item.name.replace(/\s*\([^)]*\)\s*/g, '').trim()}`,
+        shortValue,
+        fullHint: `${item.summary} — ${item.detail}`,
+      };
+    }),
+  );
   protected readonly previewDiffs = computed(() => this.report().previewDiffs);
 
   protected onConfirmChange(event: { checked?: boolean }): void {

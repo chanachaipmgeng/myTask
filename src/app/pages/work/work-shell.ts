@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
 import { filter, map, startWith } from 'rxjs';
 import { currentViewer, openprojectProjectCatalog } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -16,6 +15,7 @@ import {
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
+import { SfTextBoxComponent } from '../../shared/sf';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { listOrgTeamOptions } from '../../../../shared/domain/workspace-scope';
 import { WorkHubFilter, WorkHubScope } from './work-hub-filter';
@@ -39,7 +39,7 @@ const MINE_TABS = TEAM_TABS.filter((tab) => tab.path !== 'handoff' && tab.path !
     RouterOutlet,
     RouterLink,
     ButtonModule,
-    TextBoxModule,
+    SfTextBoxComponent,
     FilterChipsComponent,
     FormFieldComponent,
     PageHeadComponent,

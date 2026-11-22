@@ -7,17 +7,12 @@
   >
     <div actions class="flex flex-wrap items-center gap-2">
       <app-form-field label="คน" variant="filter">
-        <ejs-dropdownlist
-          id="schedule-person"
-          [dataSource]="personOptions()"
-          [fields]="fields"
+        <app-sf-dropdown
+          [items]="personOptions()"
           [value]="personId()"
-          (change)="setPerson($event)"
-          [allowFiltering]="true"
-          filterBarPlaceholder="ค้นหาชื่อ"
-          placeholder="เลือกคน"
-          width="220px"
-        ></ejs-dropdownlist>
+          [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชื่อ', placeholder: 'เลือกคน', width: '220px' }"
+          (valueChange)="setPerson($event)"
+        />
       </app-form-field>
     </div>
   </app-page-head>
@@ -29,94 +24,72 @@
       subtitle="คลิกแถบงานเพื่อโฟกัสวันทางขวา · อ่านอย่างเดียว"
     >
       <div actions class="flex flex-wrap items-center gap-2">
+        <app-live-pulse tone="primary" [label]="selectedDayLabel()" />
         <app-status-badge [label]="'แสดง ' + boardModel().shown + ' ใบ'" tone="info"></app-status-badge>
-        <app-status-badge [label]="'หลุดสัปดาห์ ' + boardModel().slipped + ' ใบ'" tone="warning"></app-status-badge>
-        <app-status-badge [label]="'ซ่อน ' + boardModel().hidden + ' ใบ'" tone="secondary"></app-status-badge>
-        <app-status-badge [label]="'โฟกัส ' + selectedDayLabel()" tone="primary"></app-status-badge>
+        @if (boardModel().slipped > 0) {
+          <app-status-badge [label]="'หลุดสัปดาห์ ' + boardModel().slipped" tone="warning"></app-status-badge>
+        }
       </div>
 
-      <div class="flex flex-wrap items-center gap-3 text-sm mb-1">
-        <span class="e-badge e-badge-primary e-badge-pill">แท่งงาน = ใบงาน · สถานะ/% อ่านอย่างเดียว</span>
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-muted mb-1">
         <span class="inline-flex items-center gap-2">
           <span class="schedule-swatch is-slipped"></span>
-          สีส้ม · หลุดจากสัปดาห์ที่ commit
+          แถบสีส้ม = หลุดจากสัปดาห์ที่ commit · ซ่อนอยู่ {{ boardModel().hidden }} ใบ (ไม่มีผู้รับหรือวันที่)
         </span>
       </div>
 
       @if (boardModel().shown === 0) {
-        <ejs-message
+        <app-sf-message
           content="ไม่มีใบงานที่แสดงในปฏิทินตามตัวกรองสาย/คนปัจจุบัน (ต้องมีผู้รับและช่วงวันที่)"
           severity="Info"
-          variant="Outlined"
-        ></ejs-message>
+        />
       } @else {
         <div #boardHost class="schedule-board-host">
-          <ejs-schedule
+          <ng-template #schedEventTpl let-data>
+            <div class="sched-task" [class.is-slipped]="data.Slipped" [class.is-paused]="data.IsPaused">
+              <div class="sched-task__row">
+                <span class="sched-task__id">{{ data.TicketId }}</span>
+                <span class="sched-task__pct">{{ data.Progress }}%</span>
+              </div>
+              <div class="sched-task__title">{{ data.Title }}</div>
+              <div class="sched-task__meta">
+                <span class="sched-task__dot" [attr.data-tone]="statusTone(data.Status)"></span>
+                <span>{{ data.Status }}</span>
+                <span>· {{ data.Size }}</span>
+                @if (data.Slipped) {
+                  <span class="sched-task__flag">หลุด</span>
+                }
+                @if (data.IsPaused) {
+                  <span class="sched-task__flag is-paused">พัก</span>
+                }
+                @if (data.IsMdDirect) {
+                  <span class="sched-task__flag is-md">MD</span>
+                }
+              </div>
+            </div>
+          </ng-template>
+          <ng-template #schedTooltipTpl let-data>
+            <div class="schedule-tip">
+              <p class="schedule-tip-title">{{ data.TicketId }} · {{ data.Title }}</p>
+              <p>{{ data.Status }} · ความคืบหน้า {{ data.Progress }}% · {{ data.Type }} · {{ data.Size }}</p>
+              <p>{{ data.WeekLabel }}@if (data.IsPaused) { · พักงาน}@if (data.IsMdDirect) { · MD-DIRECT}</p>
+            </div>
+          </ng-template>
+          <app-sf-schedule
             #board
-            id="team-schedule"
-            cssClass="team-schedule"
-            width="100%"
-            [readonly]="true"
-            currentView="TimelineMonth"
-            [firstDayOfWeek]="1"
-            [group]="group"
+            [selectedDate]="selectedDay()"
             [eventSettings]="eventSettings()"
-            [rowAutoHeight]="true"
-            [height]="scheduleHeight()"
+            [resources]="scheduleResources()"
+            [eventTemplate]="schedEventTpl"
+            [tooltipTemplate]="schedTooltipTpl"
+            [options]="scheduleOptions()"
             (created)="onScheduleCreated()"
             (actionBegin)="onActionBegin($event)"
             (navigating)="onNavigating($event)"
             (eventClick)="onEventClick($event)"
             (popupOpen)="onPopupOpen($event)"
             (eventRendered)="onEventRendered($event)"
-          >
-            <e-views>
-              <e-view option="TimelineMonth"></e-view>
-              <e-view option="TimelineWeek"></e-view>
-              <e-view option="Agenda"></e-view>
-            </e-views>
-            <e-resources>
-              <e-resource
-                field="OwnerId"
-                title="คน"
-                name="People"
-                [dataSource]="boardModel().people"
-                textField="Text"
-                idField="Id"
-                colorField="Color"
-              ></e-resource>
-            </e-resources>
-            <ng-template #eventSettingsTemplate let-data>
-              <div class="sched-task" [class.is-slipped]="data.Slipped" [class.is-paused]="data.IsPaused">
-                <div class="sched-task__row">
-                  <span class="sched-task__id">{{ data.TicketId }}</span>
-                  <span class="sched-task__pct">{{ data.Progress }}%</span>
-                </div>
-                <div class="sched-task__title">{{ data.Title }}</div>
-                <div class="sched-task__meta">
-                  <span class="sched-task__dot" [attr.data-tone]="statusTone(data.Status)"></span>
-                  <span>{{ data.Status }}</span>
-                  <span>· {{ data.Size }}</span>
-                  @if (data.Slipped) {
-                    <span class="sched-task__flag">หลุด</span>
-                  }
-                  @if (data.IsPaused) {
-                    <span class="sched-task__flag is-paused">พัก</span>
-                  }
-                  @if (data.IsMdDirect) {
-                    <span class="sched-task__flag is-md">MD</span>
-                  }
-                </div>
-              </div>
-            </ng-template>
-            <ng-template #eventSettingsTooltipTemplate let-data>
-              <div class="schedule-tip">
-                <p class="schedule-tip-title">{{ data.TicketId }} · {{ data.Title }}</p>
-                <p>{{ data.Status }} · ความคืบหน้า {{ data.Progress }}% · {{ data.Type }} · {{ data.Size }}</p>
-                <p>{{ data.WeekLabel }}@if (data.IsPaused) { · พักงาน}@if (data.IsMdDirect) { · MD-DIRECT}</p>
-              </div>
-            </ng-template>
-          </ejs-schedule>
+          />
         </div>
       }
     </app-section-card>
@@ -129,11 +102,11 @@
       badgeTone="info"
     >
       <div class="schedule-day-calendar">
-        <ejs-calendar
+        <app-sf-calendar
           [value]="selectedDay()"
-          [firstDayOfWeek]="1"
-          (change)="onCalendarChange($event)"
-        ></ejs-calendar>
+          [options]="{ firstDayOfWeek: 1 }"
+          (dateChange)="onCalendarChange($event)"
+        />
       </div>
 
       <app-filter-chips
@@ -143,13 +116,12 @@
       ></app-filter-chips>
 
       @if (dayAgenda().length === 0) {
-        <ejs-message
+        <app-sf-message
           content="ไม่มีใบงานในช่วงวันที่เลือกตามตัวกรองปัจจุบัน"
           severity="Info"
-          variant="Outlined"
-        ></ejs-message>
+        />
       } @else {
-        <div class="schedule-day-agenda">
+        <div class="schedule-day-agenda" appStagger [staggerStep]="45">
           @for (item of dayAgenda(); track item.Id) {
             <app-section-card
               variant="nested"
@@ -159,7 +131,10 @@
                 <div class="flex flex-wrap items-start justify-between gap-2">
                   <div class="min-w-0">
                     <p class="m-0 font-semibold text-sm leading-snug">{{ item.TicketId }} · {{ item.Title }}</p>
-                    <p class="fine m-0 mt-1">{{ ownerLabel(item.OwnerId) }} · {{ item.Progress }}%</p>
+                    <div class="flex items-center gap-2 mt-1.5">
+                      <app-person-avatar [personId]="item.OwnerId" [name]="ownerLabel(item.OwnerId)" [showName]="true" size="xs" />
+                      <span class="fine">· {{ item.Progress }}%</span>
+                    </div>
                   </div>
                   <div class="flex flex-wrap gap-1 justify-end">
                     <app-status-badge [label]="item.Status" [tone]="statusTone(item.Status)"></app-status-badge>
@@ -182,65 +157,31 @@
   </div>
 </section>
 
-<ejs-dialog
+<app-sf-dialog
   #loadChartDialog
-  cssClass="app-modal schedule-load-chart-dialog"
   header="กราฟโหลดงานตามคน"
   [visible]="false"
-  [isModal]="true"
-  [showCloseIcon]="true"
-  width="760px"
-  [animationSettings]="chartDialogAnimation"
-  (open)="onLoadChartDialogOpen()"
+  [options]="{ width: '760px', isModal: true, showCloseIcon: true, animationEffect: 'Fade', cssClass: 'schedule-load-chart-dialog' }"
+  (opened)="onLoadChartDialogOpen()"
 >
-  <ng-template #content>
-    <div class="flex flex-col gap-3">
-      <p class="fine m-0">
-        นับใบงานที่ทับซ้อนเดือน <strong>{{ loadChartMonthLabel() }}</strong>
-        ตามสายที่กรอง · แท่งเขียว = ตรงสัปดาห์ · ส้ม = หลุดสัปดาห์
-      </p>
-      @if (loadChartRows().every((row) => row.total === 0)) {
-        <ejs-message
-          content="ไม่มีใบงานในช่วงเดือนที่โฟกัสตามตัวกรองปัจจุบัน"
-          severity="Info"
-          variant="Outlined"
-        ></ejs-message>
-      } @else {
-        <ejs-chart
-          #loadChart
-          height="360px"
-          width="100%"
-          [theme]="theme.sfTheme()"
-          [primaryXAxis]="chartPrimaryX"
-          [primaryYAxis]="chartPrimaryY"
-          [tooltip]="chartTooltip"
-          [legendSettings]="chartLegend"
-          [chartArea]="chartArea"
-          [enableAnimation]="false"
-        >
-          <e-series-collection>
-            <e-series
-              type="StackingColumn"
-              [dataSource]="loadChartRows()"
-              xName="name"
-              yName="onTrack"
-              name="ตรงสัปดาห์"
-              fill="#54b054"
-              columnWidth="0.55"
-            ></e-series>
-            <e-series
-              type="StackingColumn"
-              [dataSource]="loadChartRows()"
-              xName="name"
-              yName="slipped"
-              name="หลุดสัปดาห์"
-              fill="#d83b01"
-              columnWidth="0.55"
-              [cornerRadius]="chartCorner"
-            ></e-series>
-          </e-series-collection>
-        </ejs-chart>
-      }
-    </div>
-  </ng-template>
-</ejs-dialog>
+  <div class="flex flex-col gap-3">
+    <p class="fine m-0">
+      นับใบงานที่ทับซ้อนเดือน <strong>{{ loadChartMonthLabel() }}</strong>
+      ตามสายที่กรอง · แท่งเขียว = ตรงสัปดาห์ · ส้ม = หลุดสัปดาห์
+    </p>
+    @if (loadChartRows().every((row) => row.total === 0)) {
+      <app-sf-message
+        content="ไม่มีใบงานในช่วงเดือนที่โฟกัสตามตัวกรองปัจจุบัน"
+        severity="Info"
+      />
+    } @else {
+      <app-sf-chart
+        #loadChart
+        [series]="loadChartSeries()"
+        [primaryXAxis]="chartPrimaryX"
+        [primaryYAxis]="chartPrimaryY"
+        [options]="loadChartOptions"
+      />
+    }
+  </div>
+</app-sf-dialog>

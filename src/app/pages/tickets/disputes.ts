@@ -10,22 +10,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import {
-  FilterService,
-  GridModule,
-  PageService,
-  RecordClickEventArgs,
-  SortService,
-} from '@syncfusion/ej2-angular-grids';
-import {
-  SpeechToTextModule,
-  TextBoxModule,
-  TranscriptChangedEventArgs,
-} from '@syncfusion/ej2-angular-inputs';
-import { SplitterModule } from '@syncfusion/ej2-angular-layouts';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
-import { DialogModule } from '@syncfusion/ej2-angular-popups';
+import { SpeechToTextModule, TranscriptChangedEventArgs } from '@syncfusion/ej2-angular-inputs';
 import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { TicketDispute, VarianceCode } from '../../core/models';
 import { scoreTicket } from '../../core/scoring';
@@ -40,12 +25,25 @@ import {
   mergeSpeechTranscript,
   speechErrorMessageTh,
 } from '../../shared/speech-to-text';
-import { BadgeTone } from '../../shared/ui/badge';
-import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
-import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge';
+import {
+  BadgeTone,
+  FilterChipOption,
+  FilterChipsComponent,
+  FormFieldComponent,
+  PageHeadComponent,
+  SectionCardComponent,
+  SfDialogComponent,
+  SfDropdownComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfSplitterComponent,
+  SfSplitterOptions,
+  SfSplitterPane,
+  SfTextBoxComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-disputes',
@@ -53,24 +51,19 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge/status-badge'
   imports: [
     FormsModule,
     ButtonModule,
-    GridModule,
-    DropDownListModule,
-    TextBoxModule,
     SpeechToTextModule,
-    DialogModule,
-    MessageModule,
-    SplitterModule,
     PageHeadComponent,
     SectionCardComponent,
     FilterChipsComponent,
     FormFieldComponent,
     StatusBadgeComponent,
     KpiStatCardComponent,
-  ],
-  providers: [
-    PageService,
-    SortService,
-    FilterService,
+    SfDialogComponent,
+    SfDropdownComponent,
+    SfGridComponent,
+    SfMessageComponent,
+    SfSplitterComponent,
+    SfTextBoxComponent,
   ],
   templateUrl: './disputes.html',
   styleUrl: './disputes.scss',
@@ -94,6 +87,31 @@ export class DisputesPage implements OnInit {
   /** กว้าง: ซ้าย–ขวา · แคบ: บน–ล่าง */
   protected readonly splitterOrientation = signal<'Horizontal' | 'Vertical'>('Horizontal');
   protected readonly splitterHeight = signal('560px');
+  protected readonly splitterPanes: SfSplitterPane[] = [
+    { id: 'list', size: '58%', min: '280px', collapsible: true },
+    { id: 'detail', size: '42%', min: '260px', collapsible: true },
+  ];
+  protected readonly splitterOptions = computed<SfSplitterOptions>(() => ({
+    cssClass: 'disputes-splitter',
+    height: this.splitterHeight(),
+    orientation: this.splitterOrientation(),
+    separatorSize: 5,
+  }));
+  protected readonly disputeColumns: SfGridColumn[] = [
+    { field: 'disputeCode', headerText: 'รหัสคำขอ', width: 105 },
+    { field: 'ticketId', headerText: 'ใบงาน', width: 90 },
+    { field: 'requesterId', headerText: 'ผู้ยื่น', width: 95 },
+    { field: 'requestedFlag', headerText: 'ประเภท', width: 105 },
+    { field: 'scoreDiff', headerText: 'คะแนนเดิม > ใหม่', width: 120, textAlign: 'Right' },
+    { field: 'status', headerText: 'สถานะ', width: 110 },
+  ];
+  protected readonly disputeGridOptions: SfGridOptions = {
+    id: 'disputes-list-grid',
+    height: '380',
+    sorting: true,
+    search: true,
+    resizable: true,
+  };
 
   protected readonly role = effectiveRole;
   protected readonly statusFilter = signal<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
@@ -211,10 +229,17 @@ export class DisputesPage implements OnInit {
     this.selectedDispute.set(null);
   }
 
-  protected onRecordClick(args: RecordClickEventArgs): void {
-    const dispute = args.rowData as TicketDispute;
+  protected onRowSelected(args: { data?: unknown }): void {
+    const dispute = args.data as TicketDispute | undefined;
+    if (!dispute) return;
     this.selectedDispute.set(dispute);
     this.reviewerComment.set(dispute.reviewerComment ?? '');
+  }
+
+  protected setNewRequestedFlag(val: string): void {
+    if (val === 'BLK' || val === 'ENV' || val === 'REQ') {
+      this.newRequestedFlag.set(val);
+    }
   }
 
   protected openCreateDialog(): void {

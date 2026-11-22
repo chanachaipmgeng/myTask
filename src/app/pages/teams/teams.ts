@@ -1,31 +1,50 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ButtonModule, CheckBoxModule } from '@syncfusion/ej2-angular-buttons';
-import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
+import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { canAssignWork } from '../../core/admin-settings';
 import { ApiClient, TeamsIntegration } from '../../core/api-client';
 import { ShellNotice } from '../../core/shell-notice';
 import { TeamsLogEntry, TeamsNotifyService } from '../../core/teams-notify';
 import { ScorecardService } from '../../core/scorecard.service';
-import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
+import {
+  PageHeadComponent,
+  SectionCardComponent,
+  SfCheckboxComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfTextBoxComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-teams',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    CheckBoxModule,
-    TextBoxModule,
-    GridModule,
-    MessageModule,
     PageHeadComponent,
     SectionCardComponent,
+    SfCheckboxComponent,
+    SfTextBoxComponent,
+    SfGridComponent,
+    SfMessageComponent,
   ],
   templateUrl: './teams.html',
 })
 export class TeamsPage {
-  private readonly teams = inject(TeamsNotifyService);
+  protected readonly logColumns: SfGridColumn[] = [
+    { field: 'ticketId', headerText: 'ใบงาน', width: 140 },
+    { field: 'text', headerText: 'ข้อความ', width: 420 },
+    { field: 'statusLabel', headerText: 'สถานะ', width: 180 },
+  ];
+  protected readonly logGridOptions: SfGridOptions = {
+    id: 'teams-log-grid',
+    paging: false,
+    resizable: true,
+    excelExport: true,
+    height: '240px',
+    exportFileName: 'teams-notifications',
+  };
+  protected readonly teams = inject(TeamsNotifyService);
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
   private readonly api = inject(ApiClient, { optional: true });

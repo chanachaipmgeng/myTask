@@ -1,61 +1,38 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  CategoryService,
-  ChartModule,
-  ColumnSeriesService,
-  LegendService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
-import {
-  AggregateService,
-  ColumnChooserService,
-  ExcelExportService,
-  FilterService,
-  GridModule,
-  PageService,
-  ResizeService,
-  SortService,
-  ToolbarService,
-} from '@syncfusion/ej2-angular-grids';
-import { TabModule } from '@syncfusion/ej2-angular-navigations';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { AnalyticsReport, buildAnalyticsReport } from '../../core/analytics';
 import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
+import {
+  PageHeadComponent,
+  SectionCardComponent,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfTabItem,
+  SfTabsComponent,
+} from '../../shared/ui';
 
 @Component({
   selector: 'app-analytics',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    ChartModule,
-    GridModule,
     PageHeadComponent,
     SectionCardComponent,
-    TabModule,
-    MessageModule,
     RouterLink,
-  ],
-  providers: [
-    CategoryService,
-    ColumnSeriesService,
-    LegendService,
-    TooltipService,
-    PageService,
-    SortService,
-    FilterService,
-    ResizeService,
-    ColumnChooserService,
-    ExcelExportService,
-    AggregateService,
-    ToolbarService,
+    SfChartComponent,
+    SfGridComponent,
+    SfMessageComponent,
+    SfTabsComponent,
   ],
   templateUrl: './analytics.html',
 })
@@ -66,11 +43,9 @@ export class AnalyticsPage {
   private readonly notice = inject(ShellNotice);
   protected readonly theme = inject(ThemeService);
 
-  protected readonly pageSettings = { pageSize: 10 };
-  protected readonly gridToolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     majorGridLines: { width: 0 },
     labelStyle: this.axisFont,
   };
@@ -82,21 +57,117 @@ export class AnalyticsPage {
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
-  protected readonly tooltip = {
-    enable: true,
-    shared: true,
-    enableMarker: true,
-    header: '${point.x}',
-    format: '${series.name}: <b>${point.y}</b>',
+
+  protected readonly analyticsTabs = computed<SfTabItem[]>(() => [
+    { id: 'hygiene', header: `1. ตรวจสอบข้อมูลซิงก์ & Outliers (${this.report().syncHygiene.issueCount})` },
+    { id: 'risks', header: `2. เรดาร์ติดตามความเสี่ยงใบงานเปิด (${this.report().deliveryRisks.length})` },
+    { id: 'coaching', header: '3. วิเคราะห์พัฒนาการ & โค้ชรายคน (1-on-1 Coaching)' },
+    { id: 'bottlenecks', header: '4. วิเคราะห์คอขวดโมดูล & สาเหตุปัญหา (Bottlenecks)' },
+  ]);
+
+  protected readonly hygieneColumns: SfGridColumn[] = [
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 120 },
+    { field: 'title', headerText: 'ชื่องาน / โมดูล', width: 200 },
+    { field: 'trackLabel', headerText: 'สายงาน', width: 110 },
+    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 140 },
+    { field: 'severity', headerText: 'ระดับความสำคัญ', width: 130 },
+    { field: 'issueType', headerText: 'ชนิดประเด็น', width: 160 },
+    { field: 'detail', headerText: 'รายละเอียดสิ่งที่ตรวจพบ', width: 360 },
+  ];
+  protected readonly hygieneGridOptions: SfGridOptions = {
+    id: 'hygiene-issues-grid',
+    height: '360',
+    paging: true,
+    pageSize: 10,
+    sorting: true,
+    filtering: 'Excel',
+    resizable: true,
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    exportFileName: 'sync-hygiene-issues',
   };
-  protected readonly legend = {
-    visible: true,
-    position: 'Top',
-    alignment: 'Center',
-    textStyle: this.axisFont,
+
+  protected readonly riskColumns: SfGridColumn[] = [
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 120 },
+    { field: 'title', headerText: 'เรื่อง', width: 200 },
+    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 130 },
+    { field: 'status', headerText: 'สถานะ', width: 130 },
+    { field: 'estimateMd', headerText: 'Est MD', width: 95, textAlign: 'Right', format: 'N2' },
+    { field: 'actualMd', headerText: 'Actual MD', width: 105, textAlign: 'Right', format: 'N2' },
+    { field: 'riskScore', headerText: 'Risk Score', width: 110, textAlign: 'Right' },
+    { field: 'riskLevel', headerText: 'ระดับความเสี่ยง', width: 130 },
+  ];
+  protected readonly riskGridOptions: SfGridOptions = {
+    id: 'delivery-risk-grid',
+    height: '360',
+    paging: true,
+    pageSize: 10,
+    sorting: true,
+    resizable: true,
+    search: true,
+    excelExport: true,
+    exportFileName: 'delivery-risks',
   };
-  protected readonly chartArea = { border: { width: 0 } };
-  protected readonly columnCorner = { topLeft: 4, topRight: 4 };
+
+  protected readonly coachingColumns: SfGridColumn[] = [
+    { field: 'nickname', headerText: 'พนักงาน', width: 120 },
+    { field: 'trackLabel', headerText: 'สายงาน', width: 105 },
+    { field: 'developmentIndex', headerText: 'ดัชนีพัฒนา', width: 105, textAlign: 'Right', format: 'N1' },
+    { field: 'trendSlope', headerText: 'Slope แนวโน้ม', width: 120, textAlign: 'Right', format: 'N2' },
+    { field: 'trendLabel', headerText: 'สถานะแนวโน้ม', width: 190 },
+    { field: 'onTimePct', headerText: 'ตรงสัปดาห์ %', width: 120, textAlign: 'Right', format: 'N1' },
+    { field: 'estimationAccuracyPct', headerText: 'แม่นขนาด %', width: 115, textAlign: 'Right', format: 'N1' },
+    { field: 'firstPassPct', headerText: 'ผ่านรอบแรก %', width: 125, textAlign: 'Right', format: 'N1' },
+    { field: 'strengthNote', headerText: 'จุดแข็งที่พบ', width: 240 },
+    { field: 'coachingFocus', headerText: 'คำแนะนำสำหรับการโค้ช (1-on-1)', width: 340 },
+  ];
+  protected readonly coachingGridOptions: SfGridOptions = {
+    id: 'coaching-insights-grid',
+    height: '400',
+    paging: true,
+    pageSize: 15,
+    sorting: true,
+    resizable: true,
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    exportFileName: 'coaching-insights',
+  };
+
+  protected readonly bottleneckSeries = computed<SfChartSeriesConfig[]>(() => {
+    const mods = this.report().bottlenecks.modules;
+    return [
+      { type: 'Column', dataSource: mods, xName: 'module', yName: 'avgReviewRounds', name: 'รอบรีวิวเฉลี่ย', fill: '#4c68e5', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+      { type: 'Column', dataSource: mods, xName: 'module', yName: 'reopenTotal', name: 'จำนวน Reopen รวม', fill: '#e35d6a', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+    ];
+  });
+  protected readonly bottleneckChartOptions: SfChartOptions = {
+    height: '280px',
+    exportable: true,
+    fullscreenable: true,
+    exportFileName: 'bottleneck-modules',
+    enableAnimation: true,
+    legend: { visible: true, position: 'Top', alignment: 'Center', textStyle: this.axisFont },
+    tooltip: { enable: true, shared: true, enableMarker: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b>' },
+  };
+
+  protected readonly bottleneckColumns: SfGridColumn[] = [
+    { field: 'module', headerText: 'โมดูล / ระบบงาน', width: 180 },
+    { field: 'ticketCount', headerText: 'จำนวนใบงาน', width: 120, textAlign: 'Right' },
+    { field: 'avgReviewRounds', headerText: 'รอบรีวิวเฉลี่ย', width: 130, textAlign: 'Right', format: 'N2' },
+    { field: 'reopenTotal', headerText: 'Reopen รวม', width: 120, textAlign: 'Right' },
+    { field: 'avgRatio', headerText: 'Actual/Est เฉลี่ย', width: 140, textAlign: 'Right', format: 'N2' },
+    { field: 'slipRatePct', headerText: 'อัตราหลุดสัปดาห์ %', width: 150, textAlign: 'Right', format: 'N1' },
+  ];
+  protected readonly bottleneckGridOptions: SfGridOptions = {
+    id: 'bottleneck-module-grid',
+    height: '260',
+    sorting: true,
+    resizable: true,
+    excelExport: true,
+    exportFileName: 'bottleneck-modules',
+  };
 
   protected readonly running = signal(false);
   protected readonly message = signal('');

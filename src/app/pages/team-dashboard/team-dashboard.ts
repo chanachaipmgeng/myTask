@@ -1,39 +1,6 @@
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  ElementRef,
-  QueryList,
-  ViewChildren,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  AccumulationChartComponent,
-  AccumulationChartModule,
-  AccumulationDataLabelService,
-  AccumulationLegendService,
-  AccumulationTooltipService,
-  CategoryService,
-  ChartComponent,
-  ChartModule,
-  ColumnSeriesService,
-  StackingAreaSeriesService,
-  StackingColumnSeriesService,
-  LegendService,
-  LineSeriesService,
-  PieSeriesService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { GridModule, ResizeService, SortService } from '@syncfusion/ej2-angular-grids';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import { DashboardLayoutModule } from '@syncfusion/ej2-angular-layouts';
-import { MessageModule } from '@syncfusion/ej2-angular-notifications';
 import { canCaptureKpi } from '../../core/admin-settings';
 import { ApiClient, KpiSnapshotPeriodDto, KpiSnapshotRowDto } from '../../core/api-client';
 import { mdCompositionTrend, monthlyTrend, quotaBars } from '../../core/dashboard-charts';
@@ -46,11 +13,23 @@ import { INDEX_TARGET, formatMd, sampleWorkloadPoints } from '../../core/scoring
 import { ShellNotice } from '../../core/shell-notice';
 import { todayInBangkok } from '../../core/workflow';
 import { TEAM_CONTEXT_2568 } from '../../data/team-context';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
-import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { LoadingSkeletonComponent } from '../../shared/ui/loading-skeleton/loading-skeleton';
-import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { Router } from '@angular/router';
+import {
+  FormFieldComponent,
+  LoadingSkeletonComponent,
+  PageHeadComponent,
+  SectionCardComponent,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
+  SfDonutChartComponent,
+  SfDonutChartOptions,
+  SfDropdownComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfMessageComponent,
+  SfTextBoxComponent,
+} from '../../shared/ui';
 import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
 type TrackFilter = WorkspaceTrackFilter;
@@ -61,54 +40,31 @@ const LIVE_MODE = 'live';
   selector: 'app-team-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    DashboardLayoutModule,
-    AccumulationChartModule,
-    ChartModule,
-    DropDownListModule,
     ButtonModule,
-    GridModule,
-    TextBoxModule,
-    MessageModule,
     PageHeadComponent,
     SectionCardComponent,
     FormFieldComponent,
     LoadingSkeletonComponent,
-  ],
-  providers: [
-    PieSeriesService,
-    AccumulationLegendService,
-    AccumulationTooltipService,
-    AccumulationDataLabelService,
-    CategoryService,
-    LineSeriesService,
-    ColumnSeriesService,
-    StackingAreaSeriesService,
-    StackingColumnSeriesService,
-    LegendService,
-    TooltipService,
-    SortService,
-    ResizeService,
+    SfChartComponent,
+    SfDonutChartComponent,
+    SfDropdownComponent,
+    SfGridComponent,
+    SfMessageComponent,
+    SfTextBoxComponent,
   ],
   templateUrl: './team-dashboard.html',
   styleUrl: './team-dashboard.scss',
 })
-export class TeamDashboard implements AfterViewInit {
+export class TeamDashboard {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient, { optional: true });
   private readonly notice = inject(ShellNotice);
   private readonly workspace = inject(WorkspaceFilter);
   private readonly router = inject(Router);
   protected readonly theme = inject(ThemeService);
-  private readonly el = inject(ElementRef);
-  private readonly destroyRef = inject(DestroyRef);
-
-  @ViewChildren(AccumulationChartComponent) private readonly accCharts!: QueryList<AccumulationChartComponent>;
-  @ViewChildren(ChartComponent) private readonly charts!: QueryList<ChartComponent>;
 
   protected readonly canCapture = canCaptureKpi;
   protected readonly context = TEAM_CONTEXT_2568;
-  protected readonly cellSpacing = [12, 12];
-  protected readonly fields = { text: 'text', value: 'value' };
   protected readonly captureTypeOptions = [
     { text: 'เดือน', value: 'month' },
     { text: 'ไตรมาส', value: 'quarter' },
@@ -139,40 +95,11 @@ export class TeamDashboard implements AfterViewInit {
   protected readonly snapshotError = signal('');
   protected readonly loadingSnapshot = signal(false);
 
-  /** Legend ขวาแบบ Expense doughnut ใน UI Kit */
-  protected readonly legend = {
-    visible: true,
-    position: 'Right',
-    alignment: 'Center',
-    shape: 'Circle',
-    textStyle: { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' },
-  };
-  /** ซ่อน label นอกวง — อ่านจาก legend + tooltip แทน */
-  protected readonly donutLabel = { visible: false };
-  protected readonly contextTooltip = {
-    enable: true,
-    format: '${point.x}: <b>${point.y}%</b>',
-  };
-  protected readonly sampleTooltip = {
-    enable: true,
-    format: '${point.x}: <b>${point.y}</b> MD',
-  };
   protected readonly palette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6'];
-  protected readonly centerTextStyle = computed(() => ({
-    fontFamily: 'Sarabun, Tahoma, sans-serif',
-    fontWeight: '700',
-    size: '15px',
-    color: this.theme.isDark() ? '#e2e8f0' : '#1e293b',
-  }));
-
-  protected readonly workloadCenter = computed(() => ({
-    text: `${TEAM_CONTEXT_2568.tasks.toLocaleString('en-US')}<br>งาน`,
-    textStyle: this.centerTextStyle(),
-  }));
   protected readonly target = INDEX_TARGET;
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     majorGridLines: { width: 0 },
     labelStyle: this.axisFont,
   };
@@ -196,40 +123,107 @@ export class TeamDashboard implements AfterViewInit {
     majorTickLines: { width: 0 },
     lineStyle: { width: 0 },
   };
-  protected readonly chartTooltip = {
-    enable: true,
-    shared: true,
-    enableMarker: true,
-    header: '${point.x}',
-    format: '${series.name}: <b>${point.y}</b>',
+
+  protected readonly snapshotColumns: SfGridColumn[] = [
+    { field: 'nickname', headerText: 'พนักงาน', width: 175, cellType: 'person', personIdField: 'personId' },
+    { field: 'trackLabel', headerText: 'สาย', width: 115, cellType: 'badge' },
+    { field: 'index', headerText: 'ดัชนี', width: 140, format: 'N1', cellType: 'progress' },
+    { field: 'closedCount', headerText: 'ใบปิด', width: 90, textAlign: 'Right', cellType: 'metric' },
+    { field: 'closedMd', headerText: 'MD ปิด', width: 105, textAlign: 'Right', format: 'N2', cellType: 'metric' },
+    { field: 'planIndex', headerText: 'แผน %', width: 100, textAlign: 'Right', format: 'N1', cellType: 'metric', suffix: '%' },
+    { field: 'weighted', headerText: 'ถ่วงใบ', width: 100, textAlign: 'Right', format: 'N1', cellType: 'metric' },
+  ];
+  protected readonly snapshotGridOptions: SfGridOptions = {
+    id: 'team-snapshot-grid',
+    height: '320',
+    sorting: true,
+    resizable: true,
+    excelExport: true,
+    exportFileName: 'team-kpi-snapshot',
   };
-  protected readonly chartLegend = {
-    visible: true,
-    position: 'Top',
-    alignment: 'Center',
-    textStyle: this.axisFont,
+
+  protected readonly workloadDonutOptions: SfDonutChartOptions = {
+    height: '260px',
+    innerRadius: '60%',
+    radius: '82%',
+    centerLabel: `${TEAM_CONTEXT_2568.tasks.toLocaleString('en-US')}<br>งาน`,
+    palettes: this.palette,
+    legend: { visible: true, position: 'Bottom', alignment: 'Center' },
+    tooltip: { enable: true, format: '${point.x}: <b>${point.y}%</b>' },
+    exportable: true,
+    exportFileName: 'team-workload-donut',
   };
-  protected readonly chartArea = { border: { width: 0 } };
-  /** จุดข้อมูลบนเส้นแนวโน้ม (multi-series) */
-  protected readonly seriesMarker = {
-    visible: true,
-    width: 7,
-    height: 7,
-    shape: 'Circle',
-    isFilled: true,
+
+  protected readonly sampleDonutOptions = computed<SfDonutChartOptions>(() => {
+    const md = this.samplePoints().reduce((sum, point) => sum + point.y, 0);
+    return {
+      height: '260px',
+      innerRadius: '60%',
+      radius: '82%',
+      centerLabel: `${formatMd(md)}<br>MD`,
+      palettes: this.palette,
+      legend: { visible: true, position: 'Bottom', alignment: 'Center' },
+      tooltip: { enable: true, format: '${point.x}: <b>${point.y}</b> MD' },
+      exportable: true,
+      exportFileName: 'team-sample-donut',
+    };
+  });
+
+  protected readonly monthlySeries = computed<SfChartSeriesConfig[]>(() => {
+    const pts = this.monthlyPoints();
+    const seriesMarker = { visible: true, width: 7, height: 7, shape: 'Circle', isFilled: true };
+    const targetMarker = { visible: true, width: 8, height: 8, shape: 'Diamond', isFilled: true, fill: '#f0b429', border: { width: 1, color: '#f0b429' } };
+    return [
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'plan', name: 'ปิดตามแผน', width: 2.5, fill: '#2e4fc8', marker: seriesMarker },
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'accuracy', name: 'ความแม่น', width: 2.5, fill: '#3ec6e0', marker: seriesMarker },
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'rework', name: 'Rework', width: 2.5, fill: '#e35d6a', marker: seriesMarker },
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'target', name: 'เป้า 75', width: 2, fill: '#f0b429', dashArray: '6,4', marker: targetMarker },
+    ];
+  });
+  protected readonly monthlyChartOptions: SfChartOptions = {
+    height: '260px',
+    exportable: true,
+    fullscreenable: true,
+    exportFileName: 'team-monthly-trend',
+    enableAnimation: true,
+    legend: { visible: true, position: 'Top', alignment: 'Center', textStyle: this.axisFont },
+    tooltip: { enable: true, shared: true, enableMarker: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b>' },
   };
-  /** เส้นเป้า — แยกด้วย dash + diamond ตามแนว Actual vs Ideal */
-  protected readonly targetMarker = {
-    visible: true,
-    width: 8,
-    height: 8,
-    shape: 'Diamond',
-    isFilled: true,
-    fill: '#f0b429',
-    border: { width: 1, color: '#f0b429' },
+
+  protected readonly quotaSeries = computed<SfChartSeriesConfig[]>(() => {
+    const pts = this.quotaPoints();
+    return [
+      { type: 'StackingColumn', dataSource: pts, xName: 'nickname', yName: 'used', name: 'ใช้แล้ว', fill: '#2e4fc8', columnWidth: 0.48 },
+      { type: 'StackingColumn', dataSource: pts, xName: 'nickname', yName: 'free', name: 'ว่าง', fill: '#c7d2fe', columnWidth: 0.48, cornerRadius: { topLeft: 8, topRight: 8 } },
+    ];
+  });
+  protected readonly quotaChartOptions: SfChartOptions = {
+    height: '260px',
+    exportable: true,
+    fullscreenable: true,
+    exportFileName: 'team-quota-bars',
+    enableAnimation: true,
+    legend: { visible: true, position: 'Top', alignment: 'Center', textStyle: this.axisFont },
+    tooltip: { enable: true, shared: true, enableMarker: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b>' },
   };
-  /** มุมบนแท่ง Grouped/Stacked Column (แนว UI Kit) */
-  protected readonly columnCorner = { topLeft: 8, topRight: 8 };
+
+  protected readonly mdCompSeries = computed<SfChartSeriesConfig[]>(() => {
+    const pts = this.mdCompositionPoints();
+    return [
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'plannedMd', name: 'Planned (ในแผน)', fill: '#2e4fc8', opacity: 0.82 },
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#3ec6e0', opacity: 0.82 },
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'mdMandateMd', name: '⚡ MD Mandate (สั่งตรง)', fill: '#f59e0b', opacity: 0.88 },
+    ];
+  });
+  protected readonly mdCompChartOptions: SfChartOptions = {
+    height: '270px',
+    exportable: true,
+    fullscreenable: true,
+    exportFileName: 'team-md-composition',
+    enableAnimation: true,
+    legend: { visible: true, position: 'Top', alignment: 'Center', textStyle: this.axisFont },
+    tooltip: { enable: true, shared: true, enableMarker: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b>' },
+  };
 
   protected readonly alerts = this.scorecard.alerts;
   protected readonly explanations = computed(() => kpiExplanations(this.scopedTickets(), this.scopedPeople()));
@@ -249,18 +243,6 @@ export class TeamDashboard implements AfterViewInit {
 
   protected readonly monthlyPoints = computed(() =>
     monthlyTrend(this.scopedPeople(), this.scopedTickets(), this.track()),
-  );
-  protected readonly sparkPlan = computed(() =>
-    this.monthlyPoints().map((p) => ({ x: p.month, y: p.plan })),
-  );
-  protected readonly sparkAccuracy = computed(() =>
-    this.monthlyPoints().map((p) => ({ x: p.month, y: p.accuracy })),
-  );
-  protected readonly sparkRework = computed(() =>
-    this.monthlyPoints().map((p) => ({ x: p.month, y: p.rework })),
-  );
-  protected readonly sparkTarget = computed(() =>
-    this.monthlyPoints().map((p) => ({ x: p.month, y: p.target })),
   );
   protected readonly quotaPoints = computed(() =>
     quotaBars(this.scopedPeople(), this.scopedTickets(), this.track()),
@@ -283,14 +265,6 @@ export class TeamDashboard implements AfterViewInit {
     return `${tickets.length} ใบ · ${formatMd(md)} MD`;
   });
 
-  protected readonly sampleCenter = computed(() => {
-    const md = this.samplePoints().reduce((sum, point) => sum + point.y, 0);
-    return {
-      text: `${formatMd(md)}<br>MD`,
-      textStyle: this.centerTextStyle(),
-    };
-  });
-
   protected readonly snapshotTableRows = computed(() => {
     const track = this.track();
     return this.snapshotRows()
@@ -310,51 +284,6 @@ export class TeamDashboard implements AfterViewInit {
 
   constructor() {
     void this.reloadPeriods();
-    effect(() => {
-      this.theme.isDark();
-      this.scheduleChartRefresh();
-    });
-  }
-
-  ngAfterViewInit(): void {
-    this.scheduleChartRefresh();
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver(() => {
-        this.scheduleChartRefresh();
-      });
-      observer.observe(this.el.nativeElement);
-      this.destroyRef.onDestroy(() => observer.disconnect());
-    }
-  }
-
-  protected onDashboardCreated(): void {
-    this.scheduleChartRefresh();
-  }
-
-  private scheduleChartRefresh(): void {
-    setTimeout(() => {
-      this.refreshCharts();
-    }, 50);
-    setTimeout(() => {
-      this.refreshCharts();
-    }, 200);
-  }
-
-  private refreshCharts(): void {
-    this.accCharts?.forEach((chart) => {
-      try {
-        chart.refresh();
-      } catch {}
-    });
-    this.charts?.forEach((chart) => {
-      try {
-        chart.refresh();
-      } catch {}
-    });
-  }
-
-  protected setTrack(event: { value?: string | null }): void {
-    this.setTrackChip(event.value ?? '');
   }
 
   protected setTrackChip(value: string): void {
@@ -380,8 +309,8 @@ export class TeamDashboard implements AfterViewInit {
     void this.workspace.navigateWithFilter(['/people']);
   }
 
-  protected onSamplePointClick(args: { point?: { x?: string } }): void {
-    const label = (args.point?.x ?? '').toLowerCase();
+  protected onSamplePointClick(args: { point?: { x?: unknown } }): void {
+    const label = String(args.point?.x ?? '').toLowerCase();
     if (label.includes('r&d') || label.includes('rd')) {
       this.drillToTickets('RD');
       return;
@@ -393,8 +322,8 @@ export class TeamDashboard implements AfterViewInit {
     this.drillToTickets();
   }
 
-  protected setPeriodMode(event: { value?: string | null }): void {
-    const value = event.value ?? LIVE_MODE;
+  protected setPeriodMode(raw: unknown): void {
+    const value = String(raw ?? LIVE_MODE);
     this.periodMode.set(value);
     if (value === LIVE_MODE) {
       this.snapshotRows.set([]);
@@ -405,14 +334,14 @@ export class TeamDashboard implements AfterViewInit {
     void this.loadSnapshot(periodType, periodKey);
   }
 
-  protected setCaptureType(event: { value?: string | null }): void {
-    if (event.value === 'month' || event.value === 'quarter') {
-      this.captureType.set(event.value);
+  protected setCaptureType(raw: unknown): void {
+    if (raw === 'month' || raw === 'quarter') {
+      this.captureType.set(raw);
     }
   }
 
-  protected onCaptureKey(event: { value?: string | null }): void {
-    this.captureKey.set((event.value ?? '').trim());
+  protected onCaptureKey(raw: string): void {
+    this.captureKey.set((raw ?? '').trim());
   }
 
   protected async captureSnapshot(): Promise<void> {

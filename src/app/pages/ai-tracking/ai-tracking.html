@@ -10,20 +10,12 @@
         <span>{{ share().percentLabel }} ({{ share().spikeMd }} / {{ share().plannedMd }} MD)</span>
         <span class="e-badge e-badge-info">{{ share().bandLabel }}</span>
       </div>
-      <ejs-progressbar
+      <app-sf-progress
         id="ai-spike-progress"
-        type="Linear"
-        [theme]="theme.sfTheme()"
-        width="100%"
-        height="14"
-        [minimum]="0"
-        [maximum]="100"
         [value]="sharePct()"
-        [trackThickness]="10"
-        [progressThickness]="10"
-        [progressColor]="theme.progressFill()"
-        [trackColor]="theme.progressTrack()"
-      ></ejs-progressbar>
+        height="14"
+        [options]="{ trackThickness: 10, progressThickness: 10, animated: true }"
+      />
       <p class="fine m-0 pt-1">MD ในมุมนี้ {{ trackedMd() }} &middot; MD ที่ปิดแล้ว {{ acceptedMd() }}</p>
     </div>
   </app-section-card>
@@ -42,30 +34,12 @@
         </div>
       } @else {
         <div class="chart-frame m-0">
-        <ejs-chart
-          id="ai-md-chart"
-          style="display: block; height: 320px; width: 100%"
-          [theme]="theme.sfTheme()"
-          [primaryXAxis]="categoryAxis"
-          [primaryYAxis]="mdAxis"
-          [tooltip]="tooltip"
-          [legendSettings]="legend"
-          [chartArea]="chartArea"
-          [enableAnimation]="true"
-        >
-          <e-series-collection>
-            <e-series
-              type="Column"
-              [dataSource]="points()"
-              xName="id"
-              yName="md"
-              name="MD"
-              columnWidth="0.55"
-              fill="#4c68e5"
-              [cornerRadius]="columnCorner"
-            ></e-series>
-          </e-series-collection>
-        </ejs-chart>
+          <app-sf-chart
+            [series]="chartSeries()"
+            [primaryXAxis]="categoryAxis"
+            [primaryYAxis]="mdAxis"
+            [options]="chartOptions"
+          />
         </div>
       }
     </app-section-card>
@@ -77,38 +51,16 @@
       [badge]="points().length + ' ใบ'"
       badgeTone="info"
     >
-      <ejs-grid
-        id="ai-tickets-grid"
-        [dataSource]="points()"
-        [allowPaging]="true"
-        [allowSorting]="true"
-        [allowResizing]="true"
-        [pageSettings]="{ pageSize: 8 }"
-        height="320"
-      >
-        <e-columns>
-          <e-column field="id" headerText="รหัส" width="120"></e-column>
-          <e-column field="assigneeName" headerText="ผู้รับผิดชอบ" width="160">
-            <ng-template #template let-data>
-              <app-person-avatar [personId]="data.assigneeId" [name]="data.assigneeName" [showName]="true" size="xs"></app-person-avatar>
-            </ng-template>
-          </e-column>
-          <e-column field="module" headerText="โมดูล / หัวข้อ" width="190"></e-column>
-          <e-column field="md" headerText="MD" width="90" textAlign="Right" format="N2"></e-column>
-        </e-columns>
-        <e-aggregates>
-          <e-aggregate>
-            <e-columns>
-              <e-column type="Count" field="id">
-                <ng-template #footerTemplate let-data>รวม {{ data.Count }} ใบ</ng-template>
-              </e-column>
-              <e-column type="Sum" field="md" format="N2">
-                <ng-template #footerTemplate let-data>รวม {{ data.Sum }} MD</ng-template>
-              </e-column>
-            </e-columns>
-          </e-aggregate>
-        </e-aggregates>
-      </ejs-grid>
+      <ng-template #assigneeTpl let-data>
+        <app-person-avatar [personId]="data.assigneeId" [name]="data.assigneeName" [showName]="true" size="xs" />
+      </ng-template>
+      <app-sf-grid
+        [data]="points()"
+        [columns]="gridColumns"
+        [cellTemplates]="{ assigneeName: assigneeTpl }"
+        [aggregates]="gridAggregates"
+        [options]="gridOptions"
+      />
     </app-section-card>
   </div>
 </section>

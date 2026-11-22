@@ -1,11 +1,15 @@
 .work-context-bar {
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, #94a3b8 28%, transparent);
-  background: color-mix(in srgb, #2746b3 6%, transparent);
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius-nested, 14px);
+  border: 1px solid var(--border-glass, color-mix(in srgb, #94a3b8 28%, transparent));
+  background: var(--surface-glass, color-mix(in srgb, #2746b3 6%, transparent));
+  backdrop-filter: var(--blur-glass);
 }
 
 .work-context-bar__line {

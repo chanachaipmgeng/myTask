@@ -3,6 +3,10 @@
 
 /* Syncfusion point overrides — โหลดท้ายไฟล์ผ่าน @import './styles/sf/index' */
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root,
 .e-dark-mode {
   --ink: #edf3ff;
@@ -345,6 +349,82 @@ body.e-light-mode {
   50% {
     transform: translateY(-2px);
   }
+}
+
+/* ==========================================================================
+   Motion Components & Directives (Reveal, Stagger, Tab Glide, Seamless Charts)
+   ========================================================================== */
+.motion-reveal {
+  opacity: 0;
+  will-change: opacity, transform;
+  transition:
+    opacity var(--reveal-dur, 360ms) var(--ease-nordic) var(--reveal-delay, 0ms),
+    transform var(--reveal-dur, 360ms) var(--ease-nordic) var(--reveal-delay, 0ms);
+}
+
+.motion-reveal[data-reveal='fade-up'] {
+  transform: translateY(14px);
+}
+.motion-reveal[data-reveal='scale-soft'] {
+  transform: scale(0.97) translateY(8px);
+}
+.motion-reveal[data-reveal='slide-left'] {
+  transform: translateX(16px);
+}
+.motion-reveal[data-reveal='slide-right'] {
+  transform: translateX(-16px);
+}
+
+.motion-reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+@keyframes staggerIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.motion-stagger-item {
+  animation: staggerIn var(--dur-base) var(--ease-nordic) var(--stagger-delay, 0ms) both;
+}
+
+/* Smooth tab panel entrance when switching Syncfusion Tabs */
+@keyframes tabPanelGlide {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.e-tab .e-content > .e-item.e-active {
+  animation: tabPanelGlide 220ms var(--ease-nordic) both;
+}
+
+/* Smooth interactive row highlight on Syncfusion Grid */
+.e-grid .e-row td.e-rowcell {
+  transition: background-color 140ms ease;
+}
+
+/* Seamless chart inside section-card (no double-nested box border) */
+.section-card .chart-frame {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* ==========================================================================

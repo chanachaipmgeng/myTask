@@ -11,6 +11,11 @@
     [class]="roleThemeClass()"
     (click)="closeFilterPopover()"
   >
+    <div
+      class="shell-scroll-progress"
+      [style.transform]="'scaleX(' + scrollProgress() + ')'"
+      aria-hidden="true"
+    ></div>
     <ejs-sidebar
       id="app-nav"
       [type]="narrow() ? 'Over' : 'Push'"
@@ -55,7 +60,14 @@
         </div>
 
         <!-- 2. Role-Aware Grouped Sidebar Navigation -->
-        <nav #saasNav class="saas-nav" aria-label="เมนูหลัก">
+        <nav #saasNav class="saas-nav" [class.has-active-pill]="activePill().visible" aria-label="เมนูหลัก">
+          <span
+            class="saas-nav__active-pill"
+            [class.is-visible]="activePill().visible"
+            [style.transform]="'translate3d(0,' + activePill().top + 'px,0)'"
+            [style.height.px]="activePill().height"
+            aria-hidden="true"
+          ></span>
           @for (section of sidebarSections(); track section.id) {
             <div class="saas-nav__group">
               @if (narrow() || !collapsed()) {
@@ -366,29 +378,21 @@
           <div class="workspace-filter-bar__controls">
             <label class="workspace-filter-field workspace-filter-field--inline">
               <span>รอบ</span>
-              <ejs-dropdownlist
-                [dataSource]="workspaceFilter.cycleOptions()"
-                [fields]="filterFields"
+              <app-sf-dropdown
+                [items]="workspaceFilter.cycleOptions()"
                 [value]="workspaceFilter.cycleId()"
-                (change)="onWorkspaceCycle($event)"
-                placeholder="รอบระบบ"
-                width="175px"
-                cssClass="e-outline"
-              ></ejs-dropdownlist>
+                [options]="{ placeholder: 'รอบระบบ', width: '175px', cssClass: 'e-outline' }"
+                (valueChange)="onWorkspaceCycle($event)"
+              />
             </label>
             <label class="workspace-filter-field workspace-filter-field--inline">
               <span>ทีม</span>
-              <ejs-dropdownlist
-                [dataSource]="workspaceFilter.teamOptions()"
-                [fields]="filterFields"
+              <app-sf-dropdown
+                [items]="workspaceFilter.teamOptions()"
                 [value]="workspaceFilter.teamId()"
-                (change)="onWorkspaceTeam($event)"
-                [allowFiltering]="true"
-                filterBarPlaceholder="ค้นหาทีมจาก myProject..."
-                placeholder="ทุกทีม"
-                width="195px"
-                cssClass="e-outline"
-              ></ejs-dropdownlist>
+                [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาทีมจาก myProject...', placeholder: 'ทุกทีม', width: '195px', cssClass: 'e-outline' }"
+                (valueChange)="onWorkspaceTeam($event)"
+              />
             </label>
             @if (workspaceFilter.personId(); as personId) {
               <span class="workspace-person-chip" [title]="personId">
@@ -426,46 +430,36 @@
                   <div class="filter-popover__grid">
                     <label class="workspace-filter-field">
                       <span>ปี</span>
-                      <ejs-dropdownlist
-                        [dataSource]="workspaceFilter.yearOptions()"
-                        [fields]="filterFields"
+                      <app-sf-dropdown
+                        [items]="workspaceFilter.yearOptions()"
                         [value]="workspaceFilter.yearCe() == null ? '' : '' + workspaceFilter.yearCe()"
-                        (change)="onWorkspaceYear($event)"
-                        placeholder="ทุกปี"
-                        width="100%"
-                        cssClass="e-outline"
-                      ></ejs-dropdownlist>
+                        [options]="{ placeholder: 'ทุกปี', width: '100%', cssClass: 'e-outline' }"
+                        (valueChange)="onWorkspaceYear($event)"
+                      />
                     </label>
                     <label class="workspace-filter-field">
                       <span>โปรเจกต์</span>
-                      <ejs-dropdownlist
-                        [dataSource]="workspaceFilter.projectOptions()"
-                        [fields]="filterFields"
+                      <app-sf-dropdown
+                        [items]="workspaceFilter.projectOptions()"
                         [value]="workspaceFilter.opProject()"
-                        (change)="onWorkspaceProject($event)"
-                        [allowFiltering]="true"
-                        filterBarPlaceholder="ค้นหาโปรเจกต์..."
-                        placeholder="ทุกโปรเจกต์"
-                        width="100%"
-                        cssClass="e-outline"
-                      ></ejs-dropdownlist>
+                        [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาโปรเจกต์...', placeholder: 'ทุกโปรเจกต์', width: '100%', cssClass: 'e-outline' }"
+                        (valueChange)="onWorkspaceProject($event)"
+                      />
                     </label>
                     <label class="workspace-filter-field">
                       <span>จากวัน</span>
-                      <input
-                        class="workspace-filter-date"
-                        type="date"
+                      <app-sf-datepicker
                         [value]="workspaceFilter.fromDate()"
-                        (change)="onWorkspaceFrom($event)"
+                        [options]="{ format: 'dd/MM/yyyy', placeholder: 'เลือกวันเริ่ม', width: '100%' }"
+                        (valueChange)="onWorkspaceFrom($event)"
                       />
                     </label>
                     <label class="workspace-filter-field">
                       <span>ถึงวัน</span>
-                      <input
-                        class="workspace-filter-date"
-                        type="date"
+                      <app-sf-datepicker
                         [value]="workspaceFilter.toDate()"
-                        (change)="onWorkspaceTo($event)"
+                        [options]="{ format: 'dd/MM/yyyy', placeholder: 'เลือกวันสิ้นสุด', width: '100%' }"
+                        (valueChange)="onWorkspaceTo($event)"
                       />
                     </label>
                   </div>
@@ -518,15 +512,19 @@
 
       @if (mockMode()) {
         <section class="shell-alerts" aria-label="โหมดจำลอง">
-          <ejs-message
+          <app-sf-message
             content="กำลังอยู่ในโหมดจำลอง — ข้อมูลในหน่วยความจำเท่านั้น ไม่เขียนฐานข้อมูล กดออกได้ที่เมนูโหมดจำลอง"
             severity="Warning"
-            variant="Outlined"
-          ></ejs-message>
+          />
         </section>
       }
 
-      <main class="shell-main" [attr.data-nav-key]="navKey()">
+      <main
+        class="shell-main"
+        [attr.data-nav-key]="navKey()"
+        [class.route-glide-a]="!routeAnimParity()"
+        [class.route-glide-b]="routeAnimParity()"
+      >
         @if (contextualTabs().length > 1) {
           <nav class="hub-underline-tabs shell-contextual-tabs" role="tablist" [attr.aria-label]="title()">
             @for (tab of contextualTabs(); track tab.route) {
@@ -547,59 +545,65 @@
         <router-outlet />
       </main>
     </div>
+
+    <button
+      type="button"
+      class="shell-scroll-top-btn"
+      [class.is-visible]="showScrollTop()"
+      (click)="scrollToTop()"
+      title="กลับขึ้นด้านบน"
+      aria-label="กลับขึ้นด้านบน"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+      <span>ขึ้นบน</span>
+    </button>
   </div>
 }
 
-<ejs-dialog
+<app-sf-dialog
   #alertDialog
   id="shell-alert-dialog"
   header="รายการแจ้งเตือนใบงานที่ต้องเฝ้าระวัง"
-  cssClass="app-modal"
-  width="560px"
   [visible]="false"
-  [isModal]="true"
-  [showCloseIcon]="true"
-  (close)="closeAlerts()"
+  [options]="{ width: '560px', isModal: true, showCloseIcon: true, animationEffect: 'Fade' }"
+  (closed)="closeAlerts()"
 >
-  <ng-template #content>
-    @if (alerts().length === 0) {
-      <ejs-message
-        content="ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate"
-        severity="Success"
-        variant="Outlined"
-      ></ejs-message>
-    } @else {
-      <div class="flex flex-col gap-3">
-        <ejs-textbox
-          placeholder="ค้นหารหัสใบงาน หรือข้อความแจ้งเตือน..."
-          [value]="alertSearch()"
-          (input)="onAlertSearch($event)"
-          width="100%"
-        ></ejs-textbox>
-        @if (filteredAlerts().length === 0) {
-          <p class="fine m-0 text-center py-4">ไม่พบรายการแจ้งเตือนที่ตรงกับคำค้นหา</p>
-        } @else {
-          @for (alert of filteredAlerts(); track alert.id) {
-            <app-section-card
-              variant="nested"
-              [title]="alert.ticketId"
-              [badge]="alert.shortLabel"
-              badgeTone="warning"
-            >
-              <p class="m-0 text-sm">{{ alert.message }}</p>
-            </app-section-card>
-          }
+  @if (alerts().length === 0) {
+    <app-sf-message
+      content="ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate"
+      severity="Success"
+    />
+  } @else {
+    <div class="flex flex-col gap-3">
+      <app-sf-textbox
+        placeholder="ค้นหารหัสใบงาน หรือข้อความแจ้งเตือน..."
+        [value]="alertSearch()"
+        [clearButton]="true"
+        (valueChange)="onAlertSearch($event)"
+      />
+      @if (filteredAlerts().length === 0) {
+        <p class="fine m-0 text-center py-4">ไม่พบรายการแจ้งเตือนที่ตรงกับคำค้นหา</p>
+      } @else {
+        @for (alert of filteredAlerts(); track alert.id) {
+          <app-section-card
+            variant="nested"
+            [title]="alert.ticketId"
+            [badge]="alert.shortLabel"
+            badgeTone="warning"
+          >
+            <p class="m-0 text-sm">{{ alert.message }}</p>
+          </app-section-card>
         }
-      </div>
-    }
-  </ng-template>
-  <ng-template #footerTemplate>
-    <div class="app-modal__footer">
-      <button ejs-button cssClass="e-outline" type="button" (click)="goToTicketScores()">ดูตารางคะแนน</button>
-      <button ejs-button cssClass="e-primary" type="button" (click)="goToTicketBoard()">เปิดกระดานงาน (Board)</button>
+      }
     </div>
-  </ng-template>
-</ejs-dialog>
+  }
+  <div sf-dialog-footer>
+    <button ejs-button cssClass="e-outline" type="button" (click)="goToTicketScores()">ดูตารางคะแนน</button>
+    <button ejs-button cssClass="e-primary" type="button" (click)="goToTicketBoard()">เปิดกระดานงาน (Board)</button>
+  </div>
+</app-sf-dialog>
 
 <ejs-toast
   #toast

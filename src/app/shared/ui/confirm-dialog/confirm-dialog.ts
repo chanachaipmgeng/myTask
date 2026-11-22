@@ -7,17 +7,17 @@ import {
   ViewChild,
 } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { DialogComponent, DialogModule } from '@syncfusion/ej2-angular-popups';
+import { SfDialogComponent } from '../../sf';
 
 @Component({
   selector: 'app-confirm-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DialogModule, ButtonModule],
+  imports: [SfDialogComponent, ButtonModule],
   templateUrl: './confirm-dialog.html',
   styleUrl: './confirm-dialog.scss',
 })
 export class ConfirmDialogComponent {
-  @ViewChild('dialog') dialog?: DialogComponent;
+  @ViewChild('dialog') dialog?: SfDialogComponent;
 
   @Input() header = 'ยืนยัน';
   @Input() message = '';
@@ -32,18 +32,15 @@ export class ConfirmDialogComponent {
   @Output() readonly confirmed = new EventEmitter<void>();
   @Output() readonly cancelled = new EventEmitter<void>();
 
-  /** Fade เท่านั้น — ไม่ใช้ Zoom/Slide ที่พึ่ง transform บน .e-dialog */
-  protected readonly animationSettings = { effect: 'Fade' as const, duration: 300, delay: 0 };
-
   private closingByConfirm = false;
 
   open(): void {
     this.closingByConfirm = false;
-    this.dialog?.show();
+    this.dialog?.open();
   }
 
   close(): void {
-    this.dialog?.hide();
+    this.dialog?.close();
   }
 
   protected onConfirm(): void {
@@ -61,10 +58,9 @@ export class ConfirmDialogComponent {
   }
 
   protected onDialogClose(): void {
-    if (this.closingByConfirm) {
-      this.closingByConfirm = false;
-      return;
+    if (!this.closingByConfirm) {
+      this.cancelled.emit();
     }
-    this.cancelled.emit();
+    this.closingByConfirm = false;
   }
 }

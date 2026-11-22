@@ -2,12 +2,11 @@
   @if (mdMandate().mdDirectCount > 0) {
     <div class="flex flex-wrap items-center gap-2">
       <span class="e-badge e-badge-warning e-badge-pill">MD MANDATE</span>
-      <ejs-message
+      <app-sf-message
+        class="grow"
         severity="Warning"
-        variant="Outlined"
-        cssClass="grow"
         [content]="'ทีมรับงานด่วนสั่งตรงจาก MD รวม ' + mdMandate().mdDirectCount + ' ใบ คิดเป็น ' + mdMandate().mdDirectMd + ' MD (' + mdMandate().mdDirectSharePct + '% ของโหลดงานทั้งหมด) — คุ้มครองคะแนนความแม่นยำและ On-Time อัตโนมัติ'"
-      ></ejs-message>
+      />
     </div>
   }
 
@@ -20,11 +19,10 @@
     badgeTone="warning"
   >
     @if (openGrouped().totalOpen === 0) {
-      <ejs-message
+      <app-sf-message
         severity="Success"
-        variant="Outlined"
         content="ไม่มีใบเปิดตามกรองนี้ — ลองเปลี่ยนทีม สัปดาห์ หรือถังวัน"
-      ></ejs-message>
+      />
     } @else {
       <div class="stuck-buckets">
         @for (bucket of openGrouped().buckets; track bucket.bucket) {
@@ -62,82 +60,31 @@
 
   <div class="card-grid-2">
     <app-section-card title="สัดส่วนสถานะ" subtitle="จำนวนใบงานแยกตามสถานะปัจจุบัน">
-      <ejs-accumulationchart
-        id="work-status-donut"
-        style="display: block; height: 270px; width: 100%"
-        [theme]="theme.sfTheme()"
-        [legendSettings]="legend"
-        [tooltip]="pieTooltip"
-        [centerLabel]="statusCenter()"
-        [enableAnimation]="false"
-      >
-        <e-accumulation-series-collection>
-          <e-accumulation-series
-            type="Pie"
-            [dataSource]="view().statusShare"
-            xName="x"
-            yName="y"
-            innerRadius="62%"
-            radius="82%"
-            legendShape="Circle"
-            [dataLabel]="donutLabel"
-            [palettes]="palette"
-          ></e-accumulation-series>
-        </e-accumulation-series-collection>
-      </ejs-accumulationchart>
+      <app-sf-donut-chart
+        [data]="view().statusShare"
+        xName="x"
+        yName="y"
+        [options]="statusDonutOptions()"
+      />
     </app-section-card>
 
     <app-section-card title="สัดส่วนสายงาน" subtitle="การกระจายตัวของใบงานแยกตามสายงานหลัก">
-      <ejs-accumulationchart
-        id="work-track-donut"
-        style="display: block; height: 270px; width: 100%"
-        [theme]="theme.sfTheme()"
-        [legendSettings]="legend"
-        [tooltip]="pieTooltip"
-        [centerLabel]="trackCenter()"
-        [enableAnimation]="false"
-      >
-        <e-accumulation-series-collection>
-          <e-accumulation-series
-            type="Pie"
-            [dataSource]="view().trackShare"
-            xName="x"
-            yName="y"
-            innerRadius="62%"
-            radius="82%"
-            legendShape="Circle"
-            [dataLabel]="donutLabel"
-            [palettes]="palette"
-          ></e-accumulation-series>
-        </e-accumulation-series-collection>
-      </ejs-accumulationchart>
+      <app-sf-donut-chart
+        [data]="view().trackShare"
+        xName="x"
+        yName="y"
+        [options]="trackDonutOptions()"
+      />
     </app-section-card>
 
     <div class="card-grid-2__full">
       <app-section-card title="WIP ต่อคน (MD ประมาณ)" subtitle="ภาระงานที่เปิดค้างอยู่รายบุคคลเทียบตาม Man-days">
-        <ejs-chart
-          style="display: block; height: 280px; width: 100%"
-          [theme]="theme.sfTheme()"
-          [primaryXAxis]="categoryAxis"
-          [primaryYAxis]="valueAxis"
-          [tooltip]="tooltip"
-          [legendSettings]="{ visible: false }"
-          [chartArea]="chartArea"
-          [enableAnimation]="true"
-        >
-          <e-series-collection>
-            <e-series
-              type="Column"
-              [dataSource]="view().wipBars"
-              xName="nickname"
-              yName="openMd"
-              name="WIP MD"
-              fill="#2e4fc8"
-              columnWidth="0.45"
-              [cornerRadius]="columnCorner"
-            ></e-series>
-          </e-series-collection>
-        </ejs-chart>
+        <app-sf-chart
+          [series]="wipChartSeries()"
+          [primaryXAxis]="wipXAxis"
+          [primaryYAxis]="wipYAxis"
+          [options]="wipChartOptions"
+        />
       </app-section-card>
     </div>
   </div>

@@ -1,7 +1,7 @@
 <section class="page">
   <app-page-head
     breadcrumb="ภาพรวมและวิเคราะห์ > ตรวจสอบคุณภาพ QA &amp; Defect Audit (/quality/audit)"
-    title="ศูนย์ตรวจสอบคุณภาพ QA และช่องโหว่บั๊ก (QA &amp; Defect Leakage Audit)"
+    title="ตรวจสอบคุณภาพ QA และ Defect Leakage"
     description="ตรวจสอบ First-Time Right %, อัตราการตีกลับ (Reopen Rate), อัตราหลุดไป Production และหลักฐาน DoD ก่อนส่งทดสอบ"
     periodBadge="งวดปัจจุบัน: 2026-11"
     [metrics]="[
@@ -13,185 +13,129 @@
   ></app-page-head>
 
   <app-section-card [showHead]="false">
-    <ejs-tab id="qualityTab" animation="none">
-      <e-tabitems>
-        <e-tabitem [header]="{ text: 'ตรวจสอบหลักฐาน DoD ก่อนเข้า QA (' + dodChecklist().length + ')' }">
-          <ng-template #content>
-            <div class="pt-4 flex flex-col gap-4">
-              <ejs-message
-                severity="Warning"
-                variant="Outlined"
-                content="DoD Gate Verifier: ตรวจอัตโนมัติว่ามีลิงก์ MR, Unit Test ผ่าน และผล Staging Verified ครบหรือไม่ — หากไม่ครบ QA สามารถกดตีกลับ Dev ได้ทันที"
-              ></ejs-message>
+    <ng-template #dodTabTpl>
+      <div class="pt-4 flex flex-col gap-4">
+        <app-sf-message
+          severity="Warning"
+          content="DoD Gate Verifier: ตรวจอัตโนมัติว่ามีลิงก์ MR, Unit Test ผ่าน และผล Staging Verified ครบหรือไม่ — หากไม่ครบ QA สามารถกดตีกลับ Dev ได้ทันที"
+        />
 
-              <ejs-grid [dataSource]="dodChecklist()" [allowSorting]="true" [allowResizing]="true">
-                <e-columns>
-                  <e-column field="ticketId" headerText="รหัสใบงาน" width="110" textAlign="Left">
-                    <ng-template #template let-data>
-                      <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
-                        {{ data.ticketId }}
-                      </button>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="devName" headerText="ผู้พัฒนา (Dev)" width="130"></e-column>
-                  <e-column field="qaName" headerText="ผู้ตรวจ QA" width="130"></e-column>
-                  <e-column field="mrLink" headerText="ลิงก์ MR" width="110">
-                    <ng-template #template let-data>
-                      <span class="font-mono text-xs text-blue-600 dark:text-blue-400 underline">{{ data.mrLink }}</span>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="unitTestLabel" headerText="Unit Test" width="110">
-                    <ng-template #template let-data>
-                      <app-status-badge
-                        [label]="data.unitTestLabel"
-                        [value]="data.unitTestPassed"
-                      ></app-status-badge>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="ciStatusLabel" headerText="CI Pipeline" width="120">
-                    <ng-template #template let-data>
-                      <app-status-badge
-                        [label]="data.ciStatusLabel"
-                        [tone]="data.ciPassed === true ? 'success' : data.ciPassed === false ? 'warning' : 'secondary'"
-                      ></app-status-badge>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="stagingVerified" headerText="ผล Staging" width="110">
-                    <ng-template #template let-data>
-                      <app-status-badge
-                        [label]="data.stagingVerified ? 'แนบรูปแล้ว' : 'ยังไม่แนบ'"
-                        [tone]="data.stagingVerified ? 'success' : 'warning'"
-                      ></app-status-badge>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="dodStatus" headerText="สถานะหลักฐาน DoD" width="130">
-                    <ng-template #template let-data>
-                      <app-status-badge
-                        [label]="data.dodStatus"
-                        [tone]="data.isComplete ? 'success' : 'warning'"
-                      ></app-status-badge>
-                    </ng-template>
-                  </e-column>
-                  <e-column headerText="การจัดการ" width="110" textAlign="Center">
-                    <ng-template #template let-data>
-                      @if (!data.isComplete && (role() === 'admin' || role() === 'lead')) {
-                        <button
-                          ejs-button
-                          cssClass="e-small e-outline e-danger"
-                          (click)="rejectToDev(data.ticketId, data.devName)"
-                        >
-                          ตีกลับ Dev
-                        </button>
-                      } @else {
-                        <span class="text-xs text-muted">พร้อมตรวจ</span>
-                      }
-                    </ng-template>
-                  </e-column>
-                </e-columns>
-              </ejs-grid>
-            </div>
-          </ng-template>
-        </e-tabitem>
+        <ng-template #dodTicketTpl let-data>
+          <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
+            {{ data.ticketId }}
+          </button>
+        </ng-template>
+        <ng-template #dodMrTpl let-data>
+          <span class="font-mono text-xs text-blue-600 dark:text-blue-400 underline">{{ data.mrLink }}</span>
+        </ng-template>
+        <ng-template #dodUnitTpl let-data>
+          <app-status-badge [label]="data.unitTestLabel" [value]="data.unitTestPassed"></app-status-badge>
+        </ng-template>
+        <ng-template #dodCiTpl let-data>
+          <app-status-badge
+            [label]="data.ciStatusLabel"
+            [tone]="data.ciPassed === true ? 'success' : data.ciPassed === false ? 'warning' : 'secondary'"
+          ></app-status-badge>
+        </ng-template>
+        <ng-template #dodStagingTpl let-data>
+          <app-status-badge
+            [label]="data.stagingVerified ? 'แนบรูปแล้ว' : 'ยังไม่แนบ'"
+            [tone]="data.stagingVerified ? 'success' : 'warning'"
+          ></app-status-badge>
+        </ng-template>
+        <ng-template #dodStatusTpl let-data>
+          <app-status-badge
+            [label]="data.dodStatus"
+            [tone]="data.isComplete ? 'success' : 'warning'"
+          ></app-status-badge>
+        </ng-template>
+        <ng-template #dodActionTpl let-data>
+          @if (!data.isComplete && (role() === 'admin' || role() === 'lead')) {
+            <button
+              ejs-button
+              cssClass="e-small e-outline e-danger"
+              (click)="rejectToDev(data.ticketId, data.devName)"
+            >
+              ตีกลับ Dev
+            </button>
+          } @else {
+            <span class="text-xs text-muted">พร้อมตรวจ</span>
+          }
+        </ng-template>
 
-        <e-tabitem [header]="{ text: 'วิเคราะห์สาเหตุ Reopen & Bug Escape (' + reopenEscapes().length + ')' }">
-          <ng-template #content>
-            <div class="pt-4 flex flex-col gap-5">
-              <!-- Pareto 80/20 Root-Cause Analysis Chart -->
-              <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col gap-3">
-                <div class="flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <span class="e-icons e-chart text-indigo-500"></span>
-                      แผนภูมิพาเรโตวิเคราะห์สาเหตุหลักของการตีกลับ (Pareto 80/20 Root-Cause Chart)
-                    </h3>
-                    <p class="text-xs text-muted mt-0.5">
-                      เรียงลำดับความถี่สาเหตุจากมากไปน้อย (แกนซ้าย: แท่ง) ควบคู่กับเปอร์เซ็นต์สะสม (แกนขวา: เส้น) พร้อมเส้นเตือนเกณฑ์วิกฤต 80%
-                    </p>
-                  </div>
-                  <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                    รวม {{ paretoReport().total }} ครั้ง
-                  </span>
-                </div>
+        <app-sf-grid
+          [data]="dodChecklist()"
+          [columns]="dodColumns"
+          [options]="dodGridOptions"
+          [cellTemplates]="{
+            ticketId: dodTicketTpl,
+            mrLink: dodMrTpl,
+            unitTestLabel: dodUnitTpl,
+            ciStatusLabel: dodCiTpl,
+            stagingVerified: dodStagingTpl,
+            dodStatus: dodStatusTpl,
+            action: dodActionTpl
+          }"
+        />
+      </div>
+    </ng-template>
 
-                <ejs-chart
-                  id="pareto-chart"
-                  style="display: block; width: 100%; height: 260px;"
-                  [theme]="theme.sfTheme()"
-                  [primaryXAxis]="paretoXAxis"
-                  [primaryYAxis]="paretoCountAxis"
-                  [axes]="[paretoCumAxis]"
-                  [tooltip]="tooltip"
-                  [legendSettings]="legend"
-                  [chartArea]="chartArea"
-                >
-                  <e-series-collection>
-                    <e-series
-                      type="Column"
-                      [dataSource]="paretoReport().points"
-                      xName="cause"
-                      yName="count"
-                      name="ความถี่ที่เกิด (ครั้ง)"
-                      fill="#6366f1"
-                      [cornerRadius]="{ topLeft: 4, topRight: 4 }"
-                    ></e-series>
-                    <e-series
-                      type="Line"
-                      yAxisName="cumPctAxis"
-                      [dataSource]="paretoReport().points"
-                      xName="cause"
-                      yName="cumPct"
-                      name="เปอร์เซ็นต์สะสม (%)"
-                      width="2.5"
-                      fill="#f97316"
-                      [marker]="{ visible: true, width: 7, height: 7, fill: '#f97316' }"
-                    ></e-series>
-                  </e-series-collection>
-                </ejs-chart>
+    <ng-template #reopenTabTpl>
+      <div class="pt-4 flex flex-col gap-5">
+        <!-- Pareto 80/20 Root-Cause Analysis Chart -->
+        <app-section-card
+          variant="nested"
+          title="แผนภูมิพาเรโตวิเคราะห์สาเหตุการตีกลับ"
+          subtitle="เรียงลำดับความถี่สาเหตุจากมากไปน้อย (แกนซ้าย: แท่ง) ควบคู่กับเปอร์เซ็นต์สะสม (แกนขวา: เส้น) พร้อมเส้นเตือนเกณฑ์วิกฤต 80%"
+          [badge]="'รวม ' + paretoReport().total + ' ครั้ง'"
+          badgeTone="warning"
+        >
+          <app-sf-chart
+            [series]="paretoSeries()"
+            [primaryXAxis]="paretoXAxis"
+            [primaryYAxis]="paretoCountAxis"
+            [options]="paretoChartOptions"
+          />
 
-                <ejs-message
-                  severity="Info"
-                  variant="Outlined"
-                  [content]="paretoReport().insight"
-                ></ejs-message>
-              </div>
+          <app-sf-message severity="Info" [content]="paretoReport().insight" />
+        </app-section-card>
 
-              <!-- Reopen & Bug Escape Breakdown Grid -->
-              <ejs-grid [dataSource]="reopenEscapes()" [allowSorting]="true" [allowFiltering]="true" [allowResizing]="true">
-                <e-columns>
-                  <e-column field="ticketId" headerText="รหัสใบงาน" width="110">
-                    <ng-template #template let-data>
-                      <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
-                        {{ data.ticketId }}
-                      </button>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="title" headerText="ชื่องาน" width="180"></e-column>
-                  <e-column field="assignee" headerText="ผู้รับผิดชอบ" width="130"></e-column>
-                  <e-column field="reopenCount" headerText="Reopen" width="100" textAlign="Right">
-                    <ng-template #template let-data>
-                      <span class="font-bold text-rose-600">{{ data.reopenCount }} ครั้ง</span>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="bugCause" headerText="สาเหตุของบั๊ก" width="150">
-                    <ng-template #template let-data>
-                      <app-status-badge [label]="data.bugCause" tone="secondary"></app-status-badge>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="isBugEscape" headerText="หลุด Prod" width="120" textAlign="Center">
-                    <ng-template #template let-data>
-                      <app-status-badge
-                        [label]="data.isBugEscape ? 'หลุด Prod' : 'ตรวจพบใน QA'"
-                        [tone]="data.isBugEscape ? 'danger' : 'info'"
-                      ></app-status-badge>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="notes" headerText="บันทึกเพิ่มเติม" width="160"></e-column>
-                </e-columns>
-              </ejs-grid>
-            </div>
-          </ng-template>
-        </e-tabitem>
-      </e-tabitems>
-    </ejs-tab>
+        <ng-template #reopenTicketTpl let-data>
+          <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.ticketId)">
+            {{ data.ticketId }}
+          </button>
+        </ng-template>
+        <ng-template #reopenCountTpl let-data>
+          <span class="font-bold text-rose-600">{{ data.reopenCount }} ครั้ง</span>
+        </ng-template>
+        <ng-template #bugCauseTpl let-data>
+          <app-status-badge [label]="data.bugCause" tone="secondary"></app-status-badge>
+        </ng-template>
+        <ng-template #escapeTpl let-data>
+          <app-status-badge
+            [label]="data.isBugEscape ? 'หลุด Prod' : 'ตรวจพบใน QA'"
+            [tone]="data.isBugEscape ? 'danger' : 'info'"
+          ></app-status-badge>
+        </ng-template>
+
+        <app-sf-grid
+          [data]="reopenEscapes()"
+          [columns]="reopenColumns"
+          [options]="reopenGridOptions"
+          [cellTemplates]="{
+            ticketId: reopenTicketTpl,
+            reopenCount: reopenCountTpl,
+            bugCause: bugCauseTpl,
+            isBugEscape: escapeTpl
+          }"
+        />
+      </div>
+    </ng-template>
+
+    <app-sf-tabs
+      id="qualityTab"
+      [tabs]="qualityTabs()"
+      [tabTemplates]="{ dod: dodTabTpl, reopen: reopenTabTpl }"
+    />
   </app-section-card>
 </section>

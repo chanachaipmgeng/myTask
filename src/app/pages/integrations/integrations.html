@@ -20,13 +20,13 @@
   </app-page-head>
 
   @if (message()) {
-    <ejs-message [content]="message()" severity="Info" variant="Outlined"></ejs-message>
+    <app-sf-message [content]="message()" severity="Info" />
   }
   @if (discoveryHint()) {
-    <ejs-message [content]="discoveryHint()" severity="Info" variant="Outlined"></ejs-message>
+    <app-sf-message [content]="discoveryHint()" severity="Info" />
   }
   @if (error()) {
-    <ejs-message [content]="error()" severity="Error" variant="Outlined"></ejs-message>
+    <app-sf-message [content]="error()" severity="Error" />
   }
 
   @if (loading()) {
@@ -38,312 +38,272 @@
     </app-section-card>
   } @else {
   <app-section-card [showHead]="false">
-    <ejs-tab id="integrations-tabs">
-      <e-tabitems>
-        <e-tabitem>
-          <ng-template #headerText>
-            <div>OpenProject (myProject)</div>
-          </ng-template>
-          <ng-template #content>
-            <div class="flex flex-col gap-4 pt-4">
-              <app-section-card
-                variant="nested"
-                title="การเชื่อมต่อ OpenProject"
-                subtitle="กำหนด URL, API Token และจำนวนชั่วโมงโฟกัสต่อ 1 Man-day"
-              >
-                @if (canEdit()) {
-                  <button actions ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="save()">
-                    บันทึกการตั้งค่า OpenProject
-                  </button>
+    <ng-template #opTabTpl>
+      <div class="flex flex-col gap-4 pt-4">
+        <app-section-card
+          variant="nested"
+          title="การเชื่อมต่อ OpenProject"
+          subtitle="กำหนด URL, API Token และจำนวนชั่วโมงโฟกัสต่อ 1 Man-day"
+        >
+          @if (canEdit()) {
+            <button actions ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="save()">
+              บันทึกการตั้งค่า OpenProject
+            </button>
+          }
+          <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="field">
+              <span>OpenProject URL</span>
+              <app-sf-textbox [value]="baseUrl()" (valueChange)="onBaseUrl($event)" [disabled]="!canEdit()" placeholder="https://myproject.example.com" />
+            </label>
+            <label class="field">
+              <span>API token (ว่าง = คงค่าเดิม / ใช้จาก env)</span>
+              <app-sf-textbox [value]="token()" (valueChange)="onToken($event)" [disabled]="!canEdit()" [options]="{ type: 'password' }" />
+            </label>
+            <label class="field">
+              <span>ชั่วโมงต่อ 1 man-day</span>
+              <app-sf-number [value]="hoursPerMd()" (valueChange)="onHoursPerMd($event)" [disabled]="!canEdit()" [min]="1" [max]="24" [step]="0.5" format="n1" />
+            </label>
+            <div class="field flex items-end">
+              <app-sf-checkbox
+                label="เปิดการเชื่อมต่อในฐานข้อมูล"
+                [checked]="enabled()"
+                [disabled]="!canEdit()"
+                (checkedChange)="onEnabled($event)"
+              />
+            </div>
+            <label class="field md:col-span-2">
+              <span>โปรเจกต์ที่ซิงก์ (identifier คั่นด้วยจุลภาค · ว่าง = ทุกโปรเจกต์ที่ token เห็น)</span>
+              <app-sf-textbox
+                [value]="projectsText()"
+                (valueChange)="projectsText.set($event)"
+                [disabled]="!canEdit()"
+                placeholder="เช่น myhr-core, rd-spike"
+              />
+            </label>
+            <div class="field md:col-span-2 flex flex-wrap gap-2 items-center">
+              <span class="text-sm opacity-80">
+                Team staging (env): <strong>{{ teamStaging() }}</strong>
+                @if (teamStaging() === 'rd') {
+                  <span class="e-badge e-badge-warning e-badge-pill ml-2">กำลังกรองเฉพาะ R&D</span>
                 }
-                <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <label class="field">
-                    <span>OpenProject URL</span>
-                    <ejs-textbox [value]="baseUrl()" (change)="onBaseUrl($event)" [enabled]="canEdit()" placeholder="https://myproject.example.com"></ejs-textbox>
-                  </label>
-                  <label class="field">
-                    <span>API token (ว่าง = คงค่าเดิม / ใช้จาก env)</span>
-                    <ejs-textbox [value]="token()" (change)="onToken($event)" [enabled]="canEdit()" type="password" autocomplete="off"></ejs-textbox>
-                  </label>
-                  <label class="field">
-                    <span>ชั่วโมงต่อ 1 man-day</span>
-                    <ejs-numerictextbox [value]="hoursPerMd()" (change)="onHoursPerMd($event)" [enabled]="canEdit()" [min]="1" [max]="24" [step]="0.5" format="n1"></ejs-numerictextbox>
-                  </label>
-                  <div class="field flex items-end">
-                    <ejs-checkbox
-                      id="op-enabled"
-                      label="เปิดการเชื่อมต่อในฐานข้อมูล"
-                      [checked]="enabled()"
-                      [disabled]="!canEdit()"
-                      (change)="onEnabled($event)"
-                    ></ejs-checkbox>
-                  </div>
-                  <label class="field md:col-span-2">
-                    <span>โปรเจกต์ที่ซิงก์ (identifier คั่นด้วยจุลภาค · ว่าง = ทุกโปรเจกต์ที่ token เห็น)</span>
-                    <ejs-textbox
-                      [value]="projectsText()"
-                      (change)="projectsText.set($any($event).value ?? '')"
-                      [enabled]="canEdit()"
-                      placeholder="เช่น myhr-core, rd-spike"
-                    ></ejs-textbox>
-                  </label>
-                  <div class="field md:col-span-2 flex flex-wrap gap-2 items-center">
-                    <span class="text-sm opacity-80">
-                      Team staging (env): <strong>{{ teamStaging() }}</strong>
-                      @if (teamStaging() === 'rd') {
-                        <span class="e-badge e-badge-warning e-badge-pill ml-2">กำลังกรองเฉพาะ R&D</span>
-                      }
-                    </span>
-                    @if (canEdit() && projectCatalog().length) {
-                      <button ejs-button cssClass="e-outline e-small" type="button" (click)="useActiveProjectsFromCatalog()">
-                        ใช้ทุกโปรเจกต์ active จาก catalog ({{ projectCatalog().length }})
-                      </button>
-                      <button ejs-button cssClass="e-flat e-small" type="button" (click)="clearSyncProjects()">
-                        ล้างรายการ (ซิงก์ทุกโปรเจกต์)
-                      </button>
-                    }
-                  </div>
-                </div>
-              </app-section-card>
+              </span>
+              @if (canEdit() && projectCatalog().length) {
+                <button ejs-button cssClass="e-outline e-small" type="button" (click)="useActiveProjectsFromCatalog()">
+                  ใช้ทุกโปรเจกต์ active จาก catalog ({{ projectCatalog().length }})
+                </button>
+                <button ejs-button cssClass="e-flat e-small" type="button" (click)="clearSyncProjects()">
+                  ล้างรายการ (ซิงก์ทุกโปรเจกต์)
+                </button>
+              }
+            </div>
+          </div>
+        </app-section-card>
 
-              <div class="card-grid-2">
-                <app-section-card
-                  variant="nested"
-                  title="Status → workflow"
-                  subtitle="เพิ่ม/ลบคู่สถานะ หรือแก้ JSON โดยตรง · ค่าที่ใช้ได้: {{ workflowHint }}"
-                >
-                  <div class="flex flex-wrap gap-2 items-center">
-                    @for (item of statusMapEntries(); track item.key) {
-                      <span class="e-badge e-badge-info flex items-center gap-1">
-                        {{ item.key }} → {{ item.value }}
-                        @if (canEdit()) {
-                          <button ejs-button cssClass="e-flat e-small" type="button" (click)="removeStatusMapping(item.key)">×</button>
-                        }
-                      </span>
-                    }
-                  </div>
+        <div class="card-grid-2">
+          <app-section-card
+            variant="nested"
+            title="Status → workflow"
+            subtitle="เพิ่ม/ลบคู่สถานะ หรือแก้ JSON โดยตรง · ค่าที่ใช้ได้: {{ workflowHint }}"
+          >
+            <div class="flex flex-wrap gap-2 items-center">
+              @for (item of statusMapEntries(); track item.key) {
+                <span class="e-badge e-badge-info flex items-center gap-1">
+                  {{ item.key }} → {{ item.value }}
                   @if (canEdit()) {
-                    <div class="form-grid grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
-                      <label class="field">
-                        <span>ชื่อสถานะใน OpenProject</span>
-                        <ejs-textbox [value]="newStatusKey()" (change)="newStatusKey.set($any($event).value ?? '')" placeholder="เช่น In testing"></ejs-textbox>
-                      </label>
-                      <label class="field">
-                        <span>Workflow ในระบบ</span>
-                        <ejs-dropdownlist [dataSource]="workflowOptions" [fields]="fields" [value]="newStatusValue()" (change)="newStatusValue.set($any($event).value ?? '')"></ejs-dropdownlist>
-                      </label>
-                      <button ejs-button cssClass="e-outline" type="button" (click)="addStatusMapping()">+ เพิ่มคู่สถานะ</button>
-                    </div>
+                    <button ejs-button cssClass="e-flat e-small" type="button" (click)="removeStatusMapping(item.key)">×</button>
                   }
-                  <ejs-textarea
-                    [value]="statusMapText()"
-                    (change)="onStatusMapText($event)"
-                    [enabled]="canEdit()"
-                    [rows]="6"
-                    cssClass="map-textarea"
-                    width="100%"
-                  ></ejs-textarea>
-                </app-section-card>
-
-                <app-section-card
-                  variant="nested"
-                  title="Type map &amp; User mapping"
-                  subtitle="แมปชนิด Work Package และจับคู่ผู้ใช้ OpenProject กับคนในระบบ"
-                >
-                  <div actions>
-                    <button
-                      ejs-button
-                      cssClass="e-outline e-primary e-small"
-                      type="button"
-                      iconCss="e-icons e-user"
-                      [disabled]="!canEdit() || saving() || loading()"
-                      (click)="syncUsersNow()"
-                    >
-                      ซิงค์รายชื่อพนักงานจาก MyProject
-                    </button>
-                  </div>
-                  <ejs-textarea
-                    [value]="typeMapText()"
-                    (change)="onTypeMapText($event)"
-                    [enabled]="canEdit()"
-                    [rows]="5"
-                    cssClass="map-textarea"
-                    width="100%"
-                  ></ejs-textarea>
-
-                  <div class="form-grid grid grid-cols-1 sm:grid-cols-3 gap-3 items-end pt-2">
-                    <label class="field">
-                      <span>คนในระบบ</span>
-                      <ejs-dropdownlist [dataSource]="personOptions()" [fields]="fields" [value]="mapPersonId()" (change)="onPerson($event)" [enabled]="canEdit()"></ejs-dropdownlist>
-                    </label>
-                    <label class="field">
-                      <span>ผู้ใช้ OpenProject ที่ยังไม่จับคู่</span>
-                      <ejs-dropdownlist [dataSource]="unmappedOptions()" [fields]="fields" [value]="mapOpUserId()" (change)="onOpUser($event)" [enabled]="canEdit()"></ejs-dropdownlist>
-                    </label>
-                    <button ejs-button cssClass="e-primary" type="button" [disabled]="!canEdit() || saving()" (click)="mapUser()">จับคู่</button>
-                  </div>
-                </app-section-card>
+                </span>
+              }
+            </div>
+            @if (canEdit()) {
+              <div class="form-grid grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                <label class="field">
+                  <span>ชื่อสถานะใน OpenProject</span>
+                  <app-sf-textbox [value]="newStatusKey()" (valueChange)="newStatusKey.set($event)" placeholder="เช่น In testing" />
+                </label>
+                <label class="field">
+                  <span>Workflow ในระบบ</span>
+                  <app-sf-dropdown [items]="workflowOptions" [value]="newStatusValue()" (valueChange)="newStatusValue.set($event)" />
+                </label>
+                <button ejs-button cssClass="e-outline" type="button" (click)="addStatusMapping()">+ เพิ่มคู่สถานะ</button>
               </div>
+            }
+            <app-sf-textbox
+              [multiline]="true"
+              [rows]="6"
+              [value]="statusMapText()"
+              (valueChange)="onStatusMapText($event)"
+              [disabled]="!canEdit()"
+              cssClass="map-textarea"
+            />
+          </app-section-card>
 
-              <app-section-card
-                variant="nested"
-                title="Custom fields"
-                subtitle="ใส่ชื่อ property เช่น customField12 · ว่าง = ไม่ใช้ · แมปจากฟิลด์ myProject ที่แนะนำในคู่มือ"
+          <app-section-card
+            variant="nested"
+            title="Type map &amp; User mapping"
+            subtitle="แมปชนิด Work Package และจับคู่ผู้ใช้ OpenProject กับคนในระบบ"
+          >
+            <div actions>
+              <button
+                ejs-button
+                cssClass="e-outline e-primary e-small"
+                type="button"
+                iconCss="e-icons e-user"
+                [disabled]="!canEdit() || saving() || loading()"
+                (click)="syncUsersNow()"
               >
-                <div class="form-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                  @for (row of customFieldRows; track row.key) {
-                    <label class="field">
-                      <span>{{ row.label }}</span>
-                      <ejs-textbox
-                        [value]="customFields()[row.key]"
-                        (change)="setCustomField(row.key, $event)"
-                        [enabled]="canEdit()"
-                        [placeholder]="row.hint"
-                      ></ejs-textbox>
-                    </label>
-                  }
-                </div>
-              </app-section-card>
-
-              <app-section-card
-                variant="nested"
-                title="ประวัติ sync OpenProject"
-                subtitle="บันทึกการซิงก์ข้อมูลจาก OpenProject ล่าสุด"
-              >
-                <ejs-grid [dataSource]="data()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
-                  <e-columns>
-                    <e-column field="id" headerText="ID" width="80"></e-column>
-                    <e-column field="status" headerText="สถานะ" width="100"></e-column>
-                    <e-column field="started_at" headerText="เริ่ม" width="180"></e-column>
-                    <e-column field="added" headerText="เพิ่ม" width="80"></e-column>
-                    <e-column field="updated" headerText="อัปเดต" width="80"></e-column>
-                    <e-column field="unchanged" headerText="ไม่เปลี่ยน" width="100"></e-column>
-                  </e-columns>
-                </ejs-grid>
-              </app-section-card>
+                ซิงค์รายชื่อพนักงานจาก MyProject
+              </button>
             </div>
-          </ng-template>
-        </e-tabitem>
+            <app-sf-textbox
+              [multiline]="true"
+              [rows]="5"
+              [value]="typeMapText()"
+              (valueChange)="onTypeMapText($event)"
+              [disabled]="!canEdit()"
+              cssClass="map-textarea"
+            />
 
-        <e-tabitem>
-          <ng-template #headerText>
-            <div>GitLab (mygit MR)</div>
-          </ng-template>
-          <ng-template #content>
-            <div class="flex flex-col gap-4 pt-4">
-              <app-section-card
-                variant="nested"
-                title="ตั้งค่าเชื่อมต่อ GitLab API v4"
-                subtitle="ดึง Merge Requests ที่ merged แล้ว เพื่อจับคู่รหัสใบงาน (เช่น IMP-100, OP-42) จากชื่อ MR / branch / description"
-              >
-                <div actions class="flex flex-wrap gap-2">
-                  @if (canEdit()) {
-                    <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveGitLabConfig()">บันทึก GitLab</button>
-                  }
-                  <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="syncGitLabNow()">ซิงก์ MR ตอนนี้</button>
-                  <button ejs-button cssClass="e-outline" type="button" [disabled]="saving()" (click)="discoverGitLabProjects()">ดึงรายชื่อ Repo</button>
-                </div>
-                <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <label class="field">
-                    <span>GitLab Base URL</span>
-                    <ejs-textbox [value]="gitlabBaseUrl()" (change)="gitlabBaseUrl.set($any($event).value ?? '')" [enabled]="canEdit()" placeholder="https://gitlab.example.com"></ejs-textbox>
-                  </label>
-                  <label class="field">
-                    <span>Project IDs (คั่นด้วยจุลภาค เช่น 12, 34)</span>
-                    <ejs-textbox [value]="gitlabProjectIdsText()" (change)="gitlabProjectIdsText.set($any($event).value ?? '')" [enabled]="canEdit()" placeholder="12, 34"></ejs-textbox>
-                  </label>
-                  <label class="field">
-                    <span>Personal / Project Access Token (ว่าง = คงค่าเดิม)</span>
-                    <ejs-textbox [value]="gitlabToken()" (change)="gitlabToken.set($any($event).value ?? '')" [enabled]="canEdit()" type="password" autocomplete="off"></ejs-textbox>
-                  </label>
-                  <div class="field flex items-end">
-                    <ejs-checkbox
-                      id="gitlab-enabled"
-                      label="เปิดการเชื่อมต่อ GitLab API"
-                      [checked]="gitlabEnabled()"
-                      [disabled]="!canEdit()"
-                      (change)="gitlabEnabled.set(!!$any($event).checked)"
-                    ></ejs-checkbox>
-                  </div>
-                </div>
-              </app-section-card>
-
-              <app-section-card
-                variant="nested"
-                title="ประวัติซิงก์ GitLab"
-                subtitle="ประวัติการจับคู่ Merge Request กับใบงานในระบบ"
-              >
-                <ejs-grid [dataSource]="gitlabData()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
-                  <e-columns>
-                    <e-column field="id" headerText="ID" width="80"></e-column>
-                    <e-column field="status" headerText="สถานะ" width="100"></e-column>
-                    <e-column field="started_at" headerText="เริ่ม" width="180"></e-column>
-                    <e-column field="updated" headerText="จับคู่ใบงาน" width="110"></e-column>
-                    <e-column field="unchanged" headerText="ไม่ตรงรหัส" width="110"></e-column>
-                  </e-columns>
-                </ejs-grid>
-              </app-section-card>
+            <div class="form-grid grid grid-cols-1 sm:grid-cols-3 gap-3 items-end pt-2">
+              <label class="field">
+                <span>คนในระบบ</span>
+                <app-sf-dropdown [items]="personOptions()" [value]="mapPersonId()" (valueChange)="onPerson($event)" [disabled]="!canEdit()" />
+              </label>
+              <label class="field">
+                <span>ผู้ใช้ OpenProject ที่ยังไม่จับคู่</span>
+                <app-sf-dropdown [items]="unmappedOptions()" [value]="mapOpUserId()" (valueChange)="onOpUser($event)" [disabled]="!canEdit()" />
+              </label>
+              <button ejs-button cssClass="e-primary" type="button" [disabled]="!canEdit() || saving()" (click)="mapUser()">จับคู่</button>
             </div>
-          </ng-template>
-        </e-tabitem>
+          </app-section-card>
+        </div>
 
-        <e-tabitem>
-          <ng-template #headerText>
-            <div>Microsoft Teams</div>
-          </ng-template>
-          <ng-template #content>
-            <div class="flex flex-col gap-4 pt-4">
-              <app-section-card
-                variant="nested"
-                title="ตั้งค่า Microsoft Teams Incoming Webhook"
-                subtitle="ส่งข้อความแจ้งเตือนใบงานใกล้ครบกำหนดและใบที่ actual เกิน estimate เข้าช่อง Teams (ไม่ส่งลำดับคะแนนคน)"
-              >
-                <div actions class="flex flex-wrap gap-2">
-                  @if (canEdit()) {
-                    <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveTeamsConfig()">บันทึก Teams Webhook</button>
-                  }
-                  <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="sendTeamsNow()">ยิงแจ้งเตือนเข้า Teams ตอนนี้</button>
-                </div>
-                <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <label class="field">
-                    <span>ชื่อช่องเริ่มต้น</span>
-                    <ejs-textbox [value]="teamsChannel()" (change)="teamsChannel.set($any($event).value ?? '')" [enabled]="canEdit()" placeholder="scorecard-alerts"></ejs-textbox>
-                  </label>
-                  <label class="field">
-                    <span>Incoming Webhook URL (ว่าง = คงค่าเดิม / ใช้จาก env)</span>
-                    <ejs-textbox [value]="teamsWebhookUrl()" (change)="teamsWebhookUrl.set($any($event).value ?? '')" [enabled]="canEdit()" type="password" autocomplete="off" placeholder="https://...webhook.office.com/..."></ejs-textbox>
-                  </label>
-                  <div class="field flex items-end">
-                    <ejs-checkbox
-                      id="teams-enabled"
-                      label="เปิดใช้งานการส่งเข้า Teams Webhook"
-                      [checked]="teamsEnabled()"
-                      [disabled]="!canEdit()"
-                      (change)="teamsEnabled.set(!!$any($event).checked)"
-                    ></ejs-checkbox>
-                  </div>
-                </div>
-              </app-section-card>
+        <app-section-card
+          variant="nested"
+          title="Custom fields"
+          subtitle="ใส่ชื่อ property เช่น customField12 · ว่าง = ไม่ใช้ · แมปจากฟิลด์ myProject ที่แนะนำในคู่มือ"
+        >
+          <div class="form-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            @for (row of customFieldRows; track row.key) {
+              <label class="field">
+                <span>{{ row.label }}</span>
+                <app-sf-textbox
+                  [value]="customFields()[row.key]"
+                  (valueChange)="setCustomField(row.key, $event)"
+                  [disabled]="!canEdit()"
+                  [placeholder]="row.hint"
+                />
+              </label>
+            }
+          </div>
+        </app-section-card>
 
-              <app-section-card
-                variant="nested"
-                title="ประวัติส่งแจ้งเตือน Teams"
-                subtitle="บันทึกการส่งแจ้งเตือนเข้า Microsoft Teams"
-              >
-                <ejs-grid [dataSource]="teamsData()?.lastRuns ?? []" [allowPaging]="true" [pageSettings]="{ pageSize: 8 }">
-                  <e-columns>
-                    <e-column field="id" headerText="ID" width="80"></e-column>
-                    <e-column field="status" headerText="สถานะ" width="100"></e-column>
-                    <e-column field="started_at" headerText="เวลาส่ง" width="180"></e-column>
-                    <e-column field="added" headerText="จำนวนข้อความ" width="130"></e-column>
-                  </e-columns>
-                </ejs-grid>
-              </app-section-card>
+        <app-section-card
+          variant="nested"
+          title="ประวัติ sync OpenProject"
+          subtitle="บันทึกการซิงก์ข้อมูลจาก OpenProject ล่าสุด"
+        >
+          <app-sf-grid [data]="data()?.lastRuns ?? []" [columns]="opRunColumns" [options]="runGridOptions" />
+        </app-section-card>
+      </div>
+    </ng-template>
+
+    <ng-template #gitlabTabTpl>
+      <div class="flex flex-col gap-4 pt-4">
+        <app-section-card
+          variant="nested"
+          title="ตั้งค่าเชื่อมต่อ GitLab API v4"
+          subtitle="ดึง Merge Requests ที่ merged แล้ว เพื่อจับคู่รหัสใบงาน (เช่น IMP-100, OP-42) จากชื่อ MR / branch / description"
+        >
+          <div actions class="flex flex-wrap gap-2">
+            @if (canEdit()) {
+              <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveGitLabConfig()">บันทึก GitLab</button>
+            }
+            <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="syncGitLabNow()">ซิงก์ MR ตอนนี้</button>
+            <button ejs-button cssClass="e-outline" type="button" [disabled]="saving()" (click)="discoverGitLabProjects()">ดึงรายชื่อ Repo</button>
+          </div>
+          <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="field">
+              <span>GitLab Base URL</span>
+              <app-sf-textbox [value]="gitlabBaseUrl()" (valueChange)="gitlabBaseUrl.set($event)" [disabled]="!canEdit()" placeholder="https://gitlab.example.com" />
+            </label>
+            <label class="field">
+              <span>Project IDs (คั่นด้วยจุลภาค เช่น 12, 34)</span>
+              <app-sf-textbox [value]="gitlabProjectIdsText()" (valueChange)="gitlabProjectIdsText.set($event)" [disabled]="!canEdit()" placeholder="12, 34" />
+            </label>
+            <label class="field">
+              <span>Personal / Project Access Token (ว่าง = คงค่าเดิม)</span>
+              <app-sf-textbox [value]="gitlabToken()" (valueChange)="gitlabToken.set($event)" [disabled]="!canEdit()" [options]="{ type: 'password' }" />
+            </label>
+            <div class="field flex items-end">
+              <app-sf-checkbox
+                label="เปิดการเชื่อมต่อ GitLab API"
+                [checked]="gitlabEnabled()"
+                [disabled]="!canEdit()"
+                (checkedChange)="gitlabEnabled.set($event)"
+              />
             </div>
-          </ng-template>
-        </e-tabitem>
-      </e-tabitems>
-    </ejs-tab>
+          </div>
+        </app-section-card>
+
+        <app-section-card
+          variant="nested"
+          title="ประวัติซิงก์ GitLab"
+          subtitle="ประวัติการจับคู่ Merge Request กับใบงานในระบบ"
+        >
+          <app-sf-grid [data]="gitlabData()?.lastRuns ?? []" [columns]="gitlabRunColumns" [options]="runGridOptions" />
+        </app-section-card>
+      </div>
+    </ng-template>
+
+    <ng-template #teamsTabTpl>
+      <div class="flex flex-col gap-4 pt-4">
+        <app-section-card
+          variant="nested"
+          title="ตั้งค่า Microsoft Teams Incoming Webhook"
+          subtitle="ส่งข้อความแจ้งเตือนใบงานใกล้ครบกำหนดและใบที่ actual เกิน estimate เข้าช่อง Teams (ไม่ส่งลำดับคะแนนคน)"
+        >
+          <div actions class="flex flex-wrap gap-2">
+            @if (canEdit()) {
+              <button ejs-button cssClass="e-success" type="button" [disabled]="saving()" (click)="saveTeamsConfig()">บันทึก Teams Webhook</button>
+            }
+            <button ejs-button cssClass="e-primary" type="button" [disabled]="saving()" (click)="sendTeamsNow()">ยิงแจ้งเตือนเข้า Teams ตอนนี้</button>
+          </div>
+          <div class="form-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="field">
+              <span>ชื่อช่องเริ่มต้น</span>
+              <app-sf-textbox [value]="teamsChannel()" (valueChange)="teamsChannel.set($event)" [disabled]="!canEdit()" placeholder="scorecard-alerts" />
+            </label>
+            <label class="field">
+              <span>Incoming Webhook URL (ว่าง = คงค่าเดิม / ใช้จาก env)</span>
+              <app-sf-textbox [value]="teamsWebhookUrl()" (valueChange)="teamsWebhookUrl.set($event)" [disabled]="!canEdit()" [options]="{ type: 'password' }" placeholder="https://...webhook.office.com/..." />
+            </label>
+            <div class="field flex items-end">
+              <app-sf-checkbox
+                label="เปิดใช้งานการส่งเข้า Teams Webhook"
+                [checked]="teamsEnabled()"
+                [disabled]="!canEdit()"
+                (checkedChange)="teamsEnabled.set($event)"
+              />
+            </div>
+          </div>
+        </app-section-card>
+
+        <app-section-card
+          variant="nested"
+          title="ประวัติส่งแจ้งเตือน Teams"
+          subtitle="บันทึกการส่งแจ้งเตือนเข้า Microsoft Teams"
+        >
+          <app-sf-grid [data]="teamsData()?.lastRuns ?? []" [columns]="teamsRunColumns" [options]="runGridOptions" />
+        </app-section-card>
+      </div>
+    </ng-template>
+
+    <app-sf-tabs
+      id="integrations-tabs"
+      [tabs]="integrationTabs"
+      [tabTemplates]="{ op: opTabTpl, gitlab: gitlabTabTpl, teams: teamsTabTpl }"
+    />
   </app-section-card>
   }
 </section>

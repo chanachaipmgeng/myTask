@@ -5,52 +5,25 @@
   ></app-page-head>
 
   @if (!canAssign()) {
-    <ejs-message
+    <app-sf-message
       content="บัญชีนี้เป็น member — ดูคิวได้อย่างเดียว รับข้อเสนอได้เฉพาะ admin หรือ lead"
       severity="Info"
-      variant="Outlined"
-    ></ejs-message>
+    />
   }
 
   <app-flash-messages [success]="message()" [error]="error()"></app-flash-messages>
 
-  <ejs-toolbar id="queue-toolbar" cssClass="page-toolbar" overflowMode="Scroll" width="100%">
-    <e-items>
-      <e-item text="กดรับข้อเสนอก่อน ใบจึงจะย้าย"></e-item>
-      <e-item type="Separator"></e-item>
-      <e-item [template]="freeTemplate"></e-item>
-    </e-items>
-  </ejs-toolbar>
-  <ng-template #freeTemplate>
-    <div class="free-line" id="free-people">
-      @if (freePeople().length === 0) {
-        <ejs-message content="ไม่มีคนว่างในโควต้านี้" severity="Info" variant="Outlined"></ejs-message>
-      } @else {
-        <span class="toolbar-field"><span>คนว่าง</span></span>
-        <ejs-chiplist [chips]="freeChips()" selection="None" cssClass="free-chips"></ejs-chiplist>
-      }
-    </div>
-  </ng-template>
-
   <app-section-card
     title="กำลังคนที่เหลือในสัปดาห์"
-    subtitle="ตรวจสอบโควตาคงเหลือหลังหักใบงานเปิดและสำรองนอกแผน 1 MD"
+    subtitle="ตรวจสอบโควตาคงเหลือหลังหักใบงานเปิดและสำรองนอกแผน 1 MD · กดรับข้อเสนอที่ด้านล่างเพื่อจ่ายใบงาน"
     [badge]="'ว่าง ' + freePeople().length + ' คน'"
     badgeTone="info"
   >
-    <ejs-grid [dataSource]="plan().rows" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="320">
-      <e-columns>
-        <e-column field="personLabel" headerText="คน" width="180"></e-column>
-        <e-column field="trackLabel" headerText="สาย" width="120"></e-column>
-        <e-column field="level" headerText="ระดับ" width="110"></e-column>
-        <e-column field="quota" headerText="โควต้า" width="100" textAlign="Right" format="N1"></e-column>
-        <e-column field="openMd" headerText="MD ที่เปิดอยู่" width="130" textAlign="Right" format="N2"></e-column>
-        <e-column field="freeMd" headerText="ว่างหลังกัน 1 MD" width="150" textAlign="Right" format="N2"></e-column>
-        <e-column field="wipLabel" headerText="WIP" width="90"></e-column>
-        <e-column field="xlLabel" headerText="XL" width="80"></e-column>
-        <e-column field="status" headerText="สถานะ" width="110"></e-column>
-      </e-columns>
-    </ejs-grid>
+    <app-sf-grid
+      [data]="plan().rows"
+      [columns]="capacityColumns"
+      [options]="capacityGridOptions"
+    />
   </app-section-card>
 
   <div class="card-grid-2">
@@ -60,22 +33,12 @@
       [badge]="implementQueue().length + ' ใบ'"
       badgeTone="primary"
     >
-      <ejs-grid class="queue-grid" [dataSource]="implementQueue()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
-        <e-columns>
-          <e-column field="id" headerText="รหัส" width="120">
-            <ng-template #template let-data>
-              <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.id)">
-                {{ data.id }}
-              </button>
-            </ng-template>
-          </e-column>
-          <e-column field="type" headerText="ชนิด" width="140"></e-column>
-          <e-column field="module" headerText="โมดูล" width="120"></e-column>
-          <e-column field="size" headerText="ขนาด" width="80"></e-column>
-          <e-column field="estimateMd" headerText="Est" width="90" textAlign="Right" format="N2"></e-column>
-          <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
-        </e-columns>
-      </ejs-grid>
+      <app-sf-grid
+        [data]="implementQueue()"
+        [columns]="queueColumns"
+        [options]="queueGridOptions"
+        (cellAction)="openTicket($event.row.id)"
+      />
     </app-section-card>
 
     <app-section-card
@@ -84,22 +47,12 @@
       [badge]="researchQueue().length + ' ใบ'"
       badgeTone="info"
     >
-      <ejs-grid class="queue-grid" [dataSource]="researchQueue()" [allowPaging]="true" [allowResizing]="true" [pageSettings]="pageSettings" height="240">
-        <e-columns>
-          <e-column field="id" headerText="รหัส" width="120">
-            <ng-template #template let-data>
-              <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.id)">
-                {{ data.id }}
-              </button>
-            </ng-template>
-          </e-column>
-          <e-column field="type" headerText="ชนิด" width="140"></e-column>
-          <e-column field="module" headerText="โมดูล" width="120"></e-column>
-          <e-column field="size" headerText="ขนาด" width="80"></e-column>
-          <e-column field="estimateMd" headerText="Est" width="90" textAlign="Right" format="N2"></e-column>
-          <e-column field="assignee" headerText="ผู้รับ" width="150"></e-column>
-        </e-columns>
-      </ejs-grid>
+      <app-sf-grid
+        [data]="researchQueue()"
+        [columns]="queueColumns"
+        [options]="queueGridOptions"
+        (cellAction)="openTicket($event.row.id)"
+      />
     </app-section-card>
   </div>
 
@@ -112,8 +65,31 @@
     <div class="grid grid-cols-1 gap-3">
       @for (item of plan().plans; track item.ticket.id) {
         <app-section-card variant="nested" [showHead]="false">
-          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <p class="m-0">{{ item.text }}</p>
+          <div
+            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between pl-3 border-l-4"
+            [class.border-emerald-500]="!!item.personId"
+            [class.border-amber-500]="!item.personId"
+          >
+            <div class="flex flex-col gap-1.5 min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <button ejs-button cssClass="e-link e-small font-bold p-0" type="button" (click)="openTicket(item.ticket.id)">
+                  {{ item.ticket.id }}
+                </button>
+                <app-status-badge [label]="item.ticket.size + ' · ' + item.ticket.estimateMd + ' MD'" tone="info" />
+                <app-status-badge
+                  [label]="item.ticket.track === 'RD' ? 'R&D' : 'Implement'"
+                  [tone]="item.ticket.track === 'RD' ? 'info' : 'primary'"
+                />
+                <app-status-badge
+                  [label]="item.personId ? 'พร้อมจ่ายงาน' : 'ลงสัปดาห์นี้ไม่ได้'"
+                  [tone]="item.personId ? 'success' : 'warning'"
+                />
+                @if (item.personId) {
+                  <app-person-avatar [personId]="item.personId" [showName]="true" size="xs" />
+                }
+              </div>
+              <p class="m-0 text-sm text-muted leading-relaxed">{{ item.text }}</p>
+            </div>
             @if (item.personId) {
               <div class="flex items-center gap-2">
                 <button

@@ -1,32 +1,7 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import {
-  CategoryService,
-  ChartModule,
-  ColumnSeriesService,
-  LegendService,
-  LineSeriesService,
-  StripLineService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { DropDownListModule } from '@syncfusion/ej2-angular-dropdowns';
-import { TextBoxModule } from '@syncfusion/ej2-angular-inputs';
-import {
-  AggregateService,
-  ColumnChooserService,
-  ExcelExportService,
-  FilterService,
-  GridComponent,
-  GridModule,
-  PageService,
-  ResizeService,
-  SearchService,
-  SortService,
-  ToolbarService,
-} from '@syncfusion/ej2-angular-grids';
-import { ProgressBarModule } from '@syncfusion/ej2-angular-progressbar';
 import { trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { buildPeopleRoster } from '../../core/people-roster';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -34,11 +9,20 @@ import { ThemeService } from '../../core/theme.service';
 import { ViewportService } from '../../core/viewport.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { INDEX_TARGET } from '../../core/scoring';
-import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import {
   FormFieldComponent,
+  PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
+  SfGridAggregate,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfProgressComponent,
+  SfTextBoxComponent,
   StatusBadgeComponent,
   toneForAlertLabel,
   trackToneMap,
@@ -50,35 +34,17 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DecimalPipe,
-    GridModule,
-    ChartModule,
     ButtonModule,
-    DropDownListModule,
     RouterLink,
-    TextBoxModule,
     PageHeadComponent,
     PersonAvatarComponent,
-    ProgressBarModule,
     StatusBadgeComponent,
     SectionCardComponent,
     FormFieldComponent,
-  ],
-  providers: [
-    PageService,
-    SortService,
-    FilterService,
-    SearchService,
-    ResizeService,
-    ColumnChooserService,
-    ExcelExportService,
-    AggregateService,
-    ToolbarService,
-    ColumnSeriesService,
-    LineSeriesService,
-    CategoryService,
-    LegendService,
-    StripLineService,
-    TooltipService,
+    SfChartComponent,
+    SfGridComponent,
+    SfProgressComponent,
+    SfTextBoxComponent,
   ],
   templateUrl: './people-board.html',
   styleUrl: './people-board.scss',
@@ -90,14 +56,69 @@ export class PeopleBoard {
   protected readonly theme = inject(ThemeService);
   protected readonly viewport = inject(ViewportService);
 
-  @ViewChild('peopleGrid') private peopleGrid?: GridComponent;
-
   protected readonly target = INDEX_TARGET;
   protected readonly fields = { text: 'text', value: 'value' };
-  protected readonly pageSettings = { pageSize: 16 };
-  protected readonly filterSettings = { type: 'Menu' };
-  protected readonly sortSettings = { columns: [{ field: 'index', direction: 'Descending' }] };
-  protected readonly toolbar = ['Search', 'ColumnChooser', 'ExcelExport', 'CsvExport'];
+
+  protected readonly chartSeries = computed<SfChartSeriesConfig[]>(() => [
+    {
+      type: 'Column',
+      dataSource: this.rows(),
+      xName: 'nickname',
+      yName: 'index',
+      pointColorMapping: 'color',
+      name: 'ดัชนีพัฒนา',
+      columnWidth: 0.52,
+      cornerRadius: { topLeft: 8, topRight: 8 },
+    },
+  ]);
+
+  protected readonly chartOptions: SfChartOptions = {
+    height: '420px',
+    exportable: true,
+    fullscreenable: true,
+    exportFileName: 'people-index-chart',
+    margin: { top: 14, right: 34, bottom: 28, left: 12 },
+    enableAnimation: false,
+  };
+
+  protected readonly gridColumns: SfGridColumn[] = [
+    { field: 'personLabel', headerText: 'พนักงาน', width: 245, isFrozen: true },
+    { field: 'levelLabel', headerText: 'ระดับ', width: 110 },
+    { field: 'trackLabel', headerText: 'สาย', width: 110 },
+    { field: 'quota', headerText: 'โควต้า', width: 95, textAlign: 'Right', format: 'N1' },
+    { field: 'openCount', headerText: 'WIP', width: 85, textAlign: 'Right' },
+    { field: 'closedCount', headerText: 'ปิดแล้ว', width: 105, textAlign: 'Right' },
+    { field: 'index', headerText: 'ดัชนี', width: 160 },
+    { field: 'planLabel', headerText: 'ปิดตามแผน', width: 200 },
+    { field: 'accuracyLabel', headerText: 'ความแม่น', width: 110 },
+    { field: 'weighted', headerText: 'คะแนนถ่วง', width: 115, textAlign: 'Right', format: 'N1' },
+    { field: 'reworkPct', headerText: 'Rework %', width: 115, textAlign: 'Right', format: 'N1' },
+    { field: 'sideLabel', headerText: 'นอกแผน / Spike', width: 150 },
+    { field: 'alertLabel', headerText: 'แจ้งเตือน', width: 160 },
+  ];
+
+  protected readonly gridAggregates: SfGridAggregate[] = [
+    { field: 'personLabel', type: 'Count', prefix: 'รวม ', suffix: ' คน' },
+    { field: 'quota', type: 'Sum', format: 'N1', prefix: 'รวม ' },
+    { field: 'openCount', type: 'Sum', prefix: 'รวม ' },
+    { field: 'closedCount', type: 'Sum', prefix: 'รวม ' },
+    { field: 'index', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
+  ];
+
+  protected readonly gridOptions: SfGridOptions = {
+    id: 'people-board-grid',
+    paging: true,
+    pageSize: 16,
+    sorting: true,
+    sortSettings: { columns: [{ field: 'index', direction: 'Descending' }] },
+    filtering: 'Menu',
+    search: true,
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    resizable: true,
+    exportFileName: 'people-scorecard',
+  };
   protected readonly trackToneMap = trackToneMap;
   protected readonly quotas = computed(() => {
     const quota = weeklyQuotas();
@@ -119,10 +140,10 @@ export class PeopleBoard {
   protected readonly query = signal('');
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly primaryXAxis = {
-    valueType: 'Category',
+    valueType: 'Category' as const,
     majorGridLines: { width: 0 },
     labelRotation: -40,
-    labelIntersectAction: 'Rotate',
+    labelIntersectAction: 'Rotate45' as const,
     labelStyle: this.axisFont,
   };
   protected readonly primaryYAxis = {
@@ -199,19 +220,10 @@ export class PeopleBoard {
     this.query.set(event.value ?? '');
   }
 
-  protected openPerson(args: { data?: { id?: string } }): void {
-    const id = args.data?.id;
+  protected openPerson(args: { data?: unknown }): void {
+    const id = (args.data as { id?: string } | undefined)?.id;
     if (id) {
       void this.workspace.navigateWithFilter(['/people', id]);
-    }
-  }
-
-  protected onToolbarClick(args: { item?: { id?: string } }): void {
-    const id = args.item?.id ?? '';
-    if (id.endsWith('_excelexport')) {
-      void this.peopleGrid?.excelExport();
-    } else if (id.endsWith('_csvexport')) {
-      void this.peopleGrid?.csvExport();
     }
   }
 

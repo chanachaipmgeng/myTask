@@ -1,15 +1,21 @@
 :host {
   display: block;
-  /* appbar ~60 + shell-main padding 16/44 */
-  height: calc(100vh - 120px);
   min-height: 0;
 }
 
 .schedule-page.page {
-  height: 100%;
   min-height: 0;
   max-width: none;
-  overflow: hidden;
+}
+
+@media (min-width: 1200px) and (min-height: 850px) {
+  :host {
+    height: calc(100vh - 136px);
+  }
+  .schedule-page.page {
+    height: 100%;
+    overflow: hidden;
+  }
 }
 
 .schedule-page > app-page-head {
@@ -18,21 +24,28 @@
 
 .schedule-layout {
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 540px;
   display: grid;
   gap: 1rem;
   align-items: stretch;
-  /* จอแคบ: ไทม์ไลน์กินพื้นที่หลัก ไม่ให้ board-host ยุบเหลือแถวเดียว */
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(360px, 1fr) minmax(280px, 42%);
-  overflow: hidden;
+  grid-template-rows: minmax(420px, 1fr) auto;
 }
 
-@media (min-width: 960px) {
+@media (min-width: 1024px) {
   .schedule-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    grid-template-columns: minmax(0, 1fr) minmax(272px, 304px);
     grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
   }
+}
+
+/* ให้คอลัมน์รายชื่อคนฝั่งซ้ายกระชับขึ้น เพื่อให้ช่องวันบน Timeline กว้างอ่านง่าย */
+:host ::ng-deep .schedule-board-host .e-schedule .e-timeline-view .e-resource-left-td,
+:host ::ng-deep .schedule-board-host .e-schedule .e-timeline-month-view .e-resource-left-td {
+  width: 152px !important;
+  min-width: 140px !important;
+  max-width: 164px !important;
 }
 
 :host ::ng-deep app-section-card.schedule-layout__timeline,

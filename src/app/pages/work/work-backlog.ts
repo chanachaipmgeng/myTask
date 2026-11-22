@@ -1,38 +1,16 @@
-import { ChangeDetectionStrategy, Component, ViewChild, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import {
-  AggregateService,
-  ColumnChooserService,
-  ExcelExportService,
-  FilterService,
-  GridComponent,
-  GridModule,
-  PageService,
-  ResizeService,
-  SortService,
-  ToolbarService,
-} from '@syncfusion/ej2-angular-grids';
 import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { workBacklogRows } from '../../core/work-views';
-import { SectionCardComponent } from '../../shared/ui';
+import { SectionCardComponent, SfGridAggregate, SfGridColumn, SfGridComponent, SfGridOptions } from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-backlog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GridModule, ButtonModule, RouterLink, SectionCardComponent],
-  providers: [
-    PageService,
-    SortService,
-    FilterService,
-    ResizeService,
-    ColumnChooserService,
-    ExcelExportService,
-    AggregateService,
-    ToolbarService,
-  ],
+  imports: [ButtonModule, RouterLink, SectionCardComponent, SfGridComponent],
   templateUrl: './work-backlog.html',
 })
 export class WorkBacklog {
@@ -40,14 +18,7 @@ export class WorkBacklog {
   private readonly hub = inject(WorkHubFilter);
   private readonly ticketDetail = inject(TicketDetailService);
 
-  @ViewChild('backlogGrid') private backlogGrid?: GridComponent;
-
-  protected readonly pageSettings = { pageSize: 12 };
-  protected readonly gridToolbar = ['ColumnChooser', 'ExcelExport', 'CsvExport'];
   protected readonly isMine = computed(() => this.hub.scope() === 'mine');
-  protected readonly gridId = computed(() =>
-    this.isMine() ? 'my-work-backlog-grid' : 'work-backlog-grid',
-  );
   protected readonly boardLink = computed(() =>
     this.isMine() ? '/me/work/board' : '/work/board',
   );
@@ -59,18 +30,39 @@ export class WorkBacklog {
     ),
   );
 
+  protected readonly columns = computed<SfGridColumn[]>(() => [
+    { field: 'id', headerText: 'รหัส', width: 120 },
+    { field: 'title', headerText: 'ชื่องาน', width: 280 },
+    { field: 'trackLabel', headerText: 'สาย', width: 110 },
+    { field: 'type', headerText: 'ประเภท', width: 130 },
+    { field: 'size', headerText: 'ขนาด', width: 80 },
+    { field: 'estimateMd', headerText: 'Estimate MD', width: 120, textAlign: 'Right', format: 'N2' },
+    { field: 'assignee', headerText: 'ผู้รับ', width: 140, visible: !this.isMine() },
+    { field: 'status', headerText: 'สถานะ', width: 120 },
+  ]);
+
+  protected readonly aggregates: SfGridAggregate[] = [
+    { field: 'id', type: 'Count', prefix: 'รวม ', suffix: ' ใบ' },
+    { field: 'estimateMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
+  ];
+
+  protected readonly gridOptions = computed<SfGridOptions>(() => ({
+    id: this.isMine() ? 'my-work-backlog-grid' : 'work-backlog-grid',
+    paging: true,
+    pageSize: 12,
+    sorting: true,
+    filtering: 'Excel',
+    search: true,
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    resizable: true,
+    exportFileName: this.isMine() ? 'my-backlog' : 'team-backlog',
+  }));
+
   protected openTicket(id: string): void {
     if (id) {
       this.ticketDetail.open(id);
-    }
-  }
-
-  protected onToolbarClick(args: { item?: { id?: string } }): void {
-    const id = args.item?.id ?? '';
-    if (id.endsWith('_excelexport')) {
-      void this.backlogGrid?.excelExport();
-    } else if (id.endsWith('_csvexport')) {
-      void this.backlogGrid?.csvExport();
     }
   }
 }

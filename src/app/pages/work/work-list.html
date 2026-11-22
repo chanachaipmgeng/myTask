@@ -1,5 +1,5 @@
 <app-section-card
-  title="รายการใบงานปฏิบัติการ (Work List)"
+  title="รายการใบงานปฏิบัติการ"
   subtitle="รายการใบงานแนวปฏิบัติงาน (ไม่ใช่ตารางคะแนน) · จัดกลุ่มตามโปรเจกต์ได้"
   [badge]="rows().length + ' ใบ'"
   badgeTone="info"
@@ -13,100 +13,65 @@
   >
     {{ groupByProject() ? 'จัดกลุ่มโปรเจกต์: เปิด' : 'จัดกลุ่มโปรเจกต์: ปิด' }}
   </button>
-  <ejs-grid
-    #listGrid
-    [id]="gridId()"
-    [dataSource]="rows()"
-    [enablePersistence]="true"
-    [allowPaging]="true"
-    [allowSorting]="true"
-    [allowFiltering]="true"
-    [allowGrouping]="true"
-    [allowResizing]="true"
-    [showColumnChooser]="true"
-    [allowExcelExport]="true"
-    [toolbar]="toolbar"
-    [pageSettings]="pageSettings"
-    [groupSettings]="groupSettings()"
-    (toolbarClick)="onToolbarClick($event)"
+
+  <ng-template #workTpl let-data>
+    <button ejs-button cssClass="e-link e-small text-left font-semibold" type="button" (click)="openDetail(data.id, $event)">
+      {{ data.workLabel }}
+    </button>
+  </ng-template>
+  <ng-template #assigneeTpl let-data>
+    <app-person-avatar [name]="data.assignee" [showName]="true" size="xs" />
+  </ng-template>
+  <ng-template #statusTpl let-data>
+    <app-status-badge [value]="data.status" [toneMap]="workflowStatusToneMap" />
+  </ng-template>
+  <ng-template #weekTpl let-data>
+    <app-status-badge [label]="data.weekOffsetLabel" [tone]="weekTone(data.weekOffsetLabel)" />
+  </ng-template>
+  <ng-template #planTpl let-data>
+    <app-status-badge [value]="data.unplannedLabel" [toneMap]="planToneMap" />
+  </ng-template>
+  <ng-template #actionTpl let-data>
+    <button ejs-button cssClass="e-small e-outline" type="button" (click)="openDetail(data.id, $event)">
+      ดูสรุป
+    </button>
+  </ng-template>
+
+  <app-sf-grid
+    [data]="rows()"
+    [columns]="columns"
+    [cellTemplates]="{
+      workLabel: workTpl,
+      assignee: assigneeTpl,
+      status: statusTpl,
+      weekOffsetLabel: weekTpl,
+      unplannedLabel: planTpl,
+      action: actionTpl
+    }"
+    [options]="gridOptions()"
     (rowSelected)="onRowSelected($event)"
-  >
-    <e-columns>
-      <e-column field="workLabel" headerText="Work" width="280">
-        <ng-template #template let-data>
-          <button ejs-button cssClass="e-link e-small text-left font-semibold" type="button" (click)="openDetail(data.id, $event)">
-            {{ data.workLabel }}
-          </button>
-        </ng-template>
-      </e-column>
-      <e-column field="projectLabel" headerText="โปรเจกต์" width="140"></e-column>
-      <e-column field="teamLabel" headerText="ทีม" width="120"></e-column>
-      <e-column field="type" headerText="Type" width="110"></e-column>
-      <e-column field="assignee" headerText="Assignee" width="165">
-        <ng-template #template let-data>
-          <app-person-avatar [name]="data.assignee" [showName]="true" size="xs"></app-person-avatar>
-        </ng-template>
-      </e-column>
-      <e-column field="status" headerText="Status" width="130">
-        <ng-template #template let-data>
-          <app-status-badge [value]="data.status" [toneMap]="workflowStatusToneMap"></app-status-badge>
-        </ng-template>
-      </e-column>
-      <e-column field="size" headerText="Size" width="80"></e-column>
-      <e-column field="dueOnLabel" headerText="Due" width="110"></e-column>
-      <e-column field="closedOnLabel" headerText="Closed" width="110"></e-column>
-      <e-column field="weekOffsetLabel" headerText="สัปดาห์" width="130">
-        <ng-template #template let-data>
-          <app-status-badge [label]="data.weekOffsetLabel" [tone]="weekTone(data.weekOffsetLabel)"></app-status-badge>
-        </ng-template>
-      </e-column>
-      <e-column field="unplannedLabel" headerText="แผน" width="110">
-        <ng-template #template let-data>
-          <app-status-badge [value]="data.unplannedLabel" [toneMap]="planToneMap"></app-status-badge>
-        </ng-template>
-      </e-column>
-      <e-column headerText="Action" width="110" textAlign="Center" [allowFiltering]="false" [allowSorting]="false">
-        <ng-template #template let-data>
-          <button ejs-button cssClass="e-small e-outline" type="button" (click)="openDetail(data.id, $event)">
-            ดูสรุป
-          </button>
-        </ng-template>
-      </e-column>
-    </e-columns>
-  </ejs-grid>
+  />
 </app-section-card>
 
-<ejs-dialog
-  #detailDialog
-  header="สรุปใบงาน"
-  cssClass="app-modal"
-  width="480px"
-  [visible]="false"
-  [isModal]="true"
-  [showCloseIcon]="true"
->
-  <ng-template #content>
-    @if (detail(); as row) {
-      <div class="app-modal__intro">
-        <p class="app-modal__intro-title">{{ row.workLabel }}</p>
-        <p class="app-modal__intro-meta">ผู้รับ: {{ row.assignee }} · ขนาด {{ row.size }}</p>
-      </div>
-      <div class="grid gap-2 text-sm">
-        <p class="m-0 flex flex-wrap items-center gap-2">
-          สถานะ:
-          <app-status-badge [value]="row.status" [toneMap]="workflowStatusToneMap"></app-status-badge>
-        </p>
-        <p class="m-0">Due: {{ row.dueOnLabel }} · Closed: {{ row.closedOnLabel }}</p>
-        <p class="m-0 flex flex-wrap items-center gap-2">
-          <app-status-badge [label]="row.weekOffsetLabel" [tone]="weekTone(row.weekOffsetLabel)"></app-status-badge>
-          <app-status-badge [value]="row.unplannedLabel" [toneMap]="planToneMap"></app-status-badge>
-        </p>
-      </div>
-    }
-  </ng-template>
-  <ng-template #footerTemplate>
-    <div class="app-modal__footer">
-      <button ejs-button cssClass="e-primary" type="button" (click)="goToBoard()">เปิดในกระดานงาน (Board)</button>
+<app-sf-dialog #detailDialog header="สรุปใบงาน" width="480px">
+  @if (detail(); as row) {
+    <div class="app-modal__intro">
+      <p class="app-modal__intro-title">{{ row.workLabel }}</p>
+      <p class="app-modal__intro-meta">ผู้รับ: {{ row.assignee }} · ขนาด {{ row.size }}</p>
     </div>
-  </ng-template>
-</ejs-dialog>
+    <div class="grid gap-2 text-sm">
+      <p class="m-0 flex flex-wrap items-center gap-2">
+        สถานะ:
+        <app-status-badge [value]="row.status" [toneMap]="workflowStatusToneMap" />
+      </p>
+      <p class="m-0">Due: {{ row.dueOnLabel }} · Closed: {{ row.closedOnLabel }}</p>
+      <p class="m-0 flex flex-wrap items-center gap-2">
+        <app-status-badge [label]="row.weekOffsetLabel" [tone]="weekTone(row.weekOffsetLabel)" />
+        <app-status-badge [value]="row.unplannedLabel" [toneMap]="planToneMap" />
+      </p>
+    </div>
+  }
+  <button sf-dialog-footer ejs-button cssClass="e-primary" type="button" (click)="goToBoard()">
+    เปิดในกระดานงาน (Board)
+  </button>
+</app-sf-dialog>
