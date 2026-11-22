@@ -20,6 +20,11 @@ import {
   ProgressBarModule,
 } from '@syncfusion/ej2-angular-progressbar';
 import { ThemeService } from '../../core/theme.service';
+import {
+  MotionGlowTone,
+  MotionInput,
+  MotionWrapperComponent,
+} from '../motion/motion-wrapper';
 import { BadgeTone, badgeToneClass } from '../ui/badge';
 import { CountUpDirective } from '../ui/count-up';
 
@@ -42,7 +47,7 @@ const ACCENT_SPARK: Record<KpiAccent, string> = {
 @Component({
   selector: 'app-kpi-stat',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ProgressBarModule, SparklineModule, CountUpDirective],
+  imports: [ProgressBarModule, SparklineModule, CountUpDirective, MotionWrapperComponent],
   providers: [SparklineTooltipService],
   templateUrl: './kpi-stat-card.html',
   styleUrl: './kpi-stat-card.scss',
@@ -73,9 +78,25 @@ export class KpiStatCardComponent implements AfterViewInit, OnChanges {
   @Input() sparklineData: KpiSparklineData | null = null;
   @Input() sparklineType: KpiSparklineType = 'Area';
   @Input() sparklineId = '';
+  @Input() motion: MotionInput = 'scale-glass';
 
   protected sparkWidth = '100%';
   protected progressWidth = '100%';
+
+  protected mappedGlowTone(): MotionGlowTone {
+    switch (this.accent) {
+      case 'success':
+        return 'good';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'danger';
+      case 'info':
+        return 'primary';
+      default:
+        return 'none';
+    }
+  }
 
   ngAfterViewInit(): void {
     this.scheduleChartRefresh();

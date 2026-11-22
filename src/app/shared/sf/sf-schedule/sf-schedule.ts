@@ -25,6 +25,7 @@ import {
   TimelineViewsService,
   View,
 } from '@syncfusion/ej2-angular-schedule';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
 export interface SfScheduleResource {
   field: string;
@@ -47,14 +48,16 @@ export interface SfScheduleOptions {
   readonly?: boolean;
   showQuickInfo?: boolean;
   group?: GroupModel;
+  motion?: MotionInput;
 }
 
 @Component({
   selector: 'app-sf-schedule',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, ScheduleModule],
+  imports: [NgTemplateOutlet, ScheduleModule, MotionWrapperComponent],
   providers: [TimelineViewsService, TimelineMonthService, AgendaService],
   template: `
+    <app-motion-wrapper [config]="options().motion" variant="fade-up">
     <div #hostBox class="sf-schedule-wrap">
       <ejs-schedule
         #scheduleRef
@@ -105,6 +108,7 @@ export interface SfScheduleOptions {
         }
       </ejs-schedule>
     </div>
+    </app-motion-wrapper>
   `,
   styles: `
     :host, .sf-schedule-wrap {

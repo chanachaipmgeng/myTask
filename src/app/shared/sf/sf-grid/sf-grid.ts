@@ -41,6 +41,7 @@ import {
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ClickEventArgs } from '@syncfusion/ej2-navigations';
 import { ViewportService } from '../../../core/viewport.service';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 import { BadgeTone } from '../../ui/badge';
 import { PersonAvatarComponent } from '../../ui/person-avatar/person-avatar';
 import { StatusBadgeComponent } from '../../ui/status-badge/status-badge';
@@ -112,6 +113,7 @@ export interface SfGridOptions {
   gridLines?: GridLine;
   editSettings?: EditSettingsModel;
   extraToolbar?: (string | object)[];
+  motion?: MotionInput;
 }
 
 let nextGridId = 1;
@@ -119,7 +121,14 @@ let nextGridId = 1;
 @Component({
   selector: 'app-sf-grid',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, GridModule, ButtonModule, PersonAvatarComponent, StatusBadgeComponent],
+  imports: [
+    CommonModule,
+    GridModule,
+    ButtonModule,
+    PersonAvatarComponent,
+    StatusBadgeComponent,
+    MotionWrapperComponent,
+  ],
   providers: [
     PageService,
     SortService,
@@ -136,6 +145,11 @@ let nextGridId = 1;
     EditService,
   ],
   template: `
+    <app-motion-wrapper
+      [config]="options().motion"
+      variant="fade-up"
+      [refreshKey]="motionRefreshKey()"
+    >
     <div class="sf-grid-host" [attr.data-density]="density()">
       <ejs-grid
         #gridRef
@@ -237,6 +251,7 @@ let nextGridId = 1;
         </e-columns>
       </ejs-grid>
     </div>
+    </app-motion-wrapper>
   `,
   styles: `
     :host {
@@ -350,6 +365,12 @@ export class SfGridComponent {
   protected readonly textWrapSettings: TextWrapSettingsModel = { wrapMode: 'Content' };
 
   protected readonly gridId = computed(() => this.options().id || this.autoId);
+  protected readonly motionRefreshKey = computed(() => {
+    const rows = this.data();
+    const first = rows[0] as Record<string, unknown> | undefined;
+    const headKey = first ? String(first['id'] ?? first['code'] ?? first['personId'] ?? '') : '';
+    return `${rows.length}:${headKey}`;
+  });
   protected readonly paging = computed(() => this.options().paging ?? true);
   protected readonly sorting = computed(() => this.options().sorting ?? true);
   protected readonly grouping = computed(() => this.options().grouping ?? false);

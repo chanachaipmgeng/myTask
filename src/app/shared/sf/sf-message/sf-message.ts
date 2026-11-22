@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MessageModule, Severity, Variant } from '@syncfusion/ej2-angular-notifications';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
 export type SfMessageSeverity = 'Normal' | 'Info' | 'Success' | 'Warning' | 'Error';
 export type SfMessageVariant = 'Text' | 'Outlined' | 'Filled';
@@ -11,22 +12,29 @@ export interface SfMessageOptions {
   dismissible?: boolean;
   compact?: boolean;
   cssClass?: string;
+  motion?: MotionInput;
 }
 
 @Component({
   selector: 'app-sf-message',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MessageModule],
+  imports: [MessageModule, MotionWrapperComponent],
   template: `
-    <ejs-message
-      [content]="content()"
-      [severity]="resolvedSeverity()"
-      [variant]="resolvedVariant()"
-      [showIcon]="options().showIcon ?? showIcon()"
-      [showCloseIcon]="options().dismissible ?? dismissible()"
-      [cssClass]="computedCssClass()"
-      (closed)="closed.emit()"
-    ></ejs-message>
+    <app-motion-wrapper
+      [config]="options().motion"
+      variant="slide-in"
+      [refreshKey]="content()"
+    >
+      <ejs-message
+        [content]="content()"
+        [severity]="resolvedSeverity()"
+        [variant]="resolvedVariant()"
+        [showIcon]="options().showIcon ?? showIcon()"
+        [showCloseIcon]="options().dismissible ?? dismissible()"
+        [cssClass]="computedCssClass()"
+        (closed)="closed.emit()"
+      ></ejs-message>
+    </app-motion-wrapper>
   `,
   styles: `
     :host {

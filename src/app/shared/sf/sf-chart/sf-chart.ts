@@ -42,6 +42,7 @@ import {
 } from '@syncfusion/ej2-angular-charts';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ThemeService } from '../../../core/theme.service';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
 export interface SfChartSeriesConfig {
   type:
@@ -86,12 +87,13 @@ export interface SfChartOptions {
   tooltip?: TooltipSettingsModel;
   margin?: { top?: number; right?: number; bottom?: number; left?: number };
   axes?: AxisModel[];
+  motion?: MotionInput;
 }
 
 @Component({
   selector: 'app-sf-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ChartModule, ButtonModule],
+  imports: [ChartModule, ButtonModule, MotionWrapperComponent],
   providers: [
     CategoryService,
     DateTimeService,
@@ -116,6 +118,11 @@ export interface SfChartOptions {
     ExportService,
   ],
   template: `
+    <app-motion-wrapper
+      [config]="options().motion"
+      variant="scale-glass"
+      [refreshKey]="motionRefreshKey()"
+    >
     <div #hostBox class="sf-chart-wrap" [class.is-fullscreen]="fullscreen()">
       @if (showControls()) {
         <div class="sf-chart-toolbar">
@@ -196,6 +203,7 @@ export interface SfChartOptions {
         </e-series-collection>
       </ejs-chart>
     </div>
+    </app-motion-wrapper>
   `,
   styles: `
     :host {
@@ -260,6 +268,11 @@ export class SfChartComponent implements AfterViewInit, OnDestroy {
   private resizeTimer?: ReturnType<typeof setTimeout>;
 
   protected readonly resolvedHeight = computed(() => this.options().height ?? '340px');
+  protected readonly motionRefreshKey = computed(() =>
+    this.series()
+      .map((s) => `${s.name ?? s.yName}:${s.dataSource?.length ?? 0}`)
+      .join('|'),
+  );
   protected readonly showControls = computed(
     () => Boolean(this.options().exportable || this.options().fullscreenable),
   );

@@ -2,7 +2,10 @@
   display: block;
   min-width: 0;
   height: 100%;
-  animation: kpi-stat-enter var(--dur-deliberate) var(--ease-crisp) both;
+}
+
+:host > app-motion-wrapper {
+  height: 100%;
 }
 
 @keyframes kpi-stat-enter {

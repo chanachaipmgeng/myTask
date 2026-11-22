@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, computed, input, output } from '@angular/core';
 import { OverflowMode, SelectEventArgs, TabComponent, TabModule } from '@syncfusion/ej2-angular-navigations';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
 export interface SfTabItem {
   id: string;
@@ -14,35 +15,42 @@ export interface SfTabsOptions {
   allowDragAndDrop?: boolean;
   headerPlacement?: 'Top' | 'Bottom' | 'Left' | 'Right';
   cssClass?: string;
+  motion?: MotionInput;
 }
 
 @Component({
   selector: 'app-sf-tabs',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, TabModule],
+  imports: [NgTemplateOutlet, TabModule, MotionWrapperComponent],
   template: `
-    <ejs-tab
-      #tabRef
-      [id]="id()"
-      [selectedItem]="selectedItem()"
-      [overflowMode]="options().overflowMode ?? 'Scrollable'"
-      [allowDragAndDrop]="options().allowDragAndDrop ?? false"
-      [headerPlacement]="options().headerPlacement ?? 'Top'"
-      [cssClass]="resolvedCssClass()"
-      (selected)="selected.emit($event)"
+    <app-motion-wrapper
+      [config]="options().motion"
+      variant="fade-up"
+      [refreshKey]="selectedItem()"
     >
-      <e-tabitems>
-        @for (tab of tabs(); track tab.id) {
-          <e-tabitem [header]="{ text: tab.header, iconCss: tab.iconCss }" [disabled]="tab.disabled ?? false">
-            <ng-template #content>
-              @if (tabTemplates()[tab.id]; as tpl) {
-                <ng-container *ngTemplateOutlet="tpl"></ng-container>
-              }
-            </ng-template>
-          </e-tabitem>
-        }
-      </e-tabitems>
-    </ejs-tab>
+      <ejs-tab
+        #tabRef
+        [id]="id()"
+        [selectedItem]="selectedItem()"
+        [overflowMode]="options().overflowMode ?? 'Scrollable'"
+        [allowDragAndDrop]="options().allowDragAndDrop ?? false"
+        [headerPlacement]="options().headerPlacement ?? 'Top'"
+        [cssClass]="resolvedCssClass()"
+        (selected)="selected.emit($event)"
+      >
+        <e-tabitems>
+          @for (tab of tabs(); track tab.id) {
+            <e-tabitem [header]="{ text: tab.header, iconCss: tab.iconCss }" [disabled]="tab.disabled ?? false">
+              <ng-template #content>
+                @if (tabTemplates()[tab.id]; as tpl) {
+                  <ng-container *ngTemplateOutlet="tpl"></ng-container>
+                }
+              </ng-template>
+            </e-tabitem>
+          }
+        </e-tabitems>
+      </ejs-tab>
+    </app-motion-wrapper>
   `,
 })
 export class SfTabsComponent {

@@ -25,6 +25,7 @@ import {
 } from '@syncfusion/ej2-angular-charts';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ThemeService } from '../../../core/theme.service';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
 export interface SfDonutChartOptions {
   height?: string;
@@ -38,12 +39,13 @@ export interface SfDonutChartOptions {
   legend?: LegendSettingsModel;
   tooltip?: TooltipSettingsModel;
   enableSmartLabels?: boolean;
+  motion?: MotionInput;
 }
 
 @Component({
   selector: 'app-sf-donut-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AccumulationChartModule, ButtonModule],
+  imports: [AccumulationChartModule, ButtonModule, MotionWrapperComponent],
   providers: [
     PieSeriesService,
     AccumulationLegendService,
@@ -52,6 +54,11 @@ export interface SfDonutChartOptions {
     ExportService,
   ],
   template: `
+    <app-motion-wrapper
+      [config]="options().motion"
+      variant="scale-glass"
+      [refreshKey]="motionRefreshKey()"
+    >
     <div #hostBox class="sf-donut-wrap">
       @if (options().exportable) {
         <button
@@ -93,6 +100,7 @@ export interface SfDonutChartOptions {
         </e-accumulation-series-collection>
       </ejs-accumulationchart>
     </div>
+    </app-motion-wrapper>
   `,
   styles: `
     :host {
@@ -145,6 +153,10 @@ export class SfDonutChartComponent implements AfterViewInit, OnDestroy {
     enable: true,
     ...(this.options().tooltip ?? {}),
   }));
+
+  protected readonly motionRefreshKey = computed(
+    () => `${this.data().length}:${this.options().centerLabel ?? ''}`,
+  );
 
   protected readonly centerLabelConfig = computed(() => {
     const text = this.options().centerLabel;

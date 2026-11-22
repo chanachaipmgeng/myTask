@@ -29,6 +29,7 @@ import {
   ToolbarService,
   ViewType,
 } from '@syncfusion/ej2-angular-gantt';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
 export interface SfGanttOptions {
   id?: string;
@@ -53,12 +54,13 @@ export interface SfGanttOptions {
   labelSettings?: LabelSettingsModel;
   editSettings?: EditSettingsModel;
   resourceFields?: object;
+  motion?: MotionInput;
 }
 
 @Component({
   selector: 'app-sf-gantt',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [GanttModule],
+  imports: [GanttModule, MotionWrapperComponent],
   providers: [
     EditService,
     SelectionService,
@@ -71,6 +73,11 @@ export interface SfGanttOptions {
     CriticalPathService,
   ],
   template: `
+    <app-motion-wrapper
+      [config]="options().motion"
+      variant="fade-up"
+      [refreshKey]="data().length"
+    >
     <div #hostBox class="sf-gantt-wrap">
       <ejs-gantt
         #ganttRef
@@ -106,6 +113,7 @@ export interface SfGanttOptions {
         (queryTaskbarInfo)="queryTaskbarInfo.emit($event)"
       ></ejs-gantt>
     </div>
+    </app-motion-wrapper>
   `,
   styles: `
     :host, .sf-gantt-wrap {

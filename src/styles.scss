@@ -274,25 +274,35 @@ body.e-light-mode {
 }
 
 /* Subtle stagger for 2-col / bento grid cards (enter only, no hover transform) */
-.grid > app-section-card:nth-child(1) > .e-card.section-card,
-.grid > div:nth-child(1) > app-section-card > .e-card.section-card {
+.grid > app-section-card:nth-child(1) .e-card.section-card,
+.grid > app-section-card:nth-child(1) .motion-wrap,
+.grid > div:nth-child(1) > app-section-card .e-card.section-card {
   animation-delay: 40ms;
+  --mw-delay: 40ms;
 }
-.grid > app-section-card:nth-child(2) > .e-card.section-card,
-.grid > div:nth-child(2) > app-section-card > .e-card.section-card {
+.grid > app-section-card:nth-child(2) .e-card.section-card,
+.grid > app-section-card:nth-child(2) .motion-wrap,
+.grid > div:nth-child(2) > app-section-card .e-card.section-card {
   animation-delay: 95ms;
+  --mw-delay: 95ms;
 }
-.grid > app-section-card:nth-child(3) > .e-card.section-card,
-.grid > div:nth-child(3) > app-section-card > .e-card.section-card {
+.grid > app-section-card:nth-child(3) .e-card.section-card,
+.grid > app-section-card:nth-child(3) .motion-wrap,
+.grid > div:nth-child(3) > app-section-card .e-card.section-card {
   animation-delay: 150ms;
+  --mw-delay: 150ms;
 }
-.grid > app-section-card:nth-child(4) > .e-card.section-card,
-.grid > div:nth-child(4) > app-section-card > .e-card.section-card {
+.grid > app-section-card:nth-child(4) .e-card.section-card,
+.grid > app-section-card:nth-child(4) .motion-wrap,
+.grid > div:nth-child(4) > app-section-card .e-card.section-card {
   animation-delay: 205ms;
+  --mw-delay: 205ms;
 }
-.grid > app-section-card:nth-child(n + 5) > .e-card.section-card,
-.grid > div:nth-child(n + 5) > app-section-card > .e-card.section-card {
+.grid > app-section-card:nth-child(n + 5) .e-card.section-card,
+.grid > app-section-card:nth-child(n + 5) .motion-wrap,
+.grid > div:nth-child(n + 5) > app-section-card .e-card.section-card {
   animation-delay: 260ms;
+  --mw-delay: 260ms;
 }
 
 /* Soft host enter — children own the cascade (title / KPI / cards) */
@@ -394,6 +404,155 @@ body.e-light-mode {
 
 .motion-stagger-item {
   animation: staggerIn var(--dur-base) var(--ease-nordic) var(--stagger-delay, 0ms) both;
+}
+
+/* ==========================================================================
+   Central Motion Wrapper (<app-motion-wrapper>) — Wraps Component Wrappers
+   ========================================================================== */
+@keyframes mwFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mwScaleGlass {
+  from {
+    opacity: 0;
+    transform: scale(0.976) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes mwSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mwRefreshPulse {
+  0% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 0.76;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes mwSheenSweep {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.motion-wrap {
+  position: relative;
+  min-width: 0;
+  opacity: 0;
+}
+
+.motion-wrap[data-motion-variant='none'] {
+  opacity: 1;
+}
+
+.motion-wrap.is-revealed[data-motion-variant='fade-up'],
+.motion-wrap.is-revealed[data-motion-variant='cascade'] {
+  animation: mwFadeUp var(--mw-dur, 320ms) var(--ease-nordic) var(--mw-delay, 0ms) both;
+}
+
+.motion-wrap.is-revealed[data-motion-variant='scale-glass'] {
+  animation: mwScaleGlass var(--mw-dur, 340ms) var(--ease-nordic) var(--mw-delay, 0ms) both;
+}
+
+.motion-wrap.is-revealed[data-motion-variant='slide-in'] {
+  animation: mwSlideIn var(--mw-dur, 260ms) var(--ease-nordic) var(--mw-delay, 0ms) both;
+}
+
+/* Zero-Transform Settlement — Guarantees 0 coordinate offset for Syncfusion popups/drag/frozen columns */
+.motion-wrap.is-settled {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* Reactive Data-Refresh Shimmer Pulse when [refreshKey] changes */
+.motion-wrap.is-refreshing {
+  animation: mwRefreshPulse 260ms var(--ease-nordic) !important;
+}
+
+.motion-wrap.is-refreshing::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--primary-bright, #4c68e5), #38bdf8, transparent);
+  pointer-events: none;
+  z-index: 8;
+  animation: mwSheenSweep 280ms var(--ease-nordic) forwards;
+}
+
+.motion-wrap__shimmer-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  z-index: 9;
+  pointer-events: none;
+  background: rgba(46, 79, 200, 0.12);
+
+  &::before {
+    content: '';
+    display: block;
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--primary, #2e4fc8), #38bdf8, transparent);
+    animation: mwSheenSweep 1.1s infinite ease-in-out;
+  }
+}
+
+/* Semantic Glow Tones on Wrapped Cards */
+.motion-wrap[data-motion-glow='primary'] > .e-card {
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(46, 79, 200, 0.22);
+}
+.motion-wrap[data-motion-glow='good'] > .e-card {
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(16, 185, 129, 0.28);
+}
+.motion-wrap[data-motion-glow='warning'] > .e-card {
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(245, 158, 11, 0.28);
+}
+.motion-wrap[data-motion-glow='danger'] > .e-card {
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(244, 63, 94, 0.28);
+}
+.motion-wrap[data-motion-glow='ai'] > .e-card {
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(116, 101, 232, 0.3);
 }
 
 /* Smooth tab panel entrance when switching Syncfusion Tabs */
@@ -633,7 +792,12 @@ p {
   }
 }
 
-app-section-card:hover > .e-card.section-card,
+.motion-wrap > .e-card.section-card,
+.motion-wrap > .section-card {
+  animation: none;
+}
+
+app-section-card:hover .e-card.section-card,
 .e-card.section-card:hover {
   border-color: rgba(99, 102, 241, 0.35) !important;
   box-shadow: var(--shadow-card-hover) !important;
@@ -1283,7 +1447,7 @@ body.e-light-mode {
 
   .e-dashboardlayout .e-panel:hover,
   .chart-frame:hover,
-  app-section-card:hover > .e-card.section-card,
+  app-section-card:hover .e-card.section-card,
   .e-card.section-card:hover {
     border-color: #c7d7f8 !important;
     box-shadow: var(--shadow-card-hover) !important;

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ProgressBarModule, ProgressType } from '@syncfusion/ej2-angular-progressbar';
 import { ThemeService } from '../../../core/theme.service';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
 export type SfProgressTone = 'primary' | 'success' | 'warning' | 'danger' | 'auto';
 
@@ -20,6 +21,7 @@ export interface SfProgressOptions {
   segmentCount?: number;
   progressColor?: string;
   trackColor?: string;
+  motion?: MotionInput;
 }
 
 let nextProgressId = 1;
@@ -27,27 +29,33 @@ let nextProgressId = 1;
 @Component({
   selector: 'app-sf-progress',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ProgressBarModule],
+  imports: [ProgressBarModule, MotionWrapperComponent],
   template: `
-    <ejs-progressbar
-      [id]="resolvedId()"
-      [type]="resolvedType()"
-      [value]="value()"
-      [minimum]="resolvedMin()"
-      [maximum]="resolvedMax()"
-      [height]="resolvedHeight()"
-      [width]="resolvedWidth()"
-      [trackThickness]="resolvedTrackThickness()"
-      [progressThickness]="resolvedProgressThickness()"
-      [cornerRadius]="resolvedCornerRadius()"
-      [showProgressValue]="resolvedShowLabel()"
-      [isStriped]="resolvedStriped()"
-      [segmentCount]="resolvedSegments()"
-      [trackColor]="trackColor()"
-      [progressColor]="progressColor()"
-      [animation]="animationConfig()"
-      [theme]="theme.sfTheme()"
-    ></ejs-progressbar>
+    <app-motion-wrapper
+      [config]="options().motion"
+      variant="fade-up"
+      [refreshKey]="value()"
+    >
+      <ejs-progressbar
+        [id]="resolvedId()"
+        [type]="resolvedType()"
+        [value]="value()"
+        [minimum]="resolvedMin()"
+        [maximum]="resolvedMax()"
+        [height]="resolvedHeight()"
+        [width]="resolvedWidth()"
+        [trackThickness]="resolvedTrackThickness()"
+        [progressThickness]="resolvedProgressThickness()"
+        [cornerRadius]="resolvedCornerRadius()"
+        [showProgressValue]="resolvedShowLabel()"
+        [isStriped]="resolvedStriped()"
+        [segmentCount]="resolvedSegments()"
+        [trackColor]="trackColor()"
+        [progressColor]="progressColor()"
+        [animation]="animationConfig()"
+        [theme]="theme.sfTheme()"
+      ></ejs-progressbar>
+    </app-motion-wrapper>
   `,
   styles: `
     :host {

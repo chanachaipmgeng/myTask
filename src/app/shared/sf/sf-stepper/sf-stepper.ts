@@ -5,6 +5,7 @@ import {
   StepperChangedEventArgs,
   StepperModule,
 } from '@syncfusion/ej2-angular-navigations';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
 export interface SfStepperOptions {
   id?: string;
@@ -16,30 +17,37 @@ export interface SfStepperOptions {
   showTooltip?: boolean;
   minWidth?: string;
   cssClass?: string;
+  motion?: MotionInput;
 }
 
 @Component({
   selector: 'app-sf-stepper',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StepperModule],
+  imports: [StepperModule, MotionWrapperComponent],
   template: `
-    <div class="sf-stepper-scroll">
-      <div class="sf-stepper-inner" [style.min-width]="options().minWidth || null">
-        <ejs-stepper
-          [id]="options().id ?? ''"
-          [steps]="steps()"
-          [activeStep]="activeStep()"
-          [orientation]="options().orientation ?? 'horizontal'"
-          [linear]="options().linear ?? false"
-          [readOnly]="options().readOnly ?? false"
-          [labelPosition]="options().labelPosition ?? 'Bottom'"
-          [stepType]="resolvedStepType()"
-          [showTooltip]="options().showTooltip ?? true"
-          [cssClass]="options().cssClass ?? ''"
-          (stepChanged)="stepChanged.emit($event)"
-        ></ejs-stepper>
+    <app-motion-wrapper
+      [config]="options().motion"
+      variant="slide-in"
+      [refreshKey]="activeStep()"
+    >
+      <div class="sf-stepper-scroll">
+        <div class="sf-stepper-inner" [style.min-width]="options().minWidth || null">
+          <ejs-stepper
+            [id]="options().id ?? ''"
+            [steps]="steps()"
+            [activeStep]="activeStep()"
+            [orientation]="options().orientation ?? 'horizontal'"
+            [linear]="options().linear ?? false"
+            [readOnly]="options().readOnly ?? false"
+            [labelPosition]="options().labelPosition ?? 'Bottom'"
+            [stepType]="resolvedStepType()"
+            [showTooltip]="options().showTooltip ?? true"
+            [cssClass]="options().cssClass ?? ''"
+            (stepChanged)="stepChanged.emit($event)"
+          ></ejs-stepper>
+        </div>
       </div>
-    </div>
+    </app-motion-wrapper>
   `,
   styles: `
     :host {

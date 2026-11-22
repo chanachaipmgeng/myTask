@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, computed, input, output, signal } from '@angular/core';
 import { SelectedEventArgs, UploaderModule } from '@syncfusion/ej2-angular-inputs';
+import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
 export interface SfUploaderOptions {
   autoUpload?: boolean;
@@ -9,13 +10,15 @@ export interface SfUploaderOptions {
   browseLabel?: string;
   hint?: string;
   compact?: boolean;
+  motion?: MotionInput;
 }
 
 @Component({
   selector: 'app-sf-uploader',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [UploaderModule],
+  imports: [UploaderModule, MotionWrapperComponent],
   template: `
+    <app-motion-wrapper [config]="options().motion" variant="fade-up">
     <div
       #dropZone
       class="sf-dropzone"
@@ -53,6 +56,7 @@ export interface SfUploaderOptions {
         (selected)="selected.emit($event)"
       ></ejs-uploader>
     </div>
+    </app-motion-wrapper>
   `,
   styles: `
     :host {
