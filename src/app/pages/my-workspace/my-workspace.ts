@@ -17,6 +17,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   StatusBadgeComponent,
 } from '../../shared/ui';
@@ -99,15 +100,10 @@ export class MyWorkspacePage {
     { field: 'unplannedLabel', headerText: 'แผน', width: 95 },
     { field: 'actions', headerText: 'จัดการ', width: 180, allowSorting: false },
   ];
-  protected readonly openWorkGridOptions: SfGridOptions = {
+  protected readonly openWorkGridOptions: SfGridOptions = listGridOptions({
     id: 'my-open-work-grid',
     height: '260',
-    paging: true,
-    pageSize: 6,
-    sorting: true,
-    resizable: true,
-    search: true,
-  };
+  });
   protected readonly closedWorkColumns: SfGridColumn[] = [
     { field: 'id', headerText: 'ใบงาน', width: 110 },
     { field: 'title', headerText: 'เรื่อง', width: 'auto', minWidth: 150 },
@@ -125,17 +121,12 @@ export class MyWorkspacePage {
     { field: 'actualMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
     { field: 'score', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
   ];
-  protected readonly closedWorkGridOptions: SfGridOptions = {
+  protected readonly closedWorkGridOptions: SfGridOptions = listGridOptions({
     id: 'my-closed-work-grid',
     height: '280',
-    paging: true,
-    pageSize: 6,
-    sorting: true,
-    resizable: true,
-    search: true,
     excelExport: true,
     exportFileName: 'my-closed-work',
-  };
+  });
 
   protected readonly activePerson = computed(() => {
     const sess = currentSession();

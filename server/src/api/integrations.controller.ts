@@ -519,15 +519,26 @@ export class IntegrationsController {
         client.listStatuses(),
         client.listTypes(),
       ]);
+      const settings = await getSettings(this.db);
+      const existingByIdentifier = new Map(
+        (settings.openprojectProjectCatalog ?? []).map((p) => [p.identifier, p]),
+      );
+      const existingById = new Map(
+        (settings.openprojectProjectCatalog ?? []).map((p) => [p.id, p]),
+      );
+
       const catalog = projects
         .filter((p) => p.identifier)
-        .map((p) => ({
-          id: p.id,
-          identifier: p.identifier ?? '',
-          name: p.name ?? p.identifier ?? '',
-          active: p.active ?? true,
-        }));
-      const settings = await getSettings(this.db);
+        .map((p) => {
+          const existing = existingByIdentifier.get(p.identifier ?? '') ?? existingById.get(p.id);
+          return {
+            id: p.id,
+            identifier: p.identifier ?? '',
+            name: p.name ?? p.identifier ?? '',
+            active: existing !== undefined ? existing.active : (p.active ?? true),
+            assignedTeamIds: existing?.assignedTeamIds ?? [],
+          };
+        });
       settings.openprojectProjectCatalog = catalog;
       await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
       return {

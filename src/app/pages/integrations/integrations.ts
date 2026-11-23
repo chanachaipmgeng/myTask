@@ -20,6 +20,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   SfNumberComponent,
   SfTabItem,
@@ -179,7 +180,7 @@ export class IntegrationsPage {
     { field: 'started_at', headerText: 'เวลาส่ง', width: 180 },
     { field: 'added', headerText: 'จำนวนข้อความ', width: 130 },
   ];
-  protected readonly runGridOptions: SfGridOptions = { paging: true, pageSize: 8, sorting: true, resizable: true };
+  protected readonly runGridOptions: SfGridOptions = listGridOptions({ pageSize: 8 });
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly workflowHint = WORKFLOW_STATUSES.join(', ');

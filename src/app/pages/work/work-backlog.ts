@@ -4,7 +4,14 @@ import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { workBacklogRows } from '../../core/work-views';
-import { SectionCardComponent, SfGridAggregate, SfGridColumn, SfGridComponent, SfGridOptions } from '../../shared/ui';
+import {
+  SectionCardComponent,
+  SfGridAggregate,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  listGridOptions,
+} from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
@@ -46,19 +53,16 @@ export class WorkBacklog {
     { field: 'estimateMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
   ];
 
-  protected readonly gridOptions = computed<SfGridOptions>(() => ({
-    id: this.isMine() ? 'my-work-backlog-grid' : 'work-backlog-grid',
-    paging: true,
-    pageSize: 12,
-    sorting: true,
-    filtering: 'Excel',
-    search: true,
-    columnChooser: true,
-    excelExport: true,
-    csvExport: true,
-    resizable: true,
-    exportFileName: this.isMine() ? 'my-backlog' : 'team-backlog',
-  }));
+  protected readonly gridOptions = computed<SfGridOptions>(() =>
+    listGridOptions({
+      id: this.isMine() ? 'my-work-backlog-grid' : 'work-backlog-grid',
+      filtering: 'Excel',
+      columnChooser: true,
+      excelExport: true,
+      csvExport: true,
+      exportFileName: this.isMine() ? 'my-backlog' : 'team-backlog',
+    }),
+  );
 
   protected openTicket(id: string): void {
     if (id) {

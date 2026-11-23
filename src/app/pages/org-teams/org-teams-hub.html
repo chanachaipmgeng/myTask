@@ -7,7 +7,15 @@
       { label: 'สมาชิก active', value: '' + totalMembers() },
     ]"
   >
-    <div actions class="flex flex-wrap gap-2">
+    <div actions class="flex flex-wrap gap-2 items-center">
+      <app-sf-textbox
+        placeholder="ค้นหาชื่อทีมหรือสายงาน..."
+        [value]="query()"
+        [clearButton]="true"
+        width="240px"
+        (valueInput)="query.set($event)"
+        (valueChange)="query.set($event)"
+      />
       @if (workspace.teamId()) {
         <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearTeam()">ล้างทีมที่เลือก</button>
       }
@@ -55,8 +63,13 @@
         </app-section-card>
       </button>
     } @empty {
-      <app-section-card title="ยังไม่มีทีม" subtitle="ซิงก์ผู้ใช้จาก OpenProject หรือตรวจ people.teamId">
-        <p class="text-sm opacity-80">เมื่อมีทีมใน bootstrap จะแสดงเป็นการ์ดที่นี่</p>
+      <app-section-card
+        [title]="query().trim() ? 'ไม่พบทีมตามคำค้นหา' : 'ยังไม่มีทีม'"
+        [subtitle]="query().trim() ? 'ลองเปลี่ยนคำค้นหาหรือล้างช่องค้นหา' : 'ซิงก์ผู้ใช้จาก OpenProject หรือตรวจ people.teamId'"
+      >
+        <p class="text-sm opacity-80">
+          {{ query().trim() ? 'ปรับคำค้นหาแล้วลองใหม่' : 'เมื่อมีทีมใน bootstrap จะแสดงเป็นการ์ดที่นี่' }}
+        </p>
       </app-section-card>
     }
   </div>

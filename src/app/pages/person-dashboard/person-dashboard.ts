@@ -25,6 +25,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   SfTextBoxComponent,
 } from '../../shared/ui';
@@ -298,14 +299,9 @@ export class PersonDashboard {
     { field: 'actualMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
     { field: 'score', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
   ];
-  protected readonly workGridOptions: SfGridOptions = {
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
-    search: true,
+  protected readonly workGridOptions: SfGridOptions = listGridOptions({
     excelExport: true,
-  };
+  });
 
   protected readonly view = computed(() => {
     const person = this.scorecard.roster().find((item) => item.id === this.personId());

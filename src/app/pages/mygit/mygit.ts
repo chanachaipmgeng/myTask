@@ -17,6 +17,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   StatusBadgeComponent,
 } from '../../shared/ui';
@@ -78,18 +79,13 @@ export class MyGitPage {
     { field: 'reviewers', headerText: 'Reviewers', width: 160 },
     { field: 'webUrl', headerText: 'ลิงก์', width: 180 },
   ];
-  protected readonly openMrGridOptions: SfGridOptions = {
+  protected readonly openMrGridOptions: SfGridOptions = listGridOptions({
     id: 'mygit-open-mrs-grid',
     height: '240',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
-    search: true,
     excelExport: true,
     csvExport: true,
     exportFileName: 'open-mrs',
-  };
+  });
   protected readonly myTicketsMrColumns: SfGridColumn[] = [
     { field: 'id', headerText: 'รหัสใบงาน', width: 120 },
     { field: 'title', headerText: 'ชื่องาน / โมดูล', width: 220 },
@@ -98,15 +94,10 @@ export class MyGitPage {
     { field: 'reviewRounds', headerText: 'รอบรีวิว', width: 85, textAlign: 'Right' },
     { field: 'reopenCount', headerText: 'Reopen', width: 85, textAlign: 'Right' },
   ];
-  protected readonly myTicketsMrGridOptions: SfGridOptions = {
+  protected readonly myTicketsMrGridOptions: SfGridOptions = listGridOptions({
     id: 'mygit-my-tickets-grid',
     height: '240',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
-    search: true,
-  };
+  });
   protected readonly matchedColumns: SfGridColumn[] = [
     { field: 'sha', headerText: 'Commit / MR', width: 120 },
     { field: 'ticketId', headerText: 'ใบงาน', width: 140 },
@@ -118,30 +109,22 @@ export class MyGitPage {
     { field: 'mergedAt', headerText: 'เวลา merge', width: 190 },
     { field: 'message', headerText: 'ข้อความ', width: 260 },
   ];
-  protected readonly matchedGridOptions: SfGridOptions = {
+  protected readonly matchedGridOptions: SfGridOptions = listGridOptions({
     id: 'mygit-matched-grid',
     height: '220',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
     excelExport: true,
     exportFileName: 'mygit-matched',
-  };
+  });
   protected readonly unmatchedColumns: SfGridColumn[] = [
     { field: 'sha', headerText: 'Commit / MR', width: 120 },
     { field: 'ticketId', headerText: 'รหัสที่อ้าง', width: 140 },
     { field: 'mergedAt', headerText: 'เวลา merge', width: 200 },
     { field: 'message', headerText: 'ข้อความ', width: 320 },
   ];
-  protected readonly unmatchedGridOptions: SfGridOptions = {
+  protected readonly unmatchedGridOptions: SfGridOptions = listGridOptions({
     id: 'mygit-unmatched-grid',
     height: '180',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
-  };
+  });
   protected readonly matched = signal<MyGitMatch[]>([]);
   protected readonly unmatched = signal<MyGitUnmatched[]>([]);
   protected readonly gitlabInfo = signal<GitLabIntegration | null>(null);

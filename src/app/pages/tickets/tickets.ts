@@ -29,6 +29,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   SfNumberComponent,
   SfTextBoxComponent,
@@ -145,21 +146,19 @@ export class TicketsPage {
     { field: 'score', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
   ];
 
-  protected readonly ticketGridOptions: SfGridOptions = {
+  protected readonly ticketGridOptions: SfGridOptions = listGridOptions({
     id: this.isMine ? 'my-tickets-score-grid-v3' : 'tickets-score-grid-v3',
     enablePersistence: true,
-    paging: true,
     pageSize: 10,
-    sorting: true,
+    search: false,
     sortSettings: { columns: [{ field: 'score', direction: 'Descending' }] },
     filtering: 'Menu',
-    resizable: true,
     columnChooser: true,
     excelExport: true,
     csvExport: true,
     autoFreezeDesktop: 2,
     exportFileName: this.isMine ? 'my-tickets-scorecard' : 'team-tickets-scorecard',
-  };
+  });
   protected readonly trackToneMap = trackToneMap;
   protected readonly blockerToneMap = blockerToneMap;
   protected readonly closedToneMap = closedToneMap;

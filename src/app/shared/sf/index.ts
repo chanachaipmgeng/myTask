@@ -1,4 +1,11 @@
-export { SfGridComponent, type SfGridColumn, type SfGridOptions, type SfGridAggregate } from './sf-grid/sf-grid';
+export {
+  SfGridComponent,
+  listGridOptions,
+  LIST_PAGE_SIZES,
+  type SfGridColumn,
+  type SfGridOptions,
+  type SfGridAggregate,
+} from './sf-grid/sf-grid';
 export {
   SfChartComponent,
   scatterBandSeries,

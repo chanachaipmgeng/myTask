@@ -16,6 +16,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   SfTabItem,
   SfTabsComponent,
@@ -140,17 +141,11 @@ export class QualityAuditPage {
     { field: 'dodStatus', headerText: 'สถานะหลักฐาน DoD', width: 130 },
     { field: 'action', headerText: 'การจัดการ', width: 110, textAlign: 'Center' },
   ];
-  protected readonly dodGridOptions: SfGridOptions = {
+  protected readonly dodGridOptions: SfGridOptions = listGridOptions({
     id: 'quality-dod-grid',
-    paging: true,
-    pageSize: 10,
-    pageSizes: [10, 20, 50],
-    sorting: true,
-    resizable: true,
-    search: true,
     excelExport: true,
     exportFileName: 'dod-checklist',
-  };
+  });
 
   protected readonly reopenColumns: SfGridColumn[] = [
     { field: 'ticketId', headerText: 'รหัสใบงาน', width: 110 },
@@ -161,18 +156,12 @@ export class QualityAuditPage {
     { field: 'isBugEscape', headerText: 'หลุด Prod', width: 120, textAlign: 'Center' },
     { field: 'notes', headerText: 'บันทึกเพิ่มเติม', width: 160 },
   ];
-  protected readonly reopenGridOptions: SfGridOptions = {
+  protected readonly reopenGridOptions: SfGridOptions = listGridOptions({
     id: 'quality-reopen-grid',
-    paging: true,
-    pageSize: 10,
-    pageSizes: [10, 20, 50],
-    sorting: true,
     filtering: 'Excel',
-    resizable: true,
-    search: true,
     excelExport: true,
     exportFileName: 'reopen-escapes',
-  };
+  });
 
   protected readonly paretoXAxis = {
     valueType: 'Category' as const,

@@ -214,6 +214,8 @@ export interface OpenProjectCatalogEntry {
   identifier: string;
   name: string;
   active: boolean;
+  assignedTeamIds?: string[];
+  activeTicketsCount?: number;
 }
 
 export const openprojectProjectCatalog = signal<OpenProjectCatalogEntry[]>([]);

@@ -21,6 +21,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfProgressComponent,
   SfTextBoxComponent,
   StatusBadgeComponent,
@@ -105,20 +106,15 @@ export class PeopleBoard {
     { field: 'index', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
   ];
 
-  protected readonly gridOptions: SfGridOptions = {
+  protected readonly gridOptions: SfGridOptions = listGridOptions({
     id: 'people-board-grid',
-    paging: true,
-    pageSize: 16,
-    sorting: true,
     sortSettings: { columns: [{ field: 'index', direction: 'Descending' }] },
     filtering: 'Menu',
-    search: true,
     columnChooser: true,
     excelExport: true,
     csvExport: true,
-    resizable: true,
     exportFileName: 'people-scorecard',
-  };
+  });
   protected readonly trackToneMap = trackToneMap;
   protected readonly quotas = computed(() => {
     const quota = weeklyQuotas();

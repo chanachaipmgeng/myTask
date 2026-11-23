@@ -16,6 +16,36 @@ export interface AuditLogDto {
   createdAt: string;
 }
 
+/** Query ร่วมกับเซิร์ฟเวอร์สำหรับลิสต์ที่แบ่งหน้า */
+export interface ListQueryParams {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+  sort?: string;
+  dir?: 'asc' | 'desc';
+}
+
+export interface ListPageResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+function toListQueryString(params?: ListQueryParams): string {
+  if (!params) {
+    return '';
+  }
+  const query = new URLSearchParams();
+  if (params.q?.trim()) query.set('q', params.q.trim());
+  if (params.page != null) query.set('page', String(params.page));
+  if (params.pageSize != null) query.set('pageSize', String(params.pageSize));
+  if (params.sort?.trim()) query.set('sort', params.sort.trim());
+  if (params.dir) query.set('dir', params.dir);
+  const text = query.toString();
+  return text ? `?${text}` : '';
+}
+
 export interface KpiSnapshotPeriodDto {
   periodType: KpiPeriodType;
   periodKey: string;
@@ -39,6 +69,8 @@ export interface OpenProjectCatalogEntry {
   identifier: string;
   name: string;
   active: boolean;
+  assignedTeamIds?: string[];
+  activeTicketsCount?: number;
 }
 
 export interface BootstrapSettings {
@@ -422,8 +454,33 @@ export class ApiClient {
     });
   }
 
-  getAuditLogs(): Promise<{ logs: AuditLogDto[] }> {
-    return api('/api/org/audit-logs');
+  getProjects(): Promise<{ projects: OpenProjectCatalogEntry[] }> {
+    return api('/api/org/projects');
+  }
+
+  updateProject(
+    id: string | number,
+    patch: { active?: boolean; assignedTeamIds?: string[] },
+  ): Promise<{ ok: boolean; project?: OpenProjectCatalogEntry; message?: string }> {
+    return api(`/api/org/projects/${encodeURIComponent(String(id))}`, {
+      method: 'PUT',
+      body: JSON.stringify(patch),
+    });
+  }
+
+  syncProjects(): Promise<{ ok: boolean; total: number; projects: OpenProjectCatalogEntry[]; message?: string }> {
+    return api('/api/org/projects/sync', {
+      method: 'POST',
+      body: '{}',
+    });
+  }
+
+  getAuditLogs(params?: ListQueryParams): Promise<ListPageResult<AuditLogDto> & { logs: AuditLogDto[] }> {
+    return api(`/api/org/audit-logs${toListQueryString(params)}`);
+  }
+
+  listWorkItems(params?: ListQueryParams): Promise<ListPageResult<Ticket> & { tickets: Ticket[] }> {
+    return api(`/api/work-items${toListQueryString(params)}`);
   }
 
   getAnalyticsReport(): Promise<AnalyticsReport> {

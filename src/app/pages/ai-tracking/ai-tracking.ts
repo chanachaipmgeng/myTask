@@ -16,6 +16,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfProgressComponent,
 } from '../../shared/ui';
 
@@ -123,18 +124,14 @@ export class AiTrackingPage {
     { field: 'md', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
   ];
 
-  protected readonly gridOptions: SfGridOptions = {
+  protected readonly gridOptions: SfGridOptions = listGridOptions({
     id: 'ai-tickets-grid',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
     filtering: 'Excel',
-    search: true,
     excelExport: true,
     csvExport: true,
     height: '320px',
     exportFileName: 'ai-spike-tickets',
-  };
+  });
 
   protected readonly share = computed(() => researchSpikeShare(this.scopedPeople(), this.scopedTickets()));
   protected readonly sharePct = computed(() => Math.min(100, Math.round(this.share().ratio * 100)));

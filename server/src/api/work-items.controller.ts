@@ -5,6 +5,7 @@ import { scoreTicket } from '../../../shared/domain/scoring';
 import { addWorkingDays, applyGanttDateEdit, detectActiveWipTickets } from '../../../shared/domain/work-views';
 import { todayInBangkok, workflowStatusOf } from '../../../shared/domain/workflow';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
+import { compareByField, paginateItems, parseListQuery } from '../common/list-query';
 import { APP_CONFIG, AppConfig } from '../config';
 import { closeOpenStageLog, insertDueShift, insertStageLog } from '../data/multi-team.repo';
 import { getPerson } from '../data/people.repo';
@@ -30,8 +31,38 @@ export class WorkItemsController {
   ) {}
 
   @Get()
-  async list() {
-    return { tickets: await listWorkItems(this.db) };
+  async list(
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('sort') sort?: string,
+    @Query('dir') dir?: string,
+  ) {
+    const listQuery = parseListQuery(
+      { q, page, pageSize, sort, dir },
+      { defaultSort: 'id', defaultDir: 'asc' },
+    );
+    let tickets = await listWorkItems(this.db);
+    if (listQuery.q) {
+      const needle = listQuery.q.toLowerCase();
+      tickets = tickets.filter(
+        (ticket) =>
+          ticket.id.toLowerCase().includes(needle) ||
+          (ticket.title ?? '').toLowerCase().includes(needle) ||
+          (ticket.module ?? '').toLowerCase().includes(needle) ||
+          (ticket.assigneeId ?? '').toLowerCase().includes(needle),
+      );
+    }
+    const sortField = listQuery.sort || 'id';
+    tickets = tickets
+      .slice()
+      .sort((a, b) => compareByField(a, b, sortField, listQuery.dir));
+    const pageResult = paginateItems(tickets, listQuery);
+    return {
+      ...pageResult,
+      /** คงชื่อเดิมไว้ให้ผู้เรียกเก่าที่อ่าน `.tickets` */
+      tickets: pageResult.items,
+    };
   }
 
   @Get('live-search')

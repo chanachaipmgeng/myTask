@@ -30,6 +30,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   SfTextBoxComponent,
 } from '../../shared/ui';
@@ -137,16 +138,12 @@ export class TeamDashboard {
     { field: 'planIndex', headerText: 'แผน %', width: 100, textAlign: 'Right', format: 'N1', cellType: 'metric', suffix: '%' },
     { field: 'weighted', headerText: 'ถ่วงใบ', width: 100, textAlign: 'Right', format: 'N1', cellType: 'metric' },
   ];
-  protected readonly snapshotGridOptions: SfGridOptions = {
+  protected readonly snapshotGridOptions: SfGridOptions = listGridOptions({
     id: 'team-snapshot-grid',
     height: '320',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
     excelExport: true,
     exportFileName: 'team-kpi-snapshot',
-  };
+  });
 
   protected readonly workloadDonutOptions: SfDonutChartOptions = {
     height: '260px',

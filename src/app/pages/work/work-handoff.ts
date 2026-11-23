@@ -18,6 +18,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   StatusBadgeComponent,
 } from '../../shared/ui';
@@ -122,21 +123,15 @@ export class WorkHandoffPage {
     { field: 'action', headerText: 'การจัดการ', width: 110, textAlign: 'Center' },
   ];
 
-  protected readonly gridOptions: SfGridOptions = {
+  protected readonly gridOptions: SfGridOptions = listGridOptions({
     id: 'work-handoff-grid',
-    paging: true,
-    pageSize: 10,
-    pageSizes: [10, 25, 50],
-    sorting: true,
     filtering: 'Excel',
-    search: true,
     columnChooser: true,
     excelExport: true,
     csvExport: true,
-    resizable: true,
     autoFreezeDesktop: 2,
     exportFileName: 'handoff-sla',
-  };
+  });
 
   protected readonly statusToneMap: Record<string, BadgeTone> = {
     'Code Review': 'warning',

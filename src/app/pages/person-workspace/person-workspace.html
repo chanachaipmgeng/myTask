@@ -14,8 +14,14 @@
           [value]="query()"
           [clearButton]="true"
           width="220px"
-          (valueInput)="query.set($event)"
-          (valueChange)="query.set($event)"
+          (valueInput)="setQuery($event)"
+          (valueChange)="setQuery($event)"
+        />
+        <app-sf-dropdown
+          [items]="sortOptions"
+          [value]="sortMode()"
+          [options]="{ width: '200px', placeholder: 'เรียงลำดับ' }"
+          (valueChange)="setSortMode($event)"
         />
         <app-filter-chips
           [options]="trackChipOptions"
@@ -32,7 +38,7 @@
       </app-section-card>
     } @else {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" appStagger [staggerStep]="40">
-        @for (card of personCards(); track card.person.id) {
+        @for (card of pagedPersonCards(); track card.person.id) {
           <button
             type="button"
             class="person-dir-card"
@@ -74,6 +80,33 @@
           </button>
         }
       </div>
+      @if (totalCardPages() > 1) {
+        <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
+          <p class="m-0 text-sm text-muted">
+            แสดง {{ pagedPersonCards().length }} จาก {{ personCards().length }} คน · หน้า {{ cardPage() }} / {{ totalCardPages() }}
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              ejs-button
+              cssClass="e-outline e-small"
+              type="button"
+              [disabled]="cardPage() <= 1"
+              (click)="setCardPage(cardPage() - 1)"
+            >
+              ก่อนหน้า
+            </button>
+            <button
+              ejs-button
+              cssClass="e-outline e-small"
+              type="button"
+              [disabled]="cardPage() >= totalCardPages()"
+              (click)="setCardPage(cardPage() + 1)"
+            >
+              ถัดไป
+            </button>
+          </div>
+        </div>
+      }
     }
   } @else if (selectedPerson(); as person) {
     <!-- Stage 2: Person Workspace with Quick Switcher -->
@@ -168,17 +201,17 @@
               <a ejs-button cssClass="e-outline" routerLink="/work/board" queryParamsHandling="preserve">บอร์ดทีม</a>
               <a ejs-button cssClass="e-outline" routerLink="/queue" queryParamsHandling="preserve">คิวจ่ายงาน</a>
             </div>
-            <ul class="person-ws__ticket-list mt-3">
-              @for (ticket of openTickets().slice(0, 12); track ticket.id) {
-                <li>
-                  <span class="person-ws__ticket-id">{{ ticket.id }}</span>
-                  <span>{{ ticket.title || ticket.module }}</span>
-                  <span class="person-ws__muted">{{ ticket.estimateMd }} MD</span>
-                </li>
-              } @empty {
-                <li class="person-ws__empty">ไม่มีใบเปิด</li>
-              }
-            </ul>
+            @if (openWorkRows().length === 0) {
+              <p class="person-ws__empty m-0 mt-3">ไม่มีใบเปิด</p>
+            } @else {
+              <div class="mt-3">
+                <app-sf-grid
+                  [data]="openWorkRows()"
+                  [columns]="openWorkColumns"
+                  [options]="openWorkGridOptions"
+                />
+              </div>
+            }
           </app-section-card>
         }
 

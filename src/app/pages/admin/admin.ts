@@ -43,6 +43,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   SfMultiSelectComponent,
   SfNumberComponent,
@@ -91,17 +92,12 @@ export class AdminPage {
     { field: 'detail', headerText: 'รายละเอียด', width: 280 },
     { field: 'createdAt', headerText: 'เวลา', width: 190 },
   ];
-  protected readonly auditGridOptions: SfGridOptions = {
+  protected readonly auditGridOptions: SfGridOptions = listGridOptions({
     id: 'admin-audit-grid',
     height: '260',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
-    search: true,
     excelExport: true,
     exportFileName: 'admin-audit-log',
-  };
+  });
 
   protected readonly fields = { text: 'text', value: 'value' };
   protected readonly viewers = SAMPLE_VIEWERS;
@@ -247,16 +243,12 @@ export class AdminPage {
     }
   }
 
-  protected readonly rosterGridOptions: SfGridOptions = {
+  protected readonly rosterGridOptions: SfGridOptions = listGridOptions({
     id: 'admin-roster-grid-v1',
-    paging: true,
-    pageSize: 15,
-    pageSizes: [10, 15, 25, 50, 100],
-    sorting: true,
     excelExport: true,
     csvExport: true,
     exportFileName: 'team-roster-roles',
-  };
+  });
 
   protected readonly pagedRosterCards = computed(() => {
     const all = this.filteredRoster();
@@ -459,7 +451,7 @@ export class AdminPage {
       return;
     }
     try {
-      const res = await this.api.getAuditLogs();
+      const res = await this.api.getAuditLogs({ page: 1, pageSize: 100, sort: 'id', dir: 'desc' });
       if (res.logs.length > 0) {
         this.auditLogs.set(res.logs);
       }

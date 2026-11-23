@@ -12,6 +12,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   SfTextBoxComponent,
 } from '../../shared/ui';
@@ -36,15 +37,12 @@ export class TeamsPage {
     { field: 'text', headerText: 'ข้อความ', width: 420 },
     { field: 'statusLabel', headerText: 'สถานะ', width: 180 },
   ];
-  protected readonly logGridOptions: SfGridOptions = {
+  protected readonly logGridOptions: SfGridOptions = listGridOptions({
     id: 'teams-log-grid',
-    paging: true,
-    pageSize: 8,
-    resizable: true,
     excelExport: true,
     height: '240px',
     exportFileName: 'teams-notifications',
-  };
+  });
   protected readonly teams = inject(TeamsNotifyService);
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);

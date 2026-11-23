@@ -116,6 +116,25 @@ export interface SfGridOptions {
   motion?: MotionInput;
 }
 
+/** ขนาดหน้ามาตรฐานสำหรับรายการตารางปฏิบัติการ */
+export const LIST_PAGE_SIZES = [12, 25, 50, 100] as const;
+
+/**
+ * ตัวเลือกตารางรายการมาตรฐาน: ค้นหา · แบ่งหน้า · เรียง · ปรับคอลัมน์
+ * ส่งทับเฉพาะฟิลด์ที่หน้าต้องการ (เช่น `search: false` เมื่อมีช่องค้นหาด้านนอกแล้ว)
+ */
+export function listGridOptions(overrides: SfGridOptions = {}): SfGridOptions {
+  return {
+    paging: true,
+    pageSize: 25,
+    pageSizes: [...LIST_PAGE_SIZES],
+    sorting: true,
+    search: true,
+    resizable: true,
+    ...overrides,
+  };
+}
+
 let nextGridId = 1;
 
 @Component({

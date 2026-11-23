@@ -37,6 +37,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   SfSplitterComponent,
   SfSplitterOptions,
@@ -105,15 +106,10 @@ export class DisputesPage implements OnInit {
     { field: 'scoreDiff', headerText: 'คะแนนเดิม > ใหม่', width: 120, textAlign: 'Right' },
     { field: 'status', headerText: 'สถานะ', width: 110 },
   ];
-  protected readonly disputeGridOptions: SfGridOptions = {
+  protected readonly disputeGridOptions: SfGridOptions = listGridOptions({
     id: 'disputes-list-grid',
     height: '380',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    search: true,
-    resizable: true,
-  };
+  });
 
   protected readonly role = effectiveRole;
   protected readonly statusFilter = signal<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');

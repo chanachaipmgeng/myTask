@@ -17,6 +17,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   SfTabItem,
   SfTabsComponent,
@@ -76,19 +77,15 @@ export class AnalyticsPage {
     { field: 'issueType', headerText: 'ชนิดประเด็น', width: 160 },
     { field: 'detail', headerText: 'รายละเอียดสิ่งที่ตรวจพบ', width: 360 },
   ];
-  protected readonly hygieneGridOptions: SfGridOptions = {
+  protected readonly hygieneGridOptions: SfGridOptions = listGridOptions({
     id: 'hygiene-issues-grid',
     height: '360',
-    paging: true,
-    pageSize: 10,
-    sorting: true,
     filtering: 'Excel',
-    resizable: true,
     columnChooser: true,
     excelExport: true,
     csvExport: true,
     exportFileName: 'sync-hygiene-issues',
-  };
+  });
 
   protected readonly riskColumns: SfGridColumn[] = [
     { field: 'ticketId', headerText: 'รหัสใบงาน', width: 120 },
@@ -100,17 +97,12 @@ export class AnalyticsPage {
     { field: 'riskScore', headerText: 'Risk Score', width: 110, textAlign: 'Right' },
     { field: 'riskLevel', headerText: 'ระดับความเสี่ยง', width: 130 },
   ];
-  protected readonly riskGridOptions: SfGridOptions = {
+  protected readonly riskGridOptions: SfGridOptions = listGridOptions({
     id: 'delivery-risk-grid',
     height: '360',
-    paging: true,
-    pageSize: 10,
-    sorting: true,
-    resizable: true,
-    search: true,
     excelExport: true,
     exportFileName: 'delivery-risks',
-  };
+  });
 
   protected readonly coachingColumns: SfGridColumn[] = [
     { field: 'nickname', headerText: 'พนักงาน', width: 175 },
@@ -124,18 +116,14 @@ export class AnalyticsPage {
     { field: 'strengthNote', headerText: 'จุดแข็งที่พบ', width: 240 },
     { field: 'coachingFocus', headerText: 'คำแนะนำสำหรับการโค้ช (1-on-1)', width: 340 },
   ];
-  protected readonly coachingGridOptions: SfGridOptions = {
+  protected readonly coachingGridOptions: SfGridOptions = listGridOptions({
     id: 'coaching-insights-grid',
     height: '400',
-    paging: true,
-    pageSize: 15,
-    sorting: true,
-    resizable: true,
     columnChooser: true,
     excelExport: true,
     csvExport: true,
     exportFileName: 'coaching-insights',
-  };
+  });
 
   protected readonly bottleneckSeries = computed<SfChartSeriesConfig[]>(() => {
     const mods = this.report().bottlenecks.modules;
@@ -162,16 +150,12 @@ export class AnalyticsPage {
     { field: 'avgRatio', headerText: 'Actual/Est เฉลี่ย', width: 140, textAlign: 'Right', format: 'N2' },
     { field: 'slipRatePct', headerText: 'อัตราหลุดสัปดาห์ %', width: 150, textAlign: 'Right', format: 'N1' },
   ];
-  protected readonly bottleneckGridOptions: SfGridOptions = {
+  protected readonly bottleneckGridOptions: SfGridOptions = listGridOptions({
     id: 'bottleneck-module-grid',
     height: '260',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
     excelExport: true,
     exportFileName: 'bottleneck-modules',
-  };
+  });
 
   protected readonly running = signal(false);
   protected readonly message = signal('');

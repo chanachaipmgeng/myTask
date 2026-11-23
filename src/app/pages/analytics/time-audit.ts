@@ -22,6 +22,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   StatusBadgeComponent,
   scatterBandSeries,
@@ -62,19 +63,15 @@ export class TimeAuditPage {
     { field: 'anomalyLabel', headerText: 'ความผิดปกติ', width: 165 },
   ];
 
-  protected readonly gridOptions: SfGridOptions = {
+  protected readonly gridOptions: SfGridOptions = listGridOptions({
     id: 'time-audit-grid',
-    paging: true,
-    pageSize: 12,
-    sorting: true,
     filtering: 'Excel',
-    search: true,
     columnChooser: true,
     excelExport: true,
     csvExport: true,
     height: '380px',
     exportFileName: 'three-way-time-audit',
-  };
+  });
 
   protected openTicket(id: string): void {
     if (id) {

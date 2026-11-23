@@ -16,6 +16,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   SfMessageComponent,
   StatusBadgeComponent,
 } from '../../shared/ui';
@@ -57,19 +58,14 @@ export class QueuePage {
     { field: 'xlLabel', headerText: 'XL', width: 75, textAlign: 'Center' },
     { field: 'status', headerText: 'สถานะ', width: 110, cellType: 'badge' },
   ];
-  protected readonly capacityGridOptions: SfGridOptions = {
+  protected readonly capacityGridOptions: SfGridOptions = listGridOptions({
     id: 'queue-capacity-grid',
     height: '340',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
-    search: true,
     excelExport: true,
     csvExport: true,
     autoFreezeDesktop: 1,
     exportFileName: 'team-capacity',
-  };
+  });
   protected readonly queueColumns: SfGridColumn[] = [
     { field: 'id', headerText: 'รหัส', width: 125, cellType: 'ticket-link' },
     { field: 'type', headerText: 'ชนิด', width: 135, cellType: 'badge', badgeTone: 'secondary' },
@@ -78,13 +74,9 @@ export class QueuePage {
     { field: 'estimateMd', headerText: 'Est', width: 90, textAlign: 'Right', format: 'N2', cellType: 'metric', suffix: ' MD' },
     { field: 'assignee', headerText: 'ผู้รับ', width: 150 },
   ];
-  protected readonly queueGridOptions: SfGridOptions = {
+  protected readonly queueGridOptions: SfGridOptions = listGridOptions({
     height: '240',
-    paging: true,
-    pageSize: 8,
-    sorting: true,
-    resizable: true,
-  };
+  });
   protected readonly message = signal('');
   protected readonly error = signal('');
   protected readonly writebackEnabled = signal(false);

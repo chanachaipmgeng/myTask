@@ -8,16 +8,24 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { Person, trackDisplayLabel } from '../../core/models';
 import {
+  CARD_PAGE_SIZE,
+  CardSortMode,
   FilterChipsComponent,
   KpiStatCardComponent,
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
   SfDropdownComponent,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
   SfProgressComponent,
   SfTextBoxComponent,
   StaggerDirective,
   StatusBadgeComponent,
+  listGridOptions,
+  pageSlice,
+  totalPages,
   workflowStatusToneMap,
 } from '../../shared/ui';
 
@@ -39,6 +47,7 @@ const TABS: { id: PersonWsTab; text: string; icon: string }[] = [
     SfDropdownComponent,
     SfTextBoxComponent,
     SfProgressComponent,
+    SfGridComponent,
     RouterLink,
     FilterChipsComponent,
     PageHeadComponent,
@@ -61,10 +70,17 @@ export class PersonWorkspacePage {
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
   protected readonly query = signal('');
   protected readonly trackFilter = signal<'All' | 'Implement' | 'RD'>('All');
+  protected readonly sortMode = signal<CardSortMode>('name');
+  protected readonly cardPage = signal(1);
+  protected readonly cardPageSize = CARD_PAGE_SIZE;
   protected readonly trackChipOptions = [
     { id: 'All', label: 'ทุกสาย' },
     { id: 'Implement', label: 'Implement' },
     { id: 'RD', label: 'R&D' },
+  ];
+  protected readonly sortOptions = [
+    { text: 'เรียงตามชื่อ', value: 'name' },
+    { text: 'เรียงตามดัชนี (สูง→ต่ำ)', value: 'index' },
   ];
   protected readonly activeTab = signal<PersonWsTab>('overview');
   protected readonly avatarErrorIds = signal<Set<string>>(new Set());
@@ -113,7 +129,7 @@ export class PersonWorkspacePage {
   protected readonly personCards = computed(() => {
     const rowsById = new Map(this.scorecard.personRows().map((r) => [r.id, r]));
     const tickets = this.scorecard.tickets();
-    return this.filteredPeople().map((person) => {
+    const cards = this.filteredPeople().map((person) => {
       const row = rowsById.get(person.id);
       const mine = tickets.filter((t) => t.assigneeId === person.id);
       const openCount = mine.filter((t) => !t.closed).length;
@@ -131,7 +147,37 @@ export class PersonWorkspacePage {
         trackLabel: this.trackLabel(person),
       };
     });
+    if (this.sortMode() === 'index') {
+      return cards.sort((a, b) => b.index - a.index || a.person.nickname.localeCompare(b.person.nickname, 'th'));
+    }
+    return cards.sort((a, b) => a.person.nickname.localeCompare(b.person.nickname, 'th'));
   });
+
+  protected readonly totalCardPages = computed(() => totalPages(this.personCards().length, this.cardPageSize));
+
+  protected readonly pagedPersonCards = computed(() =>
+    pageSlice(this.personCards(), this.cardPage(), this.cardPageSize),
+  );
+
+  protected readonly openWorkColumns: SfGridColumn[] = [
+    { field: 'id', headerText: 'รหัส', width: 120 },
+    { field: 'title', headerText: 'เรื่อง', width: 220 },
+    { field: 'estimateMd', headerText: 'Est MD', width: 90, textAlign: 'Right', format: 'N2' },
+    { field: 'workflowStatus', headerText: 'สถานะ', width: 130 },
+  ];
+  protected readonly openWorkGridOptions: SfGridOptions = listGridOptions({
+    height: '280px',
+    pageSize: 12,
+  });
+
+  protected readonly openWorkRows = computed(() =>
+    this.openTickets().map((ticket) => ({
+      id: ticket.id,
+      title: ticket.title || ticket.module,
+      estimateMd: ticket.estimateMd,
+      workflowStatus: ticket.workflowStatus || (ticket.closed ? 'Done' : 'In Progress'),
+    })),
+  );
 
   protected readonly personSwitcherOptions = computed(() =>
     this.scorecard
@@ -157,6 +203,20 @@ export class PersonWorkspacePage {
   protected setTrackFilter(value: string): void {
     if (value === 'All' || value === 'Implement' || value === 'RD') {
       this.trackFilter.set(value);
+      this.cardPage.set(1);
+    }
+  }
+
+  protected setSortMode(value: string): void {
+    if (value === 'name' || value === 'index') {
+      this.sortMode.set(value);
+      this.cardPage.set(1);
+    }
+  }
+
+  protected setCardPage(page: number): void {
+    if (page >= 1 && page <= this.totalCardPages()) {
+      this.cardPage.set(page);
     }
   }
 
@@ -204,8 +264,9 @@ export class PersonWorkspacePage {
     void this.workspace.navigateWithFilter(['/workspace/people', personId]);
   }
 
-  protected setQuery(event: { value?: string }): void {
-    this.query.set(event.value ?? '');
+  protected setQuery(value: string): void {
+    this.query.set(value);
+    this.cardPage.set(1);
   }
 
   protected setTab(tab: PersonWsTab): void {

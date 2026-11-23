@@ -11,6 +11,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   StatusBadgeComponent,
   planToneMap,
   toneForWeekLabel,
@@ -61,22 +62,19 @@ export class WorkList {
     { field: 'action', headerText: 'Action', width: 110, textAlign: 'Center', allowFiltering: false, allowSorting: false },
   ];
 
-  protected readonly gridOptions = computed<SfGridOptions>(() => ({
-    id: this.isMine() ? 'my-work-operational-list-grid-v4' : 'work-operational-list-grid-v4',
-    enablePersistence: true,
-    paging: true,
-    pageSize: 15,
-    sorting: true,
-    filtering: 'Excel',
-    grouping: this.groupByProject(),
-    groupColumns: this.groupByProject() ? ['projectLabel'] : [],
-    search: true,
-    columnChooser: true,
-    excelExport: true,
-    csvExport: true,
-    resizable: true,
-    exportFileName: this.isMine() ? 'my-work-list' : 'team-work-list',
-  }));
+  protected readonly gridOptions = computed<SfGridOptions>(() =>
+    listGridOptions({
+      id: this.isMine() ? 'my-work-operational-list-grid-v4' : 'work-operational-list-grid-v4',
+      enablePersistence: true,
+      filtering: 'Excel',
+      grouping: this.groupByProject(),
+      groupColumns: this.groupByProject() ? ['projectLabel'] : [],
+      columnChooser: true,
+      excelExport: true,
+      csvExport: true,
+      exportFileName: this.isMine() ? 'my-work-list' : 'team-work-list',
+    }),
+  );
 
   protected readonly rows = computed(() =>
     workListRows(

@@ -97,12 +97,16 @@ export function mergeSettings(raw: Partial<AppSettings> | null | undefined): App
               identifier: string;
               name?: string;
               active?: boolean;
+              assignedTeamIds?: unknown;
             };
             return {
               id: typeof r.id === 'number' ? r.id : 0,
               identifier: r.identifier,
               name: r.name ?? r.identifier,
               active: r.active !== false,
+              assignedTeamIds: Array.isArray(r.assignedTeamIds)
+                ? (r.assignedTeamIds as unknown[]).map(String)
+                : [],
             };
           })
       : base.openprojectProjectCatalog,

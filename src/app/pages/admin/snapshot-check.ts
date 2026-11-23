@@ -14,6 +14,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
   StatusBadgeComponent,
 } from '../../shared/ui';
 
@@ -42,16 +43,12 @@ export class SnapshotCheckPage {
     { field: 'statusLabel', headerText: 'สถานะเทียบเป้า', width: 145, textAlign: 'Center' },
   ];
 
-  protected readonly gridOptions: SfGridOptions = {
+  protected readonly gridOptions: SfGridOptions = listGridOptions({
     id: 'snapshot-preview-diff-grid-v2',
-    paging: true,
-    pageSize: 15,
-    pageSizes: [10, 15, 25, 50, 100],
-    sorting: true,
     excelExport: true,
     csvExport: true,
     exportFileName: 'snapshot-preview-diff',
-  };
+  });
   protected readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);

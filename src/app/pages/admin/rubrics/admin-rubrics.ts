@@ -11,6 +11,7 @@ import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  listGridOptions,
 } from '../../../shared/ui';
 
 interface RubricGridRow {
@@ -55,18 +56,16 @@ export class AdminRubricsPage implements OnInit {
     { field: 'version', headerText: 'เวอร์ชัน', width: 90, allowEditing: false, textAlign: 'Center' },
   ];
 
-  protected readonly gridOptions: SfGridOptions = {
+  protected readonly gridOptions: SfGridOptions = listGridOptions({
     id: 'admin-rubrics-grid',
     paging: false,
-    sorting: true,
-    resizable: true,
     allowTextWrap: true,
     excelExport: true,
     gridLines: 'Both',
     exportFileName: 'rubric-registry',
     editSettings: { allowEditing: true, mode: 'Normal', allowEditOnDblClick: true },
     extraToolbar: ['Edit', 'Update', 'Cancel'],
-  };
+  });
 
   async ngOnInit(): Promise<void> {
     await this.loadRubrics();
