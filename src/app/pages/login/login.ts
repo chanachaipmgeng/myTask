@@ -7,6 +7,7 @@ import { AccessRole, Person } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession, setSessionUser } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
+import { RevealDirective, StaggerDirective } from '../../shared/motion';
 import { FlashMessagesComponent, SfCheckboxComponent } from '../../shared/ui';
 
 @Component({
@@ -16,6 +17,8 @@ import { FlashMessagesComponent, SfCheckboxComponent } from '../../shared/ui';
     ButtonModule,
     SfCheckboxComponent,
     FlashMessagesComponent,
+    RevealDirective,
+    StaggerDirective,
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss',

@@ -1,115 +1,45 @@
-<div class="ai-login-container">
-  <!-- Left Side: Hero AI Showcase (Syncfusion Essential UI Kit Split Layout) -->
-  <aside class="ai-login-hero">
-    <div class="ai-hero-circles" aria-hidden="true"></div>
-    <div class="ai-hero-glow" aria-hidden="true"></div>
+<div class="login-shell">
+  <div class="login-shell__ambient" aria-hidden="true">
+    <span class="login-orb login-orb--a"></span>
+    <span class="login-orb login-orb--b"></span>
+    <span class="login-orb login-orb--c"></span>
+  </div>
 
-    <div class="ai-hero-content">
-      <div class="ai-brand-badge">
-        <span class="e-icons e-ai-chat ai-brand-icon"></span>
-        <span class="ai-brand-text">MyHR Intelligence</span>
-      </div>
-
-      <h1 class="ai-hero-heading">
-        Central Sync &amp;<br />
-        <span class="gradient-text">Man-day Scorecard</span>
-      </h1>
-
-      <p class="ai-hero-desc">
-        ระบบวิเคราะห์และประเมินผลงานการส่งมอบงานระดับองค์กร เชื่อมโยงข้อมูลงานจาก MyProject และ GitLab Merge Requests ด้วยสูตรถ่วงน้ำหนัก 6 สายงานอย่างเป็นธรรมและโปร่งใส
-      </p>
-
-      <!-- AI Floating Preview Card (Essential UI Kit Feature Block) -->
-      <div class="ai-floating-card">
-        <div class="card-glow-dot"></div>
-        <div class="ai-card-header">
-          <div class="ai-card-title-row">
-            <span class="e-icons e-dashboard stat-icon"></span>
-            <span class="ai-card-title">Delivery Intelligence Snapshot</span>
-          </div>
-          <span class="e-badge e-badge-success e-badge-pill">Active</span>
-        </div>
-        <div class="ai-stats-row">
-          <div class="ai-mini-stat">
-            <span class="stat-num">93.8%</span>
-            <span class="stat-lbl">DoD Quality Rate</span>
-          </div>
-          <div class="ai-mini-stat">
-            <span class="stat-num">90.0%</span>
-            <span class="stat-lbl">On-Time Target</span>
-          </div>
-          <div class="ai-mini-stat">
-            <span class="stat-num">6 Tracks</span>
-            <span class="stat-lbl">Fair Formula</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="ai-feature-list">
-        <div class="ai-feature-pill">
-          <span class="e-icons e-check pill-icon"></span>
-          <div class="pill-text">
-            <strong>6 Tracks Dynamic Formula</strong>
-            <span>R&amp;D, Implement, QA, UX/BA, Support, Infra</span>
-          </div>
-        </div>
-
-        <div class="ai-feature-pill">
-          <span class="e-icons e-check pill-icon"></span>
-          <div class="pill-text">
-            <strong>Fair Cutoff &amp; MD Mandate</strong>
-            <span>ไม่ตัดคะแนน Dev เมื่อส่งเข้า QA และคุ้มครองงานแทรกฉุกเฉิน</span>
-          </div>
-        </div>
-
-        <div class="ai-feature-pill">
-          <span class="e-icons e-check pill-icon"></span>
-          <div class="pill-text">
-            <strong>Python Intelligence Radar</strong>
-            <span>วิเคราะห์ Z-Score Outlier, Bottleneck และ 1-on-1 Insights</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="ai-hero-footer">
-        <span class="footer-note">เวอร์ชัน 2.5 · MyHR Plus Backoffice Design Standard</span>
-      </div>
+  <aside class="login-brand" appReveal="slide-right" [revealDuration]="480">
+    <div class="login-brand__mark" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
     </div>
+    <p class="login-brand__eyebrow">MyHR Plus</p>
+    <h1 class="login-brand__title">myTask</h1>
+    <p class="login-brand__tagline">ประเมินผลงานส่งมอบด้วย Man-day อย่างเป็นธรรม</p>
   </aside>
 
-  <!-- Right Side: Essential UI Kit AI Auth Card Pane -->
-  <main class="ai-login-pane">
-    <div class="ai-login-card">
-      <!-- Card Header -->
-      <div class="card-top">
-        <div class="brand-logo-mark">
-          <span>MD</span>
-        </div>
-        <div class="card-ai-badge">
-          <span class="e-icons e-ai-chat"></span>
-          <span>Intelligent Access</span>
-        </div>
-        <h2 class="card-title">เข้าสู่ระบบ (Sign In)</h2>
-        <p class="card-subtitle">
-          เข้าใช้งานระบบ Man-day Scorecard ด้วยบัญชีองค์กรของคุณ
-        </p>
-      </div>
+  <main class="login-panel">
+    <div
+      class="login-card"
+      appReveal="scale-soft"
+      [revealDelay]="120"
+      [revealDuration]="420"
+    >
+      <header class="login-card__head">
+        <h2 class="login-card__title">เข้าสู่ระบบ</h2>
+        <p class="login-card__sub">ใช้บัญชีองค์กร หรือ GitLab SSO</p>
+      </header>
 
       <app-flash-messages [success]="message() || null" [error]="error() || null"></app-flash-messages>
 
-      <!-- Standard Credentials Form -->
-      <form class="login-form" (submit)="submitLogin($event)">
-        <!-- Username / Email Field -->
-        <div class="form-group">
-          <label class="form-label">
-            อีเมลองค์กร หรือ ชื่อผู้ใช้งาน <span class="required-star">*</span>
-          </label>
-          <div class="input-wrap">
-            <span class="e-icons e-user input-icon"></span>
+      <form class="login-form" appStagger [staggerStep]="55" (submit)="submitLogin($event)">
+        <div class="login-field">
+          <label class="login-label" for="login-username">ชื่อผู้ใช้หรืออีเมล</label>
+          <div class="login-input-wrap">
+            <span class="e-icons e-user login-input-icon" aria-hidden="true"></span>
             <input
+              id="login-username"
               type="text"
-              class="auth-input"
-              placeholder="e.g. paweena@myhr.co.th หรือ paweena"
+              class="login-input"
+              placeholder="paweena หรือ paweena@myhr.co.th"
               [value]="username()"
               (input)="onUsernameInput($event)"
               autocomplete="username"
@@ -118,141 +48,89 @@
           </div>
         </div>
 
-        <!-- Password Field -->
-        <div class="form-group">
-          <div class="label-row">
-            <label class="form-label">
-              รหัสผ่าน (Password) <span class="required-star">*</span>
-            </label>
-            <a href="javascript:void(0)" class="forgot-link" (click)="onForgotPassword()">ลืมรหัสผ่าน?</a>
+        <div class="login-field">
+          <div class="login-label-row">
+            <label class="login-label" for="login-password">รหัสผ่าน</label>
+            <button type="button" class="login-text-btn" (click)="onForgotPassword()">ลืมรหัสผ่าน?</button>
           </div>
-          <div class="input-wrap">
-            <span class="e-icons e-lock input-icon"></span>
+          <div class="login-input-wrap">
+            <span class="e-icons e-lock login-input-icon" aria-hidden="true"></span>
             <input
+              id="login-password"
               [type]="showPassword() ? 'text' : 'password'"
-              class="auth-input"
-              placeholder="••••••••••••"
+              class="login-input"
+              placeholder="••••••••"
               [value]="password()"
               (input)="onPasswordInput($event)"
               autocomplete="current-password"
             />
             <button
               type="button"
-              class="eye-btn"
+              class="login-eye"
               (click)="togglePassword()"
               [attr.aria-label]="showPassword() ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'"
-              title="แสดง/ซ่อนรหัสผ่าน"
             >
               <span class="e-icons" [class.e-eye]="!showPassword()" [class.e-eye-slash]="showPassword()"></span>
             </button>
           </div>
         </div>
 
-        <!-- Options Row -->
-        <div class="form-options">
+        <div class="login-options">
           <app-sf-checkbox
-            label="จดจำการเข้าสู่ระบบ 30 วัน"
+            label="จดจำฉัน 30 วัน"
             [checked]="rememberMe()"
             (checkedChange)="rememberMe.set($event)"
           />
         </div>
 
-        <!-- Submit Button -->
         <button
           ejs-button
-          cssClass="e-primary w-full submit-login-btn"
+          cssClass="e-primary login-submit"
           type="submit"
           [disabled]="busy()"
         >
           @if (busy()) {
-            <span class="e-icons e-spinner e-spin"></span>
-            <span>กำลังเข้าสู่ระบบ...</span>
+            <span class="e-icons e-spinner e-spin" aria-hidden="true"></span>
+            <span>กำลังเข้าสู่ระบบ…</span>
           } @else {
-            <span>เข้าสู่ระบบ (Sign In)</span>
-            <span class="e-icons e-arrow-right"></span>
+            <span>เข้าสู่ระบบ</span>
           }
         </button>
 
-        <!-- Divider -->
-        <div class="auth-divider">
-          <span>หรือเข้าสู่ระบบด้วยเครือข่ายองค์กร</span>
-        </div>
+        <div class="login-divider" aria-hidden="true"><span>หรือ</span></div>
 
-        <!-- GitLab SSO Button -->
         <button
           ejs-button
-          cssClass="e-outline w-full sso-btn"
+          cssClass="e-outline login-sso"
           type="button"
           (click)="startGitLabSso()"
-          title="ยืนยันตัวตนผ่าน GitLab OAuth SSO ขององค์กร"
         >
-          <svg class="gitlab-svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <svg class="login-sso__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path fill="#FC6D26" d="M22.65 14.39L20.61 8.12a.66.66 0 0 0-.25-.33.64.64 0 0 0-.41-.12.63.63 0 0 0-.4.14.65.65 0 0 0-.23.34L17.5 13.9H6.5L4.68 8.15a.65.65 0 0 0-.23-.34.63.63 0 0 0-.4-.14.64.64 0 0 0-.41.12.66.66 0 0 0-.25.33l-2.04 6.27a.88.88 0 0 0 .32 1l9.88 7.18a.65.65 0 0 0 .76 0l9.88-7.18a.88.88 0 0 0 .32-1z"/>
           </svg>
-          <span>เข้าสู่ระบบด้วย GitLab OAuth SSO</span>
+          <span>GitLab SSO</span>
         </button>
 
-        <!-- Quick Demo Switch (Fast 1-click Testing for Dev/Staging) -->
         @if (canUseDevLogin()) {
-          <div class="quick-demo-panel">
-            <div class="demo-title-row">
-              <span class="e-icons e-settings"></span>
-              <span>เข้าสู่ระบบทดสอบด่วน (Dev Quick Demo):</span>
-            </div>
-            <div class="demo-chips-grid">
-              <button
-                type="button"
-                class="demo-chip chip--admin"
-                (click)="quickLogin('paweena')"
-                title="เข้าสู่ระบบในบทบาท Admin (ปวีณา)"
-              >
-                <span class="role-tag">Admin</span>
-                <span class="name-tag">ปวีณา</span>
-              </button>
-              <button
-                type="button"
-                class="demo-chip chip--admin"
-                (click)="quickLogin('chanachai')"
-                title="เข้าสู่ระบบในบทบาท Admin (ชนะชัย)"
-              >
-                <span class="role-tag">Admin</span>
-                <span class="name-tag">ชนะชัย</span>
-              </button>
-              <button
-                type="button"
-                class="demo-chip chip--member"
-                (click)="quickLogin('nakarin')"
-                title="เข้าสู่ระบบในบทบาท Member (นครินทร์)"
-              >
-                <span class="role-tag">Member</span>
-                <span class="name-tag">นครินทร์</span>
-              </button>
+          <div class="login-demo">
+            <p class="login-demo__label">ทดสอบด่วน</p>
+            <div class="login-demo__chips">
+              <button type="button" class="login-chip" (click)="quickLogin('paweena')">ปวีณา · Admin</button>
+              <button type="button" class="login-chip" (click)="quickLogin('chanachai')">ชนะชัย · Admin</button>
+              <button type="button" class="login-chip" (click)="quickLogin('nakarin')">นครินทร์ · Member</button>
             </div>
           </div>
         }
 
-        <!-- Directory Sync Option -->
-        <div class="sync-footer-wrap">
-          <button
-            type="button"
-            class="sync-link-btn"
-            [disabled]="busy()"
-            (click)="syncMyProjectUsers()"
-          >
-            <span class="e-icons e-repeat"></span>
-            <span>{{ busy() ? 'กำลังซิงค์...' : 'ซิงค์รายชื่อพนักงานล่าสุดจาก MyProject' }}</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          class="login-sync"
+          [disabled]="busy()"
+          (click)="syncMyProjectUsers()"
+        >
+          {{ busy() ? 'กำลังซิงค์…' : 'ซิงค์รายชื่อจาก myProject' }}
+        </button>
       </form>
-
-      <!-- Footer Disclaimer -->
-      <div class="card-footer">
-        <p class="disclaimer-text">
-          <span class="e-icons e-shield"></span>
-          ระบบเชื่อมต่อปลอดภัยด้วยมาตรฐาน MyHR Plus Security (TLS 1.3 / OAuth 2.0)<br />
-          ข้อมูลผลงานคำนวณตามมาตรฐานวิศวกรรม 1 Man-day = 6 ชั่วโมงโฟกัส
-        </p>
-      </div>
     </div>
   </main>
 </div>
