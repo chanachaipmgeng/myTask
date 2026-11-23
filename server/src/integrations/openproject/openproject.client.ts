@@ -276,6 +276,43 @@ export class OpenProjectClient {
     });
   }
 
+  async createWorkPackage(
+    projectId: string | number,
+    payload: {
+      subject: string;
+      description?: string;
+      typeId?: number;
+      assigneeId?: number;
+      estimatedHours?: number;
+    },
+  ): Promise<OpWorkPackage> {
+    const body: Record<string, unknown> = {
+      subject: payload.subject,
+    };
+    if (payload.description) {
+      body['description'] = { raw: payload.description };
+    }
+    if (payload.estimatedHours && payload.estimatedHours > 0) {
+      body['estimatedTime'] = `PT${Math.round(payload.estimatedHours)}H`;
+    }
+    const links: Record<string, unknown> = {};
+    if (payload.typeId) {
+      links['type'] = { href: `/api/v3/types/${payload.typeId}` };
+    }
+    if (payload.assigneeId) {
+      links['assignee'] = { href: `/api/v3/users/${payload.assigneeId}` };
+    }
+    if (Object.keys(links).length > 0) {
+      body['_links'] = links;
+    }
+    const encoded = encodeURIComponent(String(projectId));
+    return this.request<OpWorkPackage>(`/api/v3/projects/${encoded}/work_packages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }
+
   async listProjects(params?: { pageSize?: number }): Promise<OpProject[]> {
     const projects: OpProject[] = [];
     const pageSize = params?.pageSize ?? 100;

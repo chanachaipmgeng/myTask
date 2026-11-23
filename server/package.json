@@ -1,6 +1,6 @@
 {
   "name": "manday-scorecard-server",
-  "version": "0.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "NestJS + PostgreSQL backend for the man-day scorecard: GitLab login, OpenProject sync, persistence.",
   "scripts": {

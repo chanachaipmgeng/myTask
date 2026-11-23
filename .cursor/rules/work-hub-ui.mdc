@@ -53,3 +53,5 @@ alwaysApply: false
 - กรองสาย/ทีม/โปรเจกต์ = `WorkspaceFilter` (URL) · `WorkHubFilter` เก็บแค่สัปดาห์/ถังวัน/ค้นหา (+ sync track จาก workspace) — อย่าทำชิปสายซ้ำในหน้า
 - เทียบสายงานด้วย `normalizeTrack` / `trackMatchesFilter` ไม่เทียบ string ดิบ `Implement` vs `IMP`
 - ข้อมูลแถว/กราฟคำนวณใน `shared/domain/work-views.ts` หรือ `people-roster` / `person-dashboard` / `workspace-scope` แล้วค่อย bind UI
+- **Relative Import Depth**: โฟลเดอร์ระดับ core/shared ใช้ `../../../shared/domain/...`, โฟลเดอร์ระดับ pages ใช้ `../../../../shared/domain/...`, และโฟลเดอร์ย่อยใน shared UI (`src/app/shared/ui/<folder>/`) ใช้ `../../../../../shared/domain/...` เสมอ
+- **Standalone Component Pipes**: เมื่อใช้ pipes ในเทมเพลต (เช่น `| slice:0:16`) ต้องประกาศนำเข้าคลาส (เช่น `SlicePipe`) ในอาเรย์ `imports` ของ `@Component` เสมอ เพื่อป้องกัน `NG8004`

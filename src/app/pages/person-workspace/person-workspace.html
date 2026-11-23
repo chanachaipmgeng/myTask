@@ -245,6 +245,85 @@
             </div>
           </app-section-card>
         }
+
+        @if (activeTab() === 'git') {
+          <app-section-card
+            title="กิจกรรม Git ล่าสุด (mygitplus)"
+            subtitle="ตรวจพบ Branch และประวัติการคอมมิตล่าสุดของพนักงานรายนี้"
+            [badge]="personBranches().length + ' Branch'"
+            badgeTone="info"
+          >
+            @if (loadingPersonBranches()) {
+              <div class="py-6 text-center text-xs text-[color:var(--text-muted)]">
+                <span class="e-icons e-spinner e-spin text-lg block mb-1"></span>
+                กำลังโหลดข้อมูล Git...
+              </div>
+            } @else if (personBranches().length === 0) {
+              <div class="py-6 text-center text-xs text-[color:var(--text-muted)]">
+                <span class="e-icons e-circle-info text-blue-500 text-lg block mb-1"></span>
+                ยังไม่พบข้อมูล Branch หรือ Commits ใน mygitplus ที่จับคู่กับพนักงานท่านนี้
+              </div>
+            } @else {
+              <div class="flex flex-col gap-3">
+                @for (b of personBranches(); track b.id) {
+                  <div class="rounded-lg border border-[color:var(--line)] p-3 bg-[color:var(--surface)] hover:bg-[color:var(--surface-sunken)] transition-colors flex flex-wrap items-center justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="e-icons e-timeline-work-week text-blue-500"></span>
+                        <span class="font-mono text-xs font-bold text-[color:var(--text-high)] break-all">{{ b.branchName }}</span>
+                        @if (b.ticketId) {
+                          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
+                            ผูกกับ #{{ b.ticketId }}
+                          </span>
+                        } @else {
+                          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            ยังไม่มีใบงาน
+                          </span>
+                        }
+                      </div>
+                      <div class="text-xs text-[color:var(--text-muted)] mt-1 flex flex-wrap items-center gap-2">
+                        <span>โปรเจกต์: <strong>{{ b.projectName }}</strong></span>
+                        @if (b.lastCommitSha) {
+                          <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-[color:var(--text-muted)] border border-slate-200 dark:border-slate-700">{{ b.lastCommitSha }}</code>
+                        }
+                        @if (b.lastCommitTitle) {
+                          <span>· <em>{{ b.lastCommitTitle }}</em></span>
+                        }
+                        @if (b.lastCommitAt) {
+                          <span>· {{ b.lastCommitAt | slice:0:16 }}</span>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      @if (!b.ticketId) {
+                        <button
+                          ejs-button
+                          cssClass="e-primary e-small"
+                          type="button"
+                          (click)="onCreateTicketFromBranch(b)"
+                        >
+                          <span class="e-icons e-plus me-1"></span> สร้างใบงาน
+                        </button>
+                      }
+                      @if (b.webUrl) {
+                        <a
+                          [href]="b.webUrl"
+                          target="_blank"
+                          rel="noopener"
+                          ejs-button
+                          cssClass="e-outline e-small"
+                        >
+                          เปิดใน Git
+                        </a>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </app-section-card>
+        }
       </div>
 
       <!-- Right: profile card -->
@@ -293,4 +372,9 @@
       </aside>
     </div>
   }
+
+  <app-ticket-create-dialog
+    #createTicketDialog
+    (created)="onTicketCreated()"
+  />
 </section>

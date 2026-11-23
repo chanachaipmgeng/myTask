@@ -16,6 +16,22 @@ export interface GitLabCommit {
   author_name?: string;
 }
 
+export interface GitLabBranch {
+  name: string;
+  merged?: boolean;
+  protected?: boolean;
+  default?: boolean;
+  web_url?: string;
+  commit?: {
+    id?: string;
+    short_id?: string;
+    title?: string;
+    created_at?: string;
+    author_name?: string;
+    author_email?: string;
+  };
+}
+
 export interface GitLabDiscussionNote {
   id?: number;
   type?: string | null;
@@ -100,6 +116,22 @@ export class GitLabClient {
     const encoded = encodeURIComponent(String(projectId));
     return this.paginateAll<GitLabMergeRequestRaw>(
       `/api/v4/projects/${encoded}/merge_requests?${query.toString()}`,
+    );
+  }
+
+  async listBranches(
+    projectId: string | number,
+    params?: { search?: string; perPage?: number },
+  ): Promise<GitLabBranch[]> {
+    const query = new URLSearchParams({
+      per_page: String(params?.perPage ?? 100),
+    });
+    if (params?.search) {
+      query.set('search', params.search);
+    }
+    const encoded = encodeURIComponent(String(projectId));
+    return this.paginateAll<GitLabBranch>(
+      `/api/v4/projects/${encoded}/repository/branches?${query.toString()}`,
     );
   }
 

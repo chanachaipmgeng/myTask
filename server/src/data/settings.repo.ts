@@ -157,7 +157,11 @@ export function connectionToken(row: ConnectionRow | null, encKey: string): stri
   if (!row?.token_enc) {
     return '';
   }
-  return decryptSecret(row.token_enc, encKey);
+  try {
+    return decryptSecret(row.token_enc, encKey);
+  } catch {
+    return '';
+  }
 }
 
 export type { OpenProjectMapping, TrackWeights, Level };

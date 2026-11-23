@@ -1,6 +1,6 @@
 {
   "name": "manday-scorecard",
-  "version": "0.0.0",
+  "version": "2.1.0",
   "scripts": {
     "ng": "ng",
     "prestart": "node scripts/write-license.mjs",

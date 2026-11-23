@@ -4,6 +4,17 @@
     description="ดึงข้อมูล Merge Request / รอบรีวิว / reopen และลิงก์ MR จากไฟล์ตัวอย่างในเครื่อง หรือจาก GitLab API v4 เพื่อเติมลงใบงานที่จับคู่รหัสได้ (ไม่นับจำนวนไฟล์หรือจำนวน commit เป็นคะแนน)"
   >
     <div actions class="flex flex-wrap items-center gap-2">
+      <button
+        ejs-button
+        cssClass="e-primary"
+        type="button"
+        [disabled]="syncingBranches()"
+        (click)="syncBranchesFromGitLab()"
+      >
+        <span class="e-icons e-sync me-1.5" [class.e-spin]="syncingBranches()"></span>
+        {{ syncingBranches() ? 'กำลังซิงก์...' : 'ซิงก์ Branch จาก mygitplus' }}
+      </button>
+
       @if (isMine) {
         <a ejs-button cssClass="e-outline" iconCss="e-icons e-table-1" routerLink="/me/tickets">
           แนบลิงก์ MR ในตารางใบงานของฉัน
@@ -20,6 +31,56 @@
       }
     </div>
   </app-page-head>
+
+  <!-- Unmatched Branches Guardrail Section -->
+  <app-section-card
+    title="Branch ที่ยังไม่มีใบงานรองรับ (Unmatched Branches)"
+    subtitle="ตรวจพบ Branch ใน mygitplus ที่ยังไม่มีเลขตั๋ว myProject — กดสร้างใบงานและผูกทันทีใน 1 คลิก"
+    [badge]="unmatchedBranches().length + ' Branch'"
+    [badgeTone]="unmatchedBranches().length > 0 ? 'warning' : 'success'"
+  >
+    <ng-template #branchNameTpl let-data>
+      <div class="flex items-center gap-1.5 font-mono text-xs font-semibold py-1">
+        <span class="e-icons e-timeline-work-week text-amber-500"></span>
+        @if (data.webUrl) {
+          <a [href]="data.webUrl" target="_blank" rel="noopener" class="text-blue-600 dark:text-blue-400 hover:underline">
+            {{ data.branchName }}
+          </a>
+        } @else {
+          <span>{{ data.branchName }}</span>
+        }
+      </div>
+    </ng-template>
+
+    <ng-template #branchActionTpl let-data>
+      <button
+        ejs-button
+        cssClass="e-primary e-small"
+        type="button"
+        (click)="onCreateTicketFromBranch(data)"
+      >
+        <span class="e-icons e-plus me-1"></span>
+        สร้างใบงาน
+      </button>
+    </ng-template>
+
+    @if (unmatchedBranches().length === 0) {
+      <div class="py-6 text-center text-xs text-[color:var(--text-muted)]">
+        <span class="e-icons e-check-circle text-green-500 text-lg block mb-1"></span>
+        ยอดเยี่ยม! ทุก Branch ที่ตรวจพบมีใบงาน myProject รองรับเรียบร้อยทั้งหมด
+      </div>
+    } @else {
+      <app-sf-grid
+        [data]="unmatchedBranches()"
+        [columns]="unmatchedBranchColumns"
+        [options]="unmatchedBranchGridOptions"
+        [cellTemplates]="{
+          branchName: branchNameTpl,
+          actions: branchActionTpl
+        }"
+      />
+    }
+  </app-section-card>
 
   <app-section-card
     title="คิวรอรีวิว MR"
@@ -143,4 +204,9 @@
       />
     </app-section-card>
   }
+
+  <app-ticket-create-dialog
+    #createTicketDialog
+    (created)="onTicketCreated($event)"
+  />
 </section>

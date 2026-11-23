@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { SlicePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { map } from 'rxjs';
+import { GitBranchItem } from '../../../../shared/domain/git-branch';
 import { filterPeopleByWorkspace } from '../../../../shared/domain/workspace-scope';
+import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
@@ -24,13 +27,14 @@ import {
   SfTextBoxComponent,
   StaggerDirective,
   StatusBadgeComponent,
+  TicketCreateDialogComponent,
   listGridOptions,
   pageSlice,
   totalPages,
   workflowStatusToneMap,
 } from '../../shared/ui';
 
-type PersonWsTab = 'overview' | 'work' | 'tickets' | 'schedule' | 'analytics';
+type PersonWsTab = 'overview' | 'work' | 'tickets' | 'schedule' | 'analytics' | 'git';
 
 const TABS: { id: PersonWsTab; text: string; icon: string }[] = [
   { id: 'overview', text: 'ภาพรวม', icon: 'e-icons e-home' },
@@ -38,12 +42,14 @@ const TABS: { id: PersonWsTab; text: string; icon: string }[] = [
   { id: 'tickets', text: 'คะแนน', icon: 'e-icons e-table' },
   { id: 'schedule', text: 'ปฏิทิน', icon: 'e-icons e-timeline-today' },
   { id: 'analytics', text: 'วิเคราะห์', icon: 'e-icons e-chart' },
+  { id: 'git', text: 'Git & โค้ด', icon: 'e-icons e-refresh' },
 ];
 
 @Component({
   selector: 'app-person-workspace',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    SlicePipe,
     ButtonModule,
     SfDropdownComponent,
     SfTextBoxComponent,
@@ -57,16 +63,23 @@ const TABS: { id: PersonWsTab; text: string; icon: string }[] = [
     KpiStatCardComponent,
     StaggerDirective,
     StatusBadgeComponent,
+    TicketCreateDialogComponent,
   ],
   templateUrl: './person-workspace.html',
   styleUrl: './person-workspace.scss',
 })
 export class PersonWorkspacePage {
+  @ViewChild('createTicketDialog') createTicketDialog?: TicketCreateDialogComponent;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly scorecard = inject(ScorecardService);
   private readonly ticketDetail = inject(TicketDetailService);
+  private readonly api = inject(ApiClient, { optional: true });
   protected readonly workspace = inject(WorkspaceFilter);
+
+  protected readonly personBranches = signal<GitBranchItem[]>([]);
+  protected readonly loadingPersonBranches = signal(false);
 
   protected readonly tabs = TABS;
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
@@ -106,6 +119,39 @@ export class PersonWorkspacePage {
         }
       }
     });
+
+    effect(() => {
+      const pid = this.selectedPersonId();
+      if (pid && this.api && this.scorecard.usingApi()) {
+        void this.loadPersonBranches(pid);
+      } else {
+        this.personBranches.set([]);
+      }
+    });
+  }
+
+  protected async loadPersonBranches(personId: string): Promise<void> {
+    if (!this.api) return;
+    this.loadingPersonBranches.set(true);
+    try {
+      const res = await this.api.getGitBranches({ personId });
+      this.personBranches.set(res.branches ?? []);
+    } catch {
+      this.personBranches.set([]);
+    } finally {
+      this.loadingPersonBranches.set(false);
+    }
+  }
+
+  protected onCreateTicketFromBranch(branch: GitBranchItem): void {
+    this.createTicketDialog?.open(branch);
+  }
+
+  protected async onTicketCreated(): Promise<void> {
+    const pid = this.selectedPersonId();
+    if (pid) {
+      await this.loadPersonBranches(pid);
+    }
   }
 
   /** รายชื่อในหน้าการ์ดและตัวสลับคน: กรองตามคำค้นหาและสายงาน */

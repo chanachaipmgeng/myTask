@@ -22,3 +22,11 @@ alwaysApply: false
   1. **OpenProject (myProject)**: URL/token, `statusMap` (ตัวช่วยเพิ่ม/ลบคู่สถานะ + JSON), `typeMap`, `customFields`, `user-map`, `lastRuns`
   2. **GitLab (mygit MR)**: `GET/PUT /api/integrations/gitlab` + `POST /api/integrations/gitlab/sync` (ดึง MR ที่ merged แล้วจับคู่รหัสใบงานผ่าน `shared/domain/gitlab-mr.ts` โดยไม่นับจำนวนไฟล์/commit เป็นคะแนน)
   3. **Microsoft Teams**: `GET/PUT /api/integrations/teams` + `POST /api/integrations/teams/send` (ส่งแจ้งเตือน `deadline`/`overrun` ผ่าน `TEAMS_WEBHOOK_URL` โดยไม่ส่งลำดับคะแนนคน)
+- **Resilient Connection Token Decryption**:
+  - ฟังก์ชัน `connectionToken(row, encKey)` ใน `settings.repo.ts` และตัวควบคุม Integrations **ต้อง** ครอบการเรียก `decryptSecret` ด้วย `try/catch` เสมอ
+  - หาก Token ในฐานข้อมูลเสียหาย, เป็นรูปแบบเก่า, หรือมีการเปลี่ยน `TOKEN_ENC_KEY` ให้คืนค่าสตริงว่าง `''` แทนการโยน `Error: sealed secret is malformed` เพื่อไม่ให้ API endpoint (เช่น `/api/integrations/gitlab/open-mrs` หรือ `/sync-branches`) พังและส่งคืน HTTP 500
+- **Git Branch & myProject Smart Integration Standard**:
+  - การตรวจจับ Branch (`POST /api/integrations/gitlab/sync-branches` และ GitLab Webhook): สกัด Ticket ID ด้วย `parseTicketIdFromBranch()` หากตรงกับใบงานในระบบให้ผูกให้อัตโนมัติ (`ticket_id`)
+  - สำหรับ Branch ที่ยังไม่มีใบงานรองรับ (Unmatched Branches): ต้องแสดงในหน้ารวม `/mygit` และแท็บ `Git & โค้ด` ใน `/workspace/people` พร้อมปุ่ม `+ สร้างใบงาน` (เปิด `TicketCreateDialogComponent` แปลงชื่อ branch เป็น Subject อัตโนมัติด้วย `cleanBranchToTicketTitle()`)
+  - **Offline / Unconfigured Mode Fallback**: เมื่อไม่มีการเชื่อมต่อ mygitplus/GitLab ในเครื่องทดสอบ ให้ส่งคืนข้อมูลตัวอย่าง (Demo Seeds) เพื่อให้นักพัฒนาและผู้ตรวจสอบ UI สามารถทดสอบปุ่มและ Flow การสร้างใบงานได้โดยไม่เกิด Error 500
+

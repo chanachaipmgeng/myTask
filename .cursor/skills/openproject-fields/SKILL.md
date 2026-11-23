@@ -51,6 +51,17 @@ description: >-
 - GitLab MR sync (`POST /api/integrations/gitlab/sync`) ใช้ `shared/domain/gitlab-mr.ts` จับคู่รหัสใบงานและอัปเดต `mrLink`/`reviewRounds`/`reopenCount`
 - Teams Webhook (`POST /api/integrations/teams/send`) ส่งแจ้งเตือน `deadline`/`overrun` ผ่าน `TEAMS_WEBHOOK_URL` หรือค่าที่ตั้งในตาราง `connections` (`id='teams'`)
 
+## Git Branch & myProject Smart Ticket Creation
+
+- `POST /api/integrations/gitlab/sync-branches` และ GitLab Webhook (`POST /api/integrations/gitlab/webhook`):
+  - สกัดรหัสใบงานอัตโนมัติด้วย `parseTicketIdFromBranch()` ใน `shared/domain/git-branch.ts`
+  - หากพบรหัสใบงาน ให้ผูกอัตโนมัติเข้ากับตั๋วงาน
+  - หากเป็น Unmatched Branch ให้แสดงปุ่ม `+ สร้างใบงาน` บนหน้า `/mygit` และแท็บ `Git & โค้ด` ใน `/workspace/people`
+- `POST /api/integrations/openproject/create-from-branch`:
+  - สร้าง Work Package บน myProject REST API v3 ผ่าน `OpenProjectClient.createWorkPackage(projectId, payload)`
+  - สกัดชื่อใบงานจาก branch ด้วย `cleanBranchToTicketTitle()`
+  - บันทึกลงตาราง `git_branches` และผูกเชื่อมโยงทันที
+
 ## ข้อจำกัด
 
 - ค่า mapping ว่างหรือ `customField\d+` เท่านั้น (`validateMapping`)

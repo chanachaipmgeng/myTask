@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { GitBranchItem } from '../../../../shared/domain/git-branch';
 import { canAssignWork, currentViewer } from '../../core/admin-settings';
 import { ApiClient, GitLabIntegration, OpenMrItem } from '../../core/api-client';
 import { currentSession } from '../../core/session';
@@ -20,6 +21,7 @@ import {
   listGridOptions,
   SfMessageComponent,
   StatusBadgeComponent,
+  TicketCreateDialogComponent,
 } from '../../shared/ui';
 
 @Component({
@@ -34,10 +36,13 @@ import {
     SfCheckboxComponent,
     SfGridComponent,
     SfMessageComponent,
+    TicketCreateDialogComponent,
   ],
   templateUrl: './mygit.html',
 })
 export class MyGitPage {
+  @ViewChild('createTicketDialog') createTicketDialog?: TicketCreateDialogComponent;
+
   private readonly route = inject(ActivatedRoute);
   private readonly mygit = inject(MyGitSyncAdapter);
   private readonly scorecard = inject(ScorecardService);
@@ -54,6 +59,31 @@ export class MyGitPage {
   protected readonly openMrs = signal<OpenMrItem[]>([]);
   protected readonly openMrSource = signal<'live' | 'offline'>('offline');
   protected readonly loadingOpenMrs = signal(false);
+
+  // Git Branches & Unmatched Detection
+  protected readonly branches = signal<GitBranchItem[]>([]);
+  protected readonly loadingBranches = signal(false);
+  protected readonly syncingBranches = signal(false);
+  protected readonly unmatchedBranches = computed(() =>
+    this.branches().filter((b) => !b.ticketId),
+  );
+
+  protected readonly unmatchedBranchColumns: SfGridColumn[] = [
+    { field: 'projectName', headerText: 'โปรเจกต์ Git', width: 160 },
+    { field: 'branchName', headerText: 'ชื่อ Branch', width: 220 },
+    { field: 'personName', headerText: 'ผู้สร้าง / Dev', width: 140 },
+    { field: 'lastCommitTitle', headerText: 'Commit ล่าสุด', width: 240 },
+    { field: 'lastCommitAt', headerText: 'เวลา Commit', width: 160 },
+    { field: 'actions', headerText: 'สร้างใบงาน', width: 130, textAlign: 'Center' },
+  ];
+
+  protected readonly unmatchedBranchGridOptions: SfGridOptions = listGridOptions({
+    id: 'mygit-unmatched-branches-grid',
+    paging: true,
+    pageSize: 10,
+    search: false,
+    excelExport: true,
+  });
   protected readonly myTicketsWithMr = computed(() => {
     const selfId = this.activePersonId();
     const tickets = this.isMine
@@ -136,6 +166,54 @@ export class MyGitPage {
   constructor() {
     void this.loadGitLabStatus();
     void this.loadOpenMrs();
+    void this.loadBranches();
+  }
+
+  protected async loadBranches(): Promise<void> {
+    if (!this.api || !this.scorecard.usingApi()) return;
+    this.loadingBranches.set(true);
+    try {
+      const res = await this.api.getGitBranches({
+        personId: this.isMine ? this.activePersonId() : undefined,
+      });
+      this.branches.set(res.branches ?? []);
+    } catch {
+      // ignore
+    } finally {
+      this.loadingBranches.set(false);
+    }
+  }
+
+  protected async syncBranchesFromGitLab(): Promise<void> {
+    if (!this.api || this.syncingBranches()) return;
+    this.syncingBranches.set(true);
+    try {
+      const res = await this.api.syncGitBranches();
+      if (res.ok) {
+        this.notice.success(
+          `ซิงก์ดึงข้อมูลสำเร็จ ${res.totalBranches} Branches (พบ ${res.unmatchedCount} Branch ที่ยังไม่มีใบงาน)`,
+          'ซิงก์ Git Branches สำเร็จ',
+        );
+        await this.loadBranches();
+      } else {
+        this.notice.error(res.message || '', 'ซิงก์ล้มเหลว');
+      }
+    } catch (err) {
+      this.notice.error(
+        err instanceof Error ? err.message : String(err),
+        'เกิดข้อผิดพลาดในการซิงก์ Branch',
+      );
+    } finally {
+      this.syncingBranches.set(false);
+    }
+  }
+
+  protected onCreateTicketFromBranch(branch: GitBranchItem): void {
+    this.createTicketDialog?.open(branch);
+  }
+
+  protected async onTicketCreated(ev: { ticketId: string; branchId?: number }): Promise<void> {
+    await this.loadBranches();
   }
 
   private async loadGitLabStatus(): Promise<void> {

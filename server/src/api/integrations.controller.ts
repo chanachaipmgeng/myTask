@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, Put, Post, Query, Req, Param, UnauthorizedException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { Ticket } from '../../../shared/domain/models';
 import { collectAlerts, projectedActual } from '../../../shared/domain/alerts';
@@ -7,10 +7,23 @@ import {
   GitLabMergeRequestRaw,
   mapGitLabMergeRequests,
 } from '../../../shared/domain/gitlab-mr';
+import {
+  cleanBranchToTicketTitle,
+  parseTicketIdFromBranch,
+  CreateTicketFromBranchPayload,
+} from '../../../shared/domain/git-branch';
+import {
+  getPersonGitSummary,
+  linkGitBranchToTicket,
+  listGitBranches,
+  listTeamGitMappings,
+  setTeamGitMappings,
+  upsertGitBranch,
+} from '../data/git.repo';
 import { formatMd, scoreTicket } from '../../../shared/domain/scoring';
 import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
 import { APP_CONFIG, AppConfig } from '../config';
-import { listPeople, listUnmappedOpUsers, setPersonOpenProjectUser } from '../data/people.repo';
+import { getPerson, listPeople, listUnmappedOpUsers, setPersonOpenProjectUser } from '../data/people.repo';
 import {
   connectionToken,
   getConnection,
@@ -498,6 +511,278 @@ export class IntegrationsController {
         message: err instanceof Error ? err.message : String(err),
       };
     }
+  }
+
+  @Get('integrations/gitlab/branches')
+  async listBranches(
+    @Query('personId') personId?: string,
+    @Query('unmatchedOnly') unmatchedOnly?: string,
+    @Query('teamId') teamId?: string,
+    @Query('status') status?: string,
+  ) {
+    const branches = await listGitBranches(this.db, {
+      personId,
+      unmatchedOnly: unmatchedOnly === 'true',
+      teamId,
+      status,
+    });
+    return { branches };
+  }
+
+  @Post('integrations/gitlab/sync-branches')
+  async syncBranches(@Req() req: AuthedRequest) {
+    const gitlab = await this.resolveGitLab();
+    if (!gitlab) {
+      // In offline / unconfigured mode, provide demo branches so developers & reviewers can test the workflow
+      const demoBranches = [
+        {
+          projectId: 101,
+          projectName: 'frontend/myhr-portal',
+          branchName: 'feature/payment-slip-export',
+          authorUsername: 'paweena',
+          personId: 'paweena',
+          lastCommitSha: '7f9a2b1c4e8d',
+          lastCommitTitle: 'feat: add export to excel for payroll slips',
+          lastCommitAt: new Date(),
+          status: 'active' as const,
+        },
+        {
+          projectId: 101,
+          projectName: 'frontend/myhr-portal',
+          branchName: 'fix/IMP-101-avatar-border-radius',
+          authorUsername: 'kanchawee',
+          personId: 'kanchawee',
+          ticketId: 'IMP-101',
+          lastCommitSha: '4b3c2d1e0f9a',
+          lastCommitTitle: 'fix(avatar): correct border radius token',
+          lastCommitAt: new Date(),
+          status: 'active' as const,
+        },
+        {
+          projectId: 102,
+          projectName: 'backend/core-api',
+          branchName: 'spike/ai-prompt-optimization',
+          authorUsername: 'chanachai',
+          personId: 'chanachai',
+          lastCommitSha: '9a8b7c6d5e4f',
+          lastCommitTitle: 'poc: streaming response for coach summary',
+          lastCommitAt: new Date(),
+          status: 'active' as const,
+        },
+      ];
+      for (const b of demoBranches) {
+        await upsertGitBranch(this.db, b);
+      }
+      return {
+        ok: true,
+        source: 'demo',
+        totalBranches: demoBranches.length,
+        unmatchedCount: 2,
+        message: 'โหมดตัวอย่าง: ซิงก์ข้อมูลจำลอง 3 Branch (มี 2 Branch ที่ยังไม่มีใบงาน)',
+      };
+    }
+
+    try {
+      const people = await listPeople(this.db);
+      const byUsername = new Map(
+        people.filter((p) => p.gitlabUsername).map((p) => [p.gitlabUsername!.toLowerCase(), p]),
+      );
+      const byEmail = new Map(
+        people.filter((p) => p.email).map((p) => [p.email!.toLowerCase(), p]),
+      );
+
+      let totalBranches = 0;
+      let unmatchedCount = 0;
+
+      let projectList: { id: number; name?: string; path_with_namespace?: string; web_url?: string }[] = [];
+      if (gitlab.projectIds.length > 0) {
+        projectList = gitlab.projectIds.map((id) => ({ id: Number(id) }));
+      } else {
+        projectList = await gitlab.client.listProjects({ membership: true });
+      }
+
+      for (const proj of projectList) {
+        try {
+          const branches = await gitlab.client.listBranches(proj.id);
+          const projName = proj.path_with_namespace || proj.name || `Project ${proj.id}`;
+
+          for (const b of branches) {
+            totalBranches++;
+            const ticketId = parseTicketIdFromBranch(b.name);
+            if (!ticketId) {
+              unmatchedCount++;
+            }
+
+            const authorEmail = b.commit?.author_email?.toLowerCase();
+            const authorName = b.commit?.author_name;
+            const matchedPerson =
+              (authorEmail ? byEmail.get(authorEmail) : undefined) ??
+              (authorName ? byUsername.get(authorName.toLowerCase()) : undefined);
+
+            await upsertGitBranch(this.db, {
+              projectId: proj.id,
+              projectName: projName,
+              branchName: b.name,
+              authorUsername: authorName,
+              personId: matchedPerson?.id,
+              ticketId,
+              webUrl: b.web_url,
+              lastCommitSha: b.commit?.short_id ?? b.commit?.id,
+              lastCommitTitle: b.commit?.title,
+              lastCommitAt: b.commit?.created_at,
+              status: b.merged ? 'merged' : 'active',
+            });
+          }
+        } catch {
+          // Skip inaccessible projects
+        }
+      }
+
+      await this.db.audit(req.authUser?.person.id ?? null, 'gitlab.sync_branches', 'gitlab', {
+        totalBranches,
+        unmatchedCount,
+      });
+
+      return { ok: true, totalBranches, unmatchedCount };
+    } catch (err: any) {
+      return { ok: false, message: `ไม่สามารถติดต่อ mygitplus ได้: ${err.message || String(err)}` };
+    }
+  }
+
+  @Public()
+  @Post('integrations/gitlab/webhook')
+  async gitlabWebhook(@Body() payload: any) {
+    if (!payload || payload.object_kind !== 'push') {
+      return { ok: true, ignored: true };
+    }
+
+    const ref = String(payload.ref ?? '');
+    if (!ref.startsWith('refs/heads/')) {
+      return { ok: true, ignored: true };
+    }
+
+    const branchName = ref.replace('refs/heads/', '');
+    const projectId = Number(payload.project?.id || payload.project_id);
+    const projectName = String(payload.project?.path_with_namespace || payload.project?.name || `Project ${projectId}`);
+    const authorUsername = payload.user_username || payload.user_name;
+    const authorEmail = payload.user_email?.toLowerCase();
+
+    const people = await listPeople(this.db);
+    const matchedPerson =
+      people.find((p) => p.gitlabUsername?.toLowerCase() === authorUsername?.toLowerCase()) ??
+      people.find((p) => p.email?.toLowerCase() === authorEmail);
+
+    const ticketId = parseTicketIdFromBranch(branchName);
+    const latestCommit = Array.isArray(payload.commits) && payload.commits.length > 0
+      ? payload.commits[payload.commits.length - 1]
+      : null;
+
+    await upsertGitBranch(this.db, {
+      projectId,
+      projectName,
+      branchName,
+      authorUsername,
+      personId: matchedPerson?.id,
+      ticketId,
+      webUrl: payload.project?.web_url ? `${payload.project.web_url}/-/tree/${branchName}` : null,
+      lastCommitSha: latestCommit?.id?.slice(0, 8),
+      lastCommitTitle: latestCommit?.title || latestCommit?.message,
+      lastCommitAt: latestCommit?.timestamp,
+      status: 'active',
+    });
+
+    return {
+      ok: true,
+      branch: branchName,
+      ticketId,
+      unmatched: !ticketId,
+    };
+  }
+
+  @Post('integrations/openproject/create-from-branch')
+  async createTicketFromBranch(
+    @Body() body: CreateTicketFromBranchPayload,
+    @Req() req: AuthedRequest,
+  ) {
+    const opClient = await this.syncService.getClient();
+    if (!opClient) {
+      return { ok: false, message: 'ไม่ได้ตั้งค่าการเชื่อมต่อ myProject (OpenProject)' };
+    }
+
+    const settings = await getSettings(this.db);
+    let assigneeOpId: number | undefined;
+
+    if (body.assigneePersonId) {
+      const person = await getPerson(this.db, body.assigneePersonId);
+      if (person?.openprojectUserId) {
+        assigneeOpId = person.openprojectUserId;
+      }
+    }
+
+    const hoursPerMd = settings.hoursPerMd || 8;
+    const estimatedHours = (body.estimateMd ?? 1) * hoursPerMd;
+
+    try {
+      const wp = await opClient.createWorkPackage(body.projectId, {
+        subject: body.subject,
+        description: body.description ?? `สร้างจาก Git Branch: ${body.branchName}`,
+        typeId: body.typeId,
+        assigneeId: assigneeOpId,
+        estimatedHours,
+      });
+
+      if (body.branchId) {
+        await linkGitBranchToTicket(this.db, body.branchId, String(wp.id));
+      }
+
+      await this.db.audit(req.authUser?.person.id ?? null, 'openproject.create_from_branch', String(wp.id), {
+        branchName: body.branchName,
+        projectId: body.projectId,
+        subject: body.subject,
+        ticketId: wp.id,
+      });
+
+      return {
+        ok: true,
+        ticketId: String(wp.id),
+        subject: wp.subject,
+        branchId: body.branchId,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  @Get('integrations/gitlab/person/:personId')
+  async personGitSummary(@Param('personId') personId: string) {
+    const summary = await getPersonGitSummary(this.db, personId);
+    return { summary };
+  }
+
+  @Get('org/teams/git-mappings')
+  @Roles('admin', 'lead')
+  async getTeamGitMappings() {
+    const mappings = await listTeamGitMappings(this.db);
+    return { mappings };
+  }
+
+  @Put('org/teams/git-mappings')
+  @Roles('admin')
+  async saveTeamGitMappings(
+    @Body() body: { teamId: string; projects: { id: number; name: string }[] },
+    @Req() req: AuthedRequest,
+  ) {
+    if (!body.teamId || !Array.isArray(body.projects)) {
+      return { ok: false, message: 'ข้อมูลไม่ถูกต้อง' };
+    }
+    await setTeamGitMappings(this.db, body.teamId, body.projects);
+    await this.db.audit(req.authUser?.person.id ?? null, 'teams.update_git_mappings', body.teamId, {
+      projectCount: body.projects.length,
+    });
+    return { ok: true };
   }
 
   @Get('integrations/openproject/discovery')

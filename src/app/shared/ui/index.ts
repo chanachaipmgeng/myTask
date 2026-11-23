@@ -32,6 +32,7 @@ export { FilterChipsComponent } from './filter-chips/filter-chips';
 export { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog';
 export { PersonAvatarComponent, type PersonAvatarSize } from './person-avatar/person-avatar';
 export { TicketDetailDialogComponent } from './ticket-detail-dialog/ticket-detail-dialog';
+export { TicketCreateDialogComponent } from './ticket-create-dialog/ticket-create-dialog';
 export {
   LoadingSkeletonComponent,
   type LoadingSkeletonVariant,

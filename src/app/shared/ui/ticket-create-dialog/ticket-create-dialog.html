@@ -1,0 +1,104 @@
+<app-sf-dialog
+  #dialog
+  dialogId="ticketCreateDialog"
+  header="สร้างใบงาน myProject จาก Git Branch"
+  width="520px"
+  [isModal]="true"
+>
+  <div class="space-y-4 py-2">
+    @if (branch(); as b) {
+      <!-- Git Source Pill -->
+      <div class="rounded-lg bg-[color:var(--surface-sunken)] border border-[color:var(--line)] p-3 flex flex-col gap-1.5 text-xs">
+        <div class="flex items-center justify-between text-[color:var(--text-muted)]">
+          <span class="flex items-center gap-1 font-medium">
+            <span class="e-icons e-folder text-blue-500"></span>
+            {{ b.projectName }}
+          </span>
+          @if (b.personName) {
+            <span class="font-semibold text-[color:var(--text-high)]">
+              โดย: {{ b.personName }}
+            </span>
+          }
+        </div>
+        <div class="flex items-center gap-1.5 font-mono font-bold text-blue-600 dark:text-blue-400 break-all">
+          <span class="e-icons e-timeline-work-week"></span>
+          {{ b.branchName }}
+        </div>
+      </div>
+    }
+
+    <!-- Subject Field -->
+    <app-form-field label="หัวข้อใบงาน (Subject)" hint="แปลงจากชื่อ branch อัตโนมัติ สามารถแก้ไขให้สื่อความหมายชัดเจนได้">
+      <app-sf-textbox
+        [value]="subject()"
+        [options]="{ placeholder: 'ระบุชื่อใบงาน...' }"
+        (valueInput)="subject.set($event)"
+        (valueChange)="subject.set($event)"
+      />
+    </app-form-field>
+
+    <!-- Project & Type Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <app-form-field label="โปรเจกต์ใน myProject">
+        <app-sf-dropdown
+          [items]="projectOptions()"
+          [value]="selectedProject()"
+          [options]="{ placeholder: 'เลือกโปรเจกต์...', allowFiltering: true }"
+          (valueChange)="selectedProject.set($event)"
+        />
+      </app-form-field>
+
+      <app-form-field label="ประเภทงาน (Type)">
+        <app-sf-dropdown
+          [items]="typeOptions"
+          [value]="selectedType()"
+          (valueChange)="selectedType.set(+$event)"
+        />
+      </app-form-field>
+    </div>
+
+    <!-- Assignee & Estimate Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <app-form-field label="ผู้รับผิดชอบ (Assignee)">
+        <app-sf-dropdown
+          [items]="assigneeOptions()"
+          [value]="selectedAssignee()"
+          [options]="{ placeholder: 'เลือกผู้รับผิดชอบ...', allowFiltering: true }"
+          (valueChange)="selectedAssignee.set($event)"
+        />
+      </app-form-field>
+
+      <app-form-field label="ประมาณการ Man-day (MD)">
+        <app-sf-number
+          [value]="estimateMd()"
+          [min]="0.1"
+          [max]="50"
+          [step]="0.5"
+          (valueChange)="estimateMd.set(+$event)"
+        />
+      </app-form-field>
+    </div>
+  </div>
+
+  <div footer class="flex justify-end gap-2 pt-3 border-t border-[color:var(--line)]">
+    <button
+      ejs-button
+      cssClass="e-flat"
+      type="button"
+      [disabled]="submitting()"
+      (click)="close()"
+    >
+      ยกเลิก
+    </button>
+    <button
+      ejs-button
+      cssClass="e-primary"
+      type="button"
+      [disabled]="submitting() || !selectedProject() || !subject().trim()"
+      (click)="onSubmit()"
+    >
+      <span class="e-icons e-check me-1.5" [class.e-spin]="submitting()"></span>
+      {{ submitting() ? 'กำลังสร้างใบงาน...' : 'สร้างใบงานบน myProject และผูกทันที' }}
+    </button>
+  </div>
+</app-sf-dialog>

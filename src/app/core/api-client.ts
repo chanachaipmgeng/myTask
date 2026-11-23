@@ -2,6 +2,12 @@ import { Injectable } from '@angular/core';
 import { AnalyticsReport } from './analytics';
 import { AccessRole, Department, Level, Person, Team, Ticket, Track } from './models';
 import { TeamVisibilityRule, VisibilityConfig } from '../../../shared/domain/team-visibility';
+import {
+  CreateTicketFromBranchPayload,
+  GitBranchItem,
+  PersonGitSummary,
+  TeamGitMapping,
+} from '../../../shared/domain/git-branch';
 import { KpiPeriodType } from './kpi-snapshot';
 import { PersonScore, TrackWeights } from './scoring';
 import { AlertRules } from './admin-settings';
@@ -472,6 +478,52 @@ export class ApiClient {
     return api('/api/org/projects/sync', {
       method: 'POST',
       body: '{}',
+    });
+  }
+
+  getGitBranches(params?: {
+    personId?: string;
+    unmatchedOnly?: boolean;
+    teamId?: string;
+    status?: string;
+  }): Promise<{ branches: GitBranchItem[] }> {
+    const q = new URLSearchParams();
+    if (params?.personId) q.set('personId', params.personId);
+    if (params?.unmatchedOnly) q.set('unmatchedOnly', 'true');
+    if (params?.teamId) q.set('teamId', params.teamId);
+    if (params?.status) q.set('status', params.status);
+    const qs = q.toString();
+    return api(`/api/integrations/gitlab/branches${qs ? '?' + qs : ''}`);
+  }
+
+  syncGitBranches(): Promise<{ ok: boolean; totalBranches: number; unmatchedCount: number; message?: string }> {
+    return api('/api/integrations/gitlab/sync-branches', {
+      method: 'POST',
+      body: '{}',
+    });
+  }
+
+  createTicketFromBranch(
+    payload: CreateTicketFromBranchPayload,
+  ): Promise<{ ok: boolean; ticketId?: string; subject?: string; branchId?: number; message?: string }> {
+    return api('/api/integrations/openproject/create-from-branch', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  getPersonGitSummary(personId: string): Promise<{ summary: PersonGitSummary }> {
+    return api(`/api/integrations/gitlab/person/${encodeURIComponent(personId)}`);
+  }
+
+  getTeamGitMappings(): Promise<{ mappings: TeamGitMapping[] }> {
+    return api('/api/org/teams/git-mappings');
+  }
+
+  saveTeamGitMappings(teamId: string, projects: { id: number; name: string }[]): Promise<{ ok: boolean }> {
+    return api('/api/org/teams/git-mappings', {
+      method: 'PUT',
+      body: JSON.stringify({ teamId, projects }),
     });
   }
 
