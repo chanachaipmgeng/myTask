@@ -9,6 +9,7 @@ import { ThemeService } from '../../core/theme.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import {
   PageHeadComponent,
+  PersonAvatarComponent,
   SectionCardComponent,
   SfChartComponent,
   SfChartOptions,
@@ -27,6 +28,7 @@ import {
   imports: [
     ButtonModule,
     PageHeadComponent,
+    PersonAvatarComponent,
     SectionCardComponent,
     RouterLink,
     SfChartComponent,
@@ -69,7 +71,7 @@ export class AnalyticsPage {
     { field: 'ticketId', headerText: 'รหัสใบงาน', width: 120 },
     { field: 'title', headerText: 'ชื่องาน / โมดูล', width: 200 },
     { field: 'trackLabel', headerText: 'สายงาน', width: 110 },
-    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 140 },
+    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 180 },
     { field: 'severity', headerText: 'ระดับความสำคัญ', width: 130 },
     { field: 'issueType', headerText: 'ชนิดประเด็น', width: 160 },
     { field: 'detail', headerText: 'รายละเอียดสิ่งที่ตรวจพบ', width: 360 },
@@ -111,7 +113,7 @@ export class AnalyticsPage {
   };
 
   protected readonly coachingColumns: SfGridColumn[] = [
-    { field: 'nickname', headerText: 'พนักงาน', width: 120 },
+    { field: 'nickname', headerText: 'พนักงาน', width: 175 },
     { field: 'trackLabel', headerText: 'สายงาน', width: 105 },
     { field: 'developmentIndex', headerText: 'ดัชนีพัฒนา', width: 105, textAlign: 'Right', format: 'N1' },
     { field: 'trendSlope', headerText: 'Slope แนวโน้ม', width: 120, textAlign: 'Right', format: 'N2' },
@@ -163,6 +165,8 @@ export class AnalyticsPage {
   protected readonly bottleneckGridOptions: SfGridOptions = {
     id: 'bottleneck-module-grid',
     height: '260',
+    paging: true,
+    pageSize: 8,
     sorting: true,
     resizable: true,
     excelExport: true,

@@ -15,6 +15,9 @@ export interface SyncHygieneIssue {
   title: string;
   trackLabel: string;
   assignee: string;
+  assigneeId?: string;
+  assigneeFullName?: string;
+  assigneeAvatarUrl?: string | null;
   issueType: HygieneIssueType;
   severity: 'High' | 'Medium' | 'Low';
   detail: string;
@@ -117,7 +120,11 @@ export function buildAnalyticsReport(
 
   for (const ticket of tickets) {
     const status = workflowStatusOf(ticket);
-    const assignee = personMap.get(ticket.assigneeId)?.nickname ?? 'ยังไม่มีผู้รับ';
+    const person = personMap.get(ticket.assigneeId);
+    const assignee = person?.nickname ?? (ticket.assigneeId.trim() ? ticket.assigneeId : 'ยังไม่มีผู้รับ');
+    const assigneeFullName = person?.fullName || (person?.nickname ? `${person.nickname}` : assignee);
+    const assigneeAvatarUrl = person?.avatarUrl ?? null;
+    const assigneeId = ticket.assigneeId;
     const trackLabel = ticket.track === 'RD' ? 'R&D' : 'Implement';
     const title = ticket.title?.trim() || ticket.module;
 
@@ -130,6 +137,9 @@ export function buildAnalyticsReport(
         title,
         trackLabel,
         assignee,
+        assigneeId,
+        assigneeFullName,
+        assigneeAvatarUrl,
         issueType: 'missing-mr-link',
         severity: 'High',
         detail: `สถานะ ${status} แต่ยังไม่มีลิงก์ Merge Request (mygit)`,
@@ -143,6 +153,9 @@ export function buildAnalyticsReport(
         title,
         trackLabel,
         assignee,
+        assigneeId,
+        assigneeFullName,
+        assigneeAvatarUrl,
         issueType: 'missing-first-due',
         severity: 'Medium',
         detail: 'เริ่มงานแล้วแต่ยังไม่ได้ล็อกวันส่งครั้งแรก (firstDueOn)',
@@ -156,6 +169,9 @@ export function buildAnalyticsReport(
         title,
         trackLabel,
         assignee,
+        assigneeId,
+        assigneeFullName,
+        assigneeAvatarUrl,
         issueType: 'missing-story-points',
         severity: 'Low',
         detail: 'ยังไม่ได้ระบุ Story Points บนบอร์ด',
@@ -169,6 +185,9 @@ export function buildAnalyticsReport(
         title,
         trackLabel,
         assignee,
+        assigneeId,
+        assigneeFullName,
+        assigneeAvatarUrl,
         issueType: 'unassigned-active',
         severity: 'High',
         detail: `ใบงานอยู่ในสถานะ ${status} แต่ยังไม่มีผู้รับผิดชอบ`,
@@ -186,6 +205,9 @@ export function buildAnalyticsReport(
         title,
         trackLabel,
         assignee,
+        assigneeId,
+        assigneeFullName,
+        assigneeAvatarUrl,
         issueType: 'bug-missing-cause',
         severity: 'Medium',
         detail: 'ใบงาน Bug ปิดแล้วแต่ยังไม่ระบุสาเหตุ (Bug Cause)',
@@ -204,6 +226,9 @@ export function buildAnalyticsReport(
           title,
           trackLabel,
           assignee,
+          assigneeId,
+          assigneeFullName,
+          assigneeAvatarUrl,
           issueType: 'actual-md-outlier',
           severity: ratio >= 2 ? 'High' : 'Medium',
           detail: `Actual/Estimate = ${round2(ratio)}x (Z-Score ${round2(z)}) สูงกว่าค่าปกติของขนาด ${ticket.size}`,

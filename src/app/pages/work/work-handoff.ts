@@ -124,6 +124,9 @@ export class WorkHandoffPage {
 
   protected readonly gridOptions: SfGridOptions = {
     id: 'work-handoff-grid',
+    paging: true,
+    pageSize: 10,
+    pageSizes: [10, 25, 50],
     sorting: true,
     filtering: 'Excel',
     search: true,

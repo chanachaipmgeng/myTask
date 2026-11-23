@@ -108,6 +108,8 @@ export class DisputesPage implements OnInit {
   protected readonly disputeGridOptions: SfGridOptions = {
     id: 'disputes-list-grid',
     height: '380',
+    paging: true,
+    pageSize: 8,
     sorting: true,
     search: true,
     resizable: true,

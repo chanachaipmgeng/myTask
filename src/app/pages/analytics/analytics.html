@@ -42,9 +42,18 @@
           </p>
           <a ejs-button cssClass="e-outline e-small" routerLink="/mygit">ซิงก์ GitLab MR</a>
         </div>
+        <ng-template #hygieneAssigneeTpl let-data>
+          <app-person-avatar
+            [personId]="data.assigneeId"
+            [name]="data.assigneeFullName || data.assignee"
+            [showName]="true"
+            size="xs"
+          />
+        </ng-template>
         <app-sf-grid
           [data]="report().syncHygiene.issues"
           [columns]="hygieneColumns"
+          [cellTemplates]="{ assignee: hygieneAssigneeTpl }"
           [options]="hygieneGridOptions"
         />
       </div>
@@ -62,9 +71,18 @@
             <a ejs-button cssClass="e-primary e-small" routerLink="/work/board">ไปที่กระดานงาน</a>
           </div>
         </div>
+        <ng-template #riskAssigneeTpl let-data>
+          <app-person-avatar
+            [personId]="data.assigneeId"
+            [name]="data.assignee"
+            [showName]="true"
+            size="xs"
+          />
+        </ng-template>
         <app-sf-grid
           [data]="report().deliveryRisks"
           [columns]="riskColumns"
+          [cellTemplates]="{ assignee: riskAssigneeTpl }"
           [options]="riskGridOptions"
         />
       </div>
@@ -76,9 +94,18 @@
           วิเคราะห์ความชันแนวโน้มรายเดือน (OLS Regression Slope) และสรุปจุดแข็งกับประเด็นที่หัวหน้าสายงานควรใช้พูดคุย
           1-on-1 เพื่อพัฒนาบุคลากรแต่ละคนอย่างตรงจุด
         </p>
+        <ng-template #coachingPersonTpl let-data>
+          <app-person-avatar
+            [personId]="data.personId"
+            [name]="data.fullName || data.nickname"
+            [showName]="true"
+            size="xs"
+          />
+        </ng-template>
         <app-sf-grid
           [data]="report().coachingInsights"
           [columns]="coachingColumns"
+          [cellTemplates]="{ nickname: coachingPersonTpl }"
           [options]="coachingGridOptions"
         />
       </div>

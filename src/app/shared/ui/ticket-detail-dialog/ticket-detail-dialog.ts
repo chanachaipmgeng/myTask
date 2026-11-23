@@ -14,6 +14,7 @@ import { ShellNotice } from '../../../core/shell-notice';
 import { TicketDetailService } from '../../../core/ticket-detail.service';
 import { scoreTicket } from '../../../../../shared/domain/scoring';
 import { workflowStatusOf } from '../../../../../shared/domain/workflow';
+import { SfDatePickerComponent } from '../../sf/sf-datepicker/sf-datepicker';
 import { SfDialogComponent } from '../../sf/sf-dialog/sf-dialog';
 import { SfNumberComponent } from '../../sf/sf-number/sf-number';
 import { SfTabItem, SfTabsComponent } from '../../sf/sf-tabs/sf-tabs';
@@ -32,6 +33,7 @@ import { StatusBadgeComponent } from '../status-badge/status-badge';
     PersonAvatarComponent,
     StatusBadgeComponent,
     SlicePipe,
+    SfDatePickerComponent,
     SfDialogComponent,
     SfNumberComponent,
     SfTabsComponent,

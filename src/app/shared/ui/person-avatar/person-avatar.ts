@@ -89,13 +89,30 @@ export class PersonAvatarComponent {
   protected readonly initials = computed(() => {
     if (this.isUnassigned()) return '';
     // Strip role/track suffix after middot (e.g. "ชนะชัย · Lead" -> "ชนะชัย")
-    const base = this.displayName().split('·')[0]?.trim() ?? '';
-    if (!base || base === '-' || base === '?') return '';
-    const parts = base.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) {
-      return `${parts[0]!.charAt(0)}${parts[1]!.charAt(0)}`.toUpperCase();
+    const raw = this.displayName().split('·')[0]?.trim() ?? '';
+    if (!raw || raw === '-' || raw === '?') return '';
+
+    // Strip parentheses, brackets and their contents (e.g. "Aimjit (เอม)" -> "Aimjit", "Chanachai (โอ๋) Otepim" -> "Chanachai Otepim")
+    const withoutParens = raw.replace(/\([^)]*\)/g, ' ').replace(/\[[^\]]*\]/g, ' ').trim();
+    const cleanWithout = withoutParens.replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, ' ').trim();
+    const words = cleanWithout ? cleanWithout.split(/\s+/).filter(Boolean) : [];
+
+    if (words.length >= 2) {
+      // First letter of first name + First letter of last name, e.g. "Chanachai Otepim" -> "CO"
+      const first = Array.from(words[0]!)[0] ?? '';
+      const last = Array.from(words[words.length - 1]!)[0] ?? '';
+      return `${first}${last}`.toUpperCase();
     }
-    return base.slice(0, 2).toUpperCase();
+    if (words.length === 1) {
+      // Single word: take first 2 characters (handles surrogate pairs and Thai characters)
+      const chars = Array.from(words[0]!);
+      return chars.slice(0, 2).join('').toUpperCase();
+    }
+
+    // Fallback: strip any non-letters/numbers and take first 2 characters
+    const fallback = raw.replace(/[^\p{L}\p{N}]/gu, '');
+    const chars = Array.from(fallback);
+    return chars.slice(0, 2).join('').toUpperCase();
   });
 
   protected readonly fallbackBg = computed(() => {

@@ -136,6 +136,8 @@ export class TeamDashboard {
   protected readonly snapshotGridOptions: SfGridOptions = {
     id: 'team-snapshot-grid',
     height: '320',
+    paging: true,
+    pageSize: 8,
     sorting: true,
     resizable: true,
     excelExport: true,

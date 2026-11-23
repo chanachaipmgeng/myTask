@@ -139,56 +139,176 @@
     badge="สำคัญ"
     badgeTone="danger"
   >
-    <div actions class="w-full sm:w-64">
-      <app-sf-textbox
-        placeholder="ค้นหาชื่อ / สายงาน / สิทธิ์..."
-        [value]="personQuery()"
-        [clearButton]="true"
-        (valueChange)="personQuery.set($event)"
-      />
+    <div actions class="flex flex-wrap items-center gap-2">
+      <div class="inline-flex rounded-lg border border-[color:var(--border)] p-0.5 bg-slate-100 dark:bg-slate-800">
+        <button
+          type="button"
+          class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5"
+          [class.bg-white]="rosterViewMode() === 'grid'"
+          [class.shadow-sm]="rosterViewMode() === 'grid'"
+          [class.text-blue-600]="rosterViewMode() === 'grid'"
+          [class.dark:bg-slate-700]="rosterViewMode() === 'grid'"
+          (click)="rosterViewMode.set('grid')"
+        >
+          <span class="e-icons e-table"></span>
+          ตาราง
+        </button>
+        <button
+          type="button"
+          class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5"
+          [class.bg-white]="rosterViewMode() === 'card'"
+          [class.shadow-sm]="rosterViewMode() === 'card'"
+          [class.text-blue-600]="rosterViewMode() === 'card'"
+          [class.dark:bg-slate-700]="rosterViewMode() === 'card'"
+          (click)="rosterViewMode.set('card')"
+        >
+          <span class="e-icons e-grid-view"></span>
+          การ์ด
+        </button>
+      </div>
+      <div class="w-full sm:w-64">
+        <app-sf-textbox
+          placeholder="ค้นหาชื่อ / สายงาน / สิทธิ์..."
+          [value]="personQuery()"
+          [clearButton]="true"
+          (valueChange)="personQuery.set($event)"
+        />
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-      @for (person of filteredRoster(); track person.id) {
-        <app-section-card variant="nested" [showHead]="false">
-          <div class="flex flex-col gap-3">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-3 min-w-0">
-                <app-person-avatar [personId]="person.id" [name]="person.nickname" size="md" />
-                <div class="flex flex-col gap-0.5 min-w-0">
-                  <span class="font-bold text-sm truncate">{{ person.nickname }}</span>
-                  <span class="fine m-0 truncate">{{ person.role }} · @{{ person.gitlabUsername || person.id }}</span>
+    <!-- DataGrid View -->
+    <ng-template #rosterPersonTpl let-data>
+      <div class="flex items-center gap-2.5">
+        <app-person-avatar [personId]="data.id" [name]="data.nickname" size="xs" />
+        <div class="flex flex-col min-w-0">
+          <span class="font-bold text-sm leading-tight truncate">{{ data.nickname }}</span>
+          <span class="text-xs text-muted leading-tight truncate">{{ data.fullName || data.nickname }}</span>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #rosterRoleTpl let-data>
+      <div class="flex flex-col min-w-0">
+        <span class="text-sm font-medium leading-tight truncate">{{ data.role || data.jobTitle || '—' }}</span>
+        <span class="text-xs text-muted leading-tight truncate" [title]="data.email || ''">{{ data.email || data.department || ('@' + (data.gitlabUsername || data.id)) }}</span>
+      </div>
+    </ng-template>
+
+    <ng-template #rosterTrackTpl let-data>
+      <app-status-badge
+        [label]="data.track === 'RD' ? 'R&D' : 'Implement'"
+        [tone]="data.track === 'RD' ? 'info' : 'primary'"
+      />
+    </ng-template>
+
+    <ng-template #rosterAccessTpl let-data>
+      <app-sf-dropdown
+        [items]="accessOptions"
+        [value]="data.access ?? 'member'"
+        [disabled]="!canEdit()"
+        [options]="{ width: '100%' }"
+        (valueChange)="onAccess(data.id, $event)"
+      />
+    </ng-template>
+
+    <ng-template #rosterLevelTpl let-data>
+      <app-sf-dropdown
+        [items]="levelOptions"
+        [value]="data.level"
+        [disabled]="!canEdit()"
+        [options]="{ width: '100%' }"
+        (valueChange)="onLevel(data.id, $event)"
+      />
+    </ng-template>
+
+    @if (rosterViewMode() === 'grid') {
+      <app-sf-grid
+        [data]="filteredRoster()"
+        [columns]="rosterGridColumns"
+        [cellTemplates]="{
+          nickname: rosterPersonTpl,
+          role: rosterRoleTpl,
+          track: rosterTrackTpl,
+          access: rosterAccessTpl,
+          level: rosterLevelTpl
+        }"
+        [options]="rosterGridOptions"
+      />
+    } @else {
+      <!-- Card View with Pagination -->
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        @for (person of pagedRosterCards(); track person.id) {
+          <app-section-card variant="nested" [showHead]="false">
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-3 min-w-0">
+                  <app-person-avatar [personId]="person.id" [name]="person.nickname" size="md" />
+                  <div class="flex flex-col gap-0.5 min-w-0">
+                    <span class="font-bold text-sm truncate">{{ person.nickname }}</span>
+                    <span class="fine m-0 truncate">{{ person.role }} · @{{ person.gitlabUsername || person.id }}</span>
+                  </div>
                 </div>
+                <app-status-badge
+                  [label]="person.track === 'RD' ? 'R&D' : 'Implement'"
+                  [tone]="person.track === 'RD' ? 'info' : 'primary'"
+                />
               </div>
-              <app-status-badge
-                [label]="person.track === 'RD' ? 'R&D' : 'Implement'"
-                [tone]="person.track === 'RD' ? 'info' : 'primary'"
-              />
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-[color:var(--line)]">
+                <app-sf-dropdown
+                  cssClass="access-list"
+                  [attr.data-person-access]="person.id"
+                  [items]="accessOptions"
+                  [value]="person.access ?? 'member'"
+                  [disabled]="!canEdit()"
+                  [options]="{ width: '100%' }"
+                  (valueChange)="onAccess(person.id, $event)"
+                />
+                <app-sf-dropdown
+                  cssClass="level-list"
+                  [attr.data-person]="person.id"
+                  [items]="levelOptions"
+                  [value]="person.level"
+                  [disabled]="!canEdit()"
+                  [options]="{ width: '100%' }"
+                  (valueChange)="onLevel(person.id, $event)"
+                />
+              </div>
             </div>
-            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-[color:var(--line)]">
-              <app-sf-dropdown
-                cssClass="access-list"
-                [attr.data-person-access]="person.id"
-                [items]="accessOptions"
-                [value]="person.access ?? 'member'"
-                [disabled]="!canEdit()"
-                [options]="{ width: '100%' }"
-                (valueChange)="onAccess(person.id, $event)"
-              />
-              <app-sf-dropdown
-                cssClass="level-list"
-                [attr.data-person]="person.id"
-                [items]="levelOptions"
-                [value]="person.level"
-                [disabled]="!canEdit()"
-                [options]="{ width: '100%' }"
-                (valueChange)="onLevel(person.id, $event)"
-              />
-            </div>
+          </app-section-card>
+        } @empty {
+          <p class="kpi-note col-span-full text-center py-6">ไม่พบพนักงานตามคำค้นหา</p>
+        }
+      </div>
+
+      @if (totalCardPages() > 1) {
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[color:var(--line)]">
+          <span class="text-xs text-muted">
+            แสดง {{ (rosterCardPage() - 1) * rosterCardPageSize + 1 }} - {{ Math.min(rosterCardPage() * rosterCardPageSize, filteredRoster().length) }} จาก {{ filteredRoster().length }} คน
+          </span>
+          <div class="flex items-center gap-2">
+            <button
+              ejs-button
+              cssClass="e-small e-outline"
+              type="button"
+              [disabled]="rosterCardPage() <= 1"
+              (click)="setCardPage(rosterCardPage() - 1)"
+            >
+              « หน้าก่อนหน้า
+            </button>
+            <span class="text-xs font-semibold px-2">หน้า {{ rosterCardPage() }} / {{ totalCardPages() }}</span>
+            <button
+              ejs-button
+              cssClass="e-small e-outline"
+              type="button"
+              [disabled]="rosterCardPage() >= totalCardPages()"
+              (click)="setCardPage(rosterCardPage() + 1)"
+            >
+              หน้าถัดไป »
+            </button>
           </div>
-        </app-section-card>
+        </div>
       }
-    </div>
+    }
   </app-section-card>
 
   <div class="card-grid-2">
@@ -342,9 +462,13 @@
     [badge]="auditLogs().length + ' รายการล่าสุด'"
     badgeTone="secondary"
   >
+    <ng-template #auditTimeTpl let-data>
+      <span class="font-mono text-xs">{{ data.createdAt | dateTime }}</span>
+    </ng-template>
     <app-sf-grid
       [data]="auditLogs()"
       [columns]="auditColumns"
+      [cellTemplates]="{ createdAt: auditTimeTpl }"
       [options]="auditGridOptions"
     />
   </app-section-card>

@@ -113,11 +113,10 @@
               />
             </app-form-field>
             <app-form-field label="วันที่">
-              <input
-                class="e-input"
-                type="date"
+              <app-sf-datepicker
                 [value]="logDate()"
-                (change)="logDate.set($any($event.target).value)"
+                [options]="{ format: 'dd/MM/yyyy', width: '100%', placeholder: 'เลือกวันที่' }"
+                (valueChange)="logDate.set($event)"
               />
             </app-form-field>
             <app-form-field label="หมายเหตุ" class="span-2">

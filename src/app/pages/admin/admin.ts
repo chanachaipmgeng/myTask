@@ -29,6 +29,7 @@ import { ThemeService } from '../../core/theme.service';
 import { beToCe, ceToBe, createYearCycle, type ScorecardCycleStatus } from '../../../../shared/domain/scorecard-cycle';
 import { listOrgTeamOptions } from '../../../../shared/domain/workspace-scope';
 import {
+  DateTimePipe,
   FlashMessagesComponent,
   FormFieldComponent,
   PageHeadComponent,
@@ -54,6 +55,7 @@ import {
   imports: [
     ButtonModule,
     RouterLink,
+    DateTimePipe,
     PageHeadComponent,
     PersonAvatarComponent,
     SectionCardComponent,
@@ -73,6 +75,7 @@ import {
   templateUrl: './admin.html',
 })
 export class AdminPage {
+  protected readonly Math = Math;
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
   protected readonly theme = inject(ThemeService);
@@ -162,6 +165,46 @@ export class AdminPage {
       createdAt: '2025-10-31T09:00:00Z',
     },
   ]);
+
+  protected readonly rosterViewMode = signal<'grid' | 'card'>('grid');
+  protected readonly rosterCardPage = signal(1);
+  protected readonly rosterCardPageSize = 12;
+
+  protected readonly rosterGridColumns: SfGridColumn[] = [
+    { field: 'nickname', headerText: 'พนักงาน', width: 210 },
+    { field: 'role', headerText: 'ตำแหน่ง / อีเมล', width: 200 },
+    { field: 'track', headerText: 'สายงาน', width: 110, textAlign: 'Center' },
+    { field: 'access', headerText: 'สิทธิ์ (Access)', width: 160 },
+    { field: 'level', headerText: 'ระดับโควตา (Level)', width: 160 },
+  ];
+
+  protected readonly rosterGridOptions: SfGridOptions = {
+    id: 'admin-roster-grid-v1',
+    paging: true,
+    pageSize: 15,
+    pageSizes: [10, 15, 25, 50, 100],
+    sorting: true,
+    excelExport: true,
+    csvExport: true,
+    exportFileName: 'team-roster-roles',
+  };
+
+  protected readonly pagedRosterCards = computed(() => {
+    const all = this.filteredRoster();
+    const page = this.rosterCardPage();
+    const start = (page - 1) * this.rosterCardPageSize;
+    return all.slice(start, start + this.rosterCardPageSize);
+  });
+
+  protected readonly totalCardPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredRoster().length / this.rosterCardPageSize))
+  );
+
+  protected setCardPage(page: number): void {
+    if (page >= 1 && page <= this.totalCardPages()) {
+      this.rosterCardPage.set(page);
+    }
+  }
 
   protected readonly filteredRoster = computed(() => {
     const q = this.personQuery().trim().toLowerCase();

@@ -6,6 +6,16 @@
       : 'แต่ละคนเป็นแถว ใบงานเป็นช่วงจากวันเริ่มจริงถึงวันครบกำหนด ถ้าไม่มีวันครบกำหนดใช้วันส่งครั้งแรก แถบสีส้มคือใบที่หลุดจากสัปดาห์ที่ commit ปฏิทินนี้อ่านอย่างเดียว ไม่เขียนวันกลับไปที่ใบงาน'"
   >
     <div actions class="flex flex-wrap items-center gap-2">
+      @if (!isMine) {
+        <app-form-field label="ทีม" variant="filter">
+          <app-sf-dropdown
+            [items]="teamOptions()"
+            [value]="selectedTeam()"
+            [options]="{ placeholder: 'เลือกทีม', width: '160px' }"
+            (valueChange)="setTeam($event)"
+          />
+        </app-form-field>
+      }
       <app-form-field label="คน" variant="filter">
         <app-sf-dropdown
           [items]="personOptions()"
@@ -28,6 +38,31 @@
         <app-status-badge [label]="'แสดง ' + boardModel().shown + ' ใบ'" tone="info"></app-status-badge>
         @if (boardModel().slipped > 0) {
           <app-status-badge [label]="'หลุดสัปดาห์ ' + boardModel().slipped" tone="warning"></app-status-badge>
+        }
+        @if (personId() === 'All' && totalResourcePages() > 1) {
+          <div class="inline-flex items-center gap-1.5 ml-2 pl-2 border-l border-[color:var(--border)]">
+            <button
+              ejs-button
+              cssClass="e-small e-outline"
+              type="button"
+              [disabled]="resourcePage() <= 1"
+              (click)="setResourcePage(resourcePage() - 1)"
+            >
+              « หน้าก่อน
+            </button>
+            <span class="text-xs font-semibold px-1 whitespace-nowrap">
+              หน้า {{ resourcePage() }} / {{ totalResourcePages() }} ({{ filteredPeopleCount() }} คน)
+            </span>
+            <button
+              ejs-button
+              cssClass="e-small e-outline"
+              type="button"
+              [disabled]="resourcePage() >= totalResourcePages()"
+              (click)="setResourcePage(resourcePage() + 1)"
+            >
+              หน้าถัดไป »
+            </button>
+          </div>
         }
       </div>
 

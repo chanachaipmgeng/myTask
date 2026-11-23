@@ -203,7 +203,10 @@
           title="ประวัติ sync OpenProject"
           subtitle="บันทึกการซิงก์ข้อมูลจาก OpenProject ล่าสุด"
         >
-          <app-sf-grid [data]="data()?.lastRuns ?? []" [columns]="opRunColumns" [options]="runGridOptions" />
+          <ng-template #opTimeTpl let-data>
+            <span class="font-mono text-xs">{{ data.started_at | dateTime }}</span>
+          </ng-template>
+          <app-sf-grid [data]="data()?.lastRuns ?? []" [columns]="opRunColumns" [options]="runGridOptions" [cellTemplates]="{ started_at: opTimeTpl }" />
         </app-section-card>
       </div>
     </ng-template>
@@ -251,7 +254,10 @@
           title="ประวัติซิงก์ GitLab"
           subtitle="ประวัติการจับคู่ Merge Request กับใบงานในระบบ"
         >
-          <app-sf-grid [data]="gitlabData()?.lastRuns ?? []" [columns]="gitlabRunColumns" [options]="runGridOptions" />
+          <ng-template #gitlabTimeTpl let-data>
+            <span class="font-mono text-xs">{{ data.started_at | dateTime }}</span>
+          </ng-template>
+          <app-sf-grid [data]="gitlabData()?.lastRuns ?? []" [columns]="gitlabRunColumns" [options]="runGridOptions" [cellTemplates]="{ started_at: gitlabTimeTpl }" />
         </app-section-card>
       </div>
     </ng-template>
@@ -294,7 +300,10 @@
           title="ประวัติส่งแจ้งเตือน Teams"
           subtitle="บันทึกการส่งแจ้งเตือนเข้า Microsoft Teams"
         >
-          <app-sf-grid [data]="teamsData()?.lastRuns ?? []" [columns]="teamsRunColumns" [options]="runGridOptions" />
+          <ng-template #teamsTimeTpl let-data>
+            <span class="font-mono text-xs">{{ data.started_at | dateTime }}</span>
+          </ng-template>
+          <app-sf-grid [data]="teamsData()?.lastRuns ?? []" [columns]="teamsRunColumns" [options]="runGridOptions" [cellTemplates]="{ started_at: teamsTimeTpl }" />
         </app-section-card>
       </div>
     </ng-template>

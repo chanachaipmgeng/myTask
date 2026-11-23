@@ -11,6 +11,7 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { WORKFLOW_STATUSES } from '../../core/models';
 import {
+  DateTimePipe,
   LoadingSkeletonComponent,
   PageHeadComponent,
   SectionCardComponent,
@@ -74,6 +75,7 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
+    DateTimePipe,
     PageHeadComponent,
     SectionCardComponent,
     LoadingSkeletonComponent,

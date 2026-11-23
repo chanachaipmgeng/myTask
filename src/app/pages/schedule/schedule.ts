@@ -50,7 +50,7 @@ import {
   StatusBadgeComponent,
   workflowStatusToneMap,
 } from '../../shared/ui';
-import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
+import { listOrgTeamOptions, type WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
 interface LoadChartRow {
   name: string;
@@ -227,6 +227,43 @@ export class SchedulePage {
   protected readonly personId = signal<string>(
     this.isMine ? (currentSession()?.person.id ?? currentViewer().id) : 'All',
   );
+  protected readonly selectedTeam = signal<string>('All');
+  protected readonly resourcePage = signal<number>(1);
+  protected readonly resourcePageSize = signal<number>(15);
+
+  protected readonly teamOptions = computed(() => {
+    const list = listOrgTeamOptions(this.scorecard.people(), this.scorecard.teams());
+    return [
+      { text: 'ทุกทีม', value: 'All' },
+      ...list.map((t) => ({ text: t.label, value: t.id })),
+    ];
+  });
+
+  protected readonly filteredPeopleCount = computed(() => {
+    const track = this.track();
+    const team = this.selectedTeam();
+    return this.scopedPeople().filter(
+      (person) =>
+        (track === 'All' || normalizeTrack(person.track) === normalizeTrack(track)) &&
+        (team === 'All' || person.teamId === team),
+    ).length;
+  });
+
+  protected readonly totalResourcePages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredPeopleCount() / this.resourcePageSize())),
+  );
+
+  protected setResourcePage(page: number): void {
+    if (page >= 1 && page <= this.totalResourcePages()) {
+      this.resourcePage.set(page);
+    }
+  }
+
+  protected setTeam(teamId: string): void {
+    this.selectedTeam.set(teamId || 'All');
+    this.resourcePage.set(1);
+  }
+
   protected readonly dayFilter = signal<DayFilter>('ALL');
   protected readonly scheduleHeight = signal('640px');
   protected readonly selectedDay = signal<Date>(
@@ -235,12 +272,17 @@ export class SchedulePage {
 
   protected readonly personOptions = computed(() => {
     const track = this.track();
+    const team = this.selectedTeam();
     const people = this.scopedPeople()
-      .filter((person) => track === 'All' || normalizeTrack(person.track) === normalizeTrack(track))
+      .filter(
+        (person) =>
+          (track === 'All' || normalizeTrack(person.track) === normalizeTrack(track)) &&
+          (team === 'All' || person.teamId === team),
+      )
       .slice()
       .sort((a, b) => a.nickname.localeCompare(b.nickname, 'th'));
     return [
-      { text: 'ทุกคน', value: 'All' },
+      { text: 'ทุกคน (ตามหน้า)', value: 'All' },
       ...people.map((person) => ({
         text: `${person.nickname} · ${trackDisplayLabel(person.track)}`,
         value: person.id,
@@ -249,7 +291,15 @@ export class SchedulePage {
   });
 
   protected readonly boardModel = computed(() =>
-    buildTeamSchedule(this.scopedPeople(), this.scopedTickets(), this.track(), this.personId()),
+    buildTeamSchedule(
+      this.scopedPeople(),
+      this.scopedTickets(),
+      this.track(),
+      this.personId(),
+      this.selectedTeam(),
+      this.resourcePage(),
+      this.resourcePageSize(),
+    ),
   );
   protected readonly eventSettings = computed(() => ({
     dataSource: this.boardModel().events,
@@ -371,6 +421,7 @@ export class SchedulePage {
   protected setPerson(raw: string): void {
     const value = raw?.trim() || 'All';
     this.personId.set(value);
+    this.resourcePage.set(1);
   }
 
   protected setDayFilter(value: string): void {
@@ -547,12 +598,22 @@ function buildTeamSchedule(
   tickets: readonly Ticket[],
   track: TrackFilter,
   personId: string,
+  teamId = 'All',
+  page = 1,
+  pageSize = 15,
 ): TeamSchedule {
-  const byTrack = people.filter(
-    (person) => track === 'All' || normalizeTrack(person.track) === normalizeTrack(track),
+  const byTrackAndTeam = people.filter(
+    (person) =>
+      (track === 'All' || normalizeTrack(person.track) === normalizeTrack(track)) &&
+      (teamId === 'All' || person.teamId === teamId),
   );
-  const visiblePeople =
-    personId === 'All' ? byTrack : byTrack.filter((person) => person.id === personId);
+  let visiblePeople: readonly Person[];
+  if (personId !== 'All') {
+    visiblePeople = byTrackAndTeam.filter((person) => person.id === personId);
+  } else {
+    const start = (page - 1) * pageSize;
+    visiblePeople = byTrackAndTeam.slice(start, start + pageSize);
+  }
   const ids = new Set(visiblePeople.map((person) => person.id));
   const scoped = tickets.filter(
     (ticket) => track === 'All' || normalizeTrack(ticket.track) === normalizeTrack(track),

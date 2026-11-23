@@ -38,7 +38,8 @@ export class TeamsPage {
   ];
   protected readonly logGridOptions: SfGridOptions = {
     id: 'teams-log-grid',
-    paging: false,
+    paging: true,
+    pageSize: 8,
     resizable: true,
     excelExport: true,
     height: '240px',

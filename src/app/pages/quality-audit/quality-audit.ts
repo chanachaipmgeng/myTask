@@ -142,6 +142,9 @@ export class QualityAuditPage {
   ];
   protected readonly dodGridOptions: SfGridOptions = {
     id: 'quality-dod-grid',
+    paging: true,
+    pageSize: 10,
+    pageSizes: [10, 20, 50],
     sorting: true,
     resizable: true,
     search: true,
@@ -160,6 +163,9 @@ export class QualityAuditPage {
   ];
   protected readonly reopenGridOptions: SfGridOptions = {
     id: 'quality-reopen-grid',
+    paging: true,
+    pageSize: 10,
+    pageSizes: [10, 20, 50],
     sorting: true,
     filtering: 'Excel',
     resizable: true,

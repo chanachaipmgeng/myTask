@@ -43,8 +43,10 @@ export class SnapshotCheckPage {
   ];
 
   protected readonly gridOptions: SfGridOptions = {
-    id: 'snapshot-preview-diff-grid',
-    paging: false,
+    id: 'snapshot-preview-diff-grid-v2',
+    paging: true,
+    pageSize: 15,
+    pageSizes: [10, 15, 25, 50, 100],
     sorting: true,
     excelExport: true,
     csvExport: true,
