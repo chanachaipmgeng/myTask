@@ -19,6 +19,7 @@ import { canAssignWork } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import { workGanttTasks } from '../../core/work-views';
 import {
   FilterChipOption,
@@ -42,6 +43,7 @@ export class WorkTimeline {
   private readonly scorecard = inject(ScorecardService);
   private readonly hub = inject(WorkHubFilter);
   private readonly notice = inject(ShellNotice);
+  private readonly ticketDetail = inject(TicketDetailService);
   protected readonly theme = inject(ThemeService);
 
   @ViewChild('workGantt') private workGantt?: SfGanttComponent;
@@ -249,6 +251,28 @@ export class WorkTimeline {
     this.statusMessage.set(text);
     this.notice.success(text);
   }
+
+  protected onGanttRowSelected(args: { data?: unknown }): void {
+    const id = ganttTaskId(args.data);
+    if (id) this.ticketDetail.open(id);
+  }
+
+  protected onGanttTaskbarClick(args: { data?: unknown; task?: unknown }): void {
+    const id = ganttTaskId(args.data ?? args.task);
+    if (id) this.ticketDetail.open(id);
+  }
+}
+
+function ganttTaskId(raw: unknown): string {
+  if (!raw || typeof raw !== 'object') return '';
+  const record = raw as Record<string, unknown>;
+  const nested = record['taskData'];
+  if (nested && typeof nested === 'object') {
+    const taskId = (nested as Record<string, unknown>)['TaskID'];
+    if (typeof taskId === 'string') return taskId;
+  }
+  const direct = record['TaskID'];
+  return typeof direct === 'string' ? direct : '';
 }
 
 function toIsoDate(value: unknown): string | null | undefined {

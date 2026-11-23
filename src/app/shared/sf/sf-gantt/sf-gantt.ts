@@ -111,6 +111,8 @@ export interface SfGanttOptions {
         (actionComplete)="actionComplete.emit($event)"
         (taskbarEdited)="taskbarEdited.emit($event)"
         (queryTaskbarInfo)="queryTaskbarInfo.emit($event)"
+        (rowSelected)="rowSelected.emit($event)"
+        (onTaskbarClick)="taskbarClick.emit($event)"
       ></ejs-gantt>
     </div>
     </app-motion-wrapper>
@@ -137,6 +139,8 @@ export class SfGanttComponent implements AfterViewInit, OnDestroy {
   readonly actionComplete = output<any>();
   readonly taskbarEdited = output<any>();
   readonly queryTaskbarInfo = output<any>();
+  readonly rowSelected = output<any>();
+  readonly taskbarClick = output<any>();
 
   protected readonly defaultToolbar: ToolbarItem[] = [
     'ZoomIn',

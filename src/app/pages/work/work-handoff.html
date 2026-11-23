@@ -85,7 +85,14 @@
     subtitle="ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล"
   >
     <ng-template #ticketIdTpl let-data>
-      <span class="font-semibold text-blue-600 dark:text-blue-400">{{ data.ticketId }}</span>
+      <button
+        ejs-button
+        cssClass="e-link e-small font-semibold"
+        type="button"
+        (click)="openTicket(data.ticketId)"
+      >
+        {{ data.ticketId }}
+      </button>
     </ng-template>
     <ng-template #statusTpl let-data>
       <app-status-badge

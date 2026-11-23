@@ -7,6 +7,7 @@ import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import {
   PageHeadComponent,
   SectionCardComponent,
@@ -39,6 +40,7 @@ import {
 })
 export class MyWorkspacePage {
   private readonly scorecard = inject(ScorecardService);
+  private readonly ticketDetail = inject(TicketDetailService);
   protected readonly theme = inject(ThemeService);
 
   protected readonly role = effectiveRole;
@@ -203,6 +205,11 @@ export class MyWorkspacePage {
 
   /** Agenda card reveal — เปิดแผง checklist ทับการ์ดทีละใบ (Syncfusion Card Reveal) */
   protected readonly revealedAgendaId = signal<string | null>(null);
+
+  protected openTicket(id: string, event?: Event): void {
+    event?.stopPropagation();
+    if (id) this.ticketDetail.open(id);
+  }
 
   protected openAgendaReveal(id: string): void {
     this.revealedAgendaId.set(id);

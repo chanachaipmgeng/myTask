@@ -75,8 +75,9 @@ npm --prefix server run build
     - `app-flash-messages` — รวม success / error / info / warning เป็น `ejs-message`
     - `app-filter-chips` — ชิปกรองสถานะ/บทบาท
     - `app-confirm-dialog` — ยืนยันสั้นๆ (queue writeback, board block) · animation Fade
-  - **DataGrid cell polish** (`/work/list`, `/people`, `/tickets`): badge ในเซลล์ · progress ดัชนีคน · Search ใน toolbar (เมื่อไม่มีช่องค้นหาภายนอก) · Action `ดูสรุป` บน List — แนว Essential UI Kit แบบจุดๆ ไม่ยกบล็อกทั้งชุด · เพิ่มคอลัมน์บน grid ที่ `enablePersistence` ต้องเปลี่ยน `id` (เช่น `work-operational-list-grid-v2`)
-  - **แผงรายละเอียดในหน้า**: `/schedule` ใช้คอลัมน์ขวา (ปฏิทินย่อย + รายวัน) · `/tickets/disputes` ใช้ `ejs-splitter` ซ้ายตารางขวารายละเอียด — อย่าใช้ `ejs-sidebar` Over drawer ทับ Timeline/ตาราง
+  - **DataGrid cell polish** (`/work/list`, `/people`, `/tickets`): badge ในเซลล์ · progress ดัชนีคน · Search ใน toolbar (เมื่อไม่มีช่องค้นหาภายนอก) · Action `ดูสรุป` บน List เปิด drawer รายละเอียด — แนว Essential UI Kit แบบจุดๆ ไม่ยกบล็อกทั้งชุด · เพิ่มคอลัมน์บน grid ที่ `enablePersistence` ต้องเปลี่ยน `id` (เช่น `work-operational-list-grid-v4`)
+  - **แผงรายละเอียดในหน้า**: `/schedule` ใช้คอลัมน์ขวา (ปฏิทินย่อย + รายวัน) · `/tickets/disputes` ใช้ `ejs-splitter` ซ้ายตารางขวารายละเอียด — อย่าใช้ `ejs-sidebar` Over drawer แทนแผงในหน้า
+  - **รายละเอียดใบงานกลาง**: `TicketDetailService.open(id)` + `app-ticket-detail-dialog` = drawer ขวา (`ejs-sidebar` Right/Over) ที่ shell · Board แก้แผนยังเป็น edit dialog + ปุ่ม 360° · แจ้งเตือน AppBar ที่ม `ticketId` เปิด drawer ได้
   - **P13 UX polish**: Gantt สลับ ProjectView/ResourceView · Board Dialog มี Delivery Timeline · Toast typed · AppBar แจ้งเตือนไอคอน
   - **Syncfusion style layers** (ธีมมาตรฐานก่อน แล้วค่อยแต่งจุดกลาง):
     1. Theme CSS — `assets/themes/tailwind3(.css|-dark.css)` ผ่าน `#sf-theme-link` (`ThemeService`)

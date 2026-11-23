@@ -1,208 +1,235 @@
-<app-sf-dialog
-  #dialog
-  id="ticketDetailDialog"
-  [header]="data()?.ticket?.id ? ('ใบงาน ' + data()!.ticket!.id) : 'รายละเอียดใบงาน'"
-  [visible]="false"
-  [options]="{ width: '920px', isModal: true, showCloseIcon: true, animationEffect: 'Fade', cssClass: 'ticket-detail-dialog' }"
-  (closed)="onDialogClose()"
+<ejs-sidebar
+  #drawer
+  id="ticket-detail-drawer"
+  class="ticket-detail-drawer"
+  position="Right"
+  type="Over"
+  [width]="drawerWidth"
+  [isOpen]="isOpen()"
+  [showBackdrop]="true"
+  [closeOnDocumentClick]="true"
+  [enableGestures]="false"
+  [animate]="true"
+  (close)="onDrawerClose()"
 >
-  @if (loading()) {
-    <p class="muted">กำลังโหลดรายละเอียด…</p>
-  } @else if (!data()?.ok || !data()?.ticket) {
-    <p class="muted">{{ data()?.message || 'ไม่พบข้อมูลใบงาน' }}</p>
-  } @else {
-    @let t = data()!.ticket!;
-    @let scores = data()!.scores;
-    <div class="detail-meta">
-      <app-status-badge [value]="t.workflowStatus || ''" [toneMap]="workflowStatusToneMap"></app-status-badge>
-      <span class="meta-chip inline-flex items-center gap-1.5">
-        <app-person-avatar [personId]="t.assigneeId" [name]="t.assigneeId || 'ยังไม่มอบหมาย'" [showName]="true" size="xs"></app-person-avatar>
-      </span>
-      <span class="meta-chip">{{ data()!.source === 'live' ? 'สดจาก myProject' : 'โหมดออฟไลน์' }}</span>
-      @if (data()!.opUrl) {
-        <a class="meta-link" [href]="data()!.opUrl!" target="_blank" rel="noopener">เปิดใน myProject</a>
-      }
-      <button ejs-button cssClass="e-outline e-small" type="button" (click)="refresh()">รีเฟรช</button>
-    </div>
+  <div class="ticket-drawer">
+    <header class="ticket-drawer__head">
+      <div class="ticket-drawer__titles">
+        <p class="ticket-drawer__eyebrow m-0">รายละเอียดใบงาน</p>
+        <h2 class="ticket-drawer__title m-0">
+          {{ data()?.ticket?.id ? ('ใบงาน ' + data()!.ticket!.id) : 'กำลังโหลด…' }}
+        </h2>
+      </div>
+      <button
+        ejs-button
+        cssClass="e-flat e-small"
+        type="button"
+        iconCss="e-icons e-close"
+        aria-label="ปิด"
+        (click)="onClose()"
+      ></button>
+    </header>
 
-    <ng-template #infoTabTpl>
-      <div class="tab-pane">
-        <h3 class="ticket-title">{{ t.title || t.id }}</h3>
-        @if (data()!.description) {
-          <pre class="desc-block">{{ data()!.description }}</pre>
-        } @else {
-          <p class="muted">ไม่มีคำอธิบาย</p>
-        }
-        @if (scores) {
-          <div class="score-row">
-            <span>ตรงเวลา {{ scores.week }}</span>
-            <span>แม่นยำ {{ scores.accuracy }}</span>
-            <span>รีวิว {{ scores.review }}</span>
-            <span>Reopen {{ scores.reopen }}</span>
-            <strong>รวม {{ scores.total ?? '—' }}</strong>
-          </div>
-        }
-        @if ((data()!.relations?.length ?? 0) > 0) {
-          <h4>ความสัมพันธ์</h4>
-          <ul class="rel-list">
-            @for (rel of data()!.relations!; track rel.id) {
-              <li>
-                <strong>{{ rel.type }}</strong>
-                — {{ rel.fromTitle || rel.fromId }} → {{ rel.toTitle || rel.toId }}
-              </li>
+    <div class="ticket-drawer__body">
+      @if (loading()) {
+        <p class="muted">กำลังโหลดรายละเอียด…</p>
+      } @else if (!data()?.ok || !data()?.ticket) {
+        <p class="muted">{{ data()?.message || 'ไม่พบข้อมูลใบงาน' }}</p>
+      } @else {
+        @let t = data()!.ticket!;
+        @let scores = data()!.scores;
+        <div class="detail-meta">
+          <app-status-badge [value]="t.workflowStatus || ''" [toneMap]="workflowStatusToneMap"></app-status-badge>
+          <span class="meta-chip inline-flex items-center gap-1.5">
+            <app-person-avatar [personId]="t.assigneeId" [name]="t.assigneeId || 'ยังไม่มอบหมาย'" [showName]="true" size="xs"></app-person-avatar>
+          </span>
+          <span class="meta-chip">{{ data()!.source === 'live' ? 'สดจาก myProject' : 'โหมดออฟไลน์' }}</span>
+          @if (data()!.opUrl) {
+            <a class="meta-link" [href]="data()!.opUrl!" target="_blank" rel="noopener">เปิดใน myProject</a>
+          }
+          <button ejs-button cssClass="e-outline e-small" type="button" (click)="refresh()">รีเฟรช</button>
+        </div>
+
+        <ng-template #infoTabTpl>
+          <div class="tab-pane">
+            <h3 class="ticket-title">{{ t.title || t.id }}</h3>
+            @if (data()!.description) {
+              <pre class="desc-block">{{ data()!.description }}</pre>
+            } @else {
+              <p class="muted">ไม่มีคำอธิบาย</p>
             }
-          </ul>
-        }
-        @if ((data()!.attachments?.length ?? 0) > 0) {
-          <h4>ไฟล์แนบ</h4>
-          <ul class="rel-list">
-            @for (att of data()!.attachments!; track att.id) {
-              <li>
-                @if (att.downloadUrl) {
-                  <a [href]="att.downloadUrl" target="_blank" rel="noopener">{{ att.fileName }}</a>
-                } @else {
-                  {{ att.fileName }}
+            @if (scores) {
+              <div class="score-row">
+                <span>ตรงเวลา {{ scores.week }}</span>
+                <span>แม่นยำ {{ scores.accuracy }}</span>
+                <span>รีวิว {{ scores.review }}</span>
+                <span>Reopen {{ scores.reopen }}</span>
+                <strong>รวม {{ scores.total ?? '—' }}</strong>
+              </div>
+            }
+            @if ((data()!.relations?.length ?? 0) > 0) {
+              <h4>ความสัมพันธ์</h4>
+              <ul class="rel-list">
+                @for (rel of data()!.relations!; track rel.id) {
+                  <li>
+                    <strong>{{ rel.type }}</strong>
+                    — {{ rel.fromTitle || rel.fromId }} → {{ rel.toTitle || rel.toId }}
+                  </li>
                 }
-              </li>
+              </ul>
             }
-          </ul>
-        }
-      </div>
-    </ng-template>
-
-    <ng-template #timeTabTpl>
-      <div class="tab-pane">
-        <p class="muted">Estimate {{ t.estimateMd }} MD · Actual {{ t.actualMd }} MD</p>
-        <table class="mini-table">
-          <thead>
-            <tr>
-              <th>วันที่</th>
-              <th>ชั่วโมง</th>
-              <th>ผู้ลง</th>
-              <th>หมายเหตุ</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (entry of data()!.timeEntries ?? []; track entry.id + entry.spentOn) {
-              <tr>
-                <td>{{ entry.spentOn || '—' }}</td>
-                <td>{{ entry.hours }}</td>
-                <td>{{ entry.userTitle || '—' }}</td>
-                <td>{{ entry.comment || '—' }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="4" class="muted">ยังไม่มีรายการลงเวลา</td>
-              </tr>
+            @if ((data()!.attachments?.length ?? 0) > 0) {
+              <h4>ไฟล์แนบ</h4>
+              <ul class="rel-list">
+                @for (att of data()!.attachments!; track att.id) {
+                  <li>
+                    @if (att.downloadUrl) {
+                      <a [href]="att.downloadUrl" target="_blank" rel="noopener">{{ att.fileName }}</a>
+                    } @else {
+                      {{ att.fileName }}
+                    }
+                  </li>
+                }
+              </ul>
             }
-          </tbody>
-        </table>
-
-        <div class="log-form">
-          <h4>+ ลงเวลา (Log Time)</h4>
-          @if (!data()!.writeback) {
-            <p class="muted">Writeback ยังปิด — ฟอร์มพร้อมใช้เมื่อเปิด OPENPROJECT_WRITEBACK</p>
-          }
-          <div class="log-grid">
-            <app-form-field label="ชั่วโมง">
-              <app-sf-number
-                [value]="logHours()"
-                [min]="0.25"
-                [step]="0.25"
-                (valueChange)="logHours.set($event)"
-              />
-            </app-form-field>
-            <app-form-field label="วันที่">
-              <app-sf-datepicker
-                [value]="logDate()"
-                [options]="{ format: 'dd/MM/yyyy', width: '100%', placeholder: 'เลือกวันที่' }"
-                (valueChange)="logDate.set($event)"
-              />
-            </app-form-field>
-            <app-form-field label="หมายเหตุ" class="span-2">
-              <app-sf-textbox
-                [value]="logComment()"
-                (valueChange)="logComment.set($event)"
-              />
-            </app-form-field>
           </div>
-          <button
-            ejs-button
-            [isPrimary]="true"
-            type="button"
-            [disabled]="!data()!.writeback"
-            (click)="submitTime()"
-          >
-            บันทึกลง myProject
-          </button>
-        </div>
-      </div>
-    </ng-template>
+        </ng-template>
 
-    <ng-template #mrTabTpl>
-      <div class="tab-pane">
-        @for (mr of data()!.mrs ?? []; track mr.webUrl + mr.iid) {
-          <div class="mr-card">
-            <div class="mr-head">
-              <strong>{{ mr.title }}</strong>
-              <app-status-badge [label]="mr.ciStatus" [tone]="ciTone(mr.ciStatus)"></app-status-badge>
-            </div>
-            <p class="muted">
-              สถานะ {{ mr.state }} · รีวิว {{ mr.reviewRounds }} รอบ · ค้าง {{ mr.unresolvedThreads }} threads
-              @if (mr.commitSpan.commitCount) {
-                · Commit {{ mr.commitSpan.firstCommitOn }} → {{ mr.commitSpan.lastCommitOn }}
-                ({{ mr.commitSpan.commitCount }})
+        <ng-template #timeTabTpl>
+          <div class="tab-pane">
+            <p class="muted">Estimate {{ t.estimateMd }} MD · Actual {{ t.actualMd }} MD</p>
+            <table class="mini-table">
+              <thead>
+                <tr>
+                  <th>วันที่</th>
+                  <th>ชั่วโมง</th>
+                  <th>ผู้ลง</th>
+                  <th>หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (entry of data()!.timeEntries ?? []; track entry.id + entry.spentOn) {
+                  <tr>
+                    <td>{{ entry.spentOn || '—' }}</td>
+                    <td>{{ entry.hours }}</td>
+                    <td>{{ entry.userTitle || '—' }}</td>
+                    <td>{{ entry.comment || '—' }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="muted">ยังไม่มีรายการลงเวลา</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+
+            <div class="log-form">
+              <h4>+ ลงเวลา (Log Time)</h4>
+              @if (!data()!.writeback) {
+                <p class="muted">Writeback ยังปิด — ฟอร์มพร้อมใช้เมื่อเปิด OPENPROJECT_WRITEBACK</p>
               }
-            </p>
-            @if (mr.webUrl) {
-              <a [href]="mr.webUrl" target="_blank" rel="noopener">เปิดใน mygitplus</a>
+              <div class="log-grid">
+                <app-form-field label="ชั่วโมง">
+                  <app-sf-number
+                    [value]="logHours()"
+                    [min]="0.25"
+                    [step]="0.25"
+                    (valueChange)="logHours.set($event)"
+                  />
+                </app-form-field>
+                <app-form-field label="วันที่">
+                  <app-sf-datepicker
+                    [value]="logDate()"
+                    [options]="{ format: 'dd/MM/yyyy', width: '100%', placeholder: 'เลือกวันที่' }"
+                    (valueChange)="logDate.set($event)"
+                  />
+                </app-form-field>
+                <app-form-field label="หมายเหตุ" class="span-2">
+                  <app-sf-textbox
+                    [value]="logComment()"
+                    (valueChange)="logComment.set($event)"
+                  />
+                </app-form-field>
+              </div>
+              <button
+                ejs-button
+                [isPrimary]="true"
+                type="button"
+                [disabled]="!data()!.writeback"
+                (click)="submitTime()"
+              >
+                บันทึกลง myProject
+              </button>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template #mrTabTpl>
+          <div class="tab-pane">
+            @for (mr of data()!.mrs ?? []; track mr.webUrl + mr.iid) {
+              <div class="mr-card">
+                <div class="mr-head">
+                  <strong>{{ mr.title }}</strong>
+                  <app-status-badge [label]="mr.ciStatus" [tone]="ciTone(mr.ciStatus)"></app-status-badge>
+                </div>
+                <p class="muted">
+                  สถานะ {{ mr.state }} · รีวิว {{ mr.reviewRounds }} รอบ · ค้าง {{ mr.unresolvedThreads }} threads
+                  @if (mr.commitSpan.commitCount) {
+                    · Commit {{ mr.commitSpan.firstCommitOn }} → {{ mr.commitSpan.lastCommitOn }}
+                    ({{ mr.commitSpan.commitCount }})
+                  }
+                </p>
+                @if (mr.webUrl) {
+                  <a [href]="mr.webUrl" target="_blank" rel="noopener">เปิดใน mygitplus</a>
+                }
+              </div>
+            } @empty {
+              <p class="muted">ยังไม่พบ MR ที่จับคู่ใบงานนี้</p>
             }
           </div>
-        } @empty {
-          <p class="muted">ยังไม่พบ MR ที่จับคู่ใบงานนี้</p>
-        }
-      </div>
-    </ng-template>
+        </ng-template>
 
-    <ng-template #activityTabTpl>
-      <div class="tab-pane">
-        <ul class="activity-list">
-          @for (act of data()!.activities ?? []; track act.createdAt + act.text) {
-            <li>
-              <time>{{ act.createdAt | slice: 0:16 }}</time>
-              <span>{{ act.text }}</span>
-            </li>
-          } @empty {
-            <li class="muted">ยังไม่มีประวัติจาก myProject</li>
-          }
-        </ul>
-        <div class="log-form">
-          <h4>ตอบกลับ</h4>
-          @if (!data()!.writeback) {
-            <p class="muted">Writeback ยังปิด — พิมพ์ได้ แต่ยังไม่ส่งจริง</p>
-          }
-          <app-sf-textbox
-            [multiline]="true"
-            [value]="replyComment()"
-            (valueChange)="replyComment.set($event)"
-          />
-          <button
-            ejs-button
-            [isPrimary]="true"
-            type="button"
-            class="mt-2"
-            [disabled]="!data()!.writeback || !replyComment().trim()"
-            (click)="submitComment()"
-          >
-            ส่งคอมเมนต์
-          </button>
-        </div>
-      </div>
-    </ng-template>
+        <ng-template #activityTabTpl>
+          <div class="tab-pane">
+            <ul class="activity-list">
+              @for (act of data()!.activities ?? []; track act.createdAt + act.text) {
+                <li>
+                  <time>{{ act.createdAt | slice: 0:16 }}</time>
+                  <span>{{ act.text }}</span>
+                </li>
+              } @empty {
+                <li class="muted">ยังไม่มีประวัติจาก myProject</li>
+              }
+            </ul>
+            <div class="log-form">
+              <h4>ตอบกลับ</h4>
+              @if (!data()!.writeback) {
+                <p class="muted">Writeback ยังปิด — พิมพ์ได้ แต่ยังไม่ส่งจริง</p>
+              }
+              <app-sf-textbox
+                [multiline]="true"
+                [value]="replyComment()"
+                (valueChange)="replyComment.set($event)"
+              />
+              <button
+                ejs-button
+                [isPrimary]="true"
+                type="button"
+                class="mt-2"
+                [disabled]="!data()!.writeback || !replyComment().trim()"
+                (click)="submitComment()"
+              >
+                ส่งคอมเมนต์
+              </button>
+            </div>
+          </div>
+        </ng-template>
 
-    <app-sf-tabs
-      [tabs]="detailTabs"
-      [tabTemplates]="{ info: infoTabTpl, time: timeTabTpl, mr: mrTabTpl, activity: activityTabTpl }"
-    />
-  }
-</app-sf-dialog>
+        <app-sf-tabs
+          [tabs]="detailTabs"
+          [tabTemplates]="{ info: infoTabTpl, time: timeTabTpl, mr: mrTabTpl, activity: activityTabTpl }"
+        />
+      }
+    </div>
+  </div>
+</ejs-sidebar>

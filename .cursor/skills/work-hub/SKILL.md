@@ -25,9 +25,17 @@ description: >-
 | Timeline | `ejs-gantt` · ทีม: สวิตช์ ProjectView/ResourceView + แก้วันถ้า `canAssignWork` · ของฉัน: ProjectView อ่านอย่างเดียว | `workGanttTasks`, `applyGanttDateEdit` |
 | Backlog | Grid ใน `section-card` · ทีม = Backlog หรือยังไม่มีผู้รับ · ของฉัน = Backlog ที่ assign ให้ฉัน · grid id คนละชุด | `workBacklogRows` |
 | Board | Kanban + Swimlane (ของฉันไม่มี swimlane ตามคน) + Dialog + Delivery Timeline | `workflow` + filter ตาม `assigneeId` |
-| List | Grid งาน · grid id คนละชุดระหว่างทีม/ของฉัน · ปุ่มไป Board ตาม scope | `workListRows` |
-| Handoff | เฉพาะ `/work/handoff` | `multi-team` / Scorecard handoff report |
-| Board block | `app-confirm-dialog` · edit dialog `#editDialog` | workflow guards |
+| List | Grid งาน · grid id คนละชุดระหว่างทีม/ของฉัน · ปุ่ม `ดูสรุป` → `TicketDetailService.open` | `workListRows` |
+| Handoff | เฉพาะ `/work/handoff` · คลิกรหัสใบเปิด drawer | `multi-team` / Scorecard handoff report |
+| Board block | `app-confirm-dialog` · edit dialog `#editDialog` · ปุ่ม 360° → drawer | workflow guards |
+
+## รายละเอียดใบงานกลาง (drawer ขวา)
+
+- บริการ: `src/app/core/ticket-detail.service.ts` — `open(id)` / `close()`
+- UI: `src/app/shared/ui/ticket-detail-dialog/` (`app-ticket-detail-dialog`) = `ejs-sidebar` Right · Over · ~560px · แท็บ รายละเอียด/เวลา/MR/ประวัติ
+- ติดตั้งครั้งเดียวใน `app.html` — หน้าอื่นแค่ `inject(TicketDetailService).open(id)`
+- ต่อจุดเข้า: List · Backlog · Queue · Tickets · Disputes · Quality/Time-audit · MyGit · Summary · Team-time · ค้นหาโกลบอล · แจ้งเตือน AppBar · Person Workspace · My Workspace · Gantt (`rowSelected`/`taskbarClick`) · Schedule · Handoff
+- อย่าใช้ Over drawer แทนคอลัมน์ขวาของ `/schedule` หรือ splitter ของ disputes — drawer ใบงานอยู่ระดับ shell
 
 ## Bento Grid Cockpit (`/cockpit` & `/me/cockpit`)
 
@@ -58,7 +66,7 @@ description: >-
 - สถานะ/แผน/แจ้งเตือน → `app-status-badge` + tone map ใน `shared/ui/badge.ts`
 - ดัชนีคน → `ejs-progressbar` สั้นในเซลล์ (`.grid-index-cell` ใน `styles/sf`)
 - Search ใน grid toolbar เมื่อยังไม่มีช่องค้นหาภายนอก
-- `/work/list` มีคอลัมน์ Action ปุ่ม `ดูสรุป` · grid id `work-operational-list-grid-v2`
+- `/work/list` มีคอลัมน์ Action ปุ่ม `ดูสรุป` เปิด drawer · grid id `work-operational-list-grid-v4` / `my-work-operational-list-grid-v4`
 - เพิ่มคอลัมน์บน grid ที่ `enablePersistence` → เปลี่ยน `id` หรือล้าง `localStorage` key `grid…` ไม่งั้นคอลัมน์ใหม่ไม่โผล่
 
 ## กฎ

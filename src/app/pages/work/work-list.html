@@ -52,26 +52,3 @@
     (rowSelected)="onRowSelected($event)"
   />
 </app-section-card>
-
-<app-sf-dialog #detailDialog header="สรุปใบงาน" width="480px">
-  @if (detail(); as row) {
-    <div class="app-modal__intro">
-      <p class="app-modal__intro-title">{{ row.workLabel }}</p>
-      <p class="app-modal__intro-meta">ผู้รับ: {{ row.assignee }} · ขนาด {{ row.size }}</p>
-    </div>
-    <div class="grid gap-2 text-sm">
-      <p class="m-0 flex flex-wrap items-center gap-2">
-        สถานะ:
-        <app-status-badge [value]="row.status" [toneMap]="workflowStatusToneMap" />
-      </p>
-      <p class="m-0">Due: {{ row.dueOnLabel }} · Closed: {{ row.closedOnLabel }}</p>
-      <p class="m-0 flex flex-wrap items-center gap-2">
-        <app-status-badge [label]="row.weekOffsetLabel" [tone]="weekTone(row.weekOffsetLabel)" />
-        <app-status-badge [value]="row.unplannedLabel" [toneMap]="planToneMap" />
-      </p>
-    </div>
-  }
-  <button sf-dialog-footer ejs-button cssClass="e-primary" type="button" (click)="goToBoard()">
-    เปิดในกระดานงาน (Board)
-  </button>
-</app-sf-dialog>

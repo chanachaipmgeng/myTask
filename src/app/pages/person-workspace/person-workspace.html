@@ -179,8 +179,14 @@
             <ul class="person-ws__ticket-list">
               @for (ticket of recentOpen(); track ticket.id) {
                 <li>
-                  <span class="person-ws__ticket-id">{{ ticket.id }}</span>
-                  <span>{{ ticket.title || ticket.module }}</span>
+                  <button
+                    type="button"
+                    class="person-ws__ticket-open"
+                    (click)="openTicket(ticket.id, $event)"
+                  >
+                    <span class="person-ws__ticket-id">{{ ticket.id }}</span>
+                    <span>{{ ticket.title || ticket.module }}</span>
+                  </button>
                   <app-status-badge
                     [value]="ticket.workflowStatus || (ticket.closed ? 'Done' : 'In Progress')"
                     [toneMap]="workflowStatusToneMap"
@@ -209,6 +215,7 @@
                   [data]="openWorkRows()"
                   [columns]="openWorkColumns"
                   [options]="openWorkGridOptions"
+                  (rowSelected)="onOpenWorkRowSelected($event)"
                 />
               </div>
             }

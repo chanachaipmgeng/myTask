@@ -92,6 +92,14 @@
                     cssClass="e-primary e-small"
                     type="button"
                     iconCss="e-icons e-eye"
+                    (click)="openTicket(item.id, $event)"
+                  >
+                    ดูรายละเอียด
+                  </button>
+                  <button
+                    ejs-button
+                    cssClass="e-outline e-small"
+                    type="button"
                     (click)="openAgendaReveal(item.id)"
                   >
                     ดู checklist
@@ -141,7 +149,15 @@
               </ul>
 
               <div class="agenda-reveal__actions flex flex-wrap gap-2">
-                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
+                <button
+                  ejs-button
+                  cssClass="e-primary e-small"
+                  type="button"
+                  (click)="openTicket(item.id, $event)"
+                >
+                  ดูรายละเอียด
+                </button>
+                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
                   เปิดบนบอร์ด
                 </a>
                 <a ejs-button cssClass="e-outline e-small" routerLink="/me/work/list">ดูรายการงานของฉัน</a>
@@ -171,7 +187,15 @@
               <p class="fine m-0">สถานะ: {{ risk.status }} · Est {{ risk.estimateMd }} MD / ใช้จริง {{ risk.actualMd }} MD</p>
               <p class="m-0 text-sm">{{ risk.reasons.join(' · ') }}</p>
               <div class="mt-2 flex flex-wrap gap-2">
-                <a ejs-button cssClass="e-primary e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
+                <button
+                  ejs-button
+                  cssClass="e-primary e-small"
+                  type="button"
+                  (click)="openTicket(risk.ticketId, $event)"
+                >
+                  ดูรายละเอียด
+                </button>
+                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
                   เปิดบนกระดานงาน
                 </a>
                 <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-warning" routerLink="/me/work/board">

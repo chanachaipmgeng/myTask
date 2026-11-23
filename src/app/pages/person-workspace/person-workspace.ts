@@ -5,6 +5,7 @@ import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { map } from 'rxjs';
 import { filterPeopleByWorkspace } from '../../../../shared/domain/workspace-scope';
 import { ScorecardService } from '../../core/scorecard.service';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { Person, trackDisplayLabel } from '../../core/models';
 import {
@@ -64,6 +65,7 @@ export class PersonWorkspacePage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly scorecard = inject(ScorecardService);
+  private readonly ticketDetail = inject(TicketDetailService);
   protected readonly workspace = inject(WorkspaceFilter);
 
   protected readonly tabs = TABS;
@@ -281,6 +283,16 @@ export class PersonWorkspacePage {
     }
     this.workspace.setPerson(id);
     void this.workspace.navigateWithFilter(['/work/list']);
+  }
+
+  protected openTicket(id: string, event?: Event): void {
+    event?.stopPropagation();
+    if (id) this.ticketDetail.open(id);
+  }
+
+  protected onOpenWorkRowSelected(event: { data?: unknown }): void {
+    const id = (event.data as { id?: string } | undefined)?.id;
+    if (id) this.openTicket(id);
   }
 
   protected onAvatarError(personId: string): void {

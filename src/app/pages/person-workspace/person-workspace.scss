@@ -163,6 +163,21 @@
   font-size: 0.875rem;
 }
 
+.person-ws__ticket-open {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .person-ws__ticket-id {
   font-variant-numeric: tabular-nums;
   font-weight: 600;

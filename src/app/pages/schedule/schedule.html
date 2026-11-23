@@ -181,6 +181,14 @@
                 </div>
                 <p class="m-0 text-xs text-muted leading-relaxed">{{ item.Description }}</p>
                 <div class="flex flex-wrap gap-2">
+                  <button
+                    ejs-button
+                    cssClass="e-primary e-small"
+                    type="button"
+                    (click)="openTicket(item.TicketId)"
+                  >
+                    ดูรายละเอียด
+                  </button>
                   <a ejs-button cssClass="e-outline e-small" routerLink="/work/board">เปิดบอร์ด</a>
                   <a ejs-button cssClass="e-flat e-small" routerLink="/tickets">ดูตารางคะแนน</a>
                 </div>

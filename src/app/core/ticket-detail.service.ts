@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-/** Shell-level ticket detail opener — one dialog shared across all pages. */
+/** Shell-level ticket detail opener — one right drawer shared across all pages. */
 @Injectable({ providedIn: 'root' })
 export class TicketDetailService {
   private readonly openId = signal<string | null>(null);

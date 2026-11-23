@@ -49,6 +49,8 @@
         [options]="ganttOptions()"
         (created)="onGanttCreated()"
         (actionComplete)="onActionComplete($event)"
+        (rowSelected)="onGanttRowSelected($event)"
+        (taskbarClick)="onGanttTaskbarClick($event)"
       />
     }
   }

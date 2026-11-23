@@ -24,6 +24,7 @@ import { currentViewer } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { Person, Ticket, WorkflowStatus, normalizeTrack, trackDisplayLabel } from '../../core/models';
 import { workflowStatusOf } from '../../core/workflow';
@@ -144,6 +145,7 @@ const COLORS = [
 export class SchedulePage {
   private readonly route = inject(ActivatedRoute);
   private readonly scorecard = inject(ScorecardService);
+  private readonly ticketDetail = inject(TicketDetailService);
   private readonly workspace = inject(WorkspaceFilter);
   protected readonly theme = inject(ThemeService);
   private readonly destroyRef = inject(DestroyRef);
@@ -505,6 +507,13 @@ export class SchedulePage {
     if (start) {
       this.goToDay(startOfDay(start));
     }
+    if (data?.TicketId) {
+      this.openTicket(data.TicketId);
+    }
+  }
+
+  protected openTicket(id: string): void {
+    if (id) this.ticketDetail.open(id);
   }
 
   private goToDay(day: Date): void {

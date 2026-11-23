@@ -4,6 +4,7 @@ import { effectiveRole } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
+import { TicketDetailService } from '../../core/ticket-detail.service';
 import {
   BadgeTone,
   FilterChipOption,
@@ -44,6 +45,7 @@ export class WorkHandoffPage {
   protected readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
   private readonly notice = inject(ShellNotice);
+  private readonly ticketDetail = inject(TicketDetailService);
 
   protected readonly role = effectiveRole;
   protected readonly trackFilter = signal<string>('All');
@@ -150,6 +152,10 @@ export class WorkHandoffPage {
 
   protected setSlaChip(value: string): void {
     this.onlyOverSla.set(value === 'over');
+  }
+
+  protected openTicket(id: string): void {
+    if (id) this.ticketDetail.open(id);
   }
 
   protected pingTarget(ticketId: string, targetName: string): void {

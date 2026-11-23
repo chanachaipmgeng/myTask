@@ -1,13 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ViewChild,
+  computed,
   effect,
   inject,
   signal,
 } from '@angular/core';
 import { SlicePipe } from '@angular/common';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { SidebarModule } from '@syncfusion/ej2-angular-navigations';
 import { ApiClient, TicketDetailResponse } from '../../../core/api-client';
 import { ScorecardService } from '../../../core/scorecard.service';
 import { ShellNotice } from '../../../core/shell-notice';
@@ -15,7 +16,6 @@ import { TicketDetailService } from '../../../core/ticket-detail.service';
 import { scoreTicket } from '../../../../../shared/domain/scoring';
 import { workflowStatusOf } from '../../../../../shared/domain/workflow';
 import { SfDatePickerComponent } from '../../sf/sf-datepicker/sf-datepicker';
-import { SfDialogComponent } from '../../sf/sf-dialog/sf-dialog';
 import { SfNumberComponent } from '../../sf/sf-number/sf-number';
 import { SfTabItem, SfTabsComponent } from '../../sf/sf-tabs/sf-tabs';
 import { SfTextBoxComponent } from '../../sf/sf-textbox/sf-textbox';
@@ -29,12 +29,12 @@ import { StatusBadgeComponent } from '../status-badge/status-badge';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
+    SidebarModule,
     FormFieldComponent,
     PersonAvatarComponent,
     StatusBadgeComponent,
     SlicePipe,
     SfDatePickerComponent,
-    SfDialogComponent,
     SfNumberComponent,
     SfTabsComponent,
     SfTextBoxComponent,
@@ -47,8 +47,6 @@ export class TicketDetailDialogComponent {
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
   private readonly detail = inject(TicketDetailService);
-
-  @ViewChild('dialog') private dialog?: SfDialogComponent;
 
   protected readonly detailTabs: SfTabItem[] = [
     { id: 'info', header: 'รายละเอียด' },
@@ -65,14 +63,19 @@ export class TicketDetailDialogComponent {
   protected readonly replyComment = signal('');
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
 
+  protected readonly isOpen = computed(() => !!this.detail.ticketId());
+  protected readonly drawerWidth =
+    typeof window !== 'undefined' && window.innerWidth <= 640
+      ? `${Math.max(280, window.innerWidth - 16)}px`
+      : '560px';
+
   constructor() {
     effect(() => {
       const id = this.detail.ticketId();
       if (id) {
         void this.load(id);
-        queueMicrotask(() => this.dialog?.open());
       } else {
-        queueMicrotask(() => this.dialog?.close());
+        this.data.set(null);
       }
     });
   }
@@ -82,7 +85,7 @@ export class TicketDetailDialogComponent {
     this.data.set(null);
   }
 
-  protected onDialogClose(): void {
+  protected onDrawerClose(): void {
     if (this.detail.ticketId()) {
       this.detail.close();
     }

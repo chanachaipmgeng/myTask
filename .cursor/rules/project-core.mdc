@@ -55,5 +55,6 @@ alwaysApply: true
 
 - ไม่เปิด OpenProject writeback โดยค่าเริ่ม (`OPENPROJECT_WRITEBACK=false`)
 - ไม่เปลี่ยนสูตร Implement/R&D เว้นแต่ผู้ใช้ขอชัดเจนและอัปเดต verify
-- แจ้งเตือนบน AppBar ใช้ปุ่มไอคอน `e-warning` + `e-badge-notification e-badge-overlap` เปิด `ejs-dialog` (`#alertDialog`) ไม่วางแถบแจ้งเตือนยาวทุกหน้า (อย่าใช้ `e-Bell` — ไม่มี glyph ในธีม)
+- แจ้งเตือนบน AppBar ใช้ปุ่มไอคอน `e-warning` + `e-badge-notification e-badge-overlap` เปิด `ejs-dialog` (`#alertDialog`) ไม่วางแถบแจ้งเตือนยาวทุกหน้า (อย่าใช้ `e-Bell` — ไม่มี glyph ในธีม) · แถวที่มี `ticketId` ต้องมีปุ่มเปิดรายละเอียดใบงาน
+- **รายละเอียดใบงานกลาง**: `TicketDetailService.open(id)` → `<app-ticket-detail-dialog>` ใน `app.html` เป็น `ejs-sidebar` ตำแหน่ง `Right` · `type="Over"` · กว้าง ~560px (คนละชั้นกับแผงรายวันของ `/schedule` หรือ splitter ของ disputes — ห้ามแทนคอลัมน์ขวาในหน้าด้วย Over drawer) · เรียกจาก List/Backlog/Queue/Tickets/ค้นหาโกลบอล/แจ้งเตือน/Person WS/My Workspace/Gantt/Schedule/Handoff ฯลฯ · Board คลิกการ์ดยังเป็น edit dialog; ปุ่ม「ดูรายละเอียด 360°」เปิด drawer ชุดเดียวกัน
 - GitLab MR sync (`shared/domain/gitlab-mr.ts`) และ Teams Webhook (`POST /api/integrations/teams/send`) รองรับทั้งโหมดจำลอง (ออฟไลน์/dry-run) และโหมดยิงจริงผ่าน API

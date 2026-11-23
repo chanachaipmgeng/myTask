@@ -271,6 +271,12 @@ export class App implements AfterViewInit {
     this.liveResults.set([]);
     this.searchOpen.set(false);
   }
+
+  protected openTicketFromAlert(id: string): void {
+    if (!id) return;
+    this.ticketDetail.open(id);
+    this.closeAlerts();
+  }
   protected goPersonFromSearch(id: string): void {
     void this.router.navigate(['/people', id]);
     this.globalSearch.set('');
