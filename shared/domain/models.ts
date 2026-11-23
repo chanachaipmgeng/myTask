@@ -89,6 +89,8 @@ export interface Person {
   unit?: string | null;
   jobTitle?: string | null;
   active?: boolean;
+  /** ทีมที่ผู้ใช้นี้ได้รับอนุญาตให้มองเห็น */
+  allowedTeams?: string[];
 }
 
 export interface Ticket {

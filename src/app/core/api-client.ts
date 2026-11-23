@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AnalyticsReport } from './analytics';
 import { AccessRole, Department, Level, Person, Team, Ticket, Track } from './models';
+import { TeamVisibilityRule, VisibilityConfig } from '../../../shared/domain/team-visibility';
 import { KpiPeriodType } from './kpi-snapshot';
 import { PersonScore, TrackWeights } from './scoring';
 import { AlertRules } from './admin-settings';
@@ -61,6 +62,8 @@ export interface BootstrapResponse {
   departments: Department[];
   teams: Team[];
   teamStaging?: 'rd' | 'all';
+  visibility?: VisibilityConfig;
+  effectiveAllowedTeams?: string[] | null;
   disputes?: import('./models').TicketDispute[];
   leaves?: import('./models').EmployeeLeave[];
   stageLogs?: import('./models').TicketStageLog[];
@@ -69,6 +72,7 @@ export interface BootstrapResponse {
     authenticated: boolean;
     person: Person | null;
     access: AccessRole | null;
+    effectiveAllowedTeams?: string[] | null;
     devLoginEnabled?: boolean;
   };
 }
@@ -391,11 +395,30 @@ export class ApiClient {
       level?: Level;
       track?: Track;
       gitlabUsername?: string | null;
+      allowedTeams?: string[];
     },
   ): Promise<{ ok: boolean; person?: Person; message?: string }> {
     return api(`/api/org/people/${encodeURIComponent(personId)}`, {
       method: 'PUT',
       body: JSON.stringify(body),
+    });
+  }
+
+  getVisibility(): Promise<VisibilityConfig> {
+    return api<VisibilityConfig>('/api/org/visibility');
+  }
+
+  updateVisibilityMatrix(matrix: TeamVisibilityRule[]): Promise<{ ok: boolean; matrix: TeamVisibilityRule[] }> {
+    return api('/api/org/visibility/matrix', {
+      method: 'PUT',
+      body: JSON.stringify({ matrix }),
+    });
+  }
+
+  updateUserAllowedTeams(userId: string, allowedTeams: string[]): Promise<{ ok: boolean; allowedTeams: string[] }> {
+    return api(`/api/org/visibility/user/${encodeURIComponent(userId)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ allowedTeams }),
     });
   }
 

@@ -72,6 +72,8 @@ export interface WorkspaceScope {
   toDate?: string;
   /** ปี ค.ศ. ทางลัด (ถ้าไม่มี from/to จะใช้ทั้งปี) */
   yearCe?: number | null;
+  /** รายชื่อทีมที่อนุญาตให้มองเห็น (null = ทุกทีมแบบ Admin) */
+  allowedTeams?: string[] | null;
 }
 
 const LEGACY_STUB_TEAM_IDS = new Set(['rd', 'implement']);
@@ -170,7 +172,22 @@ export function resolveWorkspaceTeamAllowlist(
   scope: WorkspaceScope,
   cycle?: ScorecardCycle | null,
 ): Set<string> | null {
+  const allowed = scope.allowedTeams;
   const explicit = scope.teamId?.trim() ?? '';
+
+  if (allowed && Array.isArray(allowed)) {
+    const allowedSet = new Set(allowed.filter(Boolean));
+    if (explicit) {
+      return allowedSet.has(explicit) ? new Set([explicit]) : allowedSet;
+    }
+    const fromCycle = (cycle?.teamIds ?? []).map((id) => id.trim()).filter(Boolean);
+    if (fromCycle.length > 0) {
+      const intersection = fromCycle.filter((id) => allowedSet.has(id));
+      return new Set(intersection.length > 0 ? intersection : allowedSet);
+    }
+    return allowedSet;
+  }
+
   if (explicit) {
     return new Set([explicit]);
   }

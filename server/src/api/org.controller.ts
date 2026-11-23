@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Param, Put, Req } from '@nestjs/common';
 import { AccessRole, Level, Track } from '../../../shared/domain/models';
+import { TeamVisibilityRule } from '../../../shared/domain/team-visibility';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { getPerson, listDepartments, listPeople, listTeams, upsertPerson } from '../data/people.repo';
+import { getVisibilityConfig, setTeamVisibilityMatrix, setUserAllowedTeams } from '../data/visibility.repo';
 import { Db } from '../db/db.service';
 
 export interface AuditLogDto {
@@ -39,6 +41,7 @@ export class OrgController {
       track?: Track;
       gitlabUsername?: string | null;
       openprojectUserId?: number | null;
+      allowedTeams?: string[];
     },
     @Req() req: AuthedRequest,
   ) {
@@ -67,13 +70,52 @@ export class OrgController {
       openprojectUserId:
         body.openprojectUserId !== undefined ? body.openprojectUserId : existing.openprojectUserId,
     });
+    if (Array.isArray(body.allowedTeams)) {
+      await setUserAllowedTeams(this.db, id, body.allowedTeams);
+    }
     await this.db.audit(req.authUser?.person.id ?? null, 'person.update_access', id, {
       access: nextAccess,
       level: nextLevel,
       track: nextTrack,
       gitlabUsername: saved.gitlabUsername,
+      allowedTeams: body.allowedTeams,
     });
     return { ok: true, person: saved };
+  }
+
+  @Roles('admin', 'lead')
+  @Get('visibility')
+  async getVisibility() {
+    return getVisibilityConfig(this.db);
+  }
+
+  @Roles('admin')
+  @Put('visibility/matrix')
+  async updateVisibilityMatrix(
+    @Body() body: { matrix: TeamVisibilityRule[] },
+    @Req() req: AuthedRequest,
+  ) {
+    const matrix = Array.isArray(body.matrix) ? body.matrix : [];
+    const saved = await setTeamVisibilityMatrix(this.db, matrix);
+    await this.db.audit(req.authUser?.person.id ?? null, 'visibility.update_matrix', null, {
+      rulesCount: saved.length,
+    });
+    return { ok: true, matrix: saved };
+  }
+
+  @Roles('admin')
+  @Put('visibility/user/:id')
+  async updateUserAllowedTeams(
+    @Param('id') id: string,
+    @Body() body: { allowedTeams: string[] },
+    @Req() req: AuthedRequest,
+  ) {
+    const teams = Array.isArray(body.allowedTeams) ? body.allowedTeams : [];
+    const saved = await setUserAllowedTeams(this.db, id, teams);
+    await this.db.audit(req.authUser?.person.id ?? null, 'visibility.update_user', id, {
+      allowedTeams: saved,
+    });
+    return { ok: true, allowedTeams: saved };
   }
 
   @Roles('admin')

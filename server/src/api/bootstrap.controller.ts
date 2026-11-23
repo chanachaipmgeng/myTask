@@ -1,7 +1,9 @@
 import { Controller, Get, Inject, Req } from '@nestjs/common';
+import { computeEffectiveAllowedTeams } from '../../../shared/domain/team-visibility';
 import { listAllocations, listDisputes, listLeaves, listStageLogs } from '../data/multi-team.repo';
 import { listDepartments, listPeople, listTeams } from '../data/people.repo';
 import { getSettings } from '../data/settings.repo';
+import { getVisibilityConfig } from '../data/visibility.repo';
 import { listWorkItems } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
 import { AuthedRequest, Public } from '../auth/auth.guard';
@@ -17,7 +19,7 @@ export class BootstrapController {
   @Public()
   @Get('bootstrap')
   async bootstrap(@Req() req: AuthedRequest) {
-    const [people, allTickets, settings, departments, teams, disputes, leaves, stageLogs, allocations] =
+    const [rawPeople, allTickets, settings, departments, teams, disputes, leaves, stageLogs, allocations, visibility] =
       await Promise.all([
         listPeople(this.db),
         listWorkItems(this.db),
@@ -28,8 +30,13 @@ export class BootstrapController {
         listLeaves(this.db),
         listStageLogs(this.db),
         listAllocations(this.db),
+        getVisibilityConfig(this.db),
       ]);
     const staging = this.config.openproject.teamStaging;
+    const people = rawPeople.map((p) => ({
+      ...p,
+      allowedTeams: visibility.userOverrides[p.id] ?? [],
+    }));
     const activePeopleIds = new Set(people.map((p) => p.id));
     // โหมด rd: ใบ RD หรือ assignee ที่ active — โหมด all: ส่งทุกใบใน DB
     const tickets =
@@ -38,6 +45,11 @@ export class BootstrapController {
         : allTickets.filter(
             (t) => t.track === 'RD' || (t.assigneeId && activePeopleIds.has(t.assigneeId)),
           );
+    const authUser = req.authUser;
+    const effectiveAllowedTeams = authUser?.person
+      ? computeEffectiveAllowedTeams(authUser.person, visibility)
+      : null;
+
     return {
       people,
       tickets,
@@ -49,17 +61,23 @@ export class BootstrapController {
       leaves,
       stageLogs,
       allocations,
-      auth: req.authUser
+      visibility,
+      auth: authUser
         ? {
             authenticated: true,
-            person: req.authUser.person,
-            access: req.authUser.access,
+            person: {
+              ...authUser.person,
+              allowedTeams: visibility.userOverrides[authUser.person.id] ?? [],
+            },
+            access: authUser.access,
+            effectiveAllowedTeams,
             devLoginEnabled: this.config.devLogin,
           }
         : {
             authenticated: false,
             person: null,
             access: null,
+            effectiveAllowedTeams: null,
             devLoginEnabled: this.config.devLogin,
           },
     };

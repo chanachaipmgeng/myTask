@@ -79,6 +79,7 @@ export class WorkspaceFilter {
     fromDate: this.fromDate(),
     toDate: this.toDate(),
     yearCe: this.yearCe(),
+    allowedTeams: this.scorecard.effectiveAllowedTeams(),
   }));
 
   readonly hasActiveFilter = computed(
@@ -95,7 +96,12 @@ export class WorkspaceFilter {
 
   readonly teamOptions = computed(() => {
     const rows = listOrgTeamOptions(this.scorecard.people(), this.scorecard.teams());
-    return [{ text: 'ทุกทีม', value: '' }, ...rows.map((row) => ({ text: row.label, value: row.id }))];
+    const allowed = this.scorecard.effectiveAllowedTeams();
+    const filteredRows = allowed === null ? rows : rows.filter((r) => allowed.includes(r.id));
+    return [
+      { text: allowed === null ? 'ทุกทีม' : 'ทุกทีมในสิทธิ์', value: '' },
+      ...filteredRows.map((row) => ({ text: row.label, value: row.id })),
+    ];
   });
 
   readonly cycleOptions = computed(() => {

@@ -221,6 +221,16 @@
       />
     </ng-template>
 
+    <ng-template #rosterAllowedTeamsTpl let-data>
+      <app-sf-multiselect
+        [items]="teamSelectOptions()"
+        [value]="rosterAllowedTeams(data)"
+        [disabled]="!canEdit()"
+        [options]="{ placeholder: 'เพิ่มทีมที่มองเห็นได้...', width: '100%', mode: 'Box' }"
+        (valueChange)="onAllowedTeams(data.id, $event)"
+      />
+    </ng-template>
+
     @if (rosterViewMode() === 'grid') {
       <app-sf-grid
         [data]="filteredRoster()"
@@ -230,7 +240,8 @@
           role: rosterRoleTpl,
           track: rosterTrackTpl,
           access: rosterAccessTpl,
-          level: rosterLevelTpl
+          level: rosterLevelTpl,
+          allowedTeams: rosterAllowedTeamsTpl
         }"
         [options]="rosterGridOptions"
       />
@@ -273,6 +284,16 @@
                   (valueChange)="onLevel(person.id, $event)"
                 />
               </div>
+              <div class="pt-2 border-t border-[color:var(--line)]">
+                <span class="text-xs text-muted block mb-1">ทีมที่มองเห็นได้เพิ่มเติม:</span>
+                <app-sf-multiselect
+                  [items]="teamSelectOptions()"
+                  [value]="rosterAllowedTeams(person)"
+                  [disabled]="!canEdit()"
+                  [options]="{ placeholder: 'เลือกทีมที่อนุญาต...', width: '100%', mode: 'Box' }"
+                  (valueChange)="onAllowedTeams(person.id, $event)"
+                />
+              </div>
             </div>
           </app-section-card>
         } @empty {
@@ -309,6 +330,76 @@
         </div>
       }
     }
+  </app-section-card>
+
+  <app-section-card
+    title="เมทริกซ์การแชร์ทีม (Team-to-Team Visibility Matrix)"
+    subtitle="กำหนดสิทธิ์ข้ามแผนกโดยปริยาย — แถวคือทีมต้นทาง (ผู้ขอดู) และคอลัมน์คือทีมปลายทางที่อนุญาตให้มองเห็น"
+    badge="สิทธิ์แผนก"
+    badgeTone="secondary"
+  >
+    <div actions class="flex items-center gap-2">
+      <button
+        ejs-button
+        cssClass="e-primary e-small"
+        type="button"
+        [disabled]="!canEdit() || visibilityBusy()"
+        (click)="saveTeamMatrix()"
+      >
+        {{ visibilityBusy() ? 'กำลังบันทึก...' : 'บันทึกเมทริกซ์' }}
+      </button>
+    </div>
+
+    @if (visibilityMessage()) {
+      <app-sf-message [content]="visibilityMessage()" severity="Success" class="mb-3" />
+    }
+    @if (visibilityError()) {
+      <app-sf-message [content]="visibilityError()" severity="Error" class="mb-3" />
+    }
+
+    <div class="overflow-x-auto border border-[color:var(--line)] rounded-lg">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead>
+          <tr class="bg-slate-100 dark:bg-slate-800 border-b border-[color:var(--line)]">
+            <th class="p-2.5 font-bold border-r border-[color:var(--line)] min-w-[160px]">
+              ทีมต้นทาง \ ทีมที่มองเห็น
+            </th>
+            @for (target of orgTeams(); track target.id) {
+              <th class="p-2.5 text-center font-semibold min-w-[90px] border-r border-[color:var(--line)]">
+                {{ target.label.split(' - ')[0] || target.label }}
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (source of orgTeams(); track source.id) {
+            <tr class="border-b border-[color:var(--line)] hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td class="p-2.5 font-medium border-r border-[color:var(--line)] whitespace-nowrap">
+                {{ source.label }}
+              </td>
+              @for (target of orgTeams(); track target.id) {
+                <td class="p-2.5 text-center border-r border-[color:var(--line)]">
+                  @if (source.id === target.id) {
+                    <span class="inline-block px-1.5 py-0.5 rounded text-[11px] bg-slate-200 dark:bg-slate-700 text-muted" title="ทีมของตนเอง (เห็นได้เสมอ)">
+                      ทีมตนเอง
+                    </span>
+                  } @else {
+                    <app-sf-checkbox
+                      [checked]="isTeamSharing(source.id, target.id)"
+                      [disabled]="!canEdit() || visibilityBusy()"
+                      (checkedChange)="toggleTeamSharing(source.id, target.id, $event)"
+                    />
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="fine mt-2 text-muted">
+      * หมายเหตุ: ทีมตนเองจะสามารถมองเห็นข้อมูลภายในทีมได้เสมอ สำหรับสมาชิกที่ต้องการสิทธิ์มองเห็นทีมอื่นๆ เพิ่มเติมรายบุคคล สามารถกำหนดได้ในตารางรายชื่อพนักงานด้านบน
+    </p>
   </app-section-card>
 
   <div class="card-grid-2">

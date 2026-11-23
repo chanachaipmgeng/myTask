@@ -35,6 +35,7 @@ import {
   VarianceCode,
 } from './models';
 import { ScorecardCycle, defaultCycleSettings, normalizeCycleSettings } from '../../../shared/domain/scorecard-cycle';
+import { TeamVisibilityRule, VisibilityConfig } from '../../../shared/domain/team-visibility';
 import {
   HandoffSlaReport,
   PreflightReport,
@@ -181,6 +182,8 @@ export class ScorecardService {
   private readonly disputesState = signal<TicketDispute[]>([...SEED_DISPUTES]);
   private readonly departmentsState = signal<Department[]>([]);
   private readonly teamsState = signal<Team[]>([]);
+  private readonly visibilityState = signal<VisibilityConfig>({ matrix: [], userOverrides: {} });
+  private readonly effectiveAllowedTeamsState = signal<string[] | null>(null);
   private readonly cyclesState = signal<ScorecardCycle[]>(defaultCycleSettings().cycles);
   private readonly activeCycleIdState = signal<string | null>(defaultCycleSettings().activeCycleId);
 
@@ -188,6 +191,8 @@ export class ScorecardService {
   readonly tickets = this.ticketsState.asReadonly();
   readonly departments = this.departmentsState.asReadonly();
   readonly teams = this.teamsState.asReadonly();
+  readonly visibility = this.visibilityState.asReadonly();
+  readonly effectiveAllowedTeams = this.effectiveAllowedTeamsState.asReadonly();
   readonly cycles = this.cyclesState.asReadonly();
   readonly activeCycleId = this.activeCycleIdState.asReadonly();
   readonly allocations = this.allocationsState.asReadonly();
@@ -288,6 +293,10 @@ export class ScorecardService {
       this.activeCycleIdState.set(resolvedCycles.activeCycleId);
       this.devLoginEnabledState.set(data.auth.devLoginEnabled ?? false);
       applyRemoteSettings(data.settings);
+      if (data.visibility) {
+        this.visibilityState.set(data.visibility);
+      }
+      this.effectiveAllowedTeamsState.set(data.auth.effectiveAllowedTeams ?? null);
       if (data.teamStaging === 'all' || data.teamStaging === 'rd') {
         teamStagingMode.set(data.teamStaging);
       }
@@ -332,6 +341,37 @@ export class ScorecardService {
       return;
     }
     this.peopleState.set(people.map((person) => ({ ...person })));
+  }
+
+  async updateVisibilityMatrix(matrix: TeamVisibilityRule[]): Promise<boolean> {
+    if (!this.api) return false;
+    try {
+      const res = await this.api.updateVisibilityMatrix(matrix);
+      if (res.ok) {
+        this.visibilityState.update((prev) => ({ ...prev, matrix: res.matrix ?? matrix }));
+        return true;
+      }
+    } catch {}
+    return false;
+  }
+
+  async updateUserAllowedTeams(userId: string, allowedTeams: string[]): Promise<boolean> {
+    if (!this.api) return false;
+    try {
+      const res = await this.api.updateUserAllowedTeams(userId, allowedTeams);
+      if (res.ok) {
+        const clean = res.allowedTeams ?? allowedTeams;
+        this.visibilityState.update((prev) => ({
+          ...prev,
+          userOverrides: { ...prev.userOverrides, [userId]: clean },
+        }));
+        this.peopleState.update((list) =>
+          list.map((p) => (p.id === userId ? { ...p, allowedTeams: clean } : p)),
+        );
+        return true;
+      }
+    } catch {}
+    return false;
   }
 
   exitMockSandbox(): boolean {

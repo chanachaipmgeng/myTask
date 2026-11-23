@@ -31,6 +31,7 @@ import { SfDropdownComponent } from './shared/sf/sf-dropdown/sf-dropdown';
 import { SfMessageComponent } from './shared/sf/sf-message/sf-message';
 import { SfTextBoxComponent } from './shared/sf/sf-textbox/sf-textbox';
 import { TicketDetailService } from './core/ticket-detail.service';
+import { resolvePersonTeamId } from '../../shared/domain/team-visibility';
 
 type NavLeaf = {
   id: string;
@@ -126,25 +127,43 @@ export class App implements AfterViewInit {
     if (!q || q.length < 1) {
       return { tickets: [] as { id: string; title: string }[], people: [] as { id: string; name: string }[], menus: [] as NavLeaf[] };
     }
-    const tickets = this.scorecard
-      .tickets()
-      .filter(
-        (t) =>
-          t.id.toLowerCase().includes(q) ||
-          (t.title ?? '').toLowerCase().includes(q),
-      )
-      .slice(0, 8)
-      .map((t) => ({ id: t.id, title: t.title ?? t.id }));
+    const allowed = this.scorecard.effectiveAllowedTeams();
+    const allowedSet = allowed ? new Set(allowed) : null;
+
     const people = this.scorecard
       .roster()
-      .filter(
-        (p) =>
+      .filter((p) => {
+        if (allowedSet && !allowedSet.has(resolvePersonTeamId(p))) return false;
+        return (
           p.id.toLowerCase().includes(q) ||
           p.nickname.toLowerCase().includes(q) ||
-          p.fullName.toLowerCase().includes(q),
-      )
+          p.fullName.toLowerCase().includes(q)
+        );
+      })
       .slice(0, 6)
       .map((p) => ({ id: p.id, name: `${p.nickname} · ${p.fullName}` }));
+
+    const allowedPeopleIds = allowedSet
+      ? new Set(
+          this.scorecard
+            .roster()
+            .filter((p) => allowedSet.has(resolvePersonTeamId(p)))
+            .map((p) => p.id),
+        )
+      : null;
+
+    const tickets = this.scorecard
+      .tickets()
+      .filter((t) => {
+        if (allowedPeopleIds && t.assigneeId && !allowedPeopleIds.has(t.assigneeId)) return false;
+        return (
+          t.id.toLowerCase().includes(q) ||
+          (t.title ?? '').toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 8)
+      .map((t) => ({ id: t.id, title: t.title ?? t.id }));
+
     const menus = leavesFor(this.role())
       .filter((l) => l.text.toLowerCase().includes(q))
       .slice(0, 6);

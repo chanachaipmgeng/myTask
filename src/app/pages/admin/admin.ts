@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { SAMPLE_VIEWERS } from '../../data/seed';
@@ -21,12 +21,14 @@ import {
   type ConnectionState,
 } from '../../core/admin-settings';
 import { ApiClient, AuditLogDto } from '../../core/api-client';
-import { AccessRole, Level } from '../../core/models';
+import { AccessRole, Level, Person } from '../../core/models';
+import { ShellNotice } from '../../core/shell-notice';
 import { DEFAULT_TRACK_WEIGHTS } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { beToCe, ceToBe, createYearCycle, type ScorecardCycleStatus } from '../../../../shared/domain/scorecard-cycle';
+import { TeamVisibilityRule } from '../../../../shared/domain/team-visibility';
 import { listOrgTeamOptions } from '../../../../shared/domain/workspace-scope';
 import {
   DateTimePipe,
@@ -78,6 +80,7 @@ export class AdminPage {
   protected readonly Math = Math;
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
+  private readonly notice = inject(ShellNotice);
   protected readonly theme = inject(ThemeService);
 
   protected readonly auditColumns: SfGridColumn[] = [
@@ -171,12 +174,78 @@ export class AdminPage {
   protected readonly rosterCardPageSize = 12;
 
   protected readonly rosterGridColumns: SfGridColumn[] = [
-    { field: 'nickname', headerText: 'พนักงาน', width: 210 },
-    { field: 'role', headerText: 'ตำแหน่ง / อีเมล', width: 200 },
-    { field: 'track', headerText: 'สายงาน', width: 110, textAlign: 'Center' },
-    { field: 'access', headerText: 'สิทธิ์ (Access)', width: 160 },
-    { field: 'level', headerText: 'ระดับโควตา (Level)', width: 160 },
+    { field: 'nickname', headerText: 'พนักงาน', width: 200 },
+    { field: 'role', headerText: 'ตำแหน่ง / อีเมล', width: 180 },
+    { field: 'track', headerText: 'สายงาน', width: 100, textAlign: 'Center' },
+    { field: 'access', headerText: 'สิทธิ์', width: 140 },
+    { field: 'level', headerText: 'ระดับ', width: 130 },
+    { field: 'allowedTeams', headerText: 'ทีมที่มองเห็นได้ (Allowed Teams)', width: 230 },
   ];
+
+  protected readonly visibilityMessage = signal('');
+  protected readonly visibilityError = signal('');
+  protected readonly visibilityBusy = signal(false);
+  protected readonly matrixRules = signal<TeamVisibilityRule[]>([]);
+  private readonly matrixInitialized = signal(false);
+
+  protected readonly orgTeams = computed(() =>
+    listOrgTeamOptions(this.scorecard.people(), this.scorecard.teams()),
+  );
+
+  protected readonly teamSelectOptions = computed(() =>
+    this.orgTeams().map((t) => ({ text: t.label, value: t.id })),
+  );
+
+  protected rosterAllowedTeams(person: Person): string[] {
+    return person.allowedTeams ?? this.scorecard.visibility().userOverrides[person.id] ?? [];
+  }
+
+  protected async onAllowedTeams(personId: string, teams: string[]): Promise<void> {
+    if (!this.canEdit()) return;
+    const ok = await this.scorecard.updateUserAllowedTeams(personId, teams ?? []);
+    if (ok) {
+      this.notice.success('อัปเดตสิทธิ์การมองเห็นทีมสำเร็จ');
+    }
+  }
+
+  protected isTeamSharing(sourceId: string, targetId: string): boolean {
+    const rules = this.matrixRules();
+    return rules.some((r) => r.sourceTeamId === sourceId && r.targetTeamId === targetId);
+  }
+
+  protected toggleTeamSharing(sourceId: string, targetId: string, checked: boolean): void {
+    if (!this.canEdit()) return;
+    this.matrixRules.update((current) => {
+      if (checked) {
+        if (!current.some((r) => r.sourceTeamId === sourceId && r.targetTeamId === targetId)) {
+          return [...current, { sourceTeamId: sourceId, targetTeamId: targetId }];
+        }
+        return current;
+      } else {
+        return current.filter((r) => !(r.sourceTeamId === sourceId && r.targetTeamId === targetId));
+      }
+    });
+  }
+
+  protected async saveTeamMatrix(): Promise<void> {
+    if (!this.canEdit()) return;
+    this.visibilityBusy.set(true);
+    this.visibilityError.set('');
+    this.visibilityMessage.set('');
+    try {
+      const ok = await this.scorecard.updateVisibilityMatrix(this.matrixRules());
+      if (ok) {
+        this.visibilityMessage.set('บันทึกเมทริกซ์การแชร์ทีมเรียบร้อยแล้ว');
+        this.notice.success('บันทึกเมทริกซ์การแชร์ทีมสำเร็จ');
+      } else {
+        this.visibilityError.set('บันทึกไม่สำเร็จ');
+      }
+    } catch (err) {
+      this.visibilityError.set(err instanceof Error ? err.message : 'บันทึกไม่สำเร็จ');
+    } finally {
+      this.visibilityBusy.set(false);
+    }
+  }
 
   protected readonly rosterGridOptions: SfGridOptions = {
     id: 'admin-roster-grid-v1',
@@ -257,6 +326,13 @@ export class AdminPage {
 
   constructor() {
     void this.loadAuditLogs();
+    effect(() => {
+      const v = this.scorecard.visibility();
+      if (!this.matrixInitialized() && v.matrix) {
+        this.matrixRules.set([...v.matrix]);
+        this.matrixInitialized.set(true);
+      }
+    });
   }
 
   protected onCycleYearBe(value: number): void {
