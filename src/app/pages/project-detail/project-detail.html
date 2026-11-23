@@ -1,0 +1,447 @@
+<div class="project-detail-page p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+  @if (loading()) {
+    <div class="flex items-center justify-center p-12 text-[color:var(--text-muted)]">
+      <span class="e-icons e-spinner e-spin text-2xl me-3 text-[color:var(--brand-primary,#2746b3)]"></span>
+      <span>กำลังโหลดข้อมูลโปรเจกต์...</span>
+    </div>
+  } @else if (errorMsg()) {
+    <div class="p-6 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-center">
+      <span class="e-icons e-circle-remove text-3xl text-red-500 mb-2"></span>
+      <h3 class="font-bold text-red-800 dark:text-red-300">{{ errorMsg() }}</h3>
+      <a routerLink="/admin/projects" ejs-button cssClass="e-outline e-small mt-4">
+        « กลับไปหน้ารวมโปรเจกต์
+      </a>
+    </div>
+  } @else if (project(); as p) {
+    <!-- Page Header -->
+    <app-page-head
+      [title]="p.name"
+      [description]="'รหัส: ' + p.identifier + ' · ' + (p.active ? 'กำลังเปิดใช้งาน' : 'ปิดใช้งาน')"
+      breadcrumb="แคตตาล็อกโปรเจกต์"
+    >
+      <div actions class="flex flex-wrap items-center gap-2">
+        <span
+          class="px-2.5 py-1 rounded-full text-xs font-semibold"
+          [class.bg-emerald-100]="p.active"
+          [class.text-emerald-800]="p.active"
+          [class.dark:bg-emerald-950]="p.active"
+          [class.dark:text-emerald-300]="p.active"
+          [class.bg-slate-100]="!p.active"
+          [class.text-slate-600]="!p.active"
+        >
+          {{ p.active ? '● Active' : '○ Inactive' }}
+        </span>
+
+        <a routerLink="/admin/projects" ejs-button cssClass="e-outline e-small">
+          <span class="e-icons e-chevron-left me-1"></span> แคตตาล็อก
+        </a>
+
+        <button
+          ejs-button
+          cssClass="e-primary e-small"
+          type="button"
+          (click)="loadProject(p.identifier)"
+        >
+          <span class="e-icons e-refresh me-1"></span> รีเฟรช
+        </button>
+      </div>
+    </app-page-head>
+
+    <!-- KPI Strip (4 Cards) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <app-kpi-stat
+        title="ความคืบหน้าภาพรวม"
+        [value]="p.stats.progressPercent + '%'"
+        [hint]="'ปิดแล้ว ' + p.stats.closedTicketsCount + ' จาก ' + p.stats.totalTickets + ' ใบ'"
+        iconCss="e-icons e-check"
+        accent="success"
+      />
+
+      <app-kpi-stat
+        title="ประมาณการ Man-day"
+        [value]="p.stats.totalEstimateMd"
+        [hint]="'ใช้จริงแล้ว ' + p.stats.totalActualMd + ' MD'"
+        iconCss="e-icons e-timeline-work-week"
+        accent="info"
+      />
+
+      <app-kpi-stat
+        title="ใบงานคงค้าง (WIP)"
+        [value]="p.stats.activeWipCount"
+        [hint]="'งานที่กำลังดำเนินการในระบบ'"
+        iconCss="e-icons e-clock"
+        accent="warning"
+      />
+
+      <app-kpi-stat
+        title="งานติดขัด / ข้อบกพร่อง"
+        [value]="p.stats.blockerCount + p.stats.defectCount"
+        [hint]="'ติด Block ' + p.stats.blockerCount + ' · บั๊ก ' + p.stats.defectCount + ' ใบ'"
+        iconCss="e-icons e-warning"
+        [accent]="p.stats.blockerCount > 0 ? 'danger' : 'default'"
+      />
+    </div>
+
+    <!-- Underline Tab Navigation -->
+    <div class="border-b border-slate-200 dark:border-slate-800">
+      <nav class="hub-underline-tabs flex gap-2">
+        @for (t of TABS; track t.id) {
+          <button
+            type="button"
+            class="hub-underline-tab px-4 py-2.5 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors"
+            [class.border-[color:var(--brand-primary,#2746b3)]]="activeTab() === t.id"
+            [class.text-[color:var(--brand-primary,#2746b3)]]="activeTab() === t.id"
+            [class.border-transparent]="activeTab() !== t.id"
+            [class.text-[color:var(--text-muted)]]="activeTab() !== t.id"
+            (click)="activeTab.set(t.id)"
+          >
+            <span [class]="t.icon"></span>
+            <span>{{ t.text }}</span>
+            @if (t.id === 'tickets') {
+              <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-800">
+                {{ p.stats.totalTickets }}
+              </span>
+            }
+            @if (t.id === 'git' && unmatchedBranches().length > 0) {
+              <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                {{ unmatchedBranches().length }}
+              </span>
+            }
+          </button>
+        }
+      </nav>
+    </div>
+
+    <!-- TAB 1: Overview & Health Dashboard -->
+    @if (activeTab() === 'overview') {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Effort & Progress -->
+        <app-section-card
+          title="สัดส่วนและเป้าหมาย Man-day"
+          subtitle="เปรียบเทียบภาระงานประมาณการและเวลาที่ใช้ไปจริง"
+        >
+          <div class="space-y-4 pt-2">
+            <div>
+              <div class="flex justify-between text-xs text-[color:var(--text-muted)] mb-1">
+                <span>ความสำเร็จ (Progress)</span>
+                <span class="font-bold text-[color:var(--brand-primary,#2746b3)]">{{ p.stats.progressPercent }}%</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden">
+                <div
+                  class="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                  [style.width.%]="p.stats.progressPercent"
+                ></div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800">
+              <div>
+                <div class="text-xs text-[color:var(--text-muted)]">ประมาณการรวม (Estimate)</div>
+                <div class="text-xl font-bold text-slate-800 dark:text-slate-100 font-mono">
+                  {{ p.stats.totalEstimateMd }} <span class="text-xs font-normal">MD</span>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-[color:var(--text-muted)]">ใช้จริงรวม (Actual Spent)</div>
+                <div class="text-xl font-bold text-slate-800 dark:text-slate-100 font-mono">
+                  {{ p.stats.totalActualMd }} <span class="text-xs font-normal">MD</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </app-section-card>
+
+        <!-- Stage Distribution & Aging -->
+        <app-section-card
+          title="การกระจายงานตามสถานะ (Stage Distribution)"
+          subtitle="ตรวจจับงานที่ค้างในกระบวนการนานเกินเกณฑ์ (> 5 วัน)"
+        >
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+            @for (st of p.stats.stageDistribution; track st.status) {
+              <div class="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
+                <div class="text-xs font-medium text-[color:var(--text-muted)]">{{ st.label }}</div>
+                <div class="flex items-baseline justify-between mt-2">
+                  <span class="text-2xl font-bold text-slate-800 dark:text-slate-100 font-mono">{{ st.count }}</span>
+                  @if (st.delayedCount > 0) {
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 font-bold">
+                      ค้าง {{ st.delayedCount }}
+                    </span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </app-section-card>
+
+        <!-- Track Breakdown -->
+        <app-section-card
+          title="สัดส่วนภาระงานแยกตามสายงาน (Track Breakdown)"
+          subtitle="การกระจายตัวของใบงานตามบทบาทหน้าที่ 6 สายงาน"
+        >
+          @if (p.stats.trackBreakdown.length > 0) {
+            <div class="space-y-3 pt-2">
+              @for (trk of p.stats.trackBreakdown; track trk.track) {
+                <div class="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                  <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                    <span class="text-sm font-medium">{{ trk.label }}</span>
+                  </div>
+                  <div class="text-xs font-mono">
+                    <strong>{{ trk.count }}</strong> ใบ ({{ trk.estimateMd }} MD)
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-xs text-[color:var(--text-muted)] text-center py-6">
+              ยังไม่มีข้อมูลภาระงานในโปรเจกต์นี้
+            </div>
+          }
+        </app-section-card>
+
+        <!-- Aging & Blocker Watchlist -->
+        <app-section-card
+          title="เฝ้าระวังงานติดขัดและค้างนาน (Risk & Blocker Watchlist)"
+          subtitle="ใบงานที่ต้องได้รับการติดตามเป็นพิเศษ"
+        >
+          @if (p.stats.agingTickets.length > 0) {
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+              @for (tk of p.stats.agingTickets; track tk.id) {
+                <div class="py-2.5 flex items-center justify-between text-xs">
+                  <div class="min-w-0 pr-2">
+                    <a
+                      class="font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                      (click)="ticketDetail.open(tk.id)"
+                    >
+                      #{{ tk.id }}
+                    </a>
+                    <span class="ms-1 truncate font-medium text-slate-700 dark:text-slate-300">{{ tk.subject }}</span>
+                    <div class="text-[11px] text-[color:var(--text-muted)]">
+                      ผู้รับผิดชอบ: {{ tk.assigneeName }} · {{ tk.status }}
+                    </div>
+                  </div>
+                  <span
+                    class="px-2 py-0.5 rounded text-[10px] font-bold font-mono whitespace-nowrap"
+                    [class.bg-red-100]="tk.ageDays > 5"
+                    [class.text-red-700]="tk.ageDays > 5"
+                    [class.bg-slate-100]="tk.ageDays <= 5"
+                    [class.text-slate-700]="tk.ageDays <= 5"
+                  >
+                    {{ tk.ageDays }} วัน
+                  </span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-xs text-[color:var(--text-muted)] text-center py-6">
+              ยอดเยี่ยม! ไม่พบใบงานที่ติดขัดหรือค้างนานเกินเกณฑ์
+            </div>
+          }
+        </app-section-card>
+      </div>
+    }
+
+    <!-- TAB 2: Work Packages / Tickets Grid -->
+    @if (activeTab() === 'tickets') {
+      <app-section-card
+        title="รายการใบงานในโปรเจกต์"
+        [subtitle]="'แสดงทั้งหมด ' + projectTickets().length + ' ใบงาน'"
+      >
+        <app-sf-grid
+          [data]="projectTickets()"
+          [columns]="ticketGridColumns"
+          [options]="ticketGridOptions"
+          (rowSelected)="onTicketGridRowSelected($event)"
+        />
+      </app-section-card>
+    }
+
+    <!-- TAB 3: Git & Repositories Governance -->
+    @if (activeTab() === 'git') {
+      <div class="space-y-6 pb-20">
+        <!-- Repo Mapping Configuration -->
+        <app-section-card
+          title="การผูก Git Repositories ประจำโปรเจกต์"
+          subtitle="เลือก Repository ใน mygitplus ที่เกี่ยวข้องกับโปรเจกต์นี้เพื่อรวบรวมกิจกรรมโค้ดและ CI/CD"
+        >
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+            <div class="flex-1">
+              <app-sf-multiselect
+                [items]="availableGitRepos()"
+                [fields]="{ text: 'name', value: 'id' }"
+                [value]="selectedRepoIds()"
+                [options]="{ placeholder: 'เลือก Git Repositories ที่เกี่ยวข้อง...', mode: 'Box' }"
+                (valueChange)="selectedRepoIds.set($event)"
+              />
+            </div>
+
+            @if (canEdit()) {
+              <button
+                ejs-button
+                cssClass="e-primary"
+                type="button"
+                [disabled]="saving()"
+                (click)="saveGitRepoMapping()"
+              >
+                <span class="e-icons e-save me-1.5" [class.e-spin]="saving()"></span>
+                {{ saving() ? 'กำลังบันทึก...' : 'บันทึกการผูก Repo' }}
+              </button>
+            }
+          </div>
+        </app-section-card>
+
+        <!-- CI/CD Pipeline Health Status -->
+        @if (gitSummary(); as git) {
+          <app-section-card
+            title="สถานะ CI/CD Pipeline ล่าสุด"
+            subtitle="ตรวจจับผลลัพธ์การ Build และ Test บนกิ่งหลักของแต่ละ Repository"
+          >
+            @if (git.latestPipelines.length > 0) {
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                @for (pipe of git.latestPipelines; track pipe.repoId) {
+                  <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div class="font-bold text-sm text-slate-800 dark:text-slate-100">{{ pipe.repoName }}</div>
+                      <div class="text-xs text-[color:var(--text-muted)] mt-1">Branch: <code>{{ pipe.branch }}</code></div>
+                    </div>
+                    <span
+                      class="px-2.5 py-1 rounded text-xs font-bold font-mono"
+                      [class.bg-emerald-50]="pipe.status === 'success'"
+                      [class.text-emerald-700]="pipe.status === 'success'"
+                      [class.bg-red-50]="pipe.status === 'failed'"
+                      [class.text-red-700]="pipe.status === 'failed'"
+                    >
+                      {{ pipe.status === 'success' ? '✓ Passed' : pipe.status === 'failed' ? '✗ Failed' : '● Running' }}
+                    </span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-xs text-[color:var(--text-muted)] text-center py-6">
+                ยังไม่ได้ผูก Git Repository หรือไม่พบ Pipeline ที่รันในขณะนี้
+              </div>
+            }
+          </app-section-card>
+
+          <!-- Active Git Branches & Unmatched Warning -->
+          <app-section-card
+            title="กิ่งโค้ดที่กำลังดำเนินการ (Active Git Branches)"
+            [subtitle]="'พบทั้งหมด ' + git.activeBranches.length + ' กิ่งในระบบ'"
+          >
+            @if (git.activeBranches.length > 0) {
+              <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                @for (b of git.activeBranches; track b.id) {
+                  <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">{{ b.branchName }}</span>
+                        @if (b.ticketId) {
+                          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
+                            ผูกกับ #{{ b.ticketId }}
+                          </span>
+                        } @else {
+                          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            ยังไม่มีใบงาน
+                          </span>
+                        }
+                      </div>
+                      <div class="text-xs text-[color:var(--text-muted)] mt-1 flex flex-wrap items-center gap-2">
+                        <span>โปรเจกต์: <strong>{{ b.projectName }}</strong></span>
+                        @if (b.lastCommitSha) {
+                          <code class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono border border-slate-200 dark:border-slate-700">{{ b.lastCommitSha }}</code>
+                        }
+                        @if (b.lastCommitTitle) {
+                          <span>· <em>{{ b.lastCommitTitle }}</em></span>
+                        }
+                        @if (b.lastCommitAt) {
+                          <span>· {{ b.lastCommitAt | slice:0:16 }}</span>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      @if (!b.ticketId) {
+                        <button
+                          ejs-button
+                          cssClass="e-primary e-small"
+                          type="button"
+                          (click)="onCreateTicketFromBranch(b)"
+                        >
+                          <span class="e-icons e-plus me-1"></span> สร้างใบงาน
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-xs text-[color:var(--text-muted)] text-center py-6">
+                ยังไม่พบข้อมูล Branch สำหรับโปรเจกต์นี้
+              </div>
+            }
+          </app-section-card>
+        }
+      </div>
+    }
+
+    <!-- TAB 4: Teams & Members -->
+    @if (activeTab() === 'teams') {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Assigned Teams -->
+        <app-section-card
+          title="ทีมและแผนกที่รับผิดชอบ"
+          subtitle="แผนกที่ได้รับสิทธิ์ดูแลโปรเจกต์นี้ตามการตั้งค่าขององค์กร"
+        >
+          @if (p.assignedTeamIds.length > 0) {
+            <div class="flex flex-wrap gap-2 pt-2">
+              @for (teamId of p.assignedTeamIds; track teamId) {
+                <span class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                  ทีม: {{ teamId }}
+                </span>
+              }
+            </div>
+          } @else {
+            <div class="text-xs text-[color:var(--text-muted)] pt-2">
+              โปรเจกต์ส่วนกลาง (ไม่ได้จำกัดทีมไว้ ทุกทีมสามารถเข้าถึงได้)
+            </div>
+          }
+        </app-section-card>
+
+        <!-- Project Members Working -->
+        <app-section-card
+          title="กำลังพลในโปรเจกต์ (Project Members)"
+          subtitle="พนักงานที่มีใบงานในโปรเจกต์นี้และสัดส่วนภาระงาน"
+        >
+          @if (projectMembers().length > 0) {
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+              @for (m of projectMembers(); track m.personId) {
+                <div class="py-2.5 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <app-person-avatar [personId]="m.personId" [name]="m.name" size="sm" />
+                    <div>
+                      <div class="text-sm font-medium text-slate-800 dark:text-slate-100">{{ m.name }}</div>
+                      <div class="text-xs text-[color:var(--text-muted)]">{{ m.ticketCount }} ใบงาน</div>
+                    </div>
+                  </div>
+                  <div class="text-right font-mono text-xs">
+                    <strong>{{ m.totalMd }}</strong> MD
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-xs text-[color:var(--text-muted)] text-center py-6">
+              ยังไม่มีพนักงานได้รับมอบหมายงานในโปรเจกต์นี้
+            </div>
+          }
+        </app-section-card>
+      </div>
+    }
+
+    <!-- 1-Click Ticket Create Dialog Modal -->
+    <app-ticket-create-dialog
+      #createTicketDialog
+      (created)="onTicketCreated($event.ticketId)"
+    />
+  }
+</div>

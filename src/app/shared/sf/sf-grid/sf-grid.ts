@@ -449,7 +449,7 @@ export class SfGridComponent {
     return requested;
   });
 
-  protected readonly toolbar = computed<(ToolbarItems | string | object)[]>(() => {
+  protected readonly toolbar = computed<(ToolbarItems | string | object)[] | undefined>(() => {
     const items: (ToolbarItems | string | object)[] = [];
     if (this.options().search) items.push('Search');
     if (this.columnChooser()) items.push('ColumnChooser');
@@ -458,7 +458,7 @@ export class SfGridComponent {
     if (this.options().extraToolbar?.length) {
       items.push(...this.options().extraToolbar!);
     }
-    return items;
+    return items.length ? items : undefined;
   });
 
   protected templateFor(col: SfGridColumn): TemplateRef<{ $implicit: any }> | null {

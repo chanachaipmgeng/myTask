@@ -230,6 +230,18 @@
                     }
                   </div>
                 }
+                @if (instantResults().projects.length) {
+                  <div class="search-group">
+                    <div class="search-group__label">โปรเจกต์</div>
+                    @for (item of instantResults().projects; track item.id) {
+                      <button type="button" class="search-hit" (click)="goProjectFromSearch(item.id)">
+                        <span class="e-icons e-folder text-blue-500 me-1"></span>
+                        <strong>{{ item.name }}</strong>
+                        <span class="text-xs text-[color:var(--text-muted)] ms-1">({{ item.identifier }})</span>
+                      </button>
+                    }
+                  </div>
+                }
                 @if (instantResults().menus.length) {
                   <div class="search-group">
                     <div class="search-group__label">เมนู</div>

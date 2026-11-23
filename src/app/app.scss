@@ -726,7 +726,8 @@
   border-bottom: 1px solid var(--shell-appbar-border) !important;
   backdrop-filter: blur(12px);
   box-shadow: none !important;
-  z-index: 30 !important;
+  z-index: 100 !important;
+  overflow: visible !important;
 }
 
 .navbar-left {
@@ -857,6 +858,7 @@
   border: 1px solid var(--shell-omni-border);
   background: var(--shell-card-bg, #fff);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+  z-index: 1050;
 }
 
 .search-group {

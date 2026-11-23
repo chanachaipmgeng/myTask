@@ -8,6 +8,7 @@ import {
   PersonGitSummary,
   TeamGitMapping,
 } from '../../../shared/domain/git-branch';
+import { ProjectDetail, ProjectGitSummary } from '../../../shared/domain/project-detail';
 import { KpiPeriodType } from './kpi-snapshot';
 import { PersonScore, TrackWeights } from './scoring';
 import { AlertRules } from './admin-settings';
@@ -464,9 +465,22 @@ export class ApiClient {
     return api('/api/org/projects');
   }
 
+  getProjectDetail(id: string | number): Promise<{ ok: boolean; project: ProjectDetail; message?: string }> {
+    return api(`/api/org/projects/${encodeURIComponent(String(id))}`);
+  }
+
+  getProjectGitSummary(id: string | number): Promise<{ ok: boolean; summary: ProjectGitSummary; message?: string }> {
+    return api(`/api/org/projects/${encodeURIComponent(String(id))}/git-summary`);
+  }
+
   updateProject(
     id: string | number,
-    patch: { active?: boolean; assignedTeamIds?: string[] },
+    patch: {
+      active?: boolean;
+      assignedTeamIds?: string[];
+      gitRepoIds?: string[];
+      gitRepoNames?: string[];
+    },
   ): Promise<{ ok: boolean; project?: OpenProjectCatalogEntry; message?: string }> {
     return api(`/api/org/projects/${encodeURIComponent(String(id))}`, {
       method: 'PUT',

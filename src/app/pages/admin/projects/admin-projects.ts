@@ -124,7 +124,7 @@ export class AdminProjectsComponent implements OnInit {
     {
       field: 'actions',
       headerText: 'จัดการ',
-      width: 100,
+      width: 180,
       textAlign: 'Center',
       allowFiltering: false,
       allowSorting: false,

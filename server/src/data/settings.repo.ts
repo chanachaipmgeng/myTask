@@ -98,6 +98,8 @@ export function mergeSettings(raw: Partial<AppSettings> | null | undefined): App
               name?: string;
               active?: boolean;
               assignedTeamIds?: unknown;
+              gitRepoIds?: unknown;
+              gitRepoNames?: unknown;
             };
             return {
               id: typeof r.id === 'number' ? r.id : 0,
@@ -106,6 +108,10 @@ export function mergeSettings(raw: Partial<AppSettings> | null | undefined): App
               active: r.active !== false,
               assignedTeamIds: Array.isArray(r.assignedTeamIds)
                 ? (r.assignedTeamIds as unknown[]).map(String)
+                : [],
+              gitRepoIds: Array.isArray(r.gitRepoIds) ? (r.gitRepoIds as unknown[]).map(String) : [],
+              gitRepoNames: Array.isArray(r.gitRepoNames)
+                ? (r.gitRepoNames as unknown[]).map(String)
                 : [],
             };
           })

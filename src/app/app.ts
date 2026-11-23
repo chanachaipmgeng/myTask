@@ -9,6 +9,7 @@ import {
   actualRole,
   currentViewer,
   effectiveRole,
+  openprojectProjectCatalog,
   setWorkspaceMode,
   teamStagingMode,
   toggleViewAsMember,
@@ -125,7 +126,12 @@ export class App implements AfterViewInit {
   protected readonly instantResults = computed(() => {
     const q = this.globalSearch().trim().toLowerCase();
     if (!q || q.length < 1) {
-      return { tickets: [] as { id: string; title: string }[], people: [] as { id: string; name: string }[], menus: [] as NavLeaf[] };
+      return {
+        tickets: [] as { id: string; title: string }[],
+        people: [] as { id: string; name: string }[],
+        projects: [] as { id: string | number; name: string; identifier: string }[],
+        menus: [] as NavLeaf[],
+      };
     }
     const allowed = this.scorecard.effectiveAllowedTeams();
     const allowedSet = allowed ? new Set(allowed) : null;
@@ -164,10 +170,25 @@ export class App implements AfterViewInit {
       .slice(0, 8)
       .map((t) => ({ id: t.id, title: t.title ?? t.id }));
 
+    const projects = openprojectProjectCatalog()
+      .filter((p) => {
+        if (!p.active) return false;
+        if (allowedSet && p.assignedTeamIds && p.assignedTeamIds.length > 0) {
+          if (!p.assignedTeamIds.some((tid) => allowedSet.has(tid))) return false;
+        }
+        return (
+          String(p.id).includes(q) ||
+          p.name.toLowerCase().includes(q) ||
+          p.identifier.toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 5)
+      .map((p) => ({ id: p.id || p.identifier, name: p.name, identifier: p.identifier }));
+
     const menus = leavesFor(this.role())
       .filter((l) => l.text.toLowerCase().includes(q))
       .slice(0, 6);
-    return { tickets, people, menus };
+    return { tickets, people, projects, menus };
   });
 
   protected onGlobalSearch(event: Event): void {
@@ -326,6 +347,12 @@ export class App implements AfterViewInit {
       this.liveSearching.set(false);
     }
   }
+  protected goProjectFromSearch(id: string | number): void {
+    this.router.navigate(['/org/projects', id]);
+    this.searchOpen.set(false);
+    this.globalSearch.set('');
+  }
+
   protected onGlobalSearchSubmit(): void {
     const q = this.globalSearch().trim().toLowerCase();
     if (!q) return;
@@ -335,12 +362,26 @@ export class App implements AfterViewInit {
       this.openTicketFromSearch(instant.tickets[0]!.id);
       return;
     }
-    if (instant.people.length === 1 && instant.tickets.length === 0) {
+    if (instant.projects.length === 1 && instant.tickets.length === 0) {
+      this.goProjectFromSearch(instant.projects[0]!.id);
+      return;
+    }
+    if (instant.people.length === 1 && instant.tickets.length === 0 && instant.projects.length === 0) {
       this.goPersonFromSearch(instant.people[0]!.id);
       return;
     }
-    if (instant.menus.length === 1 && instant.tickets.length === 0 && instant.people.length === 0) {
+    if (
+      instant.menus.length === 1 &&
+      instant.tickets.length === 0 &&
+      instant.people.length === 0 &&
+      instant.projects.length === 0
+    ) {
       this.goMenuFromSearch(instant.menus[0]!.route);
+      return;
+    }
+
+    if (instant.projects[0] && instant.tickets.length === 0) {
+      this.goProjectFromSearch(instant.projects[0].id);
       return;
     }
 
@@ -1065,6 +1106,7 @@ function matchNavId(url: string, role: AccessRole = 'member'): string {
 
   // Lead & Admin: Sidebar รวมตามสิทธิ์จริง (3 หมวด)
   if (path === '/me' || path.startsWith('/me/')) return 'hub-mine';
+  if (path.startsWith('/org/projects') || path.startsWith('/projects/') || path.startsWith('/admin/projects')) return 'hub-projects';
   if (path === '/cockpit' || path.startsWith('/cockpit/') || path === '/team') return 'hub-cockpit';
   if (
     path.startsWith('/workspace/people') ||
@@ -1099,6 +1141,7 @@ function screenTitle(url: string): string {
   if (url.startsWith('/org/teams/') && url.includes('/cockpit')) return 'ทีม · ค็อกพิท';
   if (url.startsWith('/org/teams')) return 'ทีมในองค์กร';
   if (url.startsWith('/me/cockpit')) return 'ค็อกพิทของฉัน';
+  if (url.startsWith('/org/projects') || url.startsWith('/projects/')) return 'รายละเอียดโปรเจกต์ & แดชบอร์ด';
   if (url.startsWith('/cockpit')) return 'ค็อกพิท Bento';
   if (url.startsWith('/admin/projects')) return 'จัดการโปรเจกต์';
   if (url.startsWith('/admin/rubrics')) return 'ทะเบียนเกณฑ์';

@@ -117,7 +117,13 @@
     <ng-template #nameTpl let-data>
       <div class="flex items-center gap-2 py-1">
         <span class="e-icons e-folder text-blue-500"></span>
-        <span class="font-medium text-[color:var(--text-high)]">{{ data.name }}</span>
+        <a
+          [routerLink]="['/org/projects', data.id || data.identifier]"
+          class="font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+          title="ดูแดชบอร์ดสุขภาพและรายละเอียดโปรเจกต์"
+        >
+          {{ data.name }}
+        </a>
       </div>
     </ng-template>
 
@@ -158,15 +164,26 @@
     </ng-template>
 
     <ng-template #actionsTpl let-data>
-      <button
-        ejs-button
-        cssClass="e-small e-outline"
-        title="ดูใบงานทั้งหมดในโปรเจกต์นี้"
-        (click)="viewTickets(data)"
-      >
-        <span class="e-icons e-eye me-1"></span>
-        ดูงาน
-      </button>
+      <div class="flex items-center justify-center gap-1.5">
+        <a
+          [routerLink]="['/org/projects', data.id || data.identifier]"
+          ejs-button
+          cssClass="e-small e-primary"
+          title="ดูแดชบอร์ดสุขภาพและรายละเอียดโปรเจกต์"
+        >
+          <span class="e-icons e-chart me-1"></span>
+          แดชบอร์ด
+        </a>
+        <button
+          ejs-button
+          cssClass="e-small e-outline"
+          title="ดูใบงานทั้งหมดในโปรเจกต์นี้"
+          (click)="viewTickets(data)"
+        >
+          <span class="e-icons e-eye me-1"></span>
+          ดูงาน
+        </button>
+      </div>
     </ng-template>
 
     <!-- DataGrid: เลื่อนในคอนเทนเนอร์ กันดันหน้าแนวนอน -->

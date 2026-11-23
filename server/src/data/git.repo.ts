@@ -27,6 +27,7 @@ export async function listGitBranches(
     teamId?: string;
     unmatchedOnly?: boolean;
     status?: string;
+    projectId?: number | number[];
   },
 ): Promise<GitBranchItem[]> {
   const conditions: string[] = [];
@@ -44,6 +45,18 @@ export async function listGitBranches(
 
   if (filters?.unmatchedOnly) {
     conditions.push(`(b.ticket_id IS NULL OR b.ticket_id = '')`);
+  }
+
+  if (filters?.projectId !== undefined) {
+    if (Array.isArray(filters.projectId)) {
+      if (filters.projectId.length > 0) {
+        params.push(filters.projectId);
+        conditions.push(`b.project_id = ANY($${params.length})`);
+      }
+    } else {
+      params.push(filters.projectId);
+      conditions.push(`b.project_id = $${params.length}`);
+    }
   }
 
   if (filters?.teamId) {

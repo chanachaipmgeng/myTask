@@ -215,6 +215,8 @@ export interface OpenProjectCatalogEntry {
   name: string;
   active: boolean;
   assignedTeamIds?: string[];
+  gitRepoIds?: string[];
+  gitRepoNames?: string[];
   activeTicketsCount?: number;
 }
 

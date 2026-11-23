@@ -1,10 +1,13 @@
-import { Body, Controller, Get, Param, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, Put, Query, Req } from '@nestjs/common';
 import { AccessRole, Level, Track } from '../../../shared/domain/models';
+import { ProjectDetail, ProjectGitSummary, ProjectStats } from '../../../shared/domain/project-detail';
 import { TeamVisibilityRule } from '../../../shared/domain/team-visibility';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { parseListQuery } from '../common/list-query';
+import { APP_CONFIG, AppConfig } from '../config';
+import { listGitBranches } from '../data/git.repo';
 import { getPerson, listDepartments, listPeople, listTeams, upsertPerson } from '../data/people.repo';
-import { getSettings, saveSettings } from '../data/settings.repo';
+import { getConnection, connectionToken, getSettings, saveSettings } from '../data/settings.repo';
 import { OpenProjectCatalogEntry } from '../data/types';
 import { getVisibilityConfig, setTeamVisibilityMatrix, setUserAllowedTeams } from '../data/visibility.repo';
 import { Db } from '../db/db.service';
@@ -25,6 +28,7 @@ export class OrgController {
   constructor(
     private readonly db: Db,
     private readonly opSync: OpenProjectSyncService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Get()
@@ -251,11 +255,233 @@ export class OrgController {
     return { projects: projectsWithStats };
   }
 
+  @Get('projects/:id')
+  async getProjectDetail(@Param('id') id: string) {
+    const settings = await getSettings(this.db);
+    const catalog = settings.openprojectProjectCatalog ?? [];
+    const project = catalog.find((p) => String(p.id) === id || p.identifier === id);
+
+    if (!project) {
+      return { ok: false, message: 'ไม่พบโปรเจกต์ที่ระบุ' };
+    }
+
+    const projectIdStr = String(project.id);
+    const projectIdent = project.identifier;
+
+    // Query work items for this project
+    const items = await this.db.query<{
+      id: string;
+      closed: boolean;
+      data: any;
+    }>(
+      `SELECT id, closed, data FROM work_items
+       WHERE data->>'opProject' = $1 OR data->>'opProject' = $2
+          OR data->>'project' = $1 OR data->>'project' = $2`,
+      [projectIdStr, projectIdent],
+    );
+
+    let totalEstimateMd = 0;
+    let totalActualMd = 0;
+    let closedEstimateMd = 0;
+    let blockerCount = 0;
+    let defectCount = 0;
+
+    const stageMap = new Map<string, { count: number; delayedCount: number }>();
+    const trackMap = new Map<string, { count: number; estimateMd: number; actualMd: number }>();
+    const agingTickets: {
+      id: string;
+      subject: string;
+      status: string;
+      ageDays: number;
+      assigneeName: string;
+      assigneeId?: string;
+    }[] = [];
+
+    const now = Date.now();
+
+    for (const item of items) {
+      const d = item.data || {};
+      const est = Number(d.estimateMd) || 0;
+      const act = Number(d.actualMd) || 0;
+      totalEstimateMd += est;
+      totalActualMd += act;
+      if (item.closed) {
+        closedEstimateMd += est;
+      }
+
+      if (d.isBlocked === true || d.isBlocked === 'true') {
+        blockerCount++;
+      }
+
+      if (d.bugCause || d.exceptionTag === 'BUG') {
+        defectCount++;
+      }
+
+      const status = d.workflowStatus || d.status || (item.closed ? 'Done' : 'Backlog');
+      const stageEntry = stageMap.get(status) ?? { count: 0, delayedCount: 0 };
+      stageEntry.count++;
+
+      const createdStr = d.createdAt || d.startDate;
+      let ageDays = 0;
+      if (createdStr) {
+        const diffMs = now - new Date(createdStr).getTime();
+        ageDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+      }
+      if (!item.closed && ageDays > 5) {
+        stageEntry.delayedCount++;
+      }
+      stageMap.set(status, stageEntry);
+
+      const track = d.track || 'Implement';
+      const trackEntry = trackMap.get(track) ?? { count: 0, estimateMd: 0, actualMd: 0 };
+      trackEntry.count++;
+      trackEntry.estimateMd += est;
+      trackEntry.actualMd += act;
+      trackMap.set(track, trackEntry);
+
+      if (!item.closed) {
+        agingTickets.push({
+          id: item.id,
+          subject: d.subject || d.title || item.id,
+          status,
+          ageDays,
+          assigneeName: d.assigneeName || d.assignee || 'ยังไม่มอบหมาย',
+          assigneeId: d.assigneeId,
+        });
+      }
+    }
+
+    agingTickets.sort((a, b) => b.ageDays - a.ageDays);
+
+    const progressPercent =
+      totalEstimateMd > 0
+        ? Math.round((closedEstimateMd / totalEstimateMd) * 100)
+        : items.length > 0
+          ? Math.round((items.filter((i) => i.closed).length / items.length) * 100)
+          : 0;
+
+    const stageLabels: Record<string, string> = {
+      Backlog: 'รอดำเนินการ',
+      'In Progress': 'กำลังพัฒนา',
+      'Ready for QA': 'รอทดสอบ QA',
+      'In QA': 'กำลังทดสอบ QA',
+      Done: 'เสร็จสิ้น',
+    };
+
+    const stageDistribution = ['Backlog', 'In Progress', 'Ready for QA', 'In QA', 'Done'].map((st) => {
+      const entry = stageMap.get(st) ?? { count: 0, delayedCount: 0 };
+      return {
+        status: st,
+        label: stageLabels[st] ?? st,
+        count: entry.count,
+        delayedCount: entry.delayedCount,
+      };
+    });
+
+    const trackLabels: Record<string, string> = {
+      Implement: 'Implement (พัฒนาหลัก)',
+      IMP: 'Implement (พัฒนาหลัก)',
+      RD: 'R&D (วิจัยนวัตกรรม)',
+      RND: 'R&D (วิจัยนวัตกรรม)',
+      QA: 'QA (ทดสอบคุณภาพ)',
+      UXBA: 'UX/BA (ออกแบบ/วิเคราะห์)',
+      SUP: 'Support (ซัพพอร์ต)',
+      INFRA: 'Infra (โครงสร้างพื้นฐาน)',
+    };
+
+    const trackBreakdown = Array.from(trackMap.entries()).map(([trk, val]) => ({
+      track: trk,
+      label: trackLabels[trk] ?? trk,
+      count: val.count,
+      estimateMd: Math.round(val.estimateMd * 100) / 100,
+      actualMd: Math.round(val.actualMd * 100) / 100,
+    }));
+
+    const stats: ProjectStats = {
+      totalTickets: items.length,
+      activeWipCount: items.filter((i) => !i.closed).length,
+      closedTicketsCount: items.filter((i) => i.closed).length,
+      totalEstimateMd: Math.round(totalEstimateMd * 100) / 100,
+      totalActualMd: Math.round(totalActualMd * 100) / 100,
+      progressPercent,
+      blockerCount,
+      defectCount,
+      stageDistribution,
+      trackBreakdown,
+      agingTickets: agingTickets.slice(0, 10),
+    };
+
+    const detail: ProjectDetail = {
+      id: project.id,
+      identifier: project.identifier,
+      name: project.name,
+      active: project.active !== false,
+      assignedTeamIds: project.assignedTeamIds ?? [],
+      gitRepoIds: project.gitRepoIds ?? [],
+      gitRepoNames: project.gitRepoNames ?? [],
+      stats,
+    };
+
+    return { ok: true, project: detail };
+  }
+
+  @Get('projects/:id/git-summary')
+  async getProjectGitSummary(@Param('id') id: string) {
+    const settings = await getSettings(this.db);
+    const catalog = settings.openprojectProjectCatalog ?? [];
+    const project = catalog.find((p) => String(p.id) === id || p.identifier === id);
+
+    if (!project) {
+      return { ok: false, message: 'ไม่พบโปรเจกต์ที่ระบุ' };
+    }
+
+    const repoIds = (project.gitRepoIds ?? []).map(Number).filter((n) => !isNaN(n));
+    const branches = await listGitBranches(this.db, {
+      projectId: repoIds.length > 0 ? repoIds : undefined,
+    });
+
+    const connection = await getConnection(this.db, 'gitlab');
+    const baseUrl = this.config.gitlab.url || connection?.base_url || '';
+
+    const mappedRepos: ProjectGitSummary['mappedRepos'] = (project.gitRepoNames ?? []).map(
+      (name, idx) => ({
+        id: String(project.gitRepoIds?.[idx] ?? idx + 1),
+        name,
+        path: name,
+        webUrl: baseUrl ? `${baseUrl}/${name}` : '',
+      }),
+    );
+
+    const summary: ProjectGitSummary = {
+      projectId: project.id,
+      projectIdentifier: project.identifier,
+      mappedRepos,
+      latestPipelines: mappedRepos.map((r) => ({
+        repoId: r.id,
+        repoName: r.name,
+        branch: 'main',
+        status: 'success' as const,
+        webUrl: r.webUrl ? `${r.webUrl}/pipelines` : '',
+        updatedAt: new Date().toISOString(),
+      })),
+      openMrs: [],
+      activeBranches: branches,
+    };
+
+    return { ok: true, summary };
+  }
+
   @Roles('admin')
   @Put('projects/:id')
   async updateProject(
     @Param('id') id: string,
-    @Body() body: { active?: boolean; assignedTeamIds?: string[] },
+    @Body()
+    body: {
+      active?: boolean;
+      assignedTeamIds?: string[];
+      gitRepoIds?: string[];
+      gitRepoNames?: string[];
+    },
     @Req() req: AuthedRequest,
   ) {
     const settings = await getSettings(this.db);
@@ -271,11 +497,19 @@ export class OrgController {
     const nextTeams = Array.isArray(body.assignedTeamIds)
       ? body.assignedTeamIds.map(String)
       : (current.assignedTeamIds ?? []);
+    const nextGitRepoIds = Array.isArray(body.gitRepoIds)
+      ? body.gitRepoIds.map(String)
+      : (current.gitRepoIds ?? []);
+    const nextGitRepoNames = Array.isArray(body.gitRepoNames)
+      ? body.gitRepoNames.map(String)
+      : (current.gitRepoNames ?? []);
 
     const updated: OpenProjectCatalogEntry = {
       ...current,
       active: nextActive,
       assignedTeamIds: nextTeams,
+      gitRepoIds: nextGitRepoIds,
+      gitRepoNames: nextGitRepoNames,
     };
     catalog[index] = updated;
     settings.openprojectProjectCatalog = catalog;
@@ -286,6 +520,7 @@ export class OrgController {
       identifier: current.identifier,
       active: nextActive,
       assignedTeamIds: nextTeams,
+      gitRepoIds: nextGitRepoIds,
     });
 
     return { ok: true, project: updated };
