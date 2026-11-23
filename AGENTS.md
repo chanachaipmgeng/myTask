@@ -43,6 +43,7 @@ npm --prefix server run build
   - `/analytics/time-audit`: ตาราง 3-Way Time Matching Grid เปรียบเทียบ Estimate vs OpenProject Actual vs GitLab Commit Span
   - `/tickets/disputes`: `ejs-splitter` รายการคำขอด้านซ้าย และแผงคำนวณคะแนนจำลอง (Projected Score Diff) ด้านขวา พร้อม `ejs-dialog` ยื่นอุทธรณ์
   - `/admin/snapshot-check`: `ejs-progressbar` แสดง Readiness % + เช็คลิสต์ 4 ด่าน + ตาราง Snapshot Preview Diff เปรียบเทียบดัชนีรายบุคคลก่อน Freeze
+  - `/admin/projects`: `app-sf-grid` จัดการแคตตาล็อกโปรเจกต์ (เปิด/ปิด Active, ผูก Assigned Teams แบบ MultiSelect, และ Smart Merge Sync ดึงสดจาก OpenProject API พร้อมนับตั๋วงาน WIP)
 - **Modern Bento Grid Cockpit (P16 - `/cockpit` & `/me/cockpit`)**:
   - **100vh Viewport Lock & Fluid Scaling**: ล็อกความสูง `calc(100vh - 78px)` เฉพาะจอเดสก์ท็อปขนาดใหญ่ `@media (min-width: 1200px) and (min-height: 850px)` หากความสูงหน้าจอ $< 850$px (เช่น แล็ปท็อปที่เปิด Windows Scaling 125%/150%) ให้ยืดหยุ่นเป็น `min-height` พร้อม `overflow-y: auto` ป้องกันกราฟ Tier 3 โดนตัดขอบล่าง โดยที่ `.shell-appbar` ต้องกำหนด `flex-wrap: nowrap !important;` ล็อกความสูงคงที่ 56px เสมอ
   - **ResizeObserver Chart Protection**: ต้องผูก `ResizeObserver` ใน `ngAfterViewInit` พร้อม debounce (150ms) เพื่อยิง event resize ให้ชาร์ต Syncfusion คำนวณขนาดใหม่ทุกครั้งที่พับ/ขยาย Sidebar

@@ -283,6 +283,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/admin').then((m) => m.AdminPage),
   },
   {
+    path: 'admin/projects',
+    canActivate: [requireRoles('admin')],
+    loadComponent: () => import('./pages/admin/projects/admin-projects').then((m) => m.AdminProjectsComponent),
+  },
+  {
     path: 'admin/rubrics',
     canActivate: [requireRoles('admin')],
     loadComponent: () => import('./pages/admin/rubrics/admin-rubrics').then((m) => m.AdminRubricsPage),

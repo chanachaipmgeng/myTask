@@ -14,7 +14,11 @@ import {
 } from '../../../shared/domain/workspace-scope';
 import { listWorkProjectOptions } from '../../../shared/domain/work-views';
 import { Person, Ticket } from './models';
-import { openprojectProjectCatalog } from './admin-settings';
+import {
+  currentViewer,
+  OpenProjectCatalogEntry,
+  openprojectProjectCatalog,
+} from './admin-settings';
 import { ScorecardService } from './scorecard.service';
 
 function parseTrack(raw: string | null | undefined): WorkspaceTrackFilter {
@@ -149,17 +153,51 @@ export class WorkspaceFilter {
       cycle,
     );
     const fromTickets = listWorkProjectOptions(scoped);
-    const map = new Map<string, string>();
-    for (const row of openprojectProjectCatalog()) {
+    const catalog = openprojectProjectCatalog();
+    const isAdmin = currentViewer().access === 'admin';
+    const allowedTeams = this.scorecard.effectiveAllowedTeams();
+
+    const catalogMap = new Map<string, OpenProjectCatalogEntry>();
+    for (const row of catalog) {
       if (row.identifier) {
-        map.set(row.identifier, row.name || row.identifier);
+        catalogMap.set(row.identifier, row);
       }
     }
+
+    const map = new Map<string, string>();
+    for (const row of catalog) {
+      if (!row.identifier) continue;
+      // Inactive projects are hidden from the dropdown
+      if (row.active === false) continue;
+
+      // Non-admins only see projects assigned to their allowed teams (or projects not restricted to any team)
+      if (!isAdmin && allowedTeams && allowedTeams.length > 0) {
+        const assigned = row.assignedTeamIds ?? [];
+        if (assigned.length > 0 && !assigned.some((t) => allowedTeams.includes(t))) {
+          continue;
+        }
+      }
+
+      map.set(row.identifier, row.name || row.identifier);
+    }
+
     for (const row of fromTickets) {
-      if (row.id) {
+      if (!row.id) continue;
+      const catEntry = catalogMap.get(row.id);
+      if (catEntry && catEntry.active === false) {
+        continue;
+      }
+      if (!isAdmin && allowedTeams && allowedTeams.length > 0 && catEntry) {
+        const assigned = catEntry.assignedTeamIds ?? [];
+        if (assigned.length > 0 && !assigned.some((t) => allowedTeams.includes(t))) {
+          continue;
+        }
+      }
+      if (!map.has(row.id)) {
         map.set(row.id, row.label);
       }
     }
+
     return [
       { text: 'ทุกโปรเจกต์', value: '' },
       ...[...map.entries()]

@@ -807,6 +807,7 @@ const ADMIN_SIDEBAR_SECTION: SidebarSection = {
   label: 'ตั้งค่าระบบ',
   items: [
     { id: 'hub-admin', text: 'หลังบ้าน & สิทธิ์', iconCss: 'e-icons e-lock', route: '/admin', exact: true },
+    { id: 'hub-projects', text: 'จัดการโปรเจกต์', iconCss: 'e-icons e-folder', route: '/admin/projects' },
     { id: 'hub-rubrics', text: 'ทะเบียนเกณฑ์', iconCss: 'e-icons e-bookmark', route: '/admin/rubrics' },
     { id: 'hub-snapshot', text: 'ตรวจก่อนแช่แข็ง', iconCss: 'e-icons e-check-box', route: '/admin/snapshot-check' },
     { id: 'hub-integrations', text: 'เชื่อมต่อ & Teams', iconCss: 'e-icons e-settings', route: '/integrations' },
@@ -1005,6 +1006,7 @@ const allNavGroups: NavGroup[] = [
     roles: ['admin'],
     children: [
       { id: 'admin-home', text: 'หลังบ้าน & สิทธิ์', iconCss: 'e-icons e-lock', route: '/admin', exact: true },
+      { id: 'admin-projects', text: 'จัดการโปรเจกต์', iconCss: 'e-icons e-folder', route: '/admin/projects' },
       { id: 'integrations', text: 'เชื่อมต่อระบบ', iconCss: 'e-icons e-settings', route: '/integrations' },
       {
         id: 'snapshot-check',
@@ -1080,6 +1082,7 @@ function matchNavId(url: string, role: AccessRole = 'member'): string {
     return 'hub-insights';
   }
   if (path === '/admin') return 'hub-admin';
+  if (path.startsWith('/admin/projects')) return 'hub-projects';
   if (path.startsWith('/admin/rubrics')) return 'hub-rubrics';
   if (path.startsWith('/admin/snapshot-check')) return 'hub-snapshot';
   if (path.startsWith('/integrations') || path === '/teams') return 'hub-integrations';
@@ -1097,6 +1100,7 @@ function screenTitle(url: string): string {
   if (url.startsWith('/org/teams')) return 'ทีมในองค์กร';
   if (url.startsWith('/me/cockpit')) return 'ค็อกพิทของฉัน';
   if (url.startsWith('/cockpit')) return 'ค็อกพิท Bento';
+  if (url.startsWith('/admin/projects')) return 'จัดการโปรเจกต์';
   if (url.startsWith('/admin/rubrics')) return 'ทะเบียนเกณฑ์';
   if (url.startsWith('/work/team-time')) return 'เวลาทีมรายวัน';
   if (url.startsWith('/me/time-log')) return 'ลงเวลางาน';

@@ -154,15 +154,42 @@ export class WorkShell {
     const base = this.filter.filterOptions(people);
     const withoutProject = filterWorkTickets(this.scorecard.tickets(), { ...base, opProject: undefined });
     const fromTickets = listWorkProjectOptions(withoutProject);
-    const map = new Map<string, string>();
-    for (const row of openprojectProjectCatalog()) {
+    const catalog = openprojectProjectCatalog();
+    const isAdmin = currentViewer().access === 'admin';
+    const allowedTeams = this.scorecard.effectiveAllowedTeams();
+
+    const catalogMap = new Map<string, (typeof catalog)[number]>();
+    for (const row of catalog) {
       if (row.identifier) {
-        map.set(row.identifier, row.name || row.identifier);
+        catalogMap.set(row.identifier, row);
       }
+    }
+
+    const map = new Map<string, string>();
+    for (const row of catalog) {
+      if (!row.identifier) continue;
+      if (row.active === false) continue;
+      if (!isAdmin && allowedTeams && allowedTeams.length > 0) {
+        const assigned = row.assignedTeamIds ?? [];
+        if (assigned.length > 0 && !assigned.some((t) => allowedTeams.includes(t))) {
+          continue;
+        }
+      }
+      map.set(row.identifier, row.name || row.identifier);
     }
     for (const row of fromTickets) {
       if (row.id) {
-        map.set(row.id, row.label);
+        const catEntry = catalogMap.get(row.id);
+        if (catEntry && catEntry.active === false) continue;
+        if (!isAdmin && allowedTeams && allowedTeams.length > 0 && catEntry) {
+          const assigned = catEntry.assignedTeamIds ?? [];
+          if (assigned.length > 0 && !assigned.some((t) => allowedTeams.includes(t))) {
+            continue;
+          }
+        }
+        if (!map.has(row.id)) {
+          map.set(row.id, row.label);
+        }
       } else {
         map.set('__none__', row.label);
       }

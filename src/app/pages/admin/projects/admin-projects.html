@@ -1,0 +1,187 @@
+<div class="admin-projects-page">
+  <app-page-head
+    title="จัดการแคตตาล็อกโปรเจกต์"
+    description="ตรวจสอบ เปิด/ปิดสถานะ Active และกำหนดทีมที่รับผิดชอบของโปรเจกต์เพื่อควบคุมการมองเห็นทั่วทั้งระบบ"
+  >
+    <div actions class="flex flex-wrap items-center gap-2">
+      <button
+        ejs-button
+        cssClass="e-primary"
+        [disabled]="!canEdit() || syncing()"
+        (click)="syncFromOpenProject()"
+      >
+        <span class="e-icons e-sync me-1.5" [class.e-spin]="syncing()"></span>
+        {{ syncing() ? 'กำลังซิงก์โปรเจกต์...' : 'ซิงก์โปรเจกต์จาก myProject' }}
+      </button>
+
+      <a
+        routerLink="/admin"
+        ejs-button
+        cssClass="e-outline"
+      >
+        <span class="e-icons e-settings me-1"></span>
+        ตั้งค่าระบบ
+      </a>
+    </div>
+  </app-page-head>
+
+  <!-- KPI Strip -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <app-kpi-stat
+      title="โปรเจกต์ทั้งหมด"
+      [value]="totalProjects()"
+      hint="แคตตาล็อกที่มีในระบบทั้งหมด"
+      iconCss="e-icons e-folder"
+      accent="info"
+    />
+
+    <app-kpi-stat
+      title="เปิดใช้งาน (Active)"
+      [value]="activeProjects()"
+      [hint]="'คิดเป็น ' + activePercentage() + '% ของทั้งหมด'"
+      iconCss="e-icons e-check"
+      accent="success"
+    />
+
+    <app-kpi-stat
+      title="ใบงานคงค้างรวม (WIP)"
+      [value]="totalActiveTickets()"
+      hint="ตั๋วงานที่กำลังดำเนินงานในระบบ"
+      iconCss="e-icons e-chart"
+      accent="default"
+    />
+
+    <app-kpi-stat
+      title="ยังไม่ระบุทีม"
+      [value]="unassignedTeamsCount()"
+      hint="โปรเจกต์ส่วนกลางที่เปิดให้ทุกทีม"
+      iconCss="e-icons e-people"
+      accent="warning"
+    />
+  </div>
+
+  <!-- Main Card with Filters and DataGrid -->
+  <app-section-card
+    title="รายชื่อและคอนฟิกโปรเจกต์"
+    subtitle="จัดการเปิด/ปิดการมองเห็นและจำกัดสิทธิ์ทีมที่เข้าถึงโปรเจกต์"
+  >
+    <!-- Filter bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="w-72">
+          <app-sf-textbox
+            [value]="searchQuery()"
+            [options]="{ placeholder: 'ค้นหาชื่อหรือรหัสโปรเจกต์...', clearButton: true }"
+            (valueInput)="searchQuery.set($event)"
+            (valueChange)="searchQuery.set($event)"
+          />
+        </div>
+
+        <div class="w-72">
+          <app-sf-dropdown
+            [items]="teamFilterOptions()"
+            [value]="filterTeam()"
+            [options]="{ placeholder: 'กรองตามทีม...' }"
+            (valueChange)="filterTeam.set($event)"
+          />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-[color:var(--text-muted)] font-medium">สถานะ:</span>
+        <div class="inline-flex rounded-lg border border-[color:var(--line)] p-0.5 bg-[color:var(--surface-sunken)]">
+          @for (chip of statusFilterChips; track chip.id) {
+            <button
+              type="button"
+              class="px-2.5 py-1 text-xs font-medium rounded-md transition-colors"
+              [class.bg-[color:var(--surface)]]="filterStatus() === chip.id"
+              [class.text-[color:var(--text-high)]]="filterStatus() === chip.id"
+              [class.shadow-sm]="filterStatus() === chip.id"
+              [class.text-[color:var(--text-muted)]]="filterStatus() !== chip.id"
+              (click)="filterStatus.set($any(chip.id))"
+            >
+              {{ chip.label }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Column Templates -->
+    <ng-template #identifierTpl let-data>
+      <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-[color:var(--surface-sunken)] border border-[color:var(--line)]">
+        {{ data.identifier }}
+      </span>
+    </ng-template>
+
+    <ng-template #nameTpl let-data>
+      <div class="flex items-center gap-2 py-1">
+        <span class="e-icons e-folder text-blue-500"></span>
+        <span class="font-medium text-[color:var(--text-high)]">{{ data.name }}</span>
+      </div>
+    </ng-template>
+
+    <ng-template #activeTicketsTpl let-data>
+      <span
+        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tabular-nums"
+        [class.bg-blue-50]="data.activeTicketsCount > 0"
+        [class.text-blue-700]="data.activeTicketsCount > 0"
+        [class.bg-slate-100]="!data.activeTicketsCount"
+        [class.text-slate-500]="!data.activeTicketsCount"
+      >
+        {{ data.activeTicketsCount || 0 }}
+      </span>
+    </ng-template>
+
+    <ng-template #assignedTeamsTpl let-data>
+      <app-sf-multiselect
+        [items]="teamSelectOptions()"
+        [value]="data.assignedTeamIds || []"
+        [disabled]="!canEdit()"
+        [options]="{ placeholder: 'ทุกทีม (ไม่จำกัด)...', width: '100%', mode: 'Box' }"
+        (valueChange)="onTeamsChange(data, $event)"
+      />
+    </ng-template>
+
+    <ng-template #activeTpl let-data>
+      <div class="flex items-center justify-center gap-2">
+        <app-sf-checkbox
+          [checked]="data.active !== false"
+          [disabled]="!canEdit()"
+          (checkedChange)="onToggleActive(data, $event)"
+        />
+        <app-status-badge
+          [value]="data.active !== false ? 'เปิดใช้งาน' : 'ปิดใช้งาน'"
+          [tone]="data.active !== false ? 'success' : 'secondary'"
+        />
+      </div>
+    </ng-template>
+
+    <ng-template #actionsTpl let-data>
+      <button
+        ejs-button
+        cssClass="e-small e-outline"
+        title="ดูใบงานทั้งหมดในโปรเจกต์นี้"
+        (click)="viewTickets(data)"
+      >
+        <span class="e-icons e-eye me-1"></span>
+        ดูงาน
+      </button>
+    </ng-template>
+
+    <!-- DataGrid -->
+    <app-sf-grid
+      [data]="filteredProjects()"
+      [columns]="gridColumns"
+      [cellTemplates]="{
+        identifier: identifierTpl,
+        name: nameTpl,
+        activeTicketsCount: activeTicketsTpl,
+        assignedTeamIds: assignedTeamsTpl,
+        active: activeTpl,
+        actions: actionsTpl
+      }"
+      [options]="gridOptions"
+    />
+  </app-section-card>
+</div>
