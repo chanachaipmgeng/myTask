@@ -6,7 +6,7 @@ import { SpeechToTextModule, TranscriptChangedEventArgs } from '@syncfusion/ej2-
 import { map } from 'rxjs';
 import { ApiClient } from '../../core/api-client';
 import { currentViewer, trackWeights, weeklyQuotas } from '../../core/admin-settings';
-import { mdCompositionTrend } from '../../core/dashboard-charts';
+import { accuracyScatterPoints, mdCompositionTrend, scoreWaterfall } from '../../core/dashboard-charts';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
@@ -17,6 +17,8 @@ import {
   SfChartComponent,
   SfChartOptions,
   SfChartSeriesConfig,
+  scatterBandSeries,
+  scorePartWaterfallSeries,
   SfDonutChartComponent,
   SfDonutChartOptions,
   SfGridAggregate,
@@ -129,6 +131,70 @@ export class PersonDashboard {
     tooltip: { enable: true, shared: true, enableMarker: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b>' },
   };
   protected readonly qualityChartOptions: SfChartOptions = { ...this.commonChartOptions, height: '280px' };
+  protected readonly scatterOptions: SfChartOptions = {
+    ...this.commonChartOptions,
+    height: '300px',
+    tooltip: { enable: true, shared: false, header: '', format: '${point.tooltip}' },
+  };
+  protected readonly waterfallOptions: SfChartOptions = {
+    ...this.commonChartOptions,
+    height: '300px',
+    margin: { top: 36, right: 28, bottom: 8, left: 4 },
+    legend: { visible: false },
+    tooltip: { enable: true, shared: false, format: '${point.x}: <b>${point.y}</b>' },
+  };
+
+  private readonly ownTickets = computed(() =>
+    this.scorecard.tickets().filter((ticket) => ticket.assigneeId === this.personId()),
+  );
+  protected readonly personScatter = computed(() => accuracyScatterPoints(this.ownTickets()));
+  protected readonly personWaterfall = computed(() => scoreWaterfall(this.ownTickets()));
+  protected readonly scatterSeries = computed<SfChartSeriesConfig[]>(() => scatterBandSeries(this.personScatter()));
+  protected readonly waterfallSeries = computed<SfChartSeriesConfig[]>(() =>
+    scorePartWaterfallSeries(this.personWaterfall().points),
+  );
+  protected readonly scatterXAxis = {
+    valueType: 'Double' as const,
+    title: 'Estimate (MD)',
+    minimum: 0,
+    titleStyle: this.axisFont,
+    labelStyle: this.axisFont,
+    majorGridLines: { width: 1, dashArray: '4,4' },
+  };
+  protected readonly scatterYAxis = computed(() => {
+    const peak = this.personScatter().reduce((max, point) => Math.max(max, point.ratio), 0);
+    return {
+      title: 'อัตราส่วนสุทธิ',
+      minimum: 0,
+      maximum: Math.max(2.5, Math.ceil(peak * 2) / 2),
+      titleStyle: this.axisFont,
+      labelStyle: this.axisFont,
+      majorGridLines: { width: 1, dashArray: '4,4' },
+      stripLines: [
+        {
+          start: 1,
+          size: 2,
+          sizeType: 'Pixel' as const,
+          color: '#64748b',
+          dashArray: '6,4',
+          text: 'อัตราส่วน 1.0',
+          horizontalAlignment: 'End' as const,
+          textStyle: { color: '#64748b', size: '11px' },
+        },
+      ],
+    };
+  });
+  protected readonly waterfallYAxis = {
+    minimum: 0,
+    maximum: 100,
+    interval: 20,
+    title: 'คะแนน',
+    titleStyle: this.axisFont,
+    labelStyle: this.axisFont,
+    majorTickLines: { width: 0 },
+    lineStyle: { width: 0 },
+    majorGridLines: { width: 1, dashArray: '4,4' },
+  };
 
   protected readonly selfTrendSeries = computed<SfChartSeriesConfig[]>(() => {
     const trend = this.view().trend;

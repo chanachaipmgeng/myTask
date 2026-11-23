@@ -1,5 +1,12 @@
 export { SfGridComponent, type SfGridColumn, type SfGridOptions, type SfGridAggregate } from './sf-grid/sf-grid';
-export { SfChartComponent, type SfChartOptions, type SfChartSeriesConfig } from './sf-chart/sf-chart';
+export {
+  SfChartComponent,
+  scatterBandSeries,
+  scorePartWaterfallSeries,
+  type SfChartOptions,
+  type SfChartSeriesConfig,
+} from './sf-chart/sf-chart';
+export { SfHeatmapComponent, type SfHeatmapCell, type SfHeatmapOptions } from './sf-heatmap/sf-heatmap';
 export { SfDonutChartComponent, type SfDonutChartOptions } from './sf-donut-chart/sf-donut-chart';
 export { SfDialogComponent, type SfDialogOptions } from './sf-dialog/sf-dialog';
 export { SfMessageComponent, type SfMessageOptions } from './sf-message/sf-message';

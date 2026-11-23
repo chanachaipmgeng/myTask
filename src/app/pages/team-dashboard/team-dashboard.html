@@ -138,6 +138,26 @@
         />
       </app-section-card>
 
+      <div class="card-grid-2__full">
+        <app-section-card
+          title="ดัชนีรายคนรายเดือน"
+          subtitle="สีเทียบเป้า 75 · ช่องว่างคือเดือนที่คนนั้นยังไม่มีใบปิด · ใช้ดัชนีพัฒนาการชุดเดียวกับโปรไฟล์คน"
+        >
+          @if (indexHeatmap().cells.length === 0) {
+            <app-sf-message content="ยังไม่มีใบที่ปิดในช่วงนี้สำหรับวาดตารางดัชนี" severity="Info" />
+          } @else {
+            <div class="chart-frame m-0">
+              <app-sf-heatmap
+                [cells]="heatCells()"
+                [xLabels]="indexHeatmap().months"
+                [yLabels]="indexHeatmap().people"
+                [options]="heatOptions()"
+              />
+            </div>
+          }
+        </app-section-card>
+      </div>
+
       <app-section-card title="แจ้งเตือนใบที่เปิดอยู่" subtitle="รายการที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate">
         <div class="max-h-[260px] overflow-y-auto pr-1">
           @if (alerts().length === 0) {

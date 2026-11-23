@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { currentViewer } from '../../core/admin-settings';
+import { accuracyScatterPoints } from '../../core/dashboard-charts';
 import { computeThreeWayTimeAudit } from '../../core/multi-team';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
@@ -15,10 +16,15 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
+  SfChartComponent,
+  SfChartOptions,
+  SfChartSeriesConfig,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  SfMessageComponent,
   StatusBadgeComponent,
+  scatterBandSeries,
 } from '../../shared/ui';
 
 @Component({
@@ -32,7 +38,9 @@ import {
     SectionCardComponent,
     FilterChipsComponent,
     StatusBadgeComponent,
+    SfChartComponent,
     SfGridComponent,
+    SfMessageComponent,
   ],
   templateUrl: './time-audit.html',
 })
@@ -156,6 +164,54 @@ export class TimeAuditPage {
   protected setFilter(type: string): void {
     this.filterType.set(type);
   }
+
+  protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
+  protected readonly scatterPoints = computed(() => {
+    const ids = new Set(this.filteredRows().map((row) => row.ticketId));
+    return accuracyScatterPoints(this.scorecard.tickets().filter((ticket) => ids.has(ticket.id)));
+  });
+  protected readonly scatterXAxis = {
+    valueType: 'Double' as const,
+    title: 'Estimate (MD)',
+    minimum: 0,
+    titleStyle: this.axisFont,
+    labelStyle: this.axisFont,
+    majorGridLines: { width: 1, dashArray: '4,4' },
+  };
+  protected readonly scatterYAxis = computed(() => {
+    const peak = this.scatterPoints().reduce((max, point) => Math.max(max, point.ratio), 0);
+    return {
+      title: 'อัตราส่วนสุทธิ',
+      minimum: 0,
+      maximum: Math.max(2.5, Math.ceil(peak * 2) / 2),
+      titleStyle: this.axisFont,
+      labelStyle: this.axisFont,
+      majorGridLines: { width: 1, dashArray: '4,4' },
+      stripLines: [
+        {
+          start: 1,
+          size: 2,
+          sizeType: 'Pixel' as const,
+          color: '#64748b',
+          dashArray: '6,4',
+          text: 'อัตราส่วน 1.0',
+          horizontalAlignment: 'End' as const,
+          textStyle: { color: '#64748b', size: '11px' },
+        },
+      ],
+    };
+  });
+  protected readonly scatterSeries = computed<SfChartSeriesConfig[]>(() =>
+    scatterBandSeries(this.scatterPoints()),
+  );
+  protected readonly scatterOptions: SfChartOptions = {
+    height: '320px',
+    exportable: true,
+    fullscreenable: true,
+    enableAnimation: true,
+    legend: { visible: true, position: 'Top', textStyle: this.axisFont },
+    tooltip: { enable: true, shared: false, header: '', format: '${point.tooltip}' },
+  };
 
   protected rerunAudit(): void {
     this.notice.info('กำลังเรียกเครื่องยนต์ Python Analytics เพื่อคำนวณและตรวจสอบเวลา 3 ทางใหม่...');

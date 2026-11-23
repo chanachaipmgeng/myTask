@@ -13,7 +13,13 @@ import {
 import { buildAnalyticsReport } from '../src/app/core/analytics';
 import { collectAlerts, projectedActual } from '../src/app/core/alerts';
 import { planNewWork } from '../src/app/core/capacity';
-import { monthlyTrend, quotaBars } from '../src/app/core/dashboard-charts';
+import {
+  accuracyScatterPoints,
+  monthlyTrend,
+  personMonthIndexHeatmap,
+  quotaBars,
+  scoreWaterfall,
+} from '../src/app/core/dashboard-charts';
 import {
   buildPeriodSnapshots,
   periodBounds,
@@ -424,6 +430,27 @@ const researchView = personDashboard(chanachai, SEED_TICKETS);
 assert.equal(implementView.formulaId, 'Implement');
 assert.equal(researchView.formulaId, 'RD');
 assert.notEqual(implementView.formula, researchView.formula);
+const scatter = accuracyScatterPoints(SEED_TICKETS);
+assert.ok(scatter.length > 0, 'accuracy scatter');
+const bugPoint = scatter.find((point) => point.ticketId === REFERENCE_BUG_ID);
+assert.ok(bugPoint);
+assert.equal(bugPoint.band, 'in');
+assert.ok(bugPoint.ratio > 0);
+const itsaraFall = scoreWaterfall(SEED_TICKETS.filter((ticket) => ticket.assigneeId === 'itsara'));
+assert.ok(itsaraFall.closedCount > 0);
+assert.equal(itsaraFall.points.length, 5);
+assert.equal(itsaraFall.points[4]?.points, undefined);
+const partSum = itsaraFall.points.slice(0, 4).reduce((sum, point) => sum + (point.points ?? 0), 0);
+assert.equal(itsaraFall.total, Math.round(partSum * 10) / 10);
+assert.equal(scoreWaterfall([]).points.length, 0);
+const heat = personMonthIndexHeatmap(SEED_PEOPLE, SEED_TICKETS);
+assert.ok(heat.cells.length > 0 && heat.months.length >= 1);
+const itsaraCell = heat.cells.find((cell) => cell.personId === 'itsara');
+assert.ok(itsaraCell);
+const monthTickets = SEED_TICKETS.filter(
+  (ticket) => ticket.assigneeId === 'itsara' && ticket.closed && ticket.closedOn?.startsWith(itsaraCell.monthKey),
+);
+assert.equal(itsaraCell.index, Math.round(scorePerson(itsara, monthTickets).developmentIndex * 10) / 10);
 assert.equal(implementView.index, Math.round(scorePerson(itsara, SEED_TICKETS).developmentIndex * 10) / 10);
 assert.equal(researchView.index, Math.round(scorePerson(chanachai, SEED_TICKETS).developmentIndex * 10) / 10);
 assert.ok(implementView.trend.length > 0 && researchView.trend.every((point) => point.target === INDEX_TARGET));

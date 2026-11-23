@@ -19,11 +19,12 @@ import {
   SfChartComponent,
   SfChartOptions,
   SfChartSeriesConfig,
+  scorePartWaterfallSeries,
   SfDialogComponent,
   SfDonutChartComponent,
   SfDonutChartOptions,
 } from '../../shared/ui';
-import { mdCompositionTrend, MdCompositionPoint } from '../../core/dashboard-charts';
+import { mdCompositionTrend, MdCompositionPoint, scoreWaterfall } from '../../core/dashboard-charts';
 import { computeHandoffSlaSummary, computeQualityAuditSummary } from '../../core/multi-team';
 import { Ticket } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -466,6 +467,27 @@ export class CockpitPage implements OnInit {
     majorGridLines: { width: 1, color: 'rgba(148, 163, 184, 0.12)' },
     lineStyle: { width: 0 },
     labelStyle: { color: 'var(--muted)' },
+  };
+
+  protected readonly scoreParts = computed(() => scoreWaterfall(this.scopedTickets()));
+  protected readonly waterfallSeries = computed<SfChartSeriesConfig[]>(() =>
+    scorePartWaterfallSeries(this.scoreParts().points),
+  );
+  protected readonly waterfallYAxis = {
+    minimum: 0,
+    maximum: 100,
+    interval: 20,
+    title: 'คะแนน',
+    labelStyle: { color: 'var(--muted)' },
+    majorGridLines: { width: 1, color: 'rgba(148, 163, 184, 0.12)' },
+    lineStyle: { width: 0 },
+  };
+  protected readonly waterfallOptions: SfChartOptions = {
+    height: '320px',
+    margin: { top: 28, right: 24, bottom: 8, left: 4 },
+    legend: { visible: false },
+    tooltip: { enable: true, shared: false },
+    enableAnimation: true,
   };
 
   protected readonly comboSeries = computed<SfChartSeriesConfig[]>(() => {

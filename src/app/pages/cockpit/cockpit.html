@@ -409,6 +409,20 @@
               </tbody>
             </table>
           </div>
+          @if (scoreParts().closedCount > 0) {
+            <h4 class="text-base font-bold mt-6 mb-1">ส่วนประกอบคะแนนใบเฉลี่ย</h4>
+            <p class="text-sm mb-3">
+              ค่าเฉลี่ยจาก {{ scoreParts().closedCount }} ใบที่ปิด
+              · ส่งตรงสัปดาห์ + ความแม่น + รีวิว + ไม่ถูกเปิดซ้ำ
+              · รวม {{ scoreParts().total }} จากเต็ม 100
+            </p>
+            <app-sf-chart
+              [series]="waterfallSeries()"
+              [primaryXAxis]="categoryAxis"
+              [primaryYAxis]="waterfallYAxis"
+              [options]="waterfallOptions"
+            />
+          }
         </div>
       }
       @case ('workload') {

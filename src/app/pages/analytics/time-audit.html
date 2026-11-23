@@ -23,6 +23,24 @@
   ></app-filter-chips>
 
   <app-section-card
+    title="ความแม่นของประมาณการ (Scatter)"
+    subtitle="แต่ละจุดคือใบงานที่ปิด · แกนตั้งคืออัตราส่วนสุทธิตามสูตรคะแนน · สีตามกรอบขนาดใบ (XS/S กว้าง, M มาตรฐาน, L/XL แคบ)"
+  >
+    @if (scatterPoints().length === 0) {
+      <app-sf-message content="ยังไม่มีใบที่ปิดพร้อม Estimate สำหรับวาดจุด" severity="Info" />
+    } @else {
+      <div class="chart-frame m-0">
+        <app-sf-chart
+          [series]="scatterSeries()"
+          [primaryXAxis]="scatterXAxis"
+          [primaryYAxis]="scatterYAxis()"
+          [options]="scatterOptions"
+        />
+      </div>
+    }
+  </app-section-card>
+
+  <app-section-card
     title="ตารางเปรียบเทียบเวลา 3 มิติ (3-Way Time Matching)"
     subtitle="ตรวจจับ Ghost In-Progress, Outlier, และการลืมบันทึกเวลาปิดงาน"
   >

@@ -133,6 +133,44 @@
       </app-section-card>
     </div>
 
+    <div class="card-grid-2">
+      <app-section-card
+        title="ส่วนประกอบคะแนนใบ"
+        [subtitle]="'ค่าเฉลี่ยจาก ' + personWaterfall().closedCount + ' ใบที่ปิด · ส่งตรงสัปดาห์ + ความแม่น + รีวิว + ไม่ถูกเปิดซ้ำ (เต็ม 100)'"
+      >
+        @if (personWaterfall().closedCount === 0) {
+          <app-sf-message content="ยังไม่มีใบที่ปิดสำหรับแยกส่วนคะแนน" severity="Info" />
+        } @else {
+          <div class="chart-frame m-0">
+            <app-sf-chart
+              [series]="waterfallSeries()"
+              [primaryXAxis]="categoryAxis"
+              [primaryYAxis]="waterfallYAxis"
+              [options]="waterfallOptions"
+            />
+          </div>
+        }
+      </app-section-card>
+
+      <app-section-card
+        title="ความแม่นของประมาณการ"
+        subtitle="แต่ละจุดคือใบที่ปิด · สีตามกรอบขนาดใบ · เส้นประคืออัตราส่วน 1.0"
+      >
+        @if (personScatter().length === 0) {
+          <app-sf-message content="ยังไม่มีใบที่ปิดพร้อม Estimate สำหรับวาดจุด" severity="Info" />
+        } @else {
+          <div class="chart-frame m-0">
+            <app-sf-chart
+              [series]="scatterSeries()"
+              [primaryXAxis]="scatterXAxis"
+              [primaryYAxis]="scatterYAxis()"
+              [options]="scatterOptions"
+            />
+          </div>
+        }
+      </app-section-card>
+    </div>
+
     <div class="card-grid-3">
       <app-section-card title="ส่งตรง / เลื่อนสัปดาห์">
         @if (view().slipShare.length === 0) {

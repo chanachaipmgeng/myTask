@@ -37,6 +37,7 @@ import {
   StripLineService,
   TooltipService,
   TooltipSettingsModel,
+  WaterfallSeriesService,
   ZoomService,
   ZoomSettingsModel,
 } from '@syncfusion/ej2-angular-charts';
@@ -57,7 +58,8 @@ export interface SfChartSeriesConfig {
     | 'StackingArea'
     | 'Scatter'
     | 'Radar'
-    | 'Polar';
+    | 'Polar'
+    | 'Waterfall';
   dataSource: object[];
   xName: string;
   yName: string;
@@ -72,6 +74,65 @@ export interface SfChartSeriesConfig {
   cornerRadius?: { topLeft?: number; topRight?: number; bottomLeft?: number; bottomRight?: number };
   marker?: object;
   drawType?: 'Line' | 'Area' | 'Column' | 'Scatter';
+  tooltipMappingName?: string;
+  /** ดัชนีแท่งสรุปของ Waterfall (นับจาก 0) */
+  sumIndexes?: number[];
+  negativeFillColor?: string;
+  summaryFillColor?: string;
+  connector?: { color?: string; width?: number; dashArray?: string };
+}
+
+const SCATTER_BANDS: { band: 'in' | 'partial' | 'out'; name: string; fill: string }[] = [
+  { band: 'in', name: 'ในกรอบ', fill: '#10b981' },
+  { band: 'partial', name: 'ขอบกรอบ', fill: '#f59e0b' },
+  { band: 'out', name: 'นอกกรอบ', fill: '#e35d6a' },
+];
+
+/** แยกจุด Scatter ตามกรอบความแม่น เป็น 3 ชุดสี */
+export function scatterBandSeries<T extends { band: 'in' | 'partial' | 'out' }>(
+  points: readonly T[],
+): SfChartSeriesConfig[] {
+  const marker = { visible: true, width: 10, height: 10, shape: 'Circle', isFilled: true };
+  return SCATTER_BANDS.map((item) => ({
+    type: 'Scatter' as const,
+    dataSource: points.filter((point) => point.band === item.band),
+    xName: 'estimateMd',
+    yName: 'ratio',
+    name: item.name,
+    fill: item.fill,
+    tooltipMappingName: 'tip',
+    marker,
+  })).filter((series) => series.dataSource.length > 0);
+}
+
+/** แท่ง Waterfall ของส่วนประกอบคะแนนใบ — จุดสุดท้ายเป็นยอดรวม */
+export function scorePartWaterfallSeries(points: readonly object[]): SfChartSeriesConfig[] {
+  if (points.length === 0) {
+    return [];
+  }
+  return [
+    {
+      type: 'Waterfall',
+      dataSource: [...points],
+      xName: 'label',
+      yName: 'points',
+      name: 'คะแนนใบเฉลี่ย',
+      fill: '#4c68e5',
+      summaryFillColor: '#2e4fc8',
+      negativeFillColor: '#e35d6a',
+      columnWidth: 0.55,
+      connector: { color: '#94a3b8', width: 1.5 },
+      sumIndexes: [points.length - 1],
+      marker: {
+        dataLabel: {
+          visible: true,
+          position: 'Outer',
+          format: 'N1',
+          font: { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '11px' },
+        },
+      },
+    },
+  ];
 }
 
 export interface SfChartOptions {
@@ -107,6 +168,7 @@ export interface SfChartOptions {
     StackingBarSeriesService,
     StackingAreaSeriesService,
     ScatterSeriesService,
+    WaterfallSeriesService,
     RadarSeriesService,
     PolarSeriesService,
     LegendService,
@@ -198,6 +260,11 @@ export interface SfChartOptions {
               [opacity]="s.opacity ?? 1"
               [cornerRadius]="s.cornerRadius ?? seriesCornerRadius(s)"
               [marker]="s.marker ?? {}"
+              [tooltipMappingName]="s.tooltipMappingName!"
+              [sumIndexes]="s.sumIndexes!"
+              [negativeFillColor]="s.negativeFillColor!"
+              [summaryFillColor]="s.summaryFillColor!"
+              [connector]="s.connector!"
             ></e-series>
           }
         </e-series-collection>

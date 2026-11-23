@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { canCaptureKpi } from '../../core/admin-settings';
 import { ApiClient, KpiSnapshotPeriodDto, KpiSnapshotRowDto } from '../../core/api-client';
-import { mdCompositionTrend, monthlyTrend, quotaBars } from '../../core/dashboard-charts';
+import { mdCompositionTrend, monthlyTrend, personMonthIndexHeatmap, quotaBars } from '../../core/dashboard-charts';
 import { kpiExplanations } from '../../core/kpi-meaning';
 import { KpiPeriodType, previousMonthKey } from '../../core/kpi-snapshot';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -22,6 +22,9 @@ import {
   SfChartOptions,
   SfChartSeriesConfig,
   SfDonutChartComponent,
+  SfHeatmapCell,
+  SfHeatmapComponent,
+  SfHeatmapOptions,
   SfDonutChartOptions,
   SfDropdownComponent,
   SfGridColumn,
@@ -47,6 +50,7 @@ const LIVE_MODE = 'live';
     LoadingSkeletonComponent,
     SfChartComponent,
     SfDonutChartComponent,
+    SfHeatmapComponent,
     SfDropdownComponent,
     SfGridComponent,
     SfMessageComponent,
@@ -252,6 +256,20 @@ export class TeamDashboard {
   protected readonly mdCompositionPoints = computed(() =>
     mdCompositionTrend(this.scopedTickets()),
   );
+  protected readonly indexHeatmap = computed(() =>
+    personMonthIndexHeatmap(this.scopedPeople(), this.scopedTickets()),
+  );
+  protected readonly heatCells = computed<SfHeatmapCell[]>(() =>
+    this.indexHeatmap().cells.map((cell) => ({
+      x: cell.month,
+      y: cell.nickname,
+      value: cell.index,
+    })),
+  );
+  protected readonly heatOptions = computed<SfHeatmapOptions>(() => ({
+    height: `${Math.min(560, Math.max(300, this.indexHeatmap().people.length * 36 + 108))}px`,
+    xTitle: 'เดือนที่ปิดงาน',
+  }));
 
   protected readonly samplePoints = computed(() =>
     sampleWorkloadPoints(this.scopedTickets(), this.track()),
