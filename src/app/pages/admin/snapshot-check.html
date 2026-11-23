@@ -9,9 +9,10 @@
     ]"
   ></app-page-head>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
     @for (item of checks(); track item.stage) {
       <app-kpi-stat
+        class="h-full"
         [title]="item.shortTitle"
         [value]="item.shortValue"
         [hint]="item.fullHint"

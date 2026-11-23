@@ -118,8 +118,18 @@ export function resolveMotionOptions(
   `,
   styles: `
     :host {
-      display: block;
+      display: flex;
+      flex-direction: column;
       min-width: 0;
+      height: 100%;
+    }
+    .motion-wrap {
+      position: relative;
+      min-width: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
     }
   `,
 })
