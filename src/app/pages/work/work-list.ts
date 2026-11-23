@@ -69,6 +69,7 @@ export class WorkList {
       filtering: 'Excel',
       grouping: this.groupByProject(),
       groupColumns: this.groupByProject() ? ['projectLabel'] : [],
+      autoFreezeDesktop: 2,
       columnChooser: true,
       excelExport: true,
       csvExport: true,

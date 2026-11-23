@@ -3,4 +3,14 @@
   flex-direction: column;
   gap: 1.5rem;
   padding-bottom: 2rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.admin-projects-grid-wrap {
+  min-width: 0;
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
 }

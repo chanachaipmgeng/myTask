@@ -169,19 +169,21 @@
       </button>
     </ng-template>
 
-    <!-- DataGrid -->
-    <app-sf-grid
-      [data]="filteredProjects()"
-      [columns]="gridColumns"
-      [cellTemplates]="{
-        identifier: identifierTpl,
-        name: nameTpl,
-        activeTicketsCount: activeTicketsTpl,
-        assignedTeamIds: assignedTeamsTpl,
-        active: activeTpl,
-        actions: actionsTpl
-      }"
-      [options]="gridOptions"
-    />
+    <!-- DataGrid: เลื่อนในคอนเทนเนอร์ กันดันหน้าแนวนอน -->
+    <div class="admin-projects-grid-wrap">
+      <app-sf-grid
+        [data]="filteredProjects()"
+        [columns]="gridColumns"
+        [cellTemplates]="{
+          identifier: identifierTpl,
+          name: nameTpl,
+          activeTicketsCount: activeTicketsTpl,
+          assignedTeamIds: assignedTeamsTpl,
+          active: activeTpl,
+          actions: actionsTpl
+        }"
+        [options]="gridOptions"
+      />
+    </div>
   </app-section-card>
 </div>

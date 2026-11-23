@@ -110,6 +110,7 @@ export class PeopleBoard {
     id: 'people-board-grid',
     sortSettings: { columns: [{ field: 'index', direction: 'Descending' }] },
     filtering: 'Menu',
+    autoFreezeDesktop: 2,
     columnChooser: true,
     excelExport: true,
     csvExport: true,

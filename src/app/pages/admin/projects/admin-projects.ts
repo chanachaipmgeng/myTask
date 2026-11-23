@@ -106,39 +106,42 @@ export class AdminProjectsComponent implements OnInit {
 
   // DataGrid Columns & Options
   protected readonly gridColumns: SfGridColumn[] = [
-    { field: 'identifier', headerText: 'รหัสโปรเจกต์', width: 140 },
-    { field: 'name', headerText: 'ชื่อโปรเจกต์', width: 220 },
+    { field: 'identifier', headerText: 'รหัสโปรเจกต์', width: 120 },
+    { field: 'name', headerText: 'ชื่อโปรเจกต์', width: 180, minWidth: 140 },
     {
       field: 'activeTicketsCount',
       headerText: 'ใบงานคงค้าง',
-      width: 120,
+      width: 110,
       textAlign: 'Right',
     },
-    { field: 'assignedTeamIds', headerText: 'ทีมที่รับผิดชอบ', width: 260 },
+    { field: 'assignedTeamIds', headerText: 'ทีมที่รับผิดชอบ', width: 220, minWidth: 160 },
     {
       field: 'active',
       headerText: 'สถานะใช้งาน',
-      width: 125,
+      width: 130,
       textAlign: 'Center',
     },
     {
       field: 'actions',
       headerText: 'จัดการ',
-      width: 110,
+      width: 100,
       textAlign: 'Center',
+      allowFiltering: false,
+      allowSorting: false,
     },
   ];
 
-  protected readonly gridOptions: SfGridOptions = {
-    ...listGridOptions,
-    paging: true,
+  protected readonly gridOptions: SfGridOptions = listGridOptions({
+    id: 'admin-projects-catalog-grid-v1',
+    height: 480,
+    search: false,
+    filtering: false,
     pageSize: 15,
     pageSizes: [10, 15, 25, 50],
-    sorting: true,
-    filtering: false,
-    search: false,
     excelExport: true,
-  };
+    exportFileName: 'openproject-catalog',
+    autoFreezeDesktop: 1,
+  });
 
   // Filtered List for Table
   protected readonly filteredProjects = computed(() => {
