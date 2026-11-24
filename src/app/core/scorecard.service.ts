@@ -17,6 +17,8 @@ import {
   weeklyQuotas,
 } from './admin-settings';
 import { trackHexColor } from '../../../shared/domain/palette';
+import { evaluatePolicySla, PolicySlaEvaluation } from '../../../shared/domain/policy-sla';
+import { todayInBangkok } from '../../../shared/domain/workflow';
 import { collectAlerts } from './alerts';
 import { ApiClient } from './api-client';
 import { planNewWork } from './capacity';
@@ -98,6 +100,13 @@ export interface TicketRow {
   score: number | null;
   scoreMeaning: string;
   alertLabel: string;
+  receiptDateLabel: string;
+  alertDateLabel: string;
+  policyDateLabel: string;
+  replyDateLabel: string;
+  policySlaLabel: string;
+  policySlaTone: PolicySlaEvaluation['tone'];
+  policyAuto: boolean;
   unassigned: boolean;
   note: string;
   closedOnLabel: string;
@@ -241,7 +250,7 @@ export class ScorecardService {
   readonly alerts = computed(() => {
     const rules = alertRules();
     return collectAlerts(this.ticketsState(), rules.overrunLimit).filter((alert) =>
-      alert.kind === 'deadline' ? rules.deadline : rules.overrun,
+      alert.kind === 'overrun' ? rules.overrun : rules.deadline,
     );
   });
 
@@ -609,13 +618,15 @@ export class ScorecardService {
     rules: { deadline: boolean; overrun: boolean; overrunLimit: number },
   ): TicketRow[] {
     const people = personById(this.peopleState());
+    const today = todayInBangkok();
     return tickets.map((ticket) => {
       const score = scoreTicket(ticket);
       const person = ticket.assigneeId ? people.get(ticket.assigneeId) : undefined;
       const scored = score.total !== null;
       const alerts = collectAlerts([ticket], rules.overrunLimit).filter((alert) =>
-        alert.kind === 'deadline' ? rules.deadline : rules.overrun,
+        alert.kind === 'overrun' ? rules.overrun : rules.deadline,
       );
+      const sla = evaluatePolicySla(ticket, today);
       return {
         id: ticket.id,
         track: ticket.track,
@@ -646,6 +657,13 @@ export class ScorecardService {
         score: score.total,
         scoreMeaning: scorePartNotes(score),
         alertLabel: alerts.length > 0 ? alerts.map((alert) => alert.shortLabel).join(', ') : '—',
+        receiptDateLabel: formatDate(ticket.receiptDate ?? null),
+        alertDateLabel: formatDate(ticket.alertDate ?? null),
+        policyDateLabel: formatDate(ticket.policyDate ?? null),
+        replyDateLabel: formatDate(ticket.replyDate ?? ticket.devDeliveredOn ?? null),
+        policySlaLabel: sla.shortLabel,
+        policySlaTone: sla.tone,
+        policyAuto: Boolean(ticket.slaAutoFilled?.policy),
         unassigned: ticket.assigneeId.trim() === '',
         note: ticket.note,
         closedOnLabel: formatDate(ticket.closedOn),

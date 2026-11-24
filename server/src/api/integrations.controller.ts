@@ -40,7 +40,13 @@ import {
 } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
 import { CiStatus, GitLabClient } from '../integrations/gitlab/gitlab.client';
-import { isoDurationToHours, validateMapping } from '../integrations/openproject/openproject.mapper';
+import {
+  autoMatchCustomFieldsFromSchema,
+  isoDurationToHours,
+  validateMapping,
+} from '../integrations/openproject/openproject.mapper';
+import { resolveTicketSlaAndDueDates } from '../../../shared/domain/policy-sla';
+import { todayInBangkok } from '../../../shared/domain/workflow';
 import { OpenProjectSyncService } from '../integrations/openproject/openproject.sync';
 
 @Controller('api')
@@ -721,6 +727,25 @@ export class IntegrationsController {
 
     const hoursPerMd = settings.hoursPerMd || 8;
     const estimatedHours = (body.estimateMd ?? 1) * hoursPerMd;
+    const today = todayInBangkok();
+    const mapping = settings.openprojectMapping;
+    const sla = resolveTicketSlaAndDueDates({
+      startDate: today,
+      createdDate: today,
+      ticketType: 'Feature',
+      closed: false,
+      autoSla: mapping.autoSla,
+    });
+    const cfPayload: Record<string, string | null | undefined> = {};
+    if (mapping.customFields.receiptDate && sla.receiptDate) {
+      cfPayload[mapping.customFields.receiptDate] = sla.receiptDate;
+    }
+    if (mapping.customFields.alertDate && sla.alertDate) {
+      cfPayload[mapping.customFields.alertDate] = sla.alertDate;
+    }
+    if (mapping.customFields.policyDate && sla.policyDate) {
+      cfPayload[mapping.customFields.policyDate] = sla.policyDate;
+    }
 
     try {
       const wp = await opClient.createWorkPackage(body.projectId, {
@@ -729,6 +754,9 @@ export class IntegrationsController {
         typeId: body.typeId,
         assigneeId: assigneeOpId,
         estimatedHours,
+        startDate: today,
+        dueDate: sla.resolvedDueOn,
+        customFields: cfPayload,
       });
 
       if (body.branchId) {
@@ -783,6 +811,40 @@ export class IntegrationsController {
       projectCount: body.projects.length,
     });
     return { ok: true };
+  }
+
+  @Post('integrations/openproject/discover-fields')
+  @Roles('admin', 'lead')
+  async discoverOpenProjectFields(@Req() req: AuthedRequest) {
+    const client = await this.syncService.getClient();
+    if (!client) {
+      return {
+        ok: false,
+        fields: [],
+        suggested: {},
+        message: 'ยังไม่ได้ตั้งค่า URL / Token ของ myProject (OpenProject)',
+      };
+    }
+    try {
+      const fields = await client.discoverCustomFieldsFromSchemas(40);
+      const suggested = autoMatchCustomFieldsFromSchema(fields);
+      await this.db.audit(req.authUser?.person.id ?? null, 'openproject.discover_fields', 'openproject', {
+        fieldCount: fields.length,
+        suggested,
+      });
+      return {
+        ok: true,
+        fields,
+        suggested,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        fields: [],
+        suggested: {},
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
   }
 
   @Get('integrations/openproject/discovery')
@@ -1089,16 +1151,25 @@ export class IntegrationsController {
     const channel = (body.channel || connection?.base_url || this.config.teams.defaultChannel || 'dev-alerts').trim();
     const includeDeadline = body.deadline ?? true;
     const includeOverrun = body.overrun ?? true;
-    const alerts = collectAlerts(tickets, settings.alertRules.overrunLimit).filter((alert) =>
-      alert.kind === 'deadline' ? includeDeadline : includeOverrun,
-    );
+    const alerts = collectAlerts(tickets, settings.alertRules.overrunLimit).filter((alert) => {
+      if (alert.kind === 'deadline' || alert.kind === 'policy-alert' || alert.kind === 'policy-breach') {
+        return includeDeadline;
+      }
+      return includeOverrun;
+    });
     const byId = new Map(tickets.map((t) => [t.id, t]));
     const messages = alerts.map((alert) => {
       const ticket = byId.get(alert.ticketId);
-      const text =
-        alert.kind === 'deadline'
-          ? `ช่อง ${channel}: สัปดาห์ที่ commit ใกล้หมด ใบ ${alert.ticketId} เหลือ ${formatMd(ticket?.workingDaysLeft ?? 0)} วันทำการและยังไม่ปิด`
-          : `ช่อง ${channel}: actual มีแนวโน้มเกิน estimate มากกว่า 50% ใบ ${alert.ticketId} คาดว่า ${formatMd(ticket ? (projectedActual(ticket) ?? 0) : 0)} MD จาก estimate ${formatMd(ticket?.estimateMd ?? 0)} MD`;
+      let text: string;
+      if (alert.kind === 'policy-breach') {
+        text = `ช่อง ${channel}: เกินกำหนด Policy Date ใบ ${alert.ticketId} (Policy ${ticket?.policyDate ?? '—'}) และยังไม่มี Reply / ยังไม่ปิดงาน`;
+      } else if (alert.kind === 'policy-alert') {
+        text = `ช่อง ${channel}: ถึงวันเตือน Alert SLA ใบ ${alert.ticketId} (Alert ${ticket?.alertDate ?? '—'} · Policy ${ticket?.policyDate ?? '—'})`;
+      } else if (alert.kind === 'deadline') {
+        text = `ช่อง ${channel}: สัปดาห์ที่ commit ใกล้หมด ใบ ${alert.ticketId} เหลือ ${formatMd(ticket?.workingDaysLeft ?? 0)} วันทำการและยังไม่ปิด`;
+      } else {
+        text = `ช่อง ${channel}: actual มีแนวโน้มเกิน estimate มากกว่า 50% ใบ ${alert.ticketId} คาดว่า ${formatMd(ticket ? (projectedActual(ticket) ?? 0) : 0)} MD จาก estimate ${formatMd(ticket?.estimateMd ?? 0)} MD`;
+      }
       return {
         kind: alert.kind,
         ticketId: alert.ticketId,

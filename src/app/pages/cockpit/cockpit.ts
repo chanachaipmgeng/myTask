@@ -30,6 +30,8 @@ import { Ticket } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
+import { evaluatePolicySla } from '../../../../shared/domain/policy-sla';
+import { todayInBangkok } from '../../../../shared/domain/workflow';
 
 export type BentoMaximizeType = 'workload' | 'trend' | 'combo' | 'quality' | 'stage' | 'bottlenecks' | null;
 
@@ -342,7 +344,10 @@ export class CockpitPage implements OnInit {
   protected readonly bottleneckItems = computed(() => {
     const tickets = this.scopedTickets();
     const active = tickets.filter((t) => !t.closed);
+    const today = todayInBangkok();
     const blockers = active.filter((t) => t.blocker || t.isPaused);
+    const slaBreaches = active.filter((t) => evaluatePolicySla(t, today).state === 'breached');
+    const slaAlerts = active.filter((t) => evaluatePolicySla(t, today).state === 'alert-due');
     const overruns = active.filter((t) => (t.workingDaysLeft ?? 1) < 0 || (t.actualMd > t.estimateMd && t.estimateMd > 0));
 
     const list = [];
@@ -354,7 +359,24 @@ export class CockpitPage implements OnInit {
         desc: `${b.id} ${b.module}: ${b.note || 'รอปลดล็อกระบบภายนอก'}`,
       });
     }
+    for (const s of slaBreaches.slice(0, 2)) {
+      list.push({
+        id: s.id,
+        tag: 'เลย Policy SLA',
+        tone: 'danger' as const,
+        desc: `${s.id} ${s.module}: เกิน Policy Date (${s.policyDate})`,
+      });
+    }
+    for (const a of slaAlerts.slice(0, 1)) {
+      list.push({
+        id: a.id,
+        tag: 'เตือน Alert SLA',
+        tone: 'warning' as const,
+        desc: `${a.id} ${a.module}: ถึงวันเตือนก่อนครบ Policy (${a.policyDate ?? a.alertDate})`,
+      });
+    }
     for (const o of overruns.slice(0, 2)) {
+      if (list.some((item) => item.id === o.id)) continue;
       list.push({
         id: o.id,
         tag: 'เวลาใช้จริงเกินแผน',
@@ -370,7 +392,7 @@ export class CockpitPage implements OnInit {
         desc: 'ไม่มีใบงานติดบล็อกวิกฤต หรือค้างเกินเกณฑ์ SLA',
       });
     }
-    return list;
+    return list.slice(0, 5);
   });
 
   protected readonly paceHealth = computed(() => {

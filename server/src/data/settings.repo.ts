@@ -36,7 +36,15 @@ export function defaultSettings(): AppSettings {
     alertRules: { ...DEFAULT_ALERTS },
     levelOverrides: {},
     hoursPerMd: FOCUS_HOURS_PER_MD,
-    openprojectMapping: { ...DEFAULT_OPENPROJECT_MAPPING, customFields: { ...DEFAULT_OPENPROJECT_MAPPING.customFields } },
+    openprojectMapping: {
+      ...DEFAULT_OPENPROJECT_MAPPING,
+      customFields: { ...DEFAULT_OPENPROJECT_MAPPING.customFields },
+      autoSla: {
+        ...DEFAULT_OPENPROJECT_MAPPING.autoSla,
+        daysByType: { ...DEFAULT_OPENPROJECT_MAPPING.autoSla.daysByType },
+        duePriorityChain: [...DEFAULT_OPENPROJECT_MAPPING.autoSla.duePriorityChain],
+      },
+    },
     openprojectProjectCatalog: [],
     scorecardCycles: defaultCycleSettings(),
   };

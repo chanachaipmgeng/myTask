@@ -3,7 +3,7 @@ import { collectAlerts, projectedActual } from './alerts';
 import { Ticket } from './models';
 import { formatMd } from './scoring';
 
-export type TeamsEventKind = 'deadline' | 'overrun';
+export type TeamsEventKind = 'deadline' | 'overrun' | 'policy-alert' | 'policy-breach';
 
 export interface TeamsDraft {
   kind: TeamsEventKind;
@@ -36,6 +36,8 @@ export class TeamsNotifyService {
     const kinds = new Set<TeamsEventKind>();
     if (this.deadline()) {
       kinds.add('deadline');
+      kinds.add('policy-alert');
+      kinds.add('policy-breach');
     }
     if (this.overrun()) {
       kinds.add('overrun');
@@ -76,6 +78,12 @@ export function teamsDrafts(
 }
 
 function messageFor(channel: string, kind: TeamsEventKind, ticket: Ticket): string {
+  if (kind === 'policy-breach') {
+    return `ช่อง ${channel}: เลยกำหนด Policy Date (${ticket.policyDate ?? '—'}) ใบ ${ticket.id} ยังไม่ส่งมอบ`;
+  }
+  if (kind === 'policy-alert') {
+    return `ช่อง ${channel}: ถึงวันเตือน Alert Date (${ticket.alertDate ?? '—'}) ก่อนครบ Policy (${ticket.policyDate ?? '—'}) ใบ ${ticket.id}`;
+  }
   if (kind === 'deadline') {
     return `ช่อง ${channel}: สัปดาห์ที่ commit ใกล้หมด ใบ ${ticket.id} เหลือ ${formatMd(ticket.workingDaysLeft ?? 0)} วันทำการและยังไม่ปิด`;
   }

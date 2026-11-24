@@ -67,6 +67,58 @@
                 <strong>รวม {{ scores.total ?? '—' }}</strong>
               </div>
             }
+
+            <div class="sla-box">
+              <div class="sla-box__head">
+                <strong>เส้นเวลา Policy &amp; SLA (myProject)</strong>
+                @if (policySla(); as sla) {
+                  @if (sla.state !== 'none') {
+                    <app-status-badge [label]="sla.label" [tone]="sla.tone"></app-status-badge>
+                  }
+                }
+              </div>
+              <div class="sla-grid">
+                <div class="sla-cell">
+                  <span class="sla-cell__label">Receipt Date (รับเรื่อง)</span>
+                  <div class="sla-cell__val">
+                    <span>{{ t.receiptDate || '—' }}</span>
+                    @if (t.slaAutoFilled?.receipt) {
+                      <span class="e-badge e-badge-violet e-badge-pill">Auto</span>
+                    }
+                  </div>
+                </div>
+                <div class="sla-cell">
+                  <span class="sla-cell__label">Alert Date (เตือนล่วงหน้า)</span>
+                  <div class="sla-cell__val">
+                    <span>{{ t.alertDate || '—' }}</span>
+                    @if (t.slaAutoFilled?.alert) {
+                      <span class="e-badge e-badge-violet e-badge-pill">Auto</span>
+                    }
+                  </div>
+                </div>
+                <div class="sla-cell">
+                  <span class="sla-cell__label">Policy Date (เส้นตาย SLA)</span>
+                  <div class="sla-cell__val">
+                    <span>{{ t.policyDate || '—' }}</span>
+                    @if (t.slaAutoFilled?.policy) {
+                      <span class="e-badge e-badge-violet e-badge-pill">Auto</span>
+                    }
+                  </div>
+                </div>
+                <div class="sla-cell">
+                  <span class="sla-cell__label">Reply Date (วันส่งมอบ)</span>
+                  <div class="sla-cell__val">
+                    <span>{{ t.replyDate || t.devDeliveredOn || '—' }}</span>
+                    @if (t.slaAutoFilled?.reply) {
+                      <span class="e-badge e-badge-violet e-badge-pill">Auto</span>
+                    }
+                  </div>
+                </div>
+              </div>
+              <p class="sla-foot m-0">
+                First Due (ล็อกแรก): <strong>{{ t.firstDueOn || '—' }}</strong> · Due ปัจจุบัน: <strong>{{ t.dueOn || '—' }}</strong>
+              </p>
+            </div>
             @if ((data()!.relations?.length ?? 0) > 0) {
               <h4>ความสัมพันธ์</h4>
               <ul class="rel-list">

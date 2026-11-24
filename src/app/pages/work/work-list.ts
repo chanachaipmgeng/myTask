@@ -49,6 +49,11 @@ export class WorkList {
     { field: 'status', headerText: 'Status', width: 130 },
     { field: 'size', headerText: 'Size', width: 80 },
     { field: 'dueOnLabel', headerText: 'Due', width: 110 },
+    { field: 'policyDateLabel', headerText: 'Policy Date', width: 135 },
+    { field: 'policySlaLabel', headerText: 'สถานะ SLA', width: 120 },
+    { field: 'receiptDateLabel', headerText: 'Receipt Date', width: 115, visible: false },
+    { field: 'alertDateLabel', headerText: 'Alert Date', width: 115, visible: false },
+    { field: 'replyDateLabel', headerText: 'Reply Date', width: 115, visible: false },
     { field: 'closedOnLabel', headerText: 'Closed', width: 110 },
     { field: 'weekOffsetLabel', headerText: 'สัปดาห์', width: 130 },
     { field: 'unplannedLabel', headerText: 'แผน', width: 110 },
@@ -64,7 +69,7 @@ export class WorkList {
 
   protected readonly gridOptions = computed<SfGridOptions>(() =>
     listGridOptions({
-      id: this.isMine() ? 'my-work-operational-list-grid-v4' : 'work-operational-list-grid-v4',
+      id: this.isMine() ? 'my-work-operational-list-grid-v5' : 'work-operational-list-grid-v5',
       enablePersistence: true,
       filtering: 'Excel',
       grouping: this.groupByProject(),

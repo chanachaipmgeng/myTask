@@ -161,5 +161,9 @@ export function toneForWeekLabel(label: string): BadgeTone {
 
 /** แจ้งเตือนในแถว — `—` = ไม่มี */
 export function toneForAlertLabel(label: string): BadgeTone {
-  return !label || label === '—' ? 'secondary' : 'danger';
+  if (!label || label === '—') return 'secondary';
+  if (label.includes('เลย') || label.includes('เกิน') || label.includes('ครบกำหนด')) {
+    return 'danger';
+  }
+  return 'warning';
 }

@@ -25,6 +25,17 @@
   <ng-template #statusTpl let-data>
     <app-status-badge [value]="data.status" [toneMap]="workflowStatusToneMap" />
   </ng-template>
+  <ng-template #policyDateTpl let-data>
+    <span class="inline-flex items-center gap-1 font-mono text-xs">
+      <span>{{ data.policyDateLabel }}</span>
+      @if (data.policyAuto) {
+        <span class="e-badge e-badge-violet e-badge-pill">Auto</span>
+      }
+    </span>
+  </ng-template>
+  <ng-template #policySlaTpl let-data>
+    <app-status-badge [label]="data.policySlaLabel" [tone]="data.policySlaTone" />
+  </ng-template>
   <ng-template #weekTpl let-data>
     <app-status-badge [label]="data.weekOffsetLabel" [tone]="weekTone(data.weekOffsetLabel)" />
   </ng-template>
@@ -44,6 +55,8 @@
       workLabel: workTpl,
       assignee: assigneeTpl,
       status: statusTpl,
+      policyDateLabel: policyDateTpl,
+      policySlaLabel: policySlaTpl,
       weekOffsetLabel: weekTpl,
       unplannedLabel: planTpl,
       action: actionTpl

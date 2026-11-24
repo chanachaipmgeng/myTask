@@ -80,6 +80,13 @@ export interface OpenProjectCatalogEntry {
   activeTicketsCount?: number;
 }
 
+export interface DiscoveredOpCustomFieldDto {
+  key: string;
+  name: string;
+  type: string;
+  sampleWpType?: string;
+}
+
 export interface BootstrapSettings {
   weeklyQuotas: Record<string, number>;
   trackWeights: TrackWeights;
@@ -382,13 +389,18 @@ export class ApiClient {
     channel?: string;
     deadline?: boolean;
     overrun?: boolean;
+    policySla?: boolean;
     dryRun?: boolean;
   }): Promise<{
     ok: boolean;
     sent: boolean;
     count?: number;
     message?: string;
-    messages?: { kind: 'deadline' | 'overrun'; ticketId: string; text: string }[];
+    messages?: {
+      kind: 'deadline' | 'overrun' | 'policy-alert' | 'policy-breach';
+      ticketId: string;
+      text: string;
+    }[];
   }> {
     return api('/api/integrations/teams/send', { method: 'POST', body: JSON.stringify(body) });
   }
@@ -741,6 +753,15 @@ export class ApiClient {
     message?: string;
   }> {
     return api('/api/integrations/openproject/discovery');
+  }
+
+  discoverOpenProjectFields(): Promise<{
+    ok: boolean;
+    fields: DiscoveredOpCustomFieldDto[];
+    suggested: Record<string, string>;
+    message?: string;
+  }> {
+    return api('/api/integrations/openproject/discover-fields', { method: 'POST', body: '{}' });
   }
 
   listGitLabProjects(): Promise<{

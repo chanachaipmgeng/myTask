@@ -96,6 +96,59 @@
   font-variant-numeric: tabular-nums;
 }
 
+.sla-box {
+  padding: 0.65rem 0.75rem;
+  margin-bottom: 0.75rem;
+  border-radius: var(--radius-nested, 12px);
+  border: 1px solid color-mix(in srgb, #0d9488 28%, transparent);
+  background: color-mix(in srgb, #0d9488 6%, transparent);
+}
+
+.sla-box__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.sla-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.sla-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-surface, #fff) 75%, transparent);
+}
+
+.sla-cell__label {
+  font-size: 0.72rem;
+  opacity: 0.72;
+}
+
+.sla-cell__val {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.sla-foot {
+  font-size: 0.76rem;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
 .rel-list {
   margin: 0.25rem 0 0.75rem;
   padding-left: 1.1rem;

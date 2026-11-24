@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   DEFAULT_OPENPROJECT_MAPPING,
+  autoMatchCustomFieldsFromSchema,
   countReopens,
   isoDurationToHours,
   mapWorkPackage,
@@ -12,6 +13,7 @@ import {
   type MapContext,
   type OpWorkPackage,
 } from '../../src/integrations/openproject/openproject.mapper';
+import { alertsForTicket } from '../../../shared/domain/alerts';
 import { Ticket } from '../../../shared/domain/models';
 
 describe('isoDurationToHours', () => {
@@ -265,5 +267,93 @@ describe('validateMapping', () => {
     const result = validateMapping(DEFAULT_OPENPROJECT_MAPPING);
     assert.ok(result.mapping);
     assert.equal(result.errors.length, 0);
+  });
+});
+
+describe('Policy & SLA dates sync + Auto-SLA rules', () => {
+  const baseCtx = (): MapContext => ({
+    mapping: DEFAULT_OPENPROJECT_MAPPING,
+    hoursPerMd: 6,
+    personByOpUser: new Map([[10, 'itsara']]),
+    spentHours: new Map(),
+    today: '2026-11-24',
+  });
+
+  it('syncs Receipt/Reply/Alert/Policy dates and falls back dueOn/firstDueOn to Policy Date when dueDate is null', () => {
+    const wp: OpWorkPackage = {
+      id: 73222,
+      subject: 'Payroll tax fix',
+      estimatedTime: 'PT6H',
+      startDate: '2026-11-20',
+      dueDate: null,
+      customField43: '2026-11-23', // Receipt Date
+      customField44: '2026-11-25', // Reply Date (on time vs Policy Date)
+      customField163: '2026-11-24', // Alert Date
+      customField185: '2026-11-25', // Policy Date
+      updatedAt: '2026-12-04T10:00:00Z', // Closed next week in QA, should NOT penalize Dev because Reply Date was on time
+      _links: {
+        status: { href: '/api/v3/statuses/9', title: '*Tested and Implement' },
+        type: { href: '/api/v3/types/1', title: 'DEV-Bugs Fix' },
+        project: { href: '/api/v3/projects/hrm', title: 'HRM' },
+        assignee: { href: '/api/v3/users/10', title: 'Itsara' },
+      },
+    };
+    const ticket = mapWorkPackage(wp, baseCtx());
+    assert.equal(ticket.receiptDate, '2026-11-23');
+    assert.equal(ticket.replyDate, '2026-11-25');
+    assert.equal(ticket.alertDate, '2026-11-24');
+    assert.equal(ticket.policyDate, '2026-11-25');
+    assert.equal(ticket.dueOn, '2026-11-25');
+    assert.equal(ticket.firstDueOn, '2026-11-25');
+    assert.equal(ticket.devDeliveredOn, '2026-11-25');
+    assert.equal(ticket.weekOffset, 0);
+    assert.equal(ticket.slaAutoFilled, undefined);
+  });
+
+  it('auto-computes Policy Date and Alert Date skipping weekends when missing', () => {
+    const wp: OpWorkPackage = {
+      id: 73999,
+      subject: 'Urgent bug without policy date',
+      estimatedTime: 'PT6H',
+      startDate: '2026-11-20', // Friday
+      dueDate: null,
+      customField43: '2026-11-20', // Receipt Date = Friday -> +3 working days for Bug-Fix = Wednesday 2026-11-25
+      _links: {
+        status: { href: '/api/v3/statuses/2', title: 'Work in Progress' },
+        type: { href: '/api/v3/types/1', title: 'DEV-Bugs Fix' },
+        project: { href: '/api/v3/projects/hrm', title: 'HRM' },
+        assignee: { href: '/api/v3/users/10', title: 'Itsara' },
+      },
+    };
+    const ticket = mapWorkPackage(wp, baseCtx());
+    assert.equal(ticket.policyDate, '2026-11-25');
+    assert.equal(ticket.alertDate, '2026-11-24');
+    assert.equal(ticket.dueOn, '2026-11-25');
+    assert.deepEqual(ticket.slaAutoFilled, { policy: true, alert: true });
+
+    // On 2026-11-24 (Alert Date), alertsForTicket should emit policy-alert
+    const onAlert = alertsForTicket(ticket, 1.5, '2026-11-24');
+    assert.ok(onAlert.some((a) => a.kind === 'policy-alert'));
+
+    // On 2026-11-26 (after Policy Date without Reply Date), alertsForTicket should emit policy-breach
+    const onBreach = alertsForTicket(ticket, 1.5, '2026-11-26');
+    assert.ok(onBreach.some((a) => a.kind === 'policy-breach'));
+  });
+
+  it('auto-matches customField keys from discovered OpenProject schema definitions', () => {
+    const matched = autoMatchCustomFieldsFromSchema([
+      { key: 'customField43', name: 'Receipt Date', type: 'Date' },
+      { key: 'customField44', name: 'Reply Date', type: 'Date' },
+      { key: 'customField45', name: 'Plan Date', type: 'Date' },
+      { key: 'customField46', name: 'Due Date', type: 'Date' },
+      { key: 'customField163', name: 'Alert', type: 'Date' },
+      { key: 'customField185', name: 'Policy Date', type: 'Date' },
+    ]);
+    assert.equal(matched.receiptDate, 'customField43');
+    assert.equal(matched.replyDate, 'customField44');
+    assert.equal(matched.planDate, 'customField45');
+    assert.equal(matched.cfDueDate, 'customField46');
+    assert.equal(matched.alertDate, 'customField163');
+    assert.equal(matched.policyDate, 'customField185');
   });
 });

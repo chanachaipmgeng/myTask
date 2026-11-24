@@ -28,6 +28,21 @@ description: >-
 5. อัปเดตตารางในคู่มือ
 6. เพิ่ม/ขยาย unit test แล้ว `npm --prefix server run test`
 
+## Policy & SLA Custom Fields (`myprojectplus.myhr.co.th`) & Auto-SLA Engine
+
+ค่าเริ่มต้นใน `DEFAULT_OPENPROJECT_MAPPING` ที่สแกนจาก Schema จริงของ `myprojectplus.myhr.co.th`:
+- `receiptDate` (`customField43` · `Receipt Date`): วันรับเรื่อง (Fallback จาก `startDate` หรือ `createdAt` เมื่อเปิด Auto-SLA)
+- `replyDate` (`customField44` · `Reply Date`): วันส่งมอบ/ตอบกลับ ใช้เป็น Fair Cutoff (`devDeliveredOn`) เมื่อใบงานไม่มีเวลาเข้า `Ready for QA`
+- `planDate` (`customField45` · `Plan Date`): วันตามแผน
+- `cfDueDate` (`customField46` · `Due Date`): วันกำหนดส่งฝั่ง Custom Field
+- `alertDate` (`customField163` · `Alert`): วันเตือนล่วงหน้าก่อนครบ Policy SLA (ออกแจ้งเตือน `policy-alert`)
+- `policyDate` (`customField185` · `Policy Date`): เส้นตาย Policy SLA (ออกแจ้งเตือน `policy-breach` และอยู่ในลำดับ Fallback ของ `dueOn` / `firstDueOn` แรกเข้า)
+
+การสแกนจับคู่ฟิลด์อัตโนมัติ & กฎ Auto-SLA (`shared/domain/policy-sla.ts`):
+- `POST /api/integrations/openproject/discover-fields` (`@Roles('admin', 'lead')`) สแกน `_links.schema` จาก Work Packages ล่าสุด แล้วเรียก `autoMatchCustomFieldsFromSchema()` คืน `fields` + `suggested` ให้หน้า `/integrations`
+- `resolveTicketSlaAndDueDates()` คำนวณวันทำการ (จันทร์–ศุกร์ ข้ามเสาร์–อาทิตย์) ตาม `mapping.autoSla` (`Bug-Investigate: 2`, `Bug-Fix: 3`, `Ops: 2`, `Spike: 3`, `Feature/CR/TechDebt: 5`, `alertLeadWorkingDays: 1`) เฉพาะช่องที่ว่าง พร้อมติดป้าย `slaAutoFilled` (`Auto`) โดยไม่เขียนทับ myProject เดิม และรักษา `firstDueOn` Lock Invariant เสมอ
+- เมื่อกด `+ สร้างใบงาน` จาก Unmatched Git Branch (`POST /api/integrations/openproject/create-from-branch`) ระบบจะส่ง `receiptDate`, `alertDate`, `policyDate` และ `dueDate` ตามกฎ Auto-SLA ขึ้น myProject ตั้งแต่วินาทีที่สร้างใบงาน
+
 ## OpenProject User Sync & Custom Fields
 
 โครงสร้างข้อมูลผู้ใช้จาก `/api/v3/users`:

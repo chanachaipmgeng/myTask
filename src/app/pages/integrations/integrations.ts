@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import {
   ApiClient,
+  DiscoveredOpCustomFieldDto,
   GitLabIntegration,
   OpenProjectIntegration,
   TeamsIntegration,
@@ -9,7 +10,13 @@ import {
 import { canEditAdmin } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
-import { WORKFLOW_STATUSES } from '../../core/models';
+import { TicketType, WORKFLOW_STATUSES } from '../../core/models';
+import {
+  AutoSlaConfig,
+  DEFAULT_AUTO_SLA_CONFIG,
+  DEFAULT_AUTO_SLA_DAYS_BY_TYPE,
+  DuePriorityKey,
+} from '../../../../shared/domain/policy-sla';
 import {
   DateTimePipe,
   LoadingSkeletonComponent,
@@ -29,6 +36,13 @@ import {
 } from '../../shared/ui';
 
 type CustomFieldKey =
+  | 'receiptDate'
+  | 'replyDate'
+  | 'alertDate'
+  | 'policyDate'
+  | 'planDate'
+  | 'cfDueDate'
+  | 'firstDueOn'
   | 'size'
   | 'track'
   | 'type'
@@ -45,11 +59,17 @@ type CustomFieldKey =
   | 'mrLink'
   | 'bugCause'
   | 'pocResult'
-  | 'firstDueOn'
   | 'weekOffset';
 
 function emptyCustomFields(): Record<CustomFieldKey, string> {
   return {
+    receiptDate: '',
+    replyDate: '',
+    alertDate: '',
+    policyDate: '',
+    planDate: '',
+    cfDueDate: '',
+    firstDueOn: '',
     size: '',
     track: '',
     type: '',
@@ -66,7 +86,6 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
     mrLink: '',
     bugCause: '',
     pocResult: '',
-    firstDueOn: '',
     weekOffset: '',
   };
 }
@@ -119,7 +138,21 @@ export class IntegrationsPage {
   protected readonly newStatusKey = signal('');
   protected readonly newStatusValue = signal<string>(WORKFLOW_STATUSES[0]);
   protected readonly customFields = signal<Record<CustomFieldKey, string>>(emptyCustomFields());
+  protected readonly discoveredFields = signal<DiscoveredOpCustomFieldDto[]>([]);
+  protected readonly useManualFieldInput = signal(false);
+
+  protected readonly slaCustomFieldRows: { key: CustomFieldKey; label: string; hint: string }[] = [
+    { key: 'receiptDate', label: 'Receipt Date (วันรับเรื่อง)', hint: 'เช่น customField43' },
+    { key: 'alertDate', label: 'Alert Date (วันเตือนล่วงหน้า)', hint: 'เช่น customField163' },
+    { key: 'policyDate', label: 'Policy Date (เส้นตาย Policy SLA)', hint: 'เช่น customField185' },
+    { key: 'replyDate', label: 'Reply Date (วันส่งมอบ/ตอบกลับ)', hint: 'เช่น customField44' },
+    { key: 'cfDueDate', label: 'Due Date (Custom Field)', hint: 'เช่น customField46' },
+    { key: 'planDate', label: 'Plan Date (วันแผนงาน)', hint: 'เช่น customField45' },
+    { key: 'firstDueOn', label: 'First Due Override', hint: 'เฉพาะกรณีล็อกแยกจาก Due Date' },
+  ];
+
   protected readonly customFieldRows: { key: CustomFieldKey; label: string; hint: string }[] = [
+    ...this.slaCustomFieldRows,
     { key: 'size', label: 'Size', hint: 'XS S M L XL' },
     { key: 'track', label: 'Track', hint: 'Implement / RD' },
     { key: 'type', label: 'Type', hint: 'Feature / Bug / Spike …' },
@@ -136,8 +169,50 @@ export class IntegrationsPage {
     { key: 'mrLink', label: 'MR link', hint: 'URL' },
     { key: 'bugCause', label: 'Bug cause', hint: 'Logic UI API …' },
     { key: 'pocResult', label: 'PoC result', hint: 'Adopted / Dropped …' },
-    { key: 'firstDueOn', label: 'First due date', hint: 'ถ้าไม่ใช้ dueDate มาตรฐาน' },
     { key: 'weekOffset', label: 'Week offset', hint: '0 1 2+ ถ้าคำนวณไม่ได้' },
+  ];
+
+  protected readonly generalCustomFieldRows = this.customFieldRows.filter(
+    (r) => !this.slaCustomFieldRows.some((s) => s.key === r.key),
+  );
+
+  // Auto-SLA state
+  protected readonly autoSlaEnabled = signal<boolean>(DEFAULT_AUTO_SLA_CONFIG.enabled);
+  protected readonly alertLeadWorkingDays = signal<number>(DEFAULT_AUTO_SLA_CONFIG.alertLeadWorkingDays);
+  protected readonly autoSlaDaysByType = signal<Record<TicketType, number>>({
+    ...DEFAULT_AUTO_SLA_DAYS_BY_TYPE,
+  });
+  protected readonly duePriorityPreset = signal<string>(
+    DEFAULT_AUTO_SLA_CONFIG.duePriorityChain.join(','),
+  );
+
+  protected readonly autoSlaTypeRows: { key: TicketType; label: string; hint: string }[] = [
+    { key: 'Bug-Investigate', label: 'Bug-Investigate (วิเคราะห์บั๊ก)', hint: 'แนะนำ 2 วันทำการ' },
+    { key: 'Bug-Fix', label: 'Bug-Fix (แก้บั๊ก)', hint: 'แนะนำ 3 วันทำการ' },
+    { key: 'Ops', label: 'Ops / Service Request', hint: 'แนะนำ 2 วันทำการ' },
+    { key: 'Spike', label: 'Spike / R&D PoC', hint: 'แนะนำ 3 วันทำการ' },
+    { key: 'Feature', label: 'Feature (ฟีเจอร์ใหม่)', hint: 'แนะนำ 5 วันทำการ' },
+    { key: 'CR', label: 'CR / Customization', hint: 'แนะนำ 5 วันทำการ' },
+    { key: 'TechDebt', label: 'TechDebt / Refactor', hint: 'แนะนำ 5 วันทำการ' },
+  ];
+
+  protected readonly duePriorityOptions: { text: string; value: string }[] = [
+    {
+      value: 'dueDate,cfDueDate,policyDate,planDate',
+      text: 'มาตรฐาน: Due Date → CF Due Date → Policy Date → Plan Date',
+    },
+    {
+      value: 'policyDate,cfDueDate,dueDate,planDate',
+      text: 'ยึด Policy SLA เป็นหลัก: Policy Date → CF Due Date → Due Date → Plan Date',
+    },
+    {
+      value: 'cfDueDate,policyDate,dueDate,planDate',
+      text: 'ยึด Custom Due Date ก่อน: CF Due Date → Policy Date → Due Date → Plan Date',
+    },
+    {
+      value: 'dueDate,policyDate,cfDueDate,planDate',
+      text: 'Due Date มาตรฐาน → Policy Date → CF Due Date → Plan Date',
+    },
   ];
   protected readonly mapPersonId = signal('');
   protected readonly mapOpUserId = signal<number | null>(null);
@@ -229,6 +304,22 @@ export class IntegrationsPage {
         next[row.key] = custom[row.key] ?? '';
       }
       this.customFields.set(next);
+
+      const rawAutoSla = (info.mapping['autoSla'] ?? null) as Partial<AutoSlaConfig> | null;
+      this.autoSlaEnabled.set(rawAutoSla?.enabled ?? DEFAULT_AUTO_SLA_CONFIG.enabled);
+      this.alertLeadWorkingDays.set(
+        Number.isFinite(rawAutoSla?.alertLeadWorkingDays)
+          ? Number(rawAutoSla!.alertLeadWorkingDays)
+          : DEFAULT_AUTO_SLA_CONFIG.alertLeadWorkingDays,
+      );
+      this.autoSlaDaysByType.set({
+        ...DEFAULT_AUTO_SLA_DAYS_BY_TYPE,
+        ...(rawAutoSla?.daysByType ?? {}),
+      });
+      const chain = Array.isArray(rawAutoSla?.duePriorityChain) && rawAutoSla!.duePriorityChain.length > 0
+        ? rawAutoSla!.duePriorityChain.join(',')
+        : DEFAULT_AUTO_SLA_CONFIG.duePriorityChain.join(',');
+      this.duePriorityPreset.set(chain);
 
       if (glInfo) {
         this.gitlabData.set(glInfo);
@@ -331,6 +422,17 @@ export class IntegrationsPage {
         .split(',')
         .map((item) => item.trim())
         .filter((item) => item.length > 0);
+      const duePriorityChain = this.duePriorityPreset()
+        .split(',')
+        .map((k) => k.trim() as DuePriorityKey)
+        .filter((k) => ['dueDate', 'cfDueDate', 'policyDate', 'planDate'].includes(k));
+      const autoSla: AutoSlaConfig = {
+        enabled: this.autoSlaEnabled(),
+        alertLeadWorkingDays: Math.max(0, Math.round(this.alertLeadWorkingDays())),
+        daysByType: { ...this.autoSlaDaysByType() },
+        duePriorityChain:
+          duePriorityChain.length > 0 ? duePriorityChain : [...DEFAULT_AUTO_SLA_CONFIG.duePriorityChain],
+      };
       const mapping = {
         ...current,
         projects,
@@ -340,6 +442,7 @@ export class IntegrationsPage {
           ...((current['customFields'] as Record<string, string> | undefined) ?? {}),
           ...customFields,
         },
+        autoSla,
       };
       const result = await this.api.saveOpenProject({
         baseUrl: this.baseUrl().trim(),
@@ -451,6 +554,93 @@ export class IntegrationsPage {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  protected async discoverCustomFieldsNow(): Promise<void> {
+    this.saving.set(true);
+    this.error.set('');
+    try {
+      const res = await this.api.discoverOpenProjectFields();
+      if (!res.ok) {
+        this.discoveryHint.set(res.message || 'สแกน Schema จาก myProject ไม่สำเร็จ');
+        this.notice.warning(this.discoveryHint());
+        return;
+      }
+      this.discoveredFields.set(res.fields ?? []);
+      this.useManualFieldInput.set(false);
+      const suggestedEntries = Object.entries(res.suggested ?? {});
+      if (suggestedEntries.length > 0) {
+        this.customFields.update((prev) => {
+          const next = { ...prev };
+          for (const [k, v] of suggestedEntries) {
+            if (k in next && v) {
+              next[k as CustomFieldKey] = v;
+            }
+          }
+          return next;
+        });
+      }
+      const matchedSummary = suggestedEntries.map(([k, v]) => `${k}→${v}`).join(', ');
+      this.discoveryHint.set(
+        `สแกนพบ Custom Fields ใน myProject ${res.fields.length} รายการ · จับคู่อัตโนมัติ ${suggestedEntries.length} ฟิลด์` +
+          (matchedSummary ? ` (${matchedSummary})` : '') +
+          ' — กด «บันทึกการตั้งค่า OpenProject» เพื่อยืนยัน',
+      );
+      this.notice.success(this.discoveryHint(), 'สแกนจับคู่ Custom Fields สำเร็จ');
+    } catch (err) {
+      this.notice.error(err instanceof Error ? err.message : String(err), 'สแกนฟิลด์ไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected applyMyHrDefaultSlaFields(): void {
+    this.customFields.update((prev) => ({
+      ...prev,
+      receiptDate: 'customField43',
+      replyDate: 'customField44',
+      planDate: 'customField45',
+      cfDueDate: 'customField46',
+      alertDate: 'customField163',
+      policyDate: 'customField185',
+    }));
+    this.notice.info(
+      'เติมรหัสมาตรฐาน myProject (customField43/44/45/46/163/185) แล้ว — กดบันทึกเพื่อใช้งาน',
+    );
+  }
+
+  protected discoveredFieldOptions(currentValue: string): { text: string; value: string }[] {
+    const list = this.discoveredFields();
+    const opts: { text: string; value: string }[] = [{ text: '— ไม่ใช้งาน (ว่าง) —', value: '' }];
+    const seen = new Set<string>(['']);
+    for (const f of list) {
+      if (seen.has(f.key)) continue;
+      seen.add(f.key);
+      opts.push({
+        text: `${f.name} (${f.key} · ${f.type})`,
+        value: f.key,
+      });
+    }
+    if (currentValue && !seen.has(currentValue)) {
+      opts.push({
+        text: `${currentValue} (ค่าที่ตั้งไว้)`,
+        value: currentValue,
+      });
+    }
+    return opts;
+  }
+
+  protected setAutoSlaDaysForType(type: TicketType, value: number): void {
+    const days = Number.isFinite(value) ? Math.max(0, Math.round(value)) : 1;
+    this.autoSlaDaysByType.update((prev) => ({ ...prev, [type]: days }));
+  }
+
+  protected resetAutoSlaDefaults(): void {
+    this.autoSlaEnabled.set(DEFAULT_AUTO_SLA_CONFIG.enabled);
+    this.alertLeadWorkingDays.set(DEFAULT_AUTO_SLA_CONFIG.alertLeadWorkingDays);
+    this.autoSlaDaysByType.set({ ...DEFAULT_AUTO_SLA_DAYS_BY_TYPE });
+    this.duePriorityPreset.set(DEFAULT_AUTO_SLA_CONFIG.duePriorityChain.join(','));
+    this.notice.info('คืนค่าเริ่มต้น Auto-SLA Policy แล้ว — กดบันทึกเพื่อใช้งาน');
   }
 
   protected async discoverOpenProject(): Promise<void> {
@@ -569,6 +759,7 @@ export class IntegrationsPage {
         channel: this.teamsChannel(),
         deadline: true,
         overrun: true,
+        policySla: true,
         dryRun: false,
       });
       await this.reload();

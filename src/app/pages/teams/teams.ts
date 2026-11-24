@@ -127,6 +127,7 @@ export class TeamsPage {
         channel: this.channel(),
         deadline: this.deadline(),
         overrun: this.overrun(),
+        policySla: this.deadline(),
         dryRun: false,
       });
       const msgs = result.messages ?? [];

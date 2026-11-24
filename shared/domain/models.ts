@@ -174,6 +174,20 @@ export interface Ticket {
   approvedBy?: string[];
   /** Total calculated Peer Review MD credit awarded to reviewers (10-15%) */
   peerReviewCreditMd?: number;
+  /** OpenProject SLA & Case Dates (customField43, 44, 45, 46, 163, 185) */
+  receiptDate?: string | null;
+  replyDate?: string | null;
+  alertDate?: string | null;
+  policyDate?: string | null;
+  planDate?: string | null;
+  cfDueDate?: string | null;
+  /** Flags marking dates that were auto-computed locally via Auto-SLA Policy */
+  slaAutoFilled?: {
+    receipt?: boolean;
+    alert?: boolean;
+    policy?: boolean;
+    reply?: boolean;
+  };
 }
 
 export interface DodChecklist {

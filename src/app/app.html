@@ -603,7 +603,7 @@
             variant="nested"
             [title]="alert.ticketId"
             [badge]="alert.shortLabel"
-            badgeTone="warning"
+            [badgeTone]="alert.kind === 'policy-breach' ? 'danger' : 'warning'"
           >
             <p class="m-0 text-sm">{{ alert.message }}</p>
             @if (alert.ticketId) {

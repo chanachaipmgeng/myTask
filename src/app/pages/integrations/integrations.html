@@ -180,18 +180,191 @@
 
         <app-section-card
           variant="nested"
-          title="Custom fields"
-          subtitle="ใส่ชื่อ property เช่น customField12 · ว่าง = ไม่ใช้ · แมปจากฟิลด์ myProject ที่แนะนำในคู่มือ"
+          title="Custom Fields &amp; วันที่ Policy / SLA"
+          subtitle="สแกน Schema จาก myProject เพื่อจับคู่ Receipt / Alert / Policy / Reply Date อัตโนมัติ หรือระบุ customFieldXX เอง"
         >
-          <div class="form-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            @for (row of customFieldRows; track row.key) {
+          @if (canEdit()) {
+            <div actions class="flex flex-wrap gap-2 items-center">
+              <button
+                ejs-button
+                cssClass="e-btn-teal e-small"
+                type="button"
+                iconCss="e-icons e-search"
+                [disabled]="saving() || loading()"
+                (click)="discoverCustomFieldsNow()"
+              >
+                สแกนจับคู่ฟิลด์จาก myProject อัตโนมัติ
+              </button>
+              <button
+                ejs-button
+                cssClass="e-outline e-small"
+                type="button"
+                [disabled]="saving()"
+                (click)="applyMyHrDefaultSlaFields()"
+              >
+                ค่ามาตรฐาน myProject SLA
+              </button>
+              @if (discoveredFields().length > 0) {
+                <button
+                  ejs-button
+                  cssClass="e-flat e-small"
+                  type="button"
+                  (click)="useManualFieldInput.set(!useManualFieldInput())"
+                >
+                  {{ useManualFieldInput() ? 'เลือกจากรายการสแกน (' + discoveredFields().length + ')' : 'พิมพ์รหัสเอง' }}
+                </button>
+              }
+              <button
+                ejs-button
+                cssClass="e-success e-small"
+                type="button"
+                [disabled]="saving()"
+                (click)="save()"
+              >
+                บันทึกฟิลด์
+              </button>
+            </div>
+          }
+
+          <div class="flex flex-col gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="e-badge e-badge-teal e-badge-pill">Policy &amp; SLA Dates</span>
+                <span class="text-xs opacity-75">
+                  วันที่รับเรื่อง · วันเตือนล่วงหน้า · เส้นตาย Policy SLA · วันส่งมอบ/ตอบกลับ (ใช้คำนวณ Fair Cutoff และ Due Fallback)
+                </span>
+              </div>
+              <div class="form-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                @for (row of slaCustomFieldRows; track row.key) {
+                  <label class="field">
+                    <span>{{ row.label }}</span>
+                    @if (discoveredFields().length > 0 && !useManualFieldInput()) {
+                      <app-sf-dropdown
+                        [items]="discoveredFieldOptions(customFields()[row.key])"
+                        [value]="customFields()[row.key]"
+                        [allowFiltering]="true"
+                        [disabled]="!canEdit()"
+                        [placeholder]="row.hint"
+                        (valueChange)="setCustomField(row.key, $event)"
+                      />
+                    } @else {
+                      <app-sf-textbox
+                        [value]="customFields()[row.key]"
+                        (valueChange)="setCustomField(row.key, $event)"
+                        [disabled]="!canEdit()"
+                        [placeholder]="row.hint"
+                      />
+                    }
+                  </label>
+                }
+              </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/50">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="e-badge e-badge-secondary e-badge-pill">Scorecard Metadata Fields</span>
+                <span class="text-xs opacity-75">ขนาดงาน · สายงาน · ประเภท · Variance · MR / Bug / PoC</span>
+              </div>
+              <div class="form-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                @for (row of generalCustomFieldRows; track row.key) {
+                  <label class="field">
+                    <span>{{ row.label }}</span>
+                    @if (discoveredFields().length > 0 && !useManualFieldInput()) {
+                      <app-sf-dropdown
+                        [items]="discoveredFieldOptions(customFields()[row.key])"
+                        [value]="customFields()[row.key]"
+                        [allowFiltering]="true"
+                        [disabled]="!canEdit()"
+                        [placeholder]="row.hint"
+                        (valueChange)="setCustomField(row.key, $event)"
+                      />
+                    } @else {
+                      <app-sf-textbox
+                        [value]="customFields()[row.key]"
+                        (valueChange)="setCustomField(row.key, $event)"
+                        [disabled]="!canEdit()"
+                        [placeholder]="row.hint"
+                      />
+                    }
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+        </app-section-card>
+
+        <app-section-card
+          variant="nested"
+          title="กฎคำนวณ Auto-SLA &amp; ลำดับวันกำหนดส่ง (Due Fallback)"
+          subtitle="เติม Policy Date / Alert Date อัตโนมัติตามวันทำการ (จันทร์–ศุกร์) เมื่อใบงานใน myProject เว้นว่างไว้ โดยยังคงกฎห้ามทับ firstDueOn เดิม"
+        >
+          @if (canEdit()) {
+            <div actions class="flex flex-wrap gap-2 items-center">
+              <button
+                ejs-button
+                cssClass="e-outline e-small"
+                type="button"
+                [disabled]="saving()"
+                (click)="resetAutoSlaDefaults()"
+              >
+                คืนค่าเริ่มต้น
+              </button>
+              <button
+                ejs-button
+                cssClass="e-success e-small"
+                type="button"
+                [disabled]="saving()"
+                (click)="save()"
+              >
+                บันทึกกฎ Auto-SLA
+              </button>
+            </div>
+          }
+
+          <div class="form-grid grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+            <div class="field flex items-center pt-2">
+              <app-sf-checkbox
+                label="เปิดคำนวณ Policy &amp; Alert Date อัตโนมัติเมื่อค่าว่าง"
+                [checked]="autoSlaEnabled()"
+                [disabled]="!canEdit()"
+                (checkedChange)="autoSlaEnabled.set($event)"
+              />
+            </div>
+            <label class="field">
+              <span>เตือนล่วงหน้า (Alert Lead · วันทำการก่อนครบ Policy)</span>
+              <app-sf-number
+                [value]="alertLeadWorkingDays()"
+                (valueChange)="alertLeadWorkingDays.set($event)"
+                [disabled]="!canEdit() || !autoSlaEnabled()"
+                [min]="0"
+                [max]="15"
+                [step]="1"
+                format="n0"
+              />
+            </label>
+            <label class="field">
+              <span>ลำดับความสำคัญวันกำหนดส่ง (dueOn / firstDueOn แรกเข้า)</span>
+              <app-sf-dropdown
+                [items]="duePriorityOptions"
+                [value]="duePriorityPreset()"
+                (valueChange)="duePriorityPreset.set($event)"
+                [disabled]="!canEdit()"
+              />
+            </label>
+          </div>
+
+          <div class="form-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            @for (item of autoSlaTypeRows; track item.key) {
               <label class="field">
-                <span>{{ row.label }}</span>
-                <app-sf-textbox
-                  [value]="customFields()[row.key]"
-                  (valueChange)="setCustomField(row.key, $event)"
-                  [disabled]="!canEdit()"
-                  [placeholder]="row.hint"
+                <span>{{ item.label }} <small class="opacity-65">({{ item.hint }})</small></span>
+                <app-sf-number
+                  [value]="autoSlaDaysByType()[item.key]"
+                  (valueChange)="setAutoSlaDaysForType(item.key, $event)"
+                  [disabled]="!canEdit() || !autoSlaEnabled()"
+                  [min]="1"
+                  [max]="60"
+                  [step]="1"
+                  format="n0"
                 />
               </label>
             }

@@ -1,5 +1,6 @@
 import { Person, Ticket, Track, TrackCode, normalizeTrack, WORKFLOW_STATUSES, WorkflowStatus } from './models';
 import { slugifyTeamName, teamLabelForId } from './op-team-staging';
+import { evaluatePolicySla, PolicySlaEvaluation } from './policy-sla';
 import { todayInBangkok, workflowStatusOf } from './workflow';
 
 export type WorkTrackFilter = Track | TrackCode | 'All';
@@ -104,6 +105,13 @@ export interface WorkListRow {
   status: string;
   size: string;
   dueOnLabel: string;
+  receiptDateLabel: string;
+  alertDateLabel: string;
+  policyDateLabel: string;
+  replyDateLabel: string;
+  policySlaLabel: string;
+  policySlaTone: PolicySlaEvaluation['tone'];
+  policyAuto: boolean;
   closedOnLabel: string;
   unplannedLabel: string;
   weekOffsetLabel: string;
@@ -634,10 +642,12 @@ export function workListRows(
   options?: WorkFilterOptions,
 ): WorkListRow[] {
   const peopleMap = new Map(people.map((person) => [person.id, person]));
+  const today = options?.today ?? todayInBangkok();
   return filterWorkTickets(tickets, { ...options, people: options?.people ?? people }).map((ticket) => {
     const title = ticket.title?.trim() || ticket.module || ticket.id;
     const person = ticket.assigneeId ? peopleMap.get(ticket.assigneeId) : undefined;
     const teamId = resolvePersonTeamId(person, ticket.track);
+    const sla = evaluatePolicySla(ticket, today);
     return {
       id: ticket.id,
       workLabel: `${ticket.id} · ${title}`,
@@ -647,6 +657,13 @@ export function workListRows(
       status: workflowStatusOf(ticket),
       size: ticket.size,
       dueOnLabel: ticket.dueOn ?? ticket.firstDueOn ?? '—',
+      receiptDateLabel: ticket.receiptDate ?? '—',
+      alertDateLabel: ticket.alertDate ?? '—',
+      policyDateLabel: ticket.policyDate ?? '—',
+      replyDateLabel: ticket.replyDate ?? ticket.devDeliveredOn ?? '—',
+      policySlaLabel: sla.shortLabel,
+      policySlaTone: sla.tone,
+      policyAuto: Boolean(ticket.slaAutoFilled?.policy),
       closedOnLabel: ticket.closedOn ?? '—',
       unplannedLabel: ticket.unplanned ? 'นอกแผน' : 'ในแผน',
       weekOffsetLabel: ticket.weekOffset === 0 ? 'ตรงสัปดาห์' : `เลื่อน +${ticket.weekOffset}`,

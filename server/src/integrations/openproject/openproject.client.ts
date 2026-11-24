@@ -1,4 +1,4 @@
-import { idFromHref, OpActivity, OpWorkPackage } from './openproject.mapper';
+import { DiscoveredOpCustomField, idFromHref, OpActivity, OpWorkPackage } from './openproject.mapper';
 
 export interface OpCollection<T> {
   _embedded?: { elements?: T[] };
@@ -284,6 +284,9 @@ export class OpenProjectClient {
       typeId?: number;
       assigneeId?: number;
       estimatedHours?: number;
+      startDate?: string | null;
+      dueDate?: string | null;
+      customFields?: Record<string, string | null | undefined>;
     },
   ): Promise<OpWorkPackage> {
     const body: Record<string, unknown> = {
@@ -294,6 +297,19 @@ export class OpenProjectClient {
     }
     if (payload.estimatedHours && payload.estimatedHours > 0) {
       body['estimatedTime'] = `PT${Math.round(payload.estimatedHours)}H`;
+    }
+    if (payload.startDate) {
+      body['startDate'] = payload.startDate;
+    }
+    if (payload.dueDate) {
+      body['dueDate'] = payload.dueDate;
+    }
+    if (payload.customFields) {
+      for (const [k, v] of Object.entries(payload.customFields)) {
+        if (/^customField\d+$/.test(k) && v) {
+          body[k] = v;
+        }
+      }
     }
     const links: Record<string, unknown> = {};
     if (payload.typeId) {
@@ -338,6 +354,53 @@ export class OpenProjectClient {
   async listTypes(): Promise<OpType[]> {
     const data = await this.get<OpCollection<OpType>>('/api/v3/types?pageSize=200');
     return data._embedded?.elements ?? [];
+  }
+
+  /**
+   * Scans recent work package schemas on OpenProject API v3 to discover all customField* keys, labels, and data types.
+   */
+  async discoverCustomFieldsFromSchemas(sampleSize = 40): Promise<DiscoveredOpCustomField[]> {
+    const query = new URLSearchParams({
+      pageSize: String(sampleSize),
+      offset: '1',
+      sortBy: JSON.stringify([['updatedAt', 'desc']]),
+    });
+    const page = await this.get<OpCollection<OpWorkPackage>>(`/api/v3/work_packages?${query.toString()}`);
+    const elements = page._embedded?.elements ?? [];
+    const seenSchemas = new Set<string>();
+    const discovered = new Map<string, DiscoveredOpCustomField>();
+
+    for (const wp of elements) {
+      const schemaLink = wp._links?.['schema'];
+      const href = Array.isArray(schemaLink) ? schemaLink[0]?.href : schemaLink?.href;
+      if (!href || seenSchemas.has(href)) continue;
+      seenSchemas.add(href);
+      try {
+        const schemaObj = await this.get<Record<string, { name?: string; type?: string }>>(href);
+        const typeLink = wp._links?.['type'];
+        const sampleWpType = (Array.isArray(typeLink) ? typeLink[0]?.title : typeLink?.title) ?? undefined;
+        for (const [key, meta] of Object.entries(schemaObj ?? {})) {
+          if (!/^customField\d+$/.test(key) || discovered.has(key)) continue;
+          const name = String(meta?.name ?? key).trim();
+          // Skip visual separator dummy fields like "--------------"
+          if (/^[-_=]{3,}$/.test(name)) continue;
+          discovered.set(key, {
+            key,
+            name,
+            type: String(meta?.type ?? 'String'),
+            sampleWpType,
+          });
+        }
+      } catch {
+        // Ignore individual inaccessible schema links
+      }
+    }
+
+    return Array.from(discovered.values()).sort((a, b) => {
+      const na = Number(a.key.replace('customField', '')) || 0;
+      const nb = Number(b.key.replace('customField', '')) || 0;
+      return na - nb;
+    });
   }
 
   async listVersions(projectId: number): Promise<OpVersion[]> {

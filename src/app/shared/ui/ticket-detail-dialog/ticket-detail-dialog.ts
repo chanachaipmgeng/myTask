@@ -14,7 +14,8 @@ import { ScorecardService } from '../../../core/scorecard.service';
 import { ShellNotice } from '../../../core/shell-notice';
 import { TicketDetailService } from '../../../core/ticket-detail.service';
 import { scoreTicket } from '../../../../../shared/domain/scoring';
-import { workflowStatusOf } from '../../../../../shared/domain/workflow';
+import { evaluatePolicySla, PolicySlaEvaluation } from '../../../../../shared/domain/policy-sla';
+import { todayInBangkok, workflowStatusOf } from '../../../../../shared/domain/workflow';
 import { SfDatePickerComponent } from '../../sf/sf-datepicker/sf-datepicker';
 import { SfNumberComponent } from '../../sf/sf-number/sf-number';
 import { SfTabItem, SfTabsComponent } from '../../sf/sf-tabs/sf-tabs';
@@ -64,6 +65,10 @@ export class TicketDetailDialogComponent {
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
 
   protected readonly isOpen = computed(() => !!this.detail.ticketId());
+  protected readonly policySla = computed<PolicySlaEvaluation | null>(() => {
+    const t = this.data()?.ticket;
+    return t ? evaluatePolicySla(t, todayInBangkok()) : null;
+  });
   protected readonly drawerWidth =
     typeof window !== 'undefined' && window.innerWidth <= 640
       ? `${Math.max(280, window.innerWidth - 16)}px`

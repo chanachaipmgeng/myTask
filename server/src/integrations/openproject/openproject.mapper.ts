@@ -1,5 +1,13 @@
 import { SIZE_STANDARD_MD } from '../../../../shared/domain/scoring';
 import {
+  AutoSlaConfig,
+  DEFAULT_AUTO_SLA_CONFIG,
+  DEFAULT_AUTO_SLA_DAYS_BY_TYPE,
+  DUE_PRIORITY_KEYS,
+  DuePriorityKey,
+  resolveTicketSlaAndDueDates,
+} from '../../../../shared/domain/policy-sla';
+import {
   BUG_CAUSES,
   BugCause,
   DISCIPLINES,
@@ -56,26 +64,49 @@ export interface OpenProjectMapping {
     exceptionTag: string;
     rdWorkTrack: string;
     spikeOutcome: string;
+    /** Case / Policy SLA date fields from myProject */
+    receiptDate: string;
+    replyDate: string;
+    planDate: string;
+    cfDueDate: string;
+    alertDate: string;
+    policyDate: string;
   };
   /** Count Done -> not-Done transitions from activities. One request per changed work package. */
   countReopens: boolean;
+  /** Automatic working-day SLA calculation & dueOn priority fallback rules */
+  autoSla: AutoSlaConfig;
+}
+
+export interface DiscoveredOpCustomField {
+  key: string;
+  name: string;
+  type: string;
+  sampleWpType?: string;
 }
 
 export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
   projects: [],
   statusMap: {
     New: 'Backlog',
+    Open: 'Backlog',
     Scheduled: 'Backlog',
     'To do': 'Backlog',
+    'On Hold': 'Backlog',
     'In progress': 'In Progress',
+    'Work in Progress': 'In Progress',
     'In development': 'In Progress',
+    '*Request more information?': 'In Progress',
     Developed: 'Code Review',
+    '*Developed': 'Ready for QA',
     'In review': 'Code Review',
     'Code review': 'Code Review',
     'Ready for QA': 'Ready for QA',
     'In testing': 'In QA',
+    '*Testing in Progress': 'In QA',
     'In QA': 'In QA',
     Tested: 'In QA',
+    '*Tested and Implement': 'Done',
     'Test failed': 'Reopened',
     Reopened: 'Reopened',
     Closed: 'Done',
@@ -100,7 +131,13 @@ export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
   },
   typeMap: {
     Bug: 'Bug-Fix',
+    'DEV-Bugs Fix': 'Bug-Fix',
     Feature: 'Feature',
+    'DEV-Enhancement': 'Feature',
+    'DEV-Customization': 'CR',
+    'DEV-Request': 'Feature',
+    'SE-Request': 'Ops',
+    'CS-Service Request': 'Ops',
     'User story': 'Feature',
     Task: 'Feature',
     Epic: 'Feature',
@@ -135,8 +172,20 @@ export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
     exceptionTag: '',
     rdWorkTrack: '',
     spikeOutcome: '',
+    receiptDate: 'customField43',
+    replyDate: 'customField44',
+    planDate: 'customField45',
+    cfDueDate: 'customField46',
+    alertDate: 'customField163',
+    policyDate: 'customField185',
   },
   countReopens: true,
+  autoSla: {
+    enabled: DEFAULT_AUTO_SLA_CONFIG.enabled,
+    alertLeadWorkingDays: DEFAULT_AUTO_SLA_CONFIG.alertLeadWorkingDays,
+    daysByType: { ...DEFAULT_AUTO_SLA_CONFIG.daysByType },
+    duePriorityChain: [...DEFAULT_AUTO_SLA_CONFIG.duePriorityChain],
+  },
 };
 
 /** Subset of an OpenProject API v3 WorkPackage resource that we read. */
@@ -209,6 +258,13 @@ export const OPENPROJECT_OWNED_FIELDS = [
   'discipline',
   'workCategory',
   'actualStartOn',
+  'receiptDate',
+  'replyDate',
+  'alertDate',
+  'policyDate',
+  'planDate',
+  'cfDueDate',
+  'slaAutoFilled',
 ] as const;
 
 /** ISO 8601 duration (PT8H, P1DT2H30M, PT0.5H) -> hours. OpenProject uses P1D = 24h. */
@@ -305,7 +361,36 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   const weekOffsetCf = asNonNegInt(customValue(wp, cf.weekOffset));
   const category = linkTitle(links['category']);
 
-  const dueOn = wp.dueDate ?? null;
+  const rawReceiptDate = dateOnly(customValue(wp, cf.receiptDate) ?? undefined);
+  const rawReplyDate = dateOnly(customValue(wp, cf.replyDate) ?? undefined);
+  const rawPlanDate = dateOnly(customValue(wp, cf.planDate) ?? undefined);
+  const rawCfDueDate = dateOnly(customValue(wp, cf.cfDueDate) ?? undefined);
+  const rawAlertDate = dateOnly(customValue(wp, cf.alertDate) ?? undefined);
+  const rawPolicyDate = dateOnly(customValue(wp, cf.policyDate) ?? undefined);
+
+  const actualStartOn = dateOnly(wp.startDate ?? undefined) ?? rawReceiptDate;
+  const closedOn = closed ? (closedOnFromActivities(ctx.activities, mapping) ?? dateOnly(wp.updatedAt)) : null;
+
+  const resolvedSla = resolveTicketSlaAndDueDates({
+    wpDueDate: wp.dueDate ?? null,
+    receiptDate: rawReceiptDate,
+    replyDate: rawReplyDate,
+    alertDate: rawAlertDate,
+    policyDate: rawPolicyDate,
+    planDate: rawPlanDate,
+    cfDueDate: rawCfDueDate,
+    startDate: actualStartOn,
+    createdDate: dateOnly(wp.createdAt),
+    ticketType: type,
+    workflowStatus: workflowStatus || undefined,
+    closed,
+    closedOn,
+    readyForQaAt: ctx.existing?.readyForQaAt ?? null,
+    devDeliveredOn: ctx.existing?.devDeliveredOn ?? null,
+    autoSla: mapping.autoSla ?? DEFAULT_AUTO_SLA_CONFIG,
+  });
+
+  const dueOn = resolvedSla.resolvedDueOn;
   const firstDueOverride = dateOnly(customValue(wp, cf.firstDueOn) ?? undefined);
   // Logic: หาก tickets.first_due_on มีค่าอยู่แล้ว ห้ามเขียนทับ ยกเว้นมีคำสั่งอนุมัติจากตาราง ticket_due_shifts
   const firstDueOn =
@@ -313,14 +398,15 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     ctx.existing?.firstDueOn ||
     firstDueOverride ||
     dueOn;
-  const closedOn = closed ? (closedOnFromActivities(ctx.activities, mapping) ?? dateOnly(wp.updatedAt)) : null;
   const reopenCount =
     ctx.activities && mapping.countReopens ? countReopens(ctx.activities, mapping) : (ctx.existing?.reopenCount ?? 0);
-  // Fair cutoff: prefer Ready-for-QA delivery date over final closedOn so QA queue does not penalize Dev.
+  // Fair cutoff: prefer Ready-for-QA / explicit Reply Date over final closedOn so QA queue does not penalize Dev.
   const deliveryAnchor =
-    ctx.existing?.readyForQaAt ?? ctx.existing?.devDeliveredOn ?? (closed ? closedOn : null);
+    ctx.existing?.readyForQaAt ??
+    ctx.existing?.devDeliveredOn ??
+    rawReplyDate ??
+    (closed ? closedOn : null);
   const computedWeekOffset = deliveryAnchor ? weekOffset(firstDueOn, deliveryAnchor) : 0;
-  const actualStartOn = dateOnly(wp.startDate ?? undefined);
 
   const base: Ticket = {
     id: ticketIdFor(wp.id),
@@ -353,6 +439,14 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     dueOn,
     firstDueOn,
     actualStartOn,
+    devDeliveredOn: ctx.existing?.devDeliveredOn ?? rawReplyDate ?? undefined,
+    receiptDate: resolvedSla.receiptDate,
+    replyDate: resolvedSla.replyDate,
+    alertDate: resolvedSla.alertDate,
+    policyDate: resolvedSla.policyDate,
+    planDate: resolvedSla.planDate,
+    cfDueDate: resolvedSla.cfDueDate,
+    slaAutoFilled: resolvedSla.slaAutoFilled,
     storyPoints: storyPoints ?? undefined,
     discipline: discipline ?? undefined,
     workCategory: workCategory ?? undefined,
@@ -378,6 +472,9 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     delete merged.workflowStatus;
   }
   merged.firstDueOn = firstDueOn;
+  if (!merged.devDeliveredOn && rawReplyDate) {
+    merged.devDeliveredOn = rawReplyDate;
+  }
   merged.reopenCount = reopenCount;
   if (variance) {
     merged.varianceCode = variance;
@@ -655,10 +752,34 @@ export function validateMapping(input: unknown): { mapping: OpenProjectMapping |
     return { mapping: null, errors: ['mapping must be an object'] };
   }
   const raw = input as Partial<OpenProjectMapping>;
+  const rawAuto = (raw as { autoSla?: Partial<AutoSlaConfig> }).autoSla;
+  const validChain: DuePriorityKey[] = Array.isArray(rawAuto?.duePriorityChain)
+    ? rawAuto!.duePriorityChain.filter((k): k is DuePriorityKey =>
+        (DUE_PRIORITY_KEYS as readonly string[]).includes(String(k)),
+      )
+    : [];
+  const mergedDaysByType: Record<TicketType, number> = { ...DEFAULT_AUTO_SLA_DAYS_BY_TYPE };
+  if (rawAuto?.daysByType && typeof rawAuto.daysByType === 'object') {
+    for (const t of TYPES) {
+      const n = Number((rawAuto.daysByType as Record<string, unknown>)[t]);
+      if (Number.isFinite(n) && n >= 0 && n <= 90) {
+        mergedDaysByType[t] = Math.round(n);
+      }
+    }
+  }
+  const leadRaw = Number(rawAuto?.alertLeadWorkingDays);
+  const mergedAutoSla: AutoSlaConfig = {
+    enabled: typeof rawAuto?.enabled === 'boolean' ? rawAuto.enabled : DEFAULT_AUTO_SLA_CONFIG.enabled,
+    alertLeadWorkingDays: Number.isFinite(leadRaw) && leadRaw >= 0 && leadRaw <= 30 ? Math.round(leadRaw) : DEFAULT_AUTO_SLA_CONFIG.alertLeadWorkingDays,
+    daysByType: mergedDaysByType,
+    duePriorityChain: validChain.length > 0 ? Array.from(new Set(validChain)) : [...DEFAULT_AUTO_SLA_CONFIG.duePriorityChain],
+  };
+
   const merged: OpenProjectMapping = {
     ...DEFAULT_OPENPROJECT_MAPPING,
     ...raw,
     customFields: { ...DEFAULT_OPENPROJECT_MAPPING.customFields, ...(raw.customFields ?? {}) },
+    autoSla: mergedAutoSla,
   };
   if (!Array.isArray(merged.projects) || merged.projects.some((p) => typeof p !== 'string')) {
     errors.push('projects must be a list of identifiers');
@@ -690,4 +811,65 @@ export function validateMapping(input: unknown): { mapping: OpenProjectMapping |
     }
   }
   return { mapping: errors.length === 0 ? merged : null, errors };
+}
+
+/**
+ * Automatically suggests customField mappings by matching discovered OpenProject schema field names.
+ */
+export function autoMatchCustomFieldsFromSchema(
+  fields: readonly DiscoveredOpCustomField[],
+): Partial<OpenProjectMapping['customFields']> {
+  const out: Partial<OpenProjectMapping['customFields']> = {};
+
+  const findField = (
+    predicates: ((name: string, type: string) => boolean)[],
+  ): string | undefined => {
+    for (const pred of predicates) {
+      const hit = fields.find((f) => pred(f.name.trim().toLowerCase(), f.type.trim().toLowerCase()));
+      if (hit) return hit.key;
+    }
+    return undefined;
+  };
+
+  const receipt = findField([
+    (n, t) => t === 'date' && (n === 'receipt date' || n === 'reciept date' || n.includes('receipt') || n.includes('reciept') || n.includes('วันรับเรื่อง')),
+  ]);
+  if (receipt) out.receiptDate = receipt;
+
+  const reply = findField([
+    (n, t) => t === 'date' && (n === 'reply date' || n.includes('reply') || n.includes('วันตอบกลับ')),
+  ]);
+  if (reply) out.replyDate = reply;
+
+  const alert = findField([
+    (n, t) => t === 'date' && (n === 'alert' || n === 'alert date' || n.startsWith('alert') || n.includes('วันเตือน')),
+  ]);
+  if (alert) out.alertDate = alert;
+
+  const policy = findField([
+    (n, t) => t === 'date' && (n === 'policy date' || n.includes('policy') || n.includes('วันครบกำหนดตามนโยบาย')),
+  ]);
+  if (policy) out.policyDate = policy;
+
+  const plan = findField([
+    (n, t) => t === 'date' && (n === 'plan date' || n === 'planned date' || n.includes('วันตามแผน')),
+  ]);
+  if (plan) out.planDate = plan;
+
+  const cfDue = findField([
+    (n, t) => t === 'date' && (n === 'due date' || n === 'finish date'),
+  ]);
+  if (cfDue) out.cfDueDate = cfDue;
+
+  const mr = findField([
+    (n) => n.includes('mr link') || n.includes('merge request') || n === 'mr url',
+  ]);
+  if (mr) out.mrLink = mr;
+
+  const bugCause = findField([
+    (n) => n.includes('rootcause') || n.includes('bug cause') || n === 'bug type',
+  ]);
+  if (bugCause) out.bugCause = bugCause;
+
+  return out;
 }

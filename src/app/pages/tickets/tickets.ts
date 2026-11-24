@@ -133,6 +133,11 @@ export class TicketsPage {
     { field: 'spikeLabel', headerText: 'Spike', width: 90 },
     { field: 'unplannedLabel', headerText: 'นอกแผน', width: 100 },
     { field: 'score', headerText: 'คะแนน', width: 100, textAlign: 'Right' },
+    { field: 'policyDateLabel', headerText: 'Policy Date', width: 135 },
+    { field: 'policySlaLabel', headerText: 'Policy SLA', width: 120 },
+    { field: 'receiptDateLabel', headerText: 'Receipt Date', width: 115, visible: false },
+    { field: 'alertDateLabel', headerText: 'Alert Date', width: 115, visible: false },
+    { field: 'replyDateLabel', headerText: 'Reply Date', width: 115, visible: false },
     { field: 'scoreMeaning', headerText: 'ที่มาของคะแนน', width: 420 },
     { field: 'alertLabel', headerText: 'แจ้งเตือน', width: 180 },
     { field: 'closedOnLabel', headerText: 'วันที่ปิด', width: 120 },
@@ -147,7 +152,7 @@ export class TicketsPage {
   ];
 
   protected readonly ticketGridOptions: SfGridOptions = listGridOptions({
-    id: this.isMine ? 'my-tickets-score-grid-v3' : 'tickets-score-grid-v3',
+    id: this.isMine ? 'my-tickets-score-grid-v4' : 'tickets-score-grid-v4',
     enablePersistence: true,
     pageSize: 10,
     search: false,
