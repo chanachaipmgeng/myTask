@@ -44,6 +44,7 @@ npm --prefix server run build
   - `/tickets/disputes`: `ejs-splitter` รายการคำขอด้านซ้าย และแผงคำนวณคะแนนจำลอง (Projected Score Diff) ด้านขวา พร้อม `ejs-dialog` ยื่นอุทธรณ์
   - `/admin/snapshot-check`: `ejs-progressbar` แสดง Readiness % + เช็คลิสต์ 4 ด่าน + ตาราง Snapshot Preview Diff เปรียบเทียบดัชนีรายบุคคลก่อน Freeze
   - `/admin/projects`: `app-sf-grid` จัดการแคตตาล็อกโปรเจกต์ (เปิด/ปิด Active, ผูก Assigned Teams แบบ MultiSelect, และ Smart Merge Sync ดึงสดจาก OpenProject API พร้อมนับตั๋วงาน WIP)
+  - `/org/projects/:id` (Enterprise Project Detail & Git Governance Hub): ศูนย์รวมข้อมูลและสุขภาพโปรเจกต์ 4 แท็บ (Overview & Health KPIs, Work Packages Grid ผูก Ticket 360° Drawer, Multi-Repo Mapping & CI/CD Pipeline Health พร้อมปุ่ม 1-Click สร้างใบงาน myProject จาก Unmatched Git Branches, และ Teams/Members Allocations) พร้อมลิงก์ตรงจาก `/admin/projects` และ Omnisearch (`⌘K`)
   - `/mygit` & `/workspace/people` (Git & myProject Smart Integration): ระบบตรวจจับ Git branch อัตโนมัติ หากมี Ticket ID (เช่น `IMP-101`) จะผูกทันที หากเป็น Branch ที่ยังไม่มีใบงานรองรับ (Unmatched) จะแสดงแจ้งเตือนพร้อมปุ่ม `+ สร้างใบงาน` (Smart Pre-filled `TicketCreateDialogComponent`) แปลงชื่อ branch เป็นชื่อใบงานอัตโนมัติ สร้าง Work Package บน myProject API v3 แล้วผูกเชื่อมโยงทันที พร้อมแท็บ `Git & โค้ด` แสดงประวัติ branch และ commit รายบุคคล
 - **Modern Bento Grid Cockpit (P16 - `/cockpit` & `/me/cockpit`)**:
   - **100vh Viewport Lock & Fluid Scaling**: ล็อกความสูง `calc(100vh - 78px)` เฉพาะจอเดสก์ท็อปขนาดใหญ่ `@media (min-width: 1200px) and (min-height: 850px)` หากความสูงหน้าจอ $< 850$px (เช่น แล็ปท็อปที่เปิด Windows Scaling 125%/150%) ให้ยืดหยุ่นเป็น `min-height` พร้อม `overflow-y: auto` ป้องกันกราฟ Tier 3 โดนตัดขอบล่าง โดยที่ `.shell-appbar` ต้องกำหนด `flex-wrap: nowrap !important;` ล็อกความสูงคงที่ 56px เสมอ
@@ -101,6 +102,17 @@ npm --prefix server run build
 - **CSS Grid over `ejs-dashboardlayout` & Refined Spring Motion**:
   - ใช้ **CSS Grid (`grid-cols-1 lg:grid-cols-2 gap-4`) + `app-section-card`** แทน `<ejs-dashboardlayout>` บนหน้าแดชบอร์ดกราฟ (`/team`, `/work/summary`) เพื่อป้องกันการ์ดบีบ/กราฟพับ · แท่งกราฟใช้ `cornerRadius: { topLeft: 8, topRight: 8 }` + เส้นกริดประ (`dashArray: '4,4'`) + `opposedPosition: true` · Donut `centerLabel` ที่อิงธีมต้องผูก `effect()` รีเฟรชเมื่อ `theme.isDark()` เปลี่ยน
   - **Refined Motion**: Active Pill Sidebar (`.saas-nav__active-pill`) วัดพิกัดด้วย `getBoundingClientRect()` + `ResizeObserver` · Micro-interactions บน chip/badge ใช้ `var(--ease-spring)` ได้ · ห้าม `transform` บน `:hover` ของ `.e-card`/`.e-btn`/`.e-dialog`
+- **Syncfusion AppBar Stacking & Popup Overflow Invariants**:
+  - บน `::ng-deep .shell-appbar.e-appbar` ต้องกำหนด `overflow: visible !important;` และ `z-index: 100 !important;` เสมอ เพื่อป้องกันไม่ให้ Syncfusion AppBar ตัดขอบ (clip) แผงเมนูย่อยหรือ Omnisearch (`.navbar-search-panel`) ที่ยื่นเลยความสูง 56px
+  - แผงลอย (Popups/Dropdown panels) ภายใน AppBar ต้องกำหนด `z-index: 1050;` ขึ้นไปเพื่อลอยทับ `.workspace-filter-bar` (`z-index: 25`) ได้อย่างถูกต้อง
+- **Syncfusion DataGrid Toolbar Cleanliness**:
+  - เมื่อคอมโพเนนต์ Grid ไม่ได้เปิดใช้งานปุ่ม Toolbar ใดๆ เลย ค่าที่ผูกกับ `[toolbar]` ของ `<ejs-grid>` ต้องส่งเป็น `undefined` (ห้ามส่ง `[]` อาเรย์ว่างเปล่า) เพื่อไม่ให้ Syncfusion เรนเดอร์กล่องสีเทาเปล่าเหนือหัวตาราง
+- **Navigation Router ID Alignment**:
+  - ฟังก์ชัน `matchNavId(url, role)` ต้องส่งคืนสตริง `id` ที่ตรงกับค่า `id` ใน `SidebarSection.items` เสมอ (เช่น `/admin/projects` และ `/org/projects/:id` ต้องส่งคืน `'hub-projects'`) เพื่อให้ Sliding Active Pill แสดงผลได้อย่างถูกต้อง
+- **Omnisearch Multi-Attribute Matching**:
+  - การค้นหาโปรเจกต์ใน Omnisearch (`⌘K`) ต้องตรวจสอบทั้ง `String(p.id).includes(q)`, `name`, และ `identifier` เพื่อให้ผู้ใช้ค้นด้วยรหัสตัวเลข (เช่น `324`) ได้ทันที
+- **Bottom-Right Floating Element Collision Protection**:
+  - บนหน้าจอหรือแท็บที่มีรายการยาว (เช่น Git Branches, Ticket List) คอนเทนเนอร์หลักต้องมี padding ด้านล่างขั้นต่ำ `pb-16` หรือ `pb-20` เพื่อป้องกันปุ่มลอย `ขึ้นบน` (Scroll-to-top) ทับซ้อนกับปุ่มกระทำสำคัญ
 - **Date Type-Safety**: ฟิลด์วันที่ (`closedOn`, `dueDate`, `startDate`) ที่มาจากฐานข้อมูลอาจเป็นได้ทั้ง `string` หรือ `Date` object ให้ normalize ด้วย `raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '')` ก่อนใช้ string methods เสมอ  
 
 ## สิทธิ์ / Board / Gantt / Writeback / KPI snapshot / Integrations

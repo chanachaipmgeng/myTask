@@ -55,3 +55,14 @@ alwaysApply: false
 - ข้อมูลแถว/กราฟคำนวณใน `shared/domain/work-views.ts` หรือ `people-roster` / `person-dashboard` / `workspace-scope` แล้วค่อย bind UI
 - **Relative Import Depth**: โฟลเดอร์ระดับ core/shared ใช้ `../../../shared/domain/...`, โฟลเดอร์ระดับ pages ใช้ `../../../../shared/domain/...`, และโฟลเดอร์ย่อยใน shared UI (`src/app/shared/ui/<folder>/`) ใช้ `../../../../../shared/domain/...` เสมอ
 - **Standalone Component Pipes**: เมื่อใช้ pipes ในเทมเพลต (เช่น `| slice:0:16`) ต้องประกาศนำเข้าคลาส (เช่น `SlicePipe`) ในอาเรย์ `imports` ของ `@Component` เสมอ เพื่อป้องกัน `NG8004`
+- **Syncfusion AppBar Stacking & Popup Overflow**:
+  - บน `::ng-deep .shell-appbar.e-appbar` ต้องกำหนด `overflow: visible !important;` และ `z-index: 100 !important;` เสมอ เพื่อป้องกันไม่ให้ Syncfusion AppBar ตัดขอบแผงเมนูย่อยหรือ Omnisearch (`.navbar-search-panel`) ที่ยื่นเลยความสูง 56px
+  - แผงลอย (Popups/Dropdown panels) ภายใน AppBar ต้องกำหนด `z-index: 1050;` ขึ้นไปเพื่อลอยทับ `.workspace-filter-bar` (`z-index: 25`) ได้อย่างถูกต้อง
+- **Syncfusion DataGrid Toolbar Cleanliness**:
+  - เมื่อคอมโพเนนต์ Grid ไม่ได้เปิดใช้งานปุ่ม Toolbar ใดๆ เลย ค่าที่ผูกกับ `[toolbar]` ของ `<ejs-grid>` ต้องส่งเป็น `undefined` (ห้ามส่ง `[]` อาเรย์ว่างเปล่า) เพื่อไม่ให้ Syncfusion เรนเดอร์กล่องสีเทาเปล่าเหนือหัวตาราง
+- **Navigation Router ID Alignment**:
+  - ฟังก์ชัน `matchNavId(url, role)` ต้องส่งคืนสตริง `id` ที่ตรงกับค่า `id` ใน `SidebarSection.items` เสมอ (เช่น `/admin/projects` และ `/org/projects/:id` ต้องส่งคืน `'hub-projects'`) เพื่อให้ Sliding Active Pill แสดงผลได้อย่างถูกต้อง
+- **Omnisearch Multi-Attribute Matching**:
+  - การค้นหาโปรเจกต์ใน Omnisearch (`⌘K`) ต้องตรวจสอบทั้ง `String(p.id).includes(q)`, `name`, และ `identifier` เพื่อให้ผู้ใช้ค้นด้วยรหัสตัวเลข (เช่น `324`) ได้ทันที
+- **Bottom-Right Floating Element Collision Protection**:
+  - บนหน้าจอหรือแท็บที่มีรายการยาว (เช่น Git Branches, Ticket List) คอนเทนเนอร์หลักต้องมี padding ด้านล่างขั้นต่ำ `pb-16` หรือ `pb-20` เพื่อป้องกันปุ่มลอย `ขึ้นบน` (Scroll-to-top) ทับซ้อนกับปุ่มกระทำสำคัญ
