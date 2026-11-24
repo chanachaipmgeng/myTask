@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { currentViewer } from '../../core/admin-settings';
+import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { acceptedTrackedMd, aiTicketPoints, formatTrackedMd, researchSpikeShare } from '../../core/ai-tracking';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
@@ -38,21 +38,23 @@ export class AiTrackingPage {
   private readonly scorecard = inject(ScorecardService);
   private readonly workspace = inject(WorkspaceFilter);
 
-  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  protected readonly isMine = computed(
+    () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
+  );
   protected readonly activePersonId = computed(
     () => currentSession()?.person.id ?? currentViewer().id,
   );
   protected readonly scopedTickets = computed(() => {
-    const all = this.scorecard.tickets();
-    if (this.isMine) {
+    const all = this.workspace.applyToTickets(this.scorecard.tickets());
+    if (this.isMine()) {
       const selfId = this.activePersonId();
       return all.filter((t) => t.assigneeId === selfId);
     }
-    return this.workspace.applyToTickets(all);
+    return all;
   });
   protected readonly scopedPeople = computed(() => {
     const all = this.scorecard.people();
-    if (this.isMine) {
+    if (this.isMine()) {
       const selfId = this.activePersonId();
       return all.filter((p) => p.id === selfId);
     }

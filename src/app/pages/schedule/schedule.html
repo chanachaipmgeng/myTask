@@ -1,12 +1,12 @@
 <section id="schedule-page" class="page schedule-page">
   <app-page-head
-    [title]="isMine ? 'ปฏิทินงานและวันลาของฉัน' : 'ปฏิทินทีม'"
-    [description]="isMine
+    [title]="isMine() ? 'ปฏิทินงานและวันลาของฉัน' : 'ปฏิทินทีม'"
+    [description]="isMine()
       ? 'ดูช่วงเวลางานของตัวเองตั้งแต่วันเริ่มจริงถึงวันครบกำหนด แถบสีส้มคือใบที่หลุดจากสัปดาห์ที่ commit (อ่านอย่างเดียว)'
       : 'แต่ละคนเป็นแถว ใบงานเป็นช่วงจากวันเริ่มจริงถึงวันครบกำหนด ถ้าไม่มีวันครบกำหนดใช้วันส่งครั้งแรก แถบสีส้มคือใบที่หลุดจากสัปดาห์ที่ commit ปฏิทินนี้อ่านอย่างเดียว ไม่เขียนวันกลับไปที่ใบงาน'"
   >
     <div actions class="flex flex-wrap items-center gap-2">
-      @if (!isMine) {
+      @if (!isMine()) {
         <app-form-field label="ทีม" variant="filter">
           <app-sf-dropdown
             [items]="teamOptions()"
@@ -15,22 +15,22 @@
             (valueChange)="setTeam($event)"
           />
         </app-form-field>
+        <app-form-field label="คน" variant="filter">
+          <app-sf-dropdown
+            [items]="personOptions()"
+            [value]="personId()"
+            [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชื่อ', placeholder: 'เลือกคน', width: '220px' }"
+            (valueChange)="setPerson($event)"
+          />
+        </app-form-field>
       }
-      <app-form-field label="คน" variant="filter">
-        <app-sf-dropdown
-          [items]="personOptions()"
-          [value]="personId()"
-          [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชื่อ', placeholder: 'เลือกคน', width: '220px' }"
-          (valueChange)="setPerson($event)"
-        />
-      </app-form-field>
     </div>
   </app-page-head>
 
   <div class="schedule-layout">
     <app-section-card
       class="schedule-layout__timeline"
-      [title]="isMine ? 'ไทม์ไลน์ของฉัน' : 'ไทม์ไลน์ทีม'"
+      [title]="isMine() ? 'ไทม์ไลน์ของฉัน' : 'ไทม์ไลน์ทีม'"
       subtitle="คลิกแถบงานเพื่อโฟกัสวันทางขวา · อ่านอย่างเดียว"
     >
       <div actions class="flex flex-wrap items-center gap-2">

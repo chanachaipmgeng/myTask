@@ -73,8 +73,10 @@ export class CockpitPage implements OnInit {
 
   @ViewChild('cockpitRoot') private cockpitRoot?: ElementRef<HTMLElement>;
 
-  /** True if loaded under /me/cockpit; false if /cockpit (team executive view) */
-  protected readonly isMine = computed(() => this.route.snapshot.data['scope'] === 'mine');
+  /** True when viewing as Member (or legacy /me/cockpit); false for Lead/Admin team & org cockpit */
+  protected readonly isMine = computed(
+    () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
+  );
   protected readonly role = effectiveRole;
 
   // Viewport & Presentation States
@@ -676,11 +678,11 @@ export class CockpitPage implements OnInit {
   }
 
   protected drillToWork(): void {
-    void this.workspace.navigateWithFilter([this.isMine() ? '/me/work' : '/work']);
+    void this.workspace.navigateWithFilter(['/work']);
   }
 
   protected drillToTickets(): void {
-    void this.workspace.navigateWithFilter([this.isMine() ? '/me/tickets' : '/tickets']);
+    void this.workspace.navigateWithFilter(['/quality/tickets']);
   }
 
   protected drillToPeople(): void {

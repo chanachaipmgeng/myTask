@@ -5,12 +5,13 @@ import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { SpeechToTextModule, TranscriptChangedEventArgs } from '@syncfusion/ej2-angular-inputs';
 import { map } from 'rxjs';
 import { ApiClient } from '../../core/api-client';
-import { currentViewer, trackWeights, weeklyQuotas } from '../../core/admin-settings';
+import { currentViewer, effectiveRole, trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { accuracyScatterPoints, mdCompositionTrend, scoreWaterfall } from '../../core/dashboard-charts';
 import { personDashboard } from '../../core/person-dashboard';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import {
   PageHeadComponent,
   SectionCardComponent,
@@ -69,16 +70,27 @@ export class PersonDashboard {
   private readonly router = inject(Router);
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
+  private readonly workspace = inject(WorkspaceFilter);
   protected readonly theme = inject(ThemeService);
-  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  private readonly isHubOls = !!this.route.snapshot.data['hubOls'];
   private readonly routePersonId = toSignal(this.route.paramMap.pipe(map((params) => params.get('personId') ?? '')), {
     initialValue: this.route.snapshot.paramMap.get('personId') ?? '',
   });
+  protected readonly isMine = computed(
+    () =>
+      this.route.snapshot.data['scope'] === 'mine' ||
+      (this.isHubOls && effectiveRole() === 'member'),
+  );
   protected readonly personId = computed(() => {
-    if (this.isMine) {
-      return currentSession()?.person.id ?? currentViewer().id;
+    const selfId = currentSession()?.person.id ?? currentViewer().id;
+    if (this.isMine()) {
+      return selfId;
     }
-    return this.routePersonId();
+    const fromRoute = this.routePersonId();
+    if (fromRoute) {
+      return fromRoute;
+    }
+    return this.workspace.personId() || selfId;
   });
 
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
@@ -366,8 +378,8 @@ export class PersonDashboard {
   });
 
   protected readonly prevPerson = computed(() => {
-    if (this.isMine) return null;
-    const list = this.scorecard.people();
+    if (this.isMine()) return null;
+    const list = this.workspace.applyToPeople(this.scorecard.people());
     const currId = this.personId();
     const idx = list.findIndex((p) => p.id === currId);
     if (idx > 0) {
@@ -377,8 +389,8 @@ export class PersonDashboard {
   });
 
   protected readonly nextPerson = computed(() => {
-    if (this.isMine) return null;
-    const list = this.scorecard.people();
+    if (this.isMine()) return null;
+    const list = this.workspace.applyToPeople(this.scorecard.people());
     const currId = this.personId();
     const idx = list.findIndex((p) => p.id === currId);
     if (idx >= 0 && idx < list.length - 1) {
@@ -503,10 +515,14 @@ export class PersonDashboard {
   }
 
   protected goToPerson(id: string): void {
+    if (this.isHubOls) {
+      this.workspace.setPerson(id);
+      return;
+    }
     void this.router.navigate(['/people', id]);
   }
 
   protected back(): void {
-    void this.router.navigate([this.isMine ? '/me' : '/people']);
+    void this.router.navigate([this.isMine() ? '/me' : '/workspace/people']);
   }
 }

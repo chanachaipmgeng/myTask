@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Params, Router } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -12,15 +12,17 @@ import {
   listWorkspaceTrackChipOptions,
   parseWorkspaceTrackFilter,
 } from '../../../shared/domain/workspace-scope';
-import { listWorkProjectOptions } from '../../../shared/domain/work-views';
-import { Person, Ticket } from './models';
+import { listWorkProjectOptions, resolvePersonTeamId } from '../../../shared/domain/work-views';
+import { Person, Ticket, trackDisplayLabel } from './models';
 import {
   currentViewer,
+  effectiveRole,
   OpenProjectCatalogEntry,
   openprojectProjectCatalog,
   openprojectTypeCatalog,
 } from './admin-settings';
 import { ScorecardService } from './scorecard.service';
+import { currentSession } from './session';
 
 function parseTrack(raw: string | null | undefined): WorkspaceTrackFilter {
   return parseWorkspaceTrackFilter(raw);
@@ -54,6 +56,13 @@ export class WorkspaceFilter {
   readonly toDate = signal('');
   readonly yearCe = signal<number | null>(null);
 
+  readonly selfPersonId = computed(
+    () => currentSession()?.person.id ?? currentViewer().id,
+  );
+  readonly isFilteringSelf = computed(
+    () => !!this.selfPersonId() && this.personId() === this.selfPersonId(),
+  );
+
   private readonly urlQuery = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -76,39 +85,68 @@ export class WorkspaceFilter {
     return this.scorecard.cycles().find((c) => c.id === activeId) ?? null;
   });
 
-  readonly scope = computed<WorkspaceScope>(() => ({
-    teamId: this.teamId(),
-    opProject: this.opProject(),
-    opType: this.opType(),
-    track: this.track(),
-    personId: this.personId(),
-    cycleId: this.cycleId(),
-    fromDate: this.fromDate(),
-    toDate: this.toDate(),
-    yearCe: this.yearCe(),
-    allowedTeams: this.scorecard.effectiveAllowedTeams(),
-  }));
+  readonly scope = computed<WorkspaceScope>(() => {
+    const isMember = effectiveRole() === 'member';
+    return {
+      teamId: isMember ? '' : this.teamId(),
+      opProject: this.opProject(),
+      opType: this.opType(),
+      track: isMember ? 'All' : this.track(),
+      personId: isMember ? this.selfPersonId() : this.personId(),
+      cycleId: this.cycleId(),
+      fromDate: this.fromDate(),
+      toDate: this.toDate(),
+      yearCe: this.yearCe(),
+      allowedTeams: this.scorecard.effectiveAllowedTeams(),
+    };
+  });
 
-  readonly hasActiveFilter = computed(
-    () =>
-      !!this.teamId() ||
+  readonly hasActiveFilter = computed(() => {
+    const isMember = effectiveRole() === 'member';
+    return (
+      (!isMember && !!this.teamId()) ||
       !!this.opProject() ||
       !!this.opType() ||
-      !!this.personId() ||
-      this.track() !== 'All' ||
+      (!isMember && !!this.personId()) ||
+      (!isMember && this.track() !== 'All') ||
       !!this.cycleId() ||
       !!this.fromDate() ||
       !!this.toDate() ||
-      this.yearCe() != null,
-  );
+      this.yearCe() != null
+    );
+  });
 
   readonly teamOptions = computed(() => {
     const rows = listOrgTeamOptions(this.scorecard.people(), this.scorecard.teams());
     const allowed = this.scorecard.effectiveAllowedTeams();
     const filteredRows = allowed === null ? rows : rows.filter((r) => allowed.includes(r.id));
     return [
-      { text: allowed === null ? 'ทุกทีม' : 'ทุกทีมในสิทธิ์', value: '' },
+      { text: allowed === null ? 'ทุกทีมในองค์กร' : 'ทุกทีมในสิทธิ์', value: '' },
       ...filteredRows.map((row) => ({ text: row.label, value: row.id })),
+    ];
+  });
+
+  readonly personOptions = computed(() => {
+    const allowed = this.scorecard.effectiveAllowedTeams();
+    const allowedSet = allowed ? new Set(allowed) : null;
+    const team = this.teamId();
+    const people = this.scorecard
+      .people()
+      .filter((p) => {
+        const pTeam = resolvePersonTeamId(p);
+        if (allowedSet && !allowedSet.has(pTeam)) return false;
+        if (team && pTeam !== team) return false;
+        return true;
+      })
+      .slice()
+      .sort((a, b) => a.nickname.localeCompare(b.nickname, 'th'));
+
+    return [
+      { text: 'ทุกพนักงาน', value: '' },
+      ...people.map((p) => ({
+        text: `${p.nickname}${p.fullName && p.fullName !== p.nickname ? ` · ${p.fullName}` : ''} (${trackDisplayLabel(p.track)})`,
+        value: p.id,
+      })),
     ];
   });
 
@@ -241,6 +279,7 @@ export class WorkspaceFilter {
   });
 
   readonly filterSummary = computed(() => {
+    const isMember = effectiveRole() === 'member';
     const parts: string[] = [];
     const cycle = this.activeCycle();
     if (cycle) {
@@ -250,9 +289,11 @@ export class WorkspaceFilter {
     } else if (this.fromDate() || this.toDate()) {
       parts.push(`${this.fromDate() || '…'} → ${this.toDate() || '…'}`);
     }
-    const team = this.teamOptions().find((row) => row.value === this.teamId());
-    if (team?.value) {
-      parts.push(team.text);
+    if (!isMember) {
+      const team = this.teamOptions().find((row) => row.value === this.teamId());
+      if (team?.value) {
+        parts.push(team.text);
+      }
     }
     const project = this.projectOptions().find((row) => row.value === this.opProject());
     if (project?.value) {
@@ -261,12 +302,15 @@ export class WorkspaceFilter {
     if (this.opType()) {
       parts.push(this.opType());
     }
-    if (this.track() !== 'All') {
+    if (!isMember && this.track() !== 'All') {
       const chip = this.trackChipOptions().find((row) => row.id === this.track());
       parts.push(chip?.label ?? this.track());
     }
-    if (this.personId()) {
+    if (!isMember && this.personId()) {
       parts.push(this.selectedPersonLabel() || this.personId());
+    }
+    if (isMember) {
+      return parts.length ? `งานของฉัน · ${parts.join(' · ')}` : 'เฉพาะงานของฉัน';
     }
     return parts.length ? parts.join(' · ') : 'ทุกทีม / ทุกรอบ';
   });
@@ -274,7 +318,10 @@ export class WorkspaceFilter {
   constructor() {
     effect(() => {
       const q = this.urlQuery();
-      this.applyFromParams(q);
+      if (this.writingUrl) {
+        return;
+      }
+      untracked(() => this.applyFromParams(q));
     });
 
     effect(() => {
@@ -371,6 +418,16 @@ export class WorkspaceFilter {
 
   setPerson(personId: string): void {
     this.personId.set(normalizeParam(personId));
+  }
+
+  toggleMineOnly(): void {
+    const selfId = this.selfPersonId();
+    if (!selfId) return;
+    if (this.personId() === selfId) {
+      this.personId.set('');
+    } else {
+      this.personId.set(selfId);
+    }
   }
 
   setCycle(cycleId: string): void {

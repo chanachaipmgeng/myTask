@@ -83,7 +83,9 @@ export class DisputesPage implements OnInit {
     }
   }
 
-  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  protected readonly isMine = computed(
+    () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
+  );
 
   /** กว้าง: ซ้าย–ขวา · แคบ: บน–ล่าง */
   protected readonly splitterOrientation = signal<'Horizontal' | 'Vertical'>('Horizontal');
@@ -119,16 +121,16 @@ export class DisputesPage implements OnInit {
     () => currentSession()?.person.id ?? currentViewer().id,
   );
 
-  /** Member or /me/disputes sees only their own requests; lead/admin on /tickets/disputes see the full queue. */
+  /** Member sees only their own requests; lead/admin see team/org queue filtered by WorkspaceFilter. */
   private readonly scopedDisputes = computed(() => {
     const all = this.disputes();
-    if (this.isMine || this.role() === 'member') {
+    if (this.isMine()) {
       const personId = this.activePersonId();
       return all.filter((d) => d.requesterId === personId);
     }
     const ticketIds = new Set(this.workspace.applyToTickets(this.scorecard.tickets()).map((t) => t.id));
     const peopleIds = new Set(this.workspace.applyToPeople(this.scorecard.people()).map((p) => p.id));
-    if (!this.workspace.teamId() && this.workspace.track() === 'All') {
+    if (!this.workspace.hasActiveFilter()) {
       return all;
     }
     return all.filter(
@@ -167,8 +169,7 @@ export class DisputesPage implements OnInit {
 
   protected readonly ticketOptions = computed(() => {
     const personId = this.activePersonId();
-    const role = this.role();
-    const mineOnly = this.isMine || role === 'member';
+    const mineOnly = this.isMine();
     const tickets = mineOnly
       ? this.scorecard.tickets().filter((t) => t.assigneeId === personId)
       : this.workspace.applyToTickets(this.scorecard.tickets());

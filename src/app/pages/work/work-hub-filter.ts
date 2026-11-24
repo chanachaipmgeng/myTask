@@ -61,7 +61,7 @@ export class WorkHubFilter {
       today: todayInBangkok(),
       weekStart: this.weekStartIso(),
       dueBucket,
-      ...(this.scope() === 'mine' && assigneeId ? { assigneeId } : {}),
+      ...(assigneeId ? { assigneeId } : {}),
       ...(teamId ? { teamId } : {}),
       ...(opProject ? { opProject } : {}),
       ...(opType ? { opType } : {}),

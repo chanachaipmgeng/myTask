@@ -1,6 +1,6 @@
 <section class="page flex flex-col gap-4">
   <app-page-head
-    [title]="isMine ? 'ซิงก์และตรวจสอบ GitLab MR ของฉัน' : 'ซิงก์ mygit (GitLab MR ทีม)'"
+    [title]="isMine() ? 'ซิงก์และตรวจสอบ GitLab MR ของฉัน' : 'ซิงก์ mygit (GitLab MR ทีม)'"
     description="ดึงข้อมูล Merge Request / รอบรีวิว / reopen และลิงก์ MR จากไฟล์ตัวอย่างในเครื่อง หรือจาก GitLab API v4 เพื่อเติมลงใบงานที่จับคู่รหัสได้ (ไม่นับจำนวนไฟล์หรือจำนวน commit เป็นคะแนน)"
   >
     <div actions class="flex flex-wrap items-center gap-2">
@@ -15,8 +15,8 @@
         {{ syncingBranches() ? 'กำลังซิงก์...' : 'ซิงก์ Branch จาก mygitplus' }}
       </button>
 
-      @if (isMine) {
-        <a ejs-button cssClass="e-outline e-btn-violet" iconCss="e-icons e-table" routerLink="/me/tickets">
+      @if (isMine()) {
+        <a ejs-button cssClass="e-outline e-btn-violet" iconCss="e-icons e-table" routerLink="/quality/tickets">
           แนบลิงก์ MR ในตารางใบงานของฉัน
         </a>
       }
@@ -130,7 +130,7 @@
     />
   </app-section-card>
 
-  @if (isMine) {
+  @if (isMine()) {
     <app-section-card
       title="สถานะลิงก์ Merge Request ในใบงานของฉัน"
       subtitle="ตรวจสอบว่าใบงานที่รับผิดชอบแนบลิงก์ MR ครบถ้วนก่อนส่งตรวจ DoD Gate"

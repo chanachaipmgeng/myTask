@@ -1,7 +1,7 @@
 <section class="page hub-shell flex flex-col gap-3">
   @if (showTabs()) {
-    <nav class="hub-underline-tabs" role="tablist" [attr.aria-label]="heading">
-      @for (tab of tabs; track tab.path) {
+    <nav class="hub-underline-tabs" role="tablist" [attr.aria-label]="heading()">
+      @for (tab of tabs(); track tab.path) {
         <a
           class="hub-underline-tab"
           role="tab"

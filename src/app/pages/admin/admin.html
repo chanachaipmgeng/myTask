@@ -137,12 +137,30 @@
   </app-section-card>
 
   <app-section-card
-    title="จัดการสิทธิ์และระดับโควตาทีม"
-    subtitle="งานหลักของหน้านี้ — ปรับ access และระดับโควตาของแต่ละคน"
-    badge="สำคัญ"
+    title="จัดการสิทธิ์และระดับโควตาทีม (โซนแอดมิน)"
+    subtitle="กรองรายแผนก สายงาน หรือระดับสิทธิ์ เพื่อปรับ Access (Admin / Lead / Member) โควตา และขอบเขตทีมที่มองเห็นได้"
+    [badge]="filteredRoster().length + ' / ' + roster().length + ' คน'"
     badgeTone="danger"
   >
     <div actions class="flex flex-wrap items-center gap-2">
+      <app-sf-dropdown
+        [items]="rosterTeamFilterOptions()"
+        [value]="rosterTeamFilter()"
+        [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาแผนก/ทีม...', placeholder: 'ทุกแผนก/ทีม', width: '175px', cssClass: 'e-outline' }"
+        (valueChange)="onRosterTeamFilter($event)"
+      />
+      <app-sf-dropdown
+        [items]="rosterTrackFilterOptions()"
+        [value]="rosterTrackFilter()"
+        [options]="{ placeholder: 'ทุกสายงาน', width: '145px', cssClass: 'e-outline' }"
+        (valueChange)="onRosterTrackFilter($event)"
+      />
+      <app-sf-dropdown
+        [items]="rosterRoleFilterOptions"
+        [value]="rosterRoleFilter()"
+        [options]="{ placeholder: 'ทุกสิทธิ์', width: '145px', cssClass: 'e-outline' }"
+        (valueChange)="onRosterRoleFilter($event)"
+      />
       <div class="inline-flex rounded-lg border border-[color:var(--border)] p-0.5 bg-slate-100 dark:bg-slate-800">
         <button
           type="button"
@@ -169,14 +187,19 @@
           การ์ด
         </button>
       </div>
-      <div class="w-full sm:w-64">
+      <div class="w-full sm:w-56">
         <app-sf-textbox
-          placeholder="ค้นหาชื่อ / สายงาน / สิทธิ์..."
+          placeholder="ค้นหาชื่อ / อีเมล / ตำแหน่ง..."
           [value]="personQuery()"
           [clearButton]="true"
-          (valueChange)="personQuery.set($event)"
+          (valueChange)="onPersonQuery($event)"
         />
       </div>
+      @if (hasRosterFilter()) {
+        <button ejs-button cssClass="e-small e-flat" type="button" (click)="clearRosterFilters()">
+          ล้างกรอง
+        </button>
+      }
     </div>
 
     <!-- DataGrid View -->

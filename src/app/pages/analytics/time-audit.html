@@ -1,12 +1,12 @@
 <section class="page">
   <app-page-head
-    [breadcrumb]="isMine ? 'ผลงาน & วิเคราะห์ตัวเอง > เช็กเวลา 3 ทางของฉัน' : 'ตรวจรับ & วิเคราะห์ทีม > ตรวจสอบเวลา 3 ทาง (3-Way Time Inspector)'"
-    [title]="isMine ? 'ตรวจสอบเวลา 3 ทางของฉัน (Estimate vs OpenProject vs GitLab)' : 'หน้าจอตรวจสอบความคลาดเคลื่อนของเวลา 3 ทาง (3-Way Time Audit)'"
+    [breadcrumb]="isMine() ? 'ผลงาน & วิเคราะห์ตัวเอง > เช็กเวลา 3 ทางของฉัน' : 'ตรวจรับ & วิเคราะห์ทีม > ตรวจสอบเวลา 3 ทาง (3-Way Time Inspector)'"
+    [title]="isMine() ? 'ตรวจสอบเวลา 3 ทางของฉัน (Estimate vs OpenProject vs GitLab)' : 'หน้าจอตรวจสอบความคลาดเคลื่อนของเวลา 3 ทาง (3-Way Time Audit)'"
     description="เปรียบเทียบเวลาจาก 3 แหล่ง: (1) Estimate MD (2) เวลาที่กรอกใน OpenProject (3) ระยะเวลา Commit จริงบน GitLab"
   >
     <div actions class="flex flex-wrap gap-2">
-      @if (isMine) {
-        <a ejs-button cssClass="e-outline" iconCss="e-icons e-table-1" routerLink="/me/tickets">
+      @if (isMine()) {
+        <a ejs-button cssClass="e-outline" iconCss="e-icons e-table-1" routerLink="/quality/tickets">
           อัปเดตเวลาในตารางใบงานของฉัน
         </a>
       }

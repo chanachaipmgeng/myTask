@@ -90,7 +90,9 @@ export class TicketsPage {
 
   @ViewChild('selfUpdateDialog') private selfUpdateDialog?: SfDialogComponent;
 
-  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  protected readonly isMine = computed(
+    () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
+  );
   protected readonly role = effectiveRole;
   protected readonly activePersonId = computed(
     () => currentSession()?.person.id ?? currentViewer().id,
@@ -99,13 +101,15 @@ export class TicketsPage {
     () => this.scorecard.roster().find((p) => p.id === this.activePersonId()) ?? null,
   );
 
-  protected readonly accordionItems: SfAccordionItem[] = this.isMine
-    ? [{ id: 'rubric', header: 'เกณฑ์การให้คะแนน 100 คะแนน และตารางขนาดมาตรฐาน (XS–XL)', expanded: false }]
-    : [
-        { id: 'import', header: 'นำเข้าไฟล์ CSV/JSON และซิงก์ myProject', expanded: false },
-        { id: 'add', header: 'เพิ่มใบงานใหม่ / จำลองคำนวณคะแนนใบงาน', expanded: false },
-        { id: 'rubric', header: 'เกณฑ์การให้คะแนน 100 คะแนน และตารางขนาดมาตรฐาน (XS–XL)', expanded: false },
-      ];
+  protected readonly accordionItems = computed<SfAccordionItem[]>(() =>
+    this.isMine()
+      ? [{ id: 'rubric', header: 'เกณฑ์การให้คะแนน 100 คะแนน และตารางขนาดมาตรฐาน (XS–XL)', expanded: false }]
+      : [
+          { id: 'import', header: 'นำเข้าไฟล์ CSV/JSON และซิงก์ myProject', expanded: false },
+          { id: 'add', header: 'เพิ่มใบงานใหม่ / จำลองคำนวณคะแนนใบงาน', expanded: false },
+          { id: 'rubric', header: 'เกณฑ์การให้คะแนน 100 คะแนน และตารางขนาดมาตรฐาน (XS–XL)', expanded: false },
+        ],
+  );
 
   protected readonly ticketColumns: SfGridColumn[] = [
     { field: 'id', headerText: 'รหัส', width: 120 },
@@ -152,19 +156,21 @@ export class TicketsPage {
     { field: 'score', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
   ];
 
-  protected readonly ticketGridOptions: SfGridOptions = listGridOptions({
-    id: this.isMine ? 'my-tickets-score-grid-v5' : 'tickets-score-grid-v5',
-    enablePersistence: true,
-    pageSize: 10,
-    search: false,
-    sortSettings: { columns: [{ field: 'score', direction: 'Descending' }] },
-    filtering: 'Menu',
-    columnChooser: true,
-    excelExport: true,
-    csvExport: true,
-    autoFreezeDesktop: 2,
-    exportFileName: this.isMine ? 'my-tickets-scorecard' : 'team-tickets-scorecard',
-  });
+  protected readonly ticketGridOptions = computed<SfGridOptions>(() =>
+    listGridOptions({
+      id: this.isMine() ? 'my-tickets-score-grid-v5' : 'tickets-score-grid-v5',
+      enablePersistence: true,
+      pageSize: 10,
+      search: false,
+      sortSettings: { columns: [{ field: 'score', direction: 'Descending' }] },
+      filtering: 'Menu',
+      columnChooser: true,
+      excelExport: true,
+      csvExport: true,
+      autoFreezeDesktop: 2,
+      exportFileName: this.isMine() ? 'my-tickets-scorecard' : 'team-tickets-scorecard',
+    }),
+  );
   protected readonly trackToneMap = trackToneMap;
   protected readonly blockerToneMap = blockerToneMap;
   protected readonly closedToneMap = closedToneMap;
@@ -257,7 +263,7 @@ export class TicketsPage {
   protected readonly error = signal('');
 
   private readonly syncWorkspaceTrack = effect(() => {
-    const track = this.workspace.track();
+    const track = this.isMine() ? 'All' : this.workspace.track();
     if (this.trackFilter() !== track) {
       this.trackFilter.set(track);
     }
@@ -348,7 +354,7 @@ export class TicketsPage {
       { text: 'In QA (กำลังตรวจ)', value: 'In QA' },
       { text: 'Reopened (เปิดแก้ไขซ้ำ)', value: 'Reopened' },
     ];
-    if (!this.isMine && (this.role() === 'admin' || this.role() === 'lead')) {
+    if (!this.isMine() && (this.role() === 'admin' || this.role() === 'lead')) {
       base.push({ text: 'Done (เสร็จสมบูรณ์)', value: 'Done' });
     }
     return base;
@@ -363,7 +369,7 @@ export class TicketsPage {
     return this.scorecard
       .ticketRows()
       .filter((row) => scopedIds.has(row.id))
-      .filter((row) => (!this.isMine ? true : row.assigneeId === selfId))
+      .filter((row) => (!this.isMine() ? true : row.assigneeId === selfId))
       .filter(
         (row) =>
           (track === 'All' || normalizeTrack(row.track) === normalizeTrack(track)) &&
@@ -444,7 +450,7 @@ export class TicketsPage {
     if (!existing) return;
 
     const nextStatus = this.editWorkflowStatus();
-    const isClosed = nextStatus === 'Done' ? true : existing.closed && this.isMine ? true : false;
+    const isClosed = nextStatus === 'Done' ? true : existing.closed && this.isMine() ? true : false;
     const mrLink = this.editMrLink().trim();
     const next: Ticket = {
       ...existing,
@@ -471,8 +477,7 @@ export class TicketsPage {
   }
 
   protected goToDispute(ticketId: string): void {
-    const target = this.isMine ? '/me/disputes' : '/tickets/disputes';
-    void this.router.navigate([target], { queryParams: { ticketId } });
+    void this.router.navigate(['/quality/disputes'], { queryParams: { ticketId } });
   }
 
   protected preview() {

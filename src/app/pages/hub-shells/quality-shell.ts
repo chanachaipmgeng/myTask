@@ -1,13 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
+import { effectiveRole } from '../../core/admin-settings';
 
-const QUALITY_TABS = [
-  { text: 'QA / DoD', path: 'audit', icon: 'e-icons e-check-box' },
-  { text: 'คะแนน', path: 'tickets', icon: 'e-icons e-table' },
-  { text: 'เวลา 3 ทาง', path: 'time-audit', icon: 'e-icons e-clock' },
-  { text: 'อุทธรณ์', path: 'disputes', icon: 'e-icons e-edit' },
+const ALL_QUALITY_TABS = [
+  { text: 'QA / DoD', path: 'audit', icon: 'e-icons e-check-box', managerOnly: true },
+  { text: 'ตารางคะแนน', path: 'tickets', icon: 'e-icons e-table', managerOnly: false },
+  { text: 'เวลา 3 ทาง', path: 'time-audit', icon: 'e-icons e-clock', managerOnly: false },
+  { text: 'อุทธรณ์คะแนน', path: 'disputes', icon: 'e-icons e-edit', managerOnly: false },
 ] as const;
 
 @Component({
@@ -19,9 +20,15 @@ const QUALITY_TABS = [
 })
 export class QualityShell {
   private readonly router = inject(Router);
-  protected readonly heading = 'คุณภาพ & คะแนนทีม';
   protected readonly basePath = '/quality';
-  protected readonly tabs = QUALITY_TABS;
+  protected readonly heading = computed(() =>
+    effectiveRole() === 'member' ? 'คะแนน & อุทธรณ์ของฉัน' : 'คุณภาพ & คะแนนทีม',
+  );
+  protected readonly tabs = computed(() =>
+    effectiveRole() === 'member'
+      ? ALL_QUALITY_TABS.filter((tab) => !tab.managerOnly)
+      : ALL_QUALITY_TABS,
+  );
   protected readonly showTabs = computed(() => true);
 
   private readonly url = toSignal(
@@ -35,11 +42,22 @@ export class QualityShell {
 
   protected readonly activePath = computed(() => {
     const path = this.url().split('?')[0] ?? '';
-    const found = this.tabs.find(
+    const list = this.tabs();
+    const found = list.find(
       (tab) => path === `${this.basePath}/${tab.path}` || path.startsWith(`${this.basePath}/${tab.path}/`),
     );
-    return found?.path ?? 'audit';
+    return found?.path ?? (effectiveRole() === 'member' ? 'tickets' : 'audit');
   });
+
+  constructor() {
+    effect(() => {
+      const role = effectiveRole();
+      const path = this.url().split('?')[0] ?? '';
+      if (role === 'member' && path.startsWith('/quality/audit')) {
+        void this.router.navigate(['/quality/tickets'], { queryParamsHandling: 'preserve', replaceUrl: true });
+      }
+    });
+  }
 
   protected tabLink(path: string): string[] {
     return [this.basePath, path];

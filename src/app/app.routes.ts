@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { effectiveRole } from './core/admin-settings';
 import { requireRoles, requireSelfOrManager } from './core/role.guard';
 
 const workChildren = [
@@ -32,9 +33,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login').then((m) => m.LoginPage),
   },
 
-  // P20: ของฉัน — MineShell + tabs
+  // หน้าแรกสรุปงานวันนี้ (ทุกสิทธิ์ใช้ร่วมกัน) + Redirect ลิงก์เดิม /me/* ไปยังวิวรวมชุดเดียว
   {
     path: 'me',
+    canActivate: [requireRoles('admin', 'lead', 'member')],
     loadComponent: () => import('./pages/hub-shells/mine-shell').then((m) => m.MineShell),
     children: [
       {
@@ -42,62 +44,25 @@ export const routes: Routes = [
         pathMatch: 'full',
         loadComponent: () => import('./pages/my-workspace/my-workspace').then((m) => m.MyWorkspacePage),
       },
-      {
-        path: 'cockpit',
-        loadComponent: () => import('./pages/cockpit/cockpit').then((m) => m.CockpitPage),
-        data: { scope: 'mine' },
-      },
-      {
-        path: 'work',
-        loadComponent: () => import('./pages/work/work-shell').then((m) => m.WorkShell),
-        data: { scope: 'mine' },
-        children: workChildren,
-      },
-      {
-        path: 'time-log',
-        loadComponent: () => import('./pages/work/team-time').then((m) => m.TeamTimePage),
-        data: { scope: 'mine' },
-      },
-      {
-        path: 'schedule',
-        loadComponent: () => import('./pages/schedule/schedule').then((m) => m.SchedulePage),
-        data: { scope: 'mine' },
-      },
-      {
-        path: 'tickets',
-        loadComponent: () => import('./pages/tickets/tickets').then((m) => m.TicketsPage),
-        data: { scope: 'mine' },
-      },
-      {
-        path: 'time-audit',
-        loadComponent: () => import('./pages/analytics/time-audit').then((m) => m.TimeAuditPage),
-        data: { scope: 'mine' },
-      },
-      {
-        path: 'disputes',
-        loadComponent: () => import('./pages/tickets/disputes').then((m) => m.DisputesPage),
-        data: { scope: 'mine' },
-      },
-      {
-        path: 'analytics',
-        loadComponent: () =>
-          import('./pages/person-dashboard/person-dashboard').then((m) => m.PersonDashboard),
-        data: { scope: 'mine' },
-      },
-      {
-        path: 'mygit',
-        loadComponent: () => import('./pages/mygit/mygit').then((m) => m.MyGitPage),
-        data: { scope: 'mine' },
-      },
-      {
-        path: 'ai',
-        loadComponent: () => import('./pages/ai-tracking/ai-tracking').then((m) => m.AiTrackingPage),
-        data: { scope: 'mine' },
-      },
+      { path: 'cockpit', pathMatch: 'full', redirectTo: '/cockpit' },
+      { path: 'work', pathMatch: 'full', redirectTo: '/work' },
+      { path: 'work/summary', pathMatch: 'full', redirectTo: '/work/summary' },
+      { path: 'work/timeline', pathMatch: 'full', redirectTo: '/work/timeline' },
+      { path: 'work/backlog', pathMatch: 'full', redirectTo: '/work/backlog' },
+      { path: 'work/board', pathMatch: 'full', redirectTo: '/work/board' },
+      { path: 'work/list', pathMatch: 'full', redirectTo: '/work/list' },
+      { path: 'time-log', pathMatch: 'full', redirectTo: '/work/team-time' },
+      { path: 'schedule', pathMatch: 'full', redirectTo: '/schedule' },
+      { path: 'tickets', pathMatch: 'full', redirectTo: '/quality/tickets' },
+      { path: 'time-audit', pathMatch: 'full', redirectTo: '/quality/time-audit' },
+      { path: 'disputes', pathMatch: 'full', redirectTo: '/quality/disputes' },
+      { path: 'analytics', pathMatch: 'full', redirectTo: '/insights/ols' },
+      { path: 'mygit', pathMatch: 'full', redirectTo: '/insights/mygit' },
+      { path: 'ai', pathMatch: 'full', redirectTo: '/insights/ai' },
     ],
   },
 
-  // P20: Person master-detail workspace
+  // บริหารทีม: Person master-detail workspace (Lead / Admin)
   {
     path: 'workspace/people',
     canActivate: [requireRoles('admin', 'lead')],
@@ -111,15 +76,20 @@ export const routes: Routes = [
       import('./pages/person-workspace/person-workspace').then((m) => m.PersonWorkspacePage),
   },
 
-  // P20: Quality hub
+  // Unified Quality & Score Hub (ทุกสิทธิ์ใช้ร่วมกัน · QA/DoD เฉพาะ Lead/Admin)
   {
     path: 'quality',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin', 'lead', 'member')],
     loadComponent: () => import('./pages/hub-shells/quality-shell').then((m) => m.QualityShell),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'audit' },
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: () => (effectiveRole() === 'member' ? 'tickets' : 'audit'),
+      },
       {
         path: 'audit',
+        canActivate: [requireRoles('admin', 'lead')],
         loadComponent: () => import('./pages/quality-audit/quality-audit').then((m) => m.QualityAuditPage),
       },
       {
@@ -129,26 +99,35 @@ export const routes: Routes = [
       {
         path: 'time-audit',
         loadComponent: () => import('./pages/analytics/time-audit').then((m) => m.TimeAuditPage),
-        data: { scope: 'team' },
       },
       {
         path: 'disputes',
         loadComponent: () => import('./pages/tickets/disputes').then((m) => m.DisputesPage),
-        data: { scope: 'team' },
       },
     ],
   },
 
-  // P20: Insights hub
+  // Unified Insights & Git Hub (ทุกสิทธิ์ใช้ร่วมกัน · ศูนย์วิเคราะห์ทีม/จำลอง เฉพาะ Lead/Admin)
   {
     path: 'insights',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin', 'lead', 'member')],
     loadComponent: () => import('./pages/hub-shells/insights-shell').then((m) => m.InsightsShell),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'report' },
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: () => (effectiveRole() === 'member' ? 'ols' : 'report'),
+      },
       {
         path: 'report',
+        canActivate: [requireRoles('admin', 'lead')],
         loadComponent: () => import('./pages/analytics/analytics').then((m) => m.AnalyticsPage),
+      },
+      {
+        path: 'ols',
+        loadComponent: () =>
+          import('./pages/person-dashboard/person-dashboard').then((m) => m.PersonDashboard),
+        data: { hubOls: true },
       },
       {
         path: 'mygit',
@@ -160,6 +139,7 @@ export const routes: Routes = [
       },
       {
         path: 'mockup',
+        canActivate: [requireRoles('admin', 'lead')],
         loadComponent: () => import('./pages/mockup/mockup').then((m) => m.MockupPage),
       },
     ],
@@ -168,7 +148,7 @@ export const routes: Routes = [
   // Legacy redirects → hubs
   { path: 'analytics/time-audit', redirectTo: 'quality/time-audit', pathMatch: 'full' },
   { path: 'tickets/disputes', redirectTo: 'quality/disputes', pathMatch: 'full' },
-  { path: 'analytics', redirectTo: 'insights/report', pathMatch: 'full' },
+  { path: 'analytics', redirectTo: 'insights', pathMatch: 'full' },
   { path: 'mygit', redirectTo: 'insights/mygit', pathMatch: 'full' },
   { path: 'ai', redirectTo: 'insights/ai', pathMatch: 'full' },
   { path: 'tickets', redirectTo: 'quality/tickets', pathMatch: 'full' },
@@ -180,7 +160,7 @@ export const routes: Routes = [
   },
   {
     path: 'cockpit',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin', 'lead', 'member')],
     loadComponent: () => import('./pages/cockpit/cockpit').then((m) => m.CockpitPage),
   },
   {
@@ -209,6 +189,7 @@ export const routes: Routes = [
           ...workChildren,
           {
             path: 'handoff',
+            canActivate: [requireRoles('admin', 'lead')],
             loadComponent: () => import('./pages/work/work-handoff').then((m) => m.WorkHandoffPage),
           },
           {
@@ -240,26 +221,25 @@ export const routes: Routes = [
   },
   {
     path: 'work',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin', 'lead', 'member')],
     loadComponent: () => import('./pages/work/work-shell').then((m) => m.WorkShell),
-    data: { scope: 'team' },
     children: [
       ...workChildren,
       {
         path: 'handoff',
+        canActivate: [requireRoles('admin', 'lead')],
         loadComponent: () => import('./pages/work/work-handoff').then((m) => m.WorkHandoffPage),
       },
       {
         path: 'team-time',
         loadComponent: () => import('./pages/work/team-time').then((m) => m.TeamTimePage),
-        data: { scope: 'team' },
       },
     ],
   },
   { path: 'pipeline', redirectTo: 'work/board', pathMatch: 'full' },
   {
     path: 'schedule',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin', 'lead', 'member')],
     loadComponent: () => import('./pages/schedule/schedule').then((m) => m.SchedulePage),
   },
   {

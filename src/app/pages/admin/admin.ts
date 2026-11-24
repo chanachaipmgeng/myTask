@@ -21,7 +21,7 @@ import {
   type ConnectionState,
 } from '../../core/admin-settings';
 import { ApiClient, AuditLogDto } from '../../core/api-client';
-import { AccessRole, Level, Person } from '../../core/models';
+import { AccessRole, Level, Person, normalizeTrack } from '../../core/models';
 import { ShellNotice } from '../../core/shell-notice';
 import { DEFAULT_TRACK_WEIGHTS } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -29,7 +29,8 @@ import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { beToCe, ceToBe, createYearCycle, type ScorecardCycleStatus } from '../../../../shared/domain/scorecard-cycle';
 import { TeamVisibilityRule } from '../../../../shared/domain/team-visibility';
-import { listOrgTeamOptions } from '../../../../shared/domain/workspace-scope';
+import { resolvePersonTeamId } from '../../../../shared/domain/work-views';
+import { listOrgTeamOptions, listWorkspaceTrackChipOptions } from '../../../../shared/domain/workspace-scope';
 import {
   DateTimePipe,
   FlashMessagesComponent,
@@ -267,19 +268,89 @@ export class AdminPage {
     }
   }
 
+  protected readonly rosterTeamFilter = signal('');
+  protected readonly rosterTrackFilter = signal('All');
+  protected readonly rosterRoleFilter = signal('');
+
+  protected readonly rosterTeamFilterOptions = computed(() => [
+    { text: 'ทุกแผนก / ทีม', value: '' },
+    ...this.orgTeams().map((t) => ({ text: t.label, value: t.id })),
+  ]);
+
+  protected readonly rosterTrackFilterOptions = computed(() =>
+    listWorkspaceTrackChipOptions(this.scorecard.people(), this.scorecard.tickets()).map((row) => ({
+      text: row.id === 'All' ? 'ทุกสายงาน' : row.label,
+      value: row.id,
+    })),
+  );
+
+  protected readonly rosterRoleFilterOptions = [
+    { text: 'ทุกสิทธิ์ (Role)', value: '' },
+    { text: 'Admin (ผู้ดูแลระบบ)', value: 'admin' },
+    { text: 'Lead (หัวหน้าทีม)', value: 'lead' },
+    { text: 'Member (พนักงาน)', value: 'member' },
+  ];
+
+  protected readonly hasRosterFilter = computed(
+    () =>
+      !!this.personQuery().trim() ||
+      !!this.rosterTeamFilter() ||
+      this.rosterTrackFilter() !== 'All' ||
+      !!this.rosterRoleFilter(),
+  );
+
+  protected onPersonQuery(value: string): void {
+    this.personQuery.set(value ?? '');
+    this.rosterCardPage.set(1);
+  }
+
+  protected onRosterTeamFilter(value: string): void {
+    this.rosterTeamFilter.set(value ?? '');
+    this.rosterCardPage.set(1);
+  }
+
+  protected onRosterTrackFilter(value: string): void {
+    this.rosterTrackFilter.set(value || 'All');
+    this.rosterCardPage.set(1);
+  }
+
+  protected onRosterRoleFilter(value: string): void {
+    this.rosterRoleFilter.set(value ?? '');
+    this.rosterCardPage.set(1);
+  }
+
+  protected clearRosterFilters(): void {
+    this.personQuery.set('');
+    this.rosterTeamFilter.set('');
+    this.rosterTrackFilter.set('All');
+    this.rosterRoleFilter.set('');
+    this.rosterCardPage.set(1);
+  }
+
   protected readonly filteredRoster = computed(() => {
     const q = this.personQuery().trim().toLowerCase();
-    if (!q) {
-      return this.roster();
-    }
-    return this.roster().filter(
-      (person) =>
+    const team = this.rosterTeamFilter();
+    const track = this.rosterTrackFilter();
+    const role = this.rosterRoleFilter();
+    return this.roster().filter((person) => {
+      if (team && resolvePersonTeamId(person) !== team) return false;
+      if (track !== 'All' && normalizeTrack(person.track) !== normalizeTrack(track)) return false;
+      const access = person.access ?? 'member';
+      if (role && access !== role) return false;
+      if (!q) return true;
+      return (
         person.nickname.toLowerCase().includes(q) ||
+        (person.fullName ?? '').toLowerCase().includes(q) ||
         person.id.toLowerCase().includes(q) ||
+        (person.email ?? '').toLowerCase().includes(q) ||
+        (person.role ?? '').toLowerCase().includes(q) ||
+        (person.jobTitle ?? '').toLowerCase().includes(q) ||
+        (person.department ?? '').toLowerCase().includes(q) ||
         person.track.toLowerCase().includes(q) ||
         person.level.toLowerCase().includes(q) ||
-        (person.access ?? 'member').toLowerCase().includes(q),
-    );
+        access.toLowerCase().includes(q)
+      );
+    });
   });
   protected readonly usingApi = this.scorecard.usingApi;
   protected readonly status = signal('');

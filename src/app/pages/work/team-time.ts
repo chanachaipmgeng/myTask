@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { map } from 'rxjs';
+import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { ApiClient, TeamTimeResponse } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { currentSession } from '../../core/session';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import { PageHeadComponent, SectionCardComponent, SfMessageComponent } from '../../shared/ui';
 
 @Component({
@@ -23,14 +25,30 @@ export class TeamTimePage {
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
   private readonly route = inject(ActivatedRoute);
+  private readonly workspace = inject(WorkspaceFilter);
 
-  private readonly scope = toSignal(
+  private readonly routeScope = toSignal(
     this.route.data.pipe(map((d) => (d['scope'] === 'mine' ? 'mine' : 'team'))),
     { initialValue: 'team' as 'mine' | 'team' },
   );
+  private readonly scope = computed<'mine' | 'team'>(() =>
+    this.routeScope() === 'mine' || effectiveRole() === 'member' ? 'mine' : 'team',
+  );
 
   protected readonly loading = signal(false);
-  protected readonly data = signal<TeamTimeResponse | null>(null);
+  private readonly rawData = signal<TeamTimeResponse | null>(null);
+  protected readonly data = computed<TeamTimeResponse | null>(() => {
+    const res = this.rawData();
+    if (!res) return null;
+    if (this.scope() === 'mine') {
+      return this.filterSelf(res);
+    }
+    const allowedIds = new Set(this.workspace.applyToPeople(this.scorecard.people()).map((p) => p.id));
+    if (this.workspace.hasActiveFilter()) {
+      return { ...res, rows: res.rows.filter((r) => allowedIds.has(r.personId)) };
+    }
+    return res;
+  });
   protected readonly selectedCell = signal<{
     personId: string;
     nickname: string;
@@ -58,6 +76,10 @@ export class TeamTimePage {
 
   constructor() {
     void this.reload();
+    effect(() => {
+      this.scope();
+      this.selectedCell.set(null);
+    });
   }
 
   protected async reload(): Promise<void> {
@@ -65,13 +87,13 @@ export class TeamTimePage {
     try {
       if (this.scorecard.usingApi()) {
         const res = await this.api.getTeamTime();
-        this.data.set(this.scope() === 'mine' ? this.filterSelf(res) : res);
+        this.rawData.set(res);
       } else {
-        this.data.set(this.offlineMatrix());
+        this.rawData.set(this.offlineMatrix());
       }
     } catch (err) {
       this.notice.warning(err instanceof Error ? err.message : String(err), 'โหลดเวลาทีมไม่สำเร็จ');
-      this.data.set(this.offlineMatrix());
+      this.rawData.set(this.offlineMatrix());
     } finally {
       this.loading.set(false);
     }
@@ -103,7 +125,7 @@ export class TeamTimePage {
   }
 
   private filterSelf(res: TeamTimeResponse): TeamTimeResponse {
-    const selfId = currentSession()?.person.id;
+    const selfId = currentSession()?.person.id ?? currentViewer().id;
     return {
       ...res,
       rows: res.rows.filter((r) => r.personId === selfId),
@@ -124,11 +146,7 @@ export class TeamTimePage {
     }
     const from = days[0]!;
     const to = days[days.length - 1]!;
-    const selfId = currentSession()?.person.id;
-    const people =
-      this.scope() === 'mine'
-        ? this.scorecard.roster().filter((p) => p.id === selfId)
-        : this.scorecard.roster();
+    const people = this.scorecard.roster();
     const tickets = this.scorecard.tickets();
     const rows = people.map((person) => {
       const dayCells = days.map((date) => {

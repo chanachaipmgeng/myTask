@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { GitBranchItem } from '../../../../shared/domain/git-branch';
-import { canAssignWork, currentViewer } from '../../core/admin-settings';
+import { canAssignWork, currentViewer, effectiveRole } from '../../core/admin-settings';
 import { ApiClient, GitLabIntegration, OpenMrItem } from '../../core/api-client';
 import { currentSession } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
@@ -51,7 +51,9 @@ export class MyGitPage {
   private readonly api = inject(ApiClient, { optional: true });
   private readonly ticketDetail = inject(TicketDetailService);
 
-  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  protected readonly isMine = computed(
+    () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
+  );
   protected readonly activePersonId = computed(
     () => currentSession()?.person.id ?? currentViewer().id,
   );
@@ -86,8 +88,8 @@ export class MyGitPage {
   });
   protected readonly myTicketsWithMr = computed(() => {
     const selfId = this.activePersonId();
-    const tickets = this.isMine
-      ? this.scorecard.tickets().filter((t) => t.assigneeId === selfId)
+    const tickets = this.isMine()
+      ? this.workspace.applyToTickets(this.scorecard.tickets()).filter((t) => t.assigneeId === selfId)
       : this.workspace.applyToTickets(this.scorecard.tickets());
     return tickets.map((t) => ({
       id: t.id,
@@ -166,7 +168,11 @@ export class MyGitPage {
   constructor() {
     void this.loadGitLabStatus();
     void this.loadOpenMrs();
-    void this.loadBranches();
+    effect(() => {
+      this.isMine();
+      this.workspace.personId();
+      void this.loadBranches();
+    });
   }
 
   protected async loadBranches(): Promise<void> {
@@ -174,7 +180,7 @@ export class MyGitPage {
     this.loadingBranches.set(true);
     try {
       const res = await this.api.getGitBranches({
-        personId: this.isMine ? this.activePersonId() : undefined,
+        personId: this.isMine() ? this.activePersonId() : (this.workspace.personId() || undefined),
       });
       this.branches.set(res.branches ?? []);
     } catch {

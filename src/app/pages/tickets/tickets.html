@@ -1,10 +1,10 @@
 <section class="page flex flex-col gap-4">
   <app-page-head
-    [title]="(isMine ? 'ตารางคะแนนและจัดการใบงานของฉัน' : 'ตารางคะแนนใบงานทีม') + (isMine && activePerson() ? ' · ' + activePerson()!.nickname : '')"
-    [description]="isMine
+    [title]="(isMine() ? 'ตารางคะแนนและจัดการใบงานของฉัน' : 'ตารางคะแนนใบงานทีม') + (isMine() && activePerson() ? ' · ' + activePerson()!.nickname : '')"
+    [description]="isMine()
       ? 'ตรวจสอบที่มาของคะแนนรายใบงานของตัวเอง (On-time 40 · Accuracy 20 · Review 20 · DoD 20) พร้อมอัปเดตสถานะ เวลาใช้จริง แนบ MR หรือยื่นอุทธรณ์ได้ทันที'
       : 'คะแนนเต็ม 100 ตอนปิดใบ: สัปดาห์ 40/20/0, ความแม่น 20/10/0, รีวิว 20/10/0, reopen 20/10/0. REQ, BLK, ENV ให้คะแนนสัปดาห์และความแม่นเต็ม.'"
-    [metrics]="isMine ? [
+    [metrics]="isMine() ? [
       { label: 'ใบงานทั้งหมด', value: myTicketStats().total, unit: 'ใบ', hint: 'เปิด ' + myTicketStats().openCount + ' · ปิด ' + myTicketStats().closedCount },
       { label: 'คะแนนเฉลี่ยใบที่ปิด', value: myTicketStats().avgScore, hint: 'เป้า ≥ 75', tone: myTicketStats().avgScore >= 75 ? 'good' : 'bad' },
       { label: 'เวลาใช้จริงสะสม', value: myTicketStats().totalActualMd, unit: 'MD', hint: '1 MD = 6 ชม.' },
@@ -12,18 +12,18 @@
     ] : []"
   >
     <div actions class="flex flex-wrap items-center gap-2">
-      @if (isMine) {
-        <a ejs-button cssClass="e-primary" iconCss="e-icons e-chart" routerLink="/me/analytics">
+      @if (isMine()) {
+        <a ejs-button cssClass="e-primary" iconCss="e-icons e-chart" routerLink="/insights/ols">
           วิเคราะห์ผลงานเชิงลึก (OLS)
         </a>
-        <a ejs-button cssClass="e-outline" iconCss="e-icons e-columns" routerLink="/me/work/board">
+        <a ejs-button cssClass="e-outline" iconCss="e-icons e-columns" routerLink="/work/board">
           เปิดบอร์ดงานของฉัน
         </a>
-        <a ejs-button cssClass="e-outline" iconCss="e-icons e-edit" routerLink="/me/disputes">
+        <a ejs-button cssClass="e-outline" iconCss="e-icons e-edit" routerLink="/quality/disputes">
           อุทธรณ์คะแนนของฉัน
         </a>
       } @else {
-        <a ejs-button cssClass="e-outline" routerLink="/work">เปิดฮับบริหารงาน (/work)</a>
+        <a ejs-button cssClass="e-outline" routerLink="/work">เปิดกระดานงาน & แผน (/work)</a>
       }
     </div>
   </app-page-head>
@@ -161,7 +161,7 @@
   </ng-template>
 
   <app-sf-accordion
-    [items]="accordionItems"
+    [items]="accordionItems()"
     [itemTemplates]="{ import: importAccTpl, add: addAccTpl, rubric: rubricAccTpl }"
     [options]="{ id: 'tickets-accordion', expandMode: 'Multiple' }"
   />
@@ -191,7 +191,7 @@
       </label>
     </ng-template>
     <app-sf-toolbar
-      [items]="[{ template: searchTemplate }, { template: trackTemplate }, { template: typeTemplate }]"
+      [items]="isMine() ? [{ template: searchTemplate }, { template: typeTemplate }] : [{ template: searchTemplate }, { template: trackTemplate }, { template: typeTemplate }]"
       [options]="{ id: 'ticket-toolbar', cssClass: 'page-toolbar m-0', overflowMode: 'Scrollable' }"
     />
 
@@ -259,7 +259,7 @@
       [data]="rows()"
       [columns]="ticketColumns"
       [aggregates]="ticketAggregates"
-      [options]="ticketGridOptions"
+      [options]="ticketGridOptions()"
       [cellTemplates]="{
         id: idTpl,
         workflowStatus: wfStatusTpl,

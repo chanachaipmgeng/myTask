@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { currentViewer } from '../../core/admin-settings';
+import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { accuracyScatterPoints } from '../../core/dashboard-charts';
 import { computeThreeWayTimeAudit } from '../../core/multi-team';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -79,15 +79,17 @@ export class TimeAuditPage {
     }
   }
 
-  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  protected readonly isMine = computed(
+    () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
+  );
   protected readonly activePersonId = computed(
     () => currentSession()?.person.id ?? currentViewer().id,
   );
   protected readonly myTicketIds = computed(() => {
     const selfId = this.activePersonId();
     return new Set(
-      this.scorecard
-        .tickets()
+      this.workspace
+        .applyToTickets(this.scorecard.tickets())
         .filter((t) => t.assigneeId === selfId)
         .map((t) => t.id),
     );
@@ -95,7 +97,7 @@ export class TimeAuditPage {
 
   protected readonly filterType = signal<string>('ALL');
   protected readonly report = computed(() => {
-    if (this.isMine) {
+    if (this.isMine()) {
       return this.scorecard.threeWayTimeReport();
     }
     return computeThreeWayTimeAudit(
@@ -106,7 +108,7 @@ export class TimeAuditPage {
 
   protected readonly scopedRows = computed(() => {
     const rows = this.report().rows;
-    if (!this.isMine) {
+    if (!this.isMine()) {
       return rows;
     }
     const mine = this.myTicketIds();

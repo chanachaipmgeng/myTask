@@ -2,12 +2,12 @@
   @if (!view().found) {
     <app-section-card title="ไม่พบพนักงานนี้">
       <button ejs-button cssClass="e-outline" type="button" (click)="back()">
-        {{ isMine ? 'กลับหน้าผลงานของฉัน' : 'กลับรายชื่อพนักงาน' }}
+        {{ isMine() ? 'กลับหน้าผลงานของฉัน' : 'กลับรายชื่อพนักงาน' }}
       </button>
     </app-section-card>
   } @else {
     <app-page-head
-      [title]="(isMine ? 'วิเคราะห์ผลงานเชิงลึกของฉัน · ' : '') + view().name + ' · ' + view().role"
+      [title]="(isMine() ? 'วิเคราะห์ผลงานเชิงลึกของฉัน · ' : '') + view().name + ' · ' + view().role"
       [avatarName]="view().name"
       [description]="
         view().trackLabel +
@@ -28,11 +28,11 @@
       ]"
     >
       <div actions class="flex flex-wrap items-center gap-2">
-        @if (isMine) {
-          <a ejs-button cssClass="e-primary" iconCss="e-icons e-table-1" routerLink="/me/tickets">
+        @if (isMine()) {
+          <a ejs-button cssClass="e-primary" iconCss="e-icons e-table-1" routerLink="/quality/tickets">
             ตารางคะแนนใบงานของฉัน
           </a>
-          <a ejs-button cssClass="e-outline" iconCss="e-icons e-clock" routerLink="/me/time-audit">
+          <a ejs-button cssClass="e-outline" iconCss="e-icons e-clock" routerLink="/quality/time-audit">
             เช็กเวลา 3 ทาง
           </a>
         }
@@ -62,7 +62,7 @@
           </button>
         }
         <button ejs-button cssClass="e-outline" iconCss="e-icons e-arrow-left" type="button" (click)="back()">
-          {{ isMine ? 'กลับหน้าผลงานวันนี้' : 'กลับรายชื่อพนักงาน' }}
+          {{ isMine() ? 'กลับหน้าผลงานวันนี้' : 'กลับรายชื่อพนักงาน' }}
         </button>
       </div>
     </app-page-head>

@@ -11,16 +11,16 @@
     ]"
   >
     <div actions class="flex flex-wrap gap-2">
-      <a ejs-button cssClass="e-primary" iconCss="e-icons e-timeline-work-week" routerLink="/me/work">
-        เปิดฮับงานของฉัน
+      <a ejs-button cssClass="e-primary" iconCss="e-icons e-timeline-work-week" routerLink="/work">
+        เปิดกระดานงาน & แผน
       </a>
-      <a ejs-button cssClass="e-outline e-btn-violet" iconCss="e-icons e-chart" routerLink="/me/analytics">
+      <a ejs-button cssClass="e-outline e-btn-violet" iconCss="e-icons e-chart" routerLink="/insights/ols">
         วิเคราะห์ผลงานเชิงลึก (OLS)
       </a>
-      <a ejs-button cssClass="e-outline e-btn-teal" iconCss="e-icons e-table" routerLink="/me/tickets">
+      <a ejs-button cssClass="e-outline e-btn-teal" iconCss="e-icons e-table" routerLink="/quality/tickets">
         ตารางคะแนน & จัดการใบงาน
       </a>
-      <a ejs-button cssClass="e-outline e-warning" iconCss="e-icons e-clock" routerLink="/me/time-audit">
+      <a ejs-button cssClass="e-outline e-warning" iconCss="e-icons e-clock" routerLink="/quality/time-audit">
         เช็กเวลา 3 ทาง
       </a>
     </div>
@@ -60,7 +60,7 @@
     [badge]="dueAgenda().length + ' ใบ'"
     badgeTone="info"
   >
-    <a actions ejs-button cssClass="e-outline e-small" routerLink="/me/work/timeline">เปิดไทม์ไลน์ของฉัน</a>
+    <a actions ejs-button cssClass="e-outline e-small" routerLink="/work/timeline">เปิดไทม์ไลน์งาน</a>
 
     @if (dueAgenda().length === 0) {
       <app-sf-message content="ตอนนี้ไม่มีใบงานเปิด — สบายใจได้ชั่วคราว" severity="Success" />
@@ -104,7 +104,7 @@
                   >
                     ดู checklist
                   </button>
-                  <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
+                  <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-columns" routerLink="/work/board">
                     เปิดบนบอร์ด
                   </a>
                 </div>
@@ -157,10 +157,10 @@
                 >
                   ดูรายละเอียด
                 </button>
-                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
+                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-columns" routerLink="/work/board">
                   เปิดบนบอร์ด
                 </a>
-                <a ejs-button cssClass="e-outline e-small" routerLink="/me/work/list">ดูรายการงานของฉัน</a>
+                <a ejs-button cssClass="e-outline e-small" routerLink="/work/list">ดูรายการงาน</a>
               </div>
             </div>
           </div>
@@ -174,7 +174,7 @@
       [title]="'ใบงานที่กำลังทำและสถานะความเสี่ยง (' + myRisks().length + ')'"
       subtitle="ใบงานเปิดของคุณพร้อมระดับความเสี่ยง เพื่อวางแผนส่งมอบและแนบลิงก์ MR ล่วงหน้า"
     >
-      <a actions ejs-button cssClass="e-outline e-small" routerLink="/me/work/board">ไปที่กระดานงาน</a>
+      <a actions ejs-button cssClass="e-outline e-small" routerLink="/work/board">ไปที่กระดานงาน</a>
       <div class="card-grid-2">
         @for (risk of myRisks(); track risk.ticketId) {
           <app-section-card
@@ -195,10 +195,10 @@
                 >
                   ดูรายละเอียด
                 </button>
-                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-columns" routerLink="/me/work/board">
+                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-columns" routerLink="/work/board">
                   เปิดบนกระดานงาน
                 </a>
-                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-warning" routerLink="/me/work/board">
+                <a ejs-button cssClass="e-outline e-small" iconCss="e-icons e-warning" routerLink="/work/board">
                   แจ้งติดปัญหา / แก้ไขการ์ด
                 </a>
               </div>
@@ -222,8 +222,8 @@
       } @else {
         <ng-template #openActionsTpl let-data>
           <div class="flex flex-wrap items-center gap-1.5">
-            <a ejs-button cssClass="e-primary e-small" routerLink="/me/tickets">อัปเดต</a>
-            <a ejs-button cssClass="e-outline e-small" [routerLink]="['/me/disputes']" [queryParams]="{ ticketId: data.id }">อุทธรณ์</a>
+            <a ejs-button cssClass="e-primary e-small" routerLink="/quality/tickets">อัปเดต</a>
+            <a ejs-button cssClass="e-outline e-small" [routerLink]="['/quality/disputes']" [queryParams]="{ ticketId: data.id }">อุทธรณ์</a>
           </div>
         </ng-template>
         <app-sf-grid

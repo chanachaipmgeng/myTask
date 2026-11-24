@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { filter, map, startWith } from 'rxjs';
-import { currentViewer, openprojectProjectCatalog } from '../../core/admin-settings';
+import { currentViewer, effectiveRole, openprojectProjectCatalog } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import {
@@ -30,7 +30,14 @@ const TEAM_TABS = [
   { text: 'เวลาทีม', path: 'team-time', icon: 'e-icons e-day' },
 ] as const;
 
-const MINE_TABS = TEAM_TABS.filter((tab) => tab.path !== 'handoff' && tab.path !== 'team-time');
+const MINE_TABS = [
+  { text: 'สรุป', path: 'summary', icon: 'e-icons e-chart' },
+  { text: 'ไทม์ไลน์', path: 'timeline', icon: 'e-icons e-timeline-work-week' },
+  { text: 'แบ็กล็อก', path: 'backlog', icon: 'e-icons e-list-unordered' },
+  { text: 'บอร์ด', path: 'board', icon: 'e-icons e-columns' },
+  { text: 'รายการ', path: 'list', icon: 'e-icons e-table' },
+  { text: 'ลงเวลา', path: 'team-time', icon: 'e-icons e-day' },
+] as const;
 
 @Component({
   selector: 'app-work-shell',
@@ -71,29 +78,40 @@ export class WorkShell {
   ];
 
   constructor() {
-    const scope: WorkHubScope = this.route.snapshot.data['scope'] === 'mine' ? 'mine' : 'team';
-    this.filter.scope.set(scope);
-    this.filter.restoreFromStorage(scope);
-    // Global workspace wins for team / project / track / type (cross-page URL)
+    const initialMine = this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member';
+    const initialScope: WorkHubScope = initialMine ? 'mine' : 'team';
+    this.filter.scope.set(initialScope);
+    this.filter.restoreFromStorage(initialScope);
     this.filter.teamId.set(this.workspace.teamId());
     this.filter.opProject.set(this.workspace.opProject());
     this.filter.opType.set(this.workspace.opType());
     this.filter.track.set(this.workspace.track());
-    if (scope === 'mine') {
-      const personId = currentSession()?.person.id ?? currentViewer().id;
-      this.filter.assigneeId.set(personId);
-    } else {
-      this.filter.assigneeId.set('');
-    }
+
     effect(() => {
-      const teamId = this.workspace.teamId();
+      const role = effectiveRole();
+      const routeMine = this.route.snapshot.data['scope'] === 'mine';
+      const nextScope: WorkHubScope = routeMine || role === 'member' ? 'mine' : 'team';
+      if (this.filter.scope() !== nextScope) {
+        this.filter.scope.set(nextScope);
+      }
+      const selfId = currentSession()?.person.id ?? currentViewer().id;
+      const targetAssignee = nextScope === 'mine' ? selfId : this.workspace.personId();
+      if (this.filter.assigneeId() !== targetAssignee) {
+        this.filter.assigneeId.set(targetAssignee);
+      }
+      const teamId = nextScope === 'mine' ? '' : this.workspace.teamId();
       const opProject = this.workspace.opProject();
       const opType = this.workspace.opType();
-      const track = this.workspace.track();
+      const track = nextScope === 'mine' ? 'All' : this.workspace.track();
       if (this.filter.teamId() !== teamId) this.filter.teamId.set(teamId);
       if (this.filter.opProject() !== opProject) this.filter.opProject.set(opProject);
       if (this.filter.opType() !== opType) this.filter.opType.set(opType);
       if (this.filter.track() !== track) this.filter.track.set(track);
+
+      const path = this.url().split('?')[0] ?? '';
+      if (nextScope === 'mine' && path.endsWith('/handoff')) {
+        void this.router.navigate(['/work/board'], { queryParamsHandling: 'preserve', replaceUrl: true });
+      }
     });
     effect(() => {
       // touch signals so persistence stays in sync
@@ -110,9 +128,6 @@ export class WorkShell {
 
   protected readonly isMine = computed(() => this.filter.scope() === 'mine');
   protected readonly basePath = computed(() => {
-    if (this.isMine()) {
-      return '/me/work';
-    }
     const orgMatch = this.url().match(/\/org\/teams\/([^/?#]+)\/work/);
     if (orgMatch?.[1]) {
       return `/org/teams/${orgMatch[1]}/work`;

@@ -26,9 +26,7 @@ export class WorkBacklog {
   private readonly ticketDetail = inject(TicketDetailService);
 
   protected readonly isMine = computed(() => this.hub.scope() === 'mine');
-  protected readonly boardLink = computed(() =>
-    this.isMine() ? '/me/work/board' : '/work/board',
-  );
+  protected readonly boardLink = computed(() => '/work/board');
   protected readonly rows = computed(() =>
     workBacklogRows(
       this.scorecard.tickets(),

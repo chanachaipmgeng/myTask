@@ -20,7 +20,7 @@ import {
   ToolbarActionArgs,
 } from '@syncfusion/ej2-angular-schedule';
 import { ItemModel } from '@syncfusion/ej2-navigations';
-import { currentViewer } from '../../core/admin-settings';
+import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
@@ -149,20 +149,24 @@ export class SchedulePage {
   private readonly workspace = inject(WorkspaceFilter);
   protected readonly theme = inject(ThemeService);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly isMine = this.route.snapshot.data['scope'] === 'mine';
+  protected readonly isMine = computed(
+    () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
+  );
 
   private readonly scopedPeople = computed(() => {
     const people = this.scorecard.people();
-    if (this.isMine) {
-      return people;
+    if (this.isMine()) {
+      const selfId = currentSession()?.person.id ?? currentViewer().id;
+      return people.filter((p) => p.id === selfId);
     }
     return this.workspace.applyToPeople(people);
   });
 
   private readonly scopedTickets = computed(() => {
     const tickets = this.scorecard.tickets();
-    if (this.isMine) {
-      return tickets;
+    if (this.isMine()) {
+      const selfId = currentSession()?.person.id ?? currentViewer().id;
+      return this.workspace.applyToTickets(tickets).filter((t) => t.assigneeId === selfId);
     }
     return this.workspace.applyToTickets(tickets);
   });
@@ -224,12 +228,27 @@ export class SchedulePage {
     tooltip: { enable: true, shared: true },
   };
   /** สายงานจาก Global Filter */
-  protected readonly track = computed<TrackFilter>(() => this.workspace.track());
+  protected readonly track = computed<TrackFilter>(() => (this.isMine() ? 'All' : this.workspace.track()));
   /** All = ทุกคนในสายที่กรอง · หรือ person.id รายคน */
   protected readonly personId = signal<string>(
-    this.isMine ? (currentSession()?.person.id ?? currentViewer().id) : 'All',
+    this.isMine() ? (currentSession()?.person.id ?? currentViewer().id) : (this.workspace.personId() || 'All'),
   );
-  protected readonly selectedTeam = signal<string>('All');
+  protected readonly selectedTeam = signal<string>(this.workspace.teamId() || 'All');
+  private readonly syncRoleAndWorkspace = effect(() => {
+    const mine = this.isMine();
+    const selfId = currentSession()?.person.id ?? currentViewer().id;
+    const wsPerson = this.workspace.personId();
+    const wsTeam = this.workspace.teamId();
+    if (mine) {
+      if (this.personId() !== selfId) this.personId.set(selfId);
+      if (this.selectedTeam() !== 'All') this.selectedTeam.set('All');
+    } else {
+      const nextPerson = wsPerson || 'All';
+      if (this.personId() !== nextPerson) this.personId.set(nextPerson);
+      const nextTeam = wsTeam || 'All';
+      if (this.selectedTeam() !== nextTeam) this.selectedTeam.set(nextTeam);
+    }
+  });
   protected readonly resourcePage = signal<number>(1);
   protected readonly resourcePageSize = signal<number>(15);
 

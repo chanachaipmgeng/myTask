@@ -386,40 +386,56 @@
       </ejs-appbar>
 
       @if (showGlobalFilterBar()) {
-        <div class="workspace-filter-bar" aria-label="ตัวกรองทีมและรอบประเมินทั่วทั้งระบบ" (click)="$event.stopPropagation()">
+        <div class="workspace-filter-bar" aria-label="ตัวกรองข้อมูลตามสิทธิ์" (click)="$event.stopPropagation()">
           <div class="workspace-filter-bar__controls">
+            @if (role() === 'member') {
+              <span class="workspace-self-scope-pill" title="กำลังแสดงข้อมูลใบงานและคะแนนของคุณ">
+                <app-person-avatar [personId]="activePersonId()" [name]="userFullName()" size="xs"></app-person-avatar>
+                <span>มุมมองของฉัน</span>
+              </span>
+            }
+
             <label class="workspace-filter-field workspace-filter-field--inline">
               <span>รอบ</span>
               <app-sf-dropdown
                 [items]="workspaceFilter.cycleOptions()"
                 [value]="workspaceFilter.cycleId()"
-                [options]="{ placeholder: 'รอบระบบ', width: '175px', cssClass: 'e-outline' }"
+                [options]="{ placeholder: 'รอบระบบ', width: '168px', cssClass: 'e-outline' }"
                 (valueChange)="onWorkspaceCycle($event)"
               />
             </label>
-            <label class="workspace-filter-field workspace-filter-field--inline">
-              <span>ทีม</span>
-              <app-sf-dropdown
-                [items]="workspaceFilter.teamOptions()"
-                [value]="workspaceFilter.teamId()"
-                [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาทีมจาก myProject...', placeholder: 'ทุกทีม', width: '195px', cssClass: 'e-outline' }"
-                (valueChange)="onWorkspaceTeam($event)"
-              />
-            </label>
-            @if (workspaceFilter.personId(); as personId) {
-              <span class="workspace-person-chip" [title]="personId">
-                <app-person-avatar [personId]="personId" [name]="workspaceFilter.selectedPersonLabel()" size="xs"></app-person-avatar>
-                <span>{{ workspaceFilter.selectedPersonLabel() || personId }}</span>
-                <button
-                  ejs-button
-                  cssClass="e-small e-flat"
-                  type="button"
-                  title="ล้างตัวกรองคน"
-                  (click)="clearWorkspacePerson()"
-                >
-                  ×
-                </button>
-              </span>
+
+            @if (role() !== 'member') {
+              <label class="workspace-filter-field workspace-filter-field--inline">
+                <span>ทีม</span>
+                <app-sf-dropdown
+                  [items]="workspaceFilter.teamOptions()"
+                  [value]="workspaceFilter.teamId()"
+                  [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาทีมจาก myProject...', placeholder: 'ทุกทีม', width: '185px', cssClass: 'e-outline' }"
+                  (valueChange)="onWorkspaceTeam($event)"
+                />
+              </label>
+
+              <label class="workspace-filter-field workspace-filter-field--inline">
+                <span>พนักงาน</span>
+                <app-sf-dropdown
+                  [items]="workspaceFilter.personOptions()"
+                  [value]="workspaceFilter.personId()"
+                  [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชื่อพนักงาน...', placeholder: 'ทุกพนักงาน', width: '205px', cssClass: 'e-outline' }"
+                  (valueChange)="onWorkspacePerson($event)"
+                />
+              </label>
+
+              <button
+                type="button"
+                class="filter-mine-btn"
+                [class.is-active]="workspaceFilter.isFilteringSelf()"
+                title="สลับกรองเฉพาะงานของฉันในหน้านี้ทันที"
+                (click)="toggleMineFilter()"
+              >
+                <span class="e-icons e-user" aria-hidden="true"></span>
+                <span>เฉพาะฉัน</span>
+              </button>
             }
 
             <div class="filter-popover-anchor">
@@ -484,14 +500,16 @@
                       />
                     </label>
                   </div>
-                  <div class="filter-popover__tracks">
-                    <span class="filter-popover__label">สายงาน</span>
-                    <app-filter-chips
-                      [options]="workspaceFilter.trackChipOptions()"
-                      [value]="workspaceFilter.track()"
-                      (valueChange)="onWorkspaceTrack($event)"
-                    ></app-filter-chips>
-                  </div>
+                  @if (role() !== 'member') {
+                    <div class="filter-popover__tracks">
+                      <span class="filter-popover__label">สายงาน</span>
+                      <app-filter-chips
+                        [options]="workspaceFilter.trackChipOptions()"
+                        [value]="workspaceFilter.track()"
+                        (valueChange)="onWorkspaceTrack($event)"
+                      ></app-filter-chips>
+                    </div>
+                  }
                   <div class="filter-popover__footer">
                     @if (workspaceFilter.systemCycle(); as sys) {
                       <button
