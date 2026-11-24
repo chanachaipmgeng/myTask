@@ -22,6 +22,7 @@ import {
   SfMultiSelectComponent,
   SfTextBoxComponent,
   SfTimelineComponent,
+  StatusBadgeComponent,
   badgeToneClass,
   resolveBadgeTone,
   sizeToneMap,
@@ -78,6 +79,7 @@ type SwimlaneMode = 'none' | 'assignee' | 'track' | 'project';
     SfMultiSelectComponent,
     SfTextBoxComponent,
     SfTimelineComponent,
+    StatusBadgeComponent,
   ],
   templateUrl: './work-board.html',
 })
@@ -170,6 +172,7 @@ export class WorkBoard {
   ];
 
   protected readonly selectedId = signal<string | null>(null);
+  protected readonly editDialogTab = signal<'general' | 'timeline' | 'mandate'>('general');
   protected readonly blockMessage = signal('');
 
   protected readonly discipline = signal<string>('');
@@ -289,6 +292,7 @@ export class WorkBoard {
     const id = args.data?.['id'];
     if (typeof id === 'string' && id) {
       this.selectedId.set(id);
+      this.editDialogTab.set('general');
       this.editDialog?.open();
     }
   }

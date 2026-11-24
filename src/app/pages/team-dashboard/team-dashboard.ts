@@ -148,9 +148,10 @@ export class TeamDashboard {
 
   protected readonly workloadDonutOptions: SfDonutChartOptions = {
     height: '260px',
-    innerRadius: '60%',
-    radius: '82%',
-    centerLabel: `${TEAM_CONTEXT_2568.tasks.toLocaleString('en-US')}<br>งาน`,
+    innerRadius: '64%',
+    radius: '84%',
+    centerLabel: TEAM_CONTEXT_2568.tasks.toLocaleString('en-US'),
+    centerSubLabel: 'ใบงานทั้งปี',
     palettes: this.palette,
     legend: { visible: true, position: 'Bottom', alignment: 'Center' },
     tooltip: { enable: true, format: '${point.x}: <b>${point.y}%</b>' },
@@ -162,9 +163,10 @@ export class TeamDashboard {
     const md = this.samplePoints().reduce((sum, point) => sum + point.y, 0);
     return {
       height: '260px',
-      innerRadius: '60%',
-      radius: '82%',
-      centerLabel: `${formatMd(md)}<br>MD`,
+      innerRadius: '64%',
+      radius: '84%',
+      centerLabel: formatMd(md),
+      centerSubLabel: 'MD รวม',
       palettes: this.palette,
       legend: { visible: true, position: 'Bottom', alignment: 'Center' },
       tooltip: { enable: true, format: '${point.x}: <b>${point.y}</b> MD' },

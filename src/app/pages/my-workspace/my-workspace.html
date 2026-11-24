@@ -2,57 +2,213 @@
   <app-page-head
     [title]="'พื้นที่ของฉัน · ' + view().name + ' (' + view().role + ')'"
     [avatarName]="view().name"
-    description="หน้าหลักสำหรับติดตามใบงานที่รับผิดชอบ โควตาคงเหลือในสัปดาห์ และดัชนีพัฒนาของตัวเองเทียบกับตัวเอง (ไม่จัดอันดับเปรียบเทียบกับเพื่อนร่วมงาน)"
-    [metrics]="[
-      { label: 'ดัชนีพัฒนาของฉัน', value: view().indexLabel, hint: 'เป้า ' + view().target, tone: view().index >= view().target ? 'good' : 'bad' },
-      { label: 'งานที่กำลังถืออยู่', value: view().openCount, unit: 'ใบ', hint: 'เพดาน WIP ไม่เกิน 2 ใบ', tone: view().openCount <= 2 ? 'good' : 'bad' },
-      { label: 'โควตาสัปดาห์คงเหลือ', value: freeMdLabel(), unit: 'MD', hint: 'โควตาระดับ ' + view().level + ': ' + view().quota + ' MD/สัปดาห์' },
-      { label: 'ใบงานที่ปิดแล้ว', value: view().closedCount, unit: 'ใบ', hint: view().trackLabel }
-    ]"
+    description="แดชบอร์ดส่วนตัว Bento สำหรับติดตามภาระงาน โควตาคงเหลือ และดัชนีพัฒนาเทียบกับเกณฑ์ตนเอง"
   >
     <div actions class="flex flex-wrap gap-2">
       <a ejs-button cssClass="e-primary" iconCss="e-icons e-timeline-work-week" routerLink="/work">
-        เปิดกระดานงาน & แผน
+        เปิดกระดานงาน &amp; แผน
       </a>
-      <a ejs-button cssClass="e-outline e-btn-violet" iconCss="e-icons e-chart" routerLink="/insights/ols">
-        วิเคราะห์ผลงานเชิงลึก (OLS)
+      <a ejs-button cssClass="e-outline" iconCss="e-icons e-chart" routerLink="/insights/ols">
+        วิเคราะห์ผลงาน (OLS)
       </a>
-      <a ejs-button cssClass="e-outline e-btn-teal" iconCss="e-icons e-table" routerLink="/quality/tickets">
-        ตารางคะแนน & จัดการใบงาน
+      <a ejs-button cssClass="e-outline" iconCss="e-icons e-table" routerLink="/quality/tickets">
+        ตารางคะแนน
       </a>
-      <a ejs-button cssClass="e-outline e-warning" iconCss="e-icons e-clock" routerLink="/quality/time-audit">
+      <a ejs-button cssClass="e-outline" iconCss="e-icons e-clock" routerLink="/quality/time-audit">
         เช็กเวลา 3 ทาง
       </a>
     </div>
   </app-page-head>
 
-  @if (myCoaching(); as coach) {
-    <app-section-card
-      title="สรุปพัฒนาการและคำแนะนำส่วนตัว"
-      subtitle="วิเคราะห์จากสถิติการส่งมอบ ความแม่นยำการประเมินขนาด และคุณภาพการรีวิวของตัวเอง"
-      [badge]="coach.trendLabel + ' (Slope ' + coach.trendSlope + ')'"
-      badgeTone="info"
-    >
-      <div class="flex flex-wrap gap-2 text-xs mb-1">
-        <app-status-badge [label]="'ส่งตรงสัปดาห์ ' + coach.onTimePct + '%'" tone="success"></app-status-badge>
-        <app-status-badge [label]="'ความแม่นประเมินขนาด ' + coach.estimationAccuracyPct + '%'" tone="info"></app-status-badge>
-        <app-status-badge [label]="'ผ่านรีวิวรอบแรก ' + coach.firstPassPct + '%'" tone="primary"></app-status-badge>
-      </div>
-      <div class="card-grid-2">
-        <app-section-card variant="nested" title="จุดแข็งปัจจุบัน" badge="Strength" badgeTone="success">
-          <p class="m-0 font-medium">{{ coach.strengthNote }}</p>
-        </app-section-card>
+  <!-- ======================================================== -->
+  <!-- Bento Row 1 (8:4): Hero Performance Index + AI Coach     -->
+  <!-- ======================================================== -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+    <!-- Left Hero Card (Col 1-8): Big Score, Sparkline, Metrics -->
+    <div class="lg:col-span-8">
+      <app-motion-wrapper motion="scale-glass" glowTone="good" class="block h-full">
         <app-section-card
-          variant="nested"
-          title="คำแนะนำเพื่อยกระดับในสปรินต์ถัดไป"
-          badge="Next Sprint Focus"
-          badgeTone="info"
+          title="ดัชนีพัฒนาการและแนวโน้มส่วนตัว (Self-Growth Index)"
+          subtitle="ประเมินเทียบกับตนเองและเกณฑ์มาตรฐาน 75 คะแนน (ถ่วงน้ำหนัก On-Time, Accuracy, Code Review)"
+          [badge]="view().index >= view().target ? 'ผ่านเกณฑ์มาตรฐาน' : 'ต้องปรับปรุง'"
+          [badgeTone]="view().index >= view().target ? 'success' : 'warning'"
         >
-          <p class="m-0 font-medium">{{ coach.coachingFocus }}</p>
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 my-2">
+            <!-- Big Score Callout with Radial Gauge Halo -->
+            <div class="flex items-center gap-4">
+              <div class="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24 shrink-0">
+                <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+                  <!-- Background Track -->
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="transparent"
+                    stroke="currentColor"
+                    stroke-width="7"
+                    class="text-[var(--color-border-subtle)] opacity-40"
+                  />
+                  <!-- Radial Progress Arc -->
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="transparent"
+                    stroke="currentColor"
+                    stroke-width="7"
+                    stroke-linecap="round"
+                    [attr.stroke-dasharray]="264"
+                    [attr.stroke-dashoffset]="264 - (264 * (view().index / 100))"
+                    class="transition-all duration-1000 ease-out"
+                    [class.text-emerald-500]="view().index >= view().target"
+                    [class.text-amber-500]="view().index < view().target"
+                  />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span class="text-2xl md:text-3xl font-extrabold tracking-tight tabular-nums text-primary leading-none">
+                    {{ view().indexLabel }}
+                  </span>
+                  <span class="text-[9px] uppercase font-bold text-muted tracking-wider mt-0.5">INDEX</span>
+                </div>
+              </div>
+
+              <div class="flex flex-col">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs uppercase font-bold text-muted tracking-wider">ดัชนีคะแนนรวม R&amp;D</span>
+                  <span class="e-badge e-badge-pill" [class.e-badge-success]="view().index >= view().target" [class.e-badge-warning]="view().index < view().target">
+                    {{ view().index >= view().target ? 'ผ่านเกณฑ์' : 'ต่ำกว่าเป้า' }}
+                  </span>
+                </div>
+                <span class="text-sm font-medium mt-1" [class.text-success]="view().index >= view().target" [class.text-warning]="view().index < view().target">
+                  เป้าหมายมาตรฐาน {{ view().target }} คะแนน (วัดเทียบตนเอง)
+                </span>
+                <span class="text-xs text-muted mt-0.5">
+                  ถ่วงน้ำหนัก 3 มิติ: ส่งมอบตรงเวลา + ประเมินขนาดแม่นยำ + รีวิวรอบแรก
+                </span>
+              </div>
+            </div>
+
+            <!-- Mini Sparkline in Hero -->
+            <div class="w-full md:w-56 h-14 flex flex-col justify-end">
+              <div class="flex items-center justify-between text-xs text-muted mb-1">
+                <span>แนวโน้ม 5 เดือน</span>
+                <span class="font-semibold text-primary">ล่าสุด {{ view().indexLabel }}</span>
+              </div>
+              <div class="h-10">
+                <app-kpi-stat
+                  [sparklineData]="trendSparklineData()"
+                  sparklineType="Area"
+                  accent="teal"
+                  sparklineId="my-hero-trend"
+                  layout="stack"
+                  value=""
+                  title=""
+                ></app-kpi-stat>
+              </div>
+            </div>
+          </div>
+
+          <!-- Component Metrics Pill Group -->
+          @if (myCoaching(); as coach) {
+            <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--color-border-subtle)] text-xs">
+              <span class="text-muted font-medium">มิติการส่งมอบ:</span>
+              <app-status-badge [label]="'ส่งตรงเวลา ' + coach.onTimePct + '%'" tone="success"></app-status-badge>
+              <app-status-badge [label]="'ความแม่นยำประเมินขนาด ' + coach.estimationAccuracyPct + '%'" tone="info"></app-status-badge>
+              <app-status-badge [label]="'ผ่านรีวิวรอบแรก ' + coach.firstPassPct + '%'" tone="primary"></app-status-badge>
+              <span class="ml-auto text-muted font-mono">{{ coach.trendLabel }} (Slope {{ coach.trendSlope }})</span>
+            </div>
+          }
         </app-section-card>
-      </div>
-    </app-section-card>
-  }
+      </app-motion-wrapper>
+    </div>
+
+    <!-- Right Card (Col 9-12): AI Coach & Reflection -->
+    <div class="lg:col-span-4">
+      <app-motion-wrapper motion="glow" glowTone="ai" class="block h-full">
+        <app-section-card
+          title="AI Coach แนะนำ"
+          subtitle="ข้อสังเกตและแนวทางพัฒนาสปรินต์ถัดไป"
+          badge="AI Reflection"
+          badgeTone="violet"
+        >
+          @if (myCoaching(); as coach) {
+            <div class="flex flex-col gap-3 py-1">
+              <div class="p-3 rounded-lg bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)]">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="e-icons e-star-filled text-success text-sm"></span>
+                  <span class="text-xs font-bold text-success uppercase">จุดแข็งเด่นชัด</span>
+                </div>
+                <p class="text-xs text-[var(--color-fg-default)] m-0 leading-relaxed font-medium">
+                  {{ coach.strengthNote }}
+                </p>
+              </div>
+
+              <div class="p-3 rounded-lg bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)]">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="e-icons e-target text-info text-sm"></span>
+                  <span class="text-xs font-bold text-info uppercase">จุดโฟกัสพัฒนาต่อ</span>
+                </div>
+                <p class="text-xs text-[var(--color-fg-default)] m-0 leading-relaxed font-medium">
+                  {{ coach.coachingFocus }}
+                </p>
+              </div>
+
+              <div class="text-right">
+                <a routerLink="/insights/ols" class="text-xs text-primary font-medium hover:underline inline-flex items-center gap-1">
+                  ดูแบบจำลอง OLS เต็มรูปแบบ <span class="e-icons e-arrow-right text-[10px]"></span>
+                </a>
+              </div>
+            </div>
+          } @else {
+            <p class="text-xs text-muted m-0">กำลังประมวลผลข้อเสนอแนะจากประวัติการทำงาน...</p>
+          }
+        </app-section-card>
+      </app-motion-wrapper>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- Bento Row 2 (4:4:4): Operational KPI Bento Cards        -->
+  <!-- ======================================================== -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <!-- WIP Limits Card -->
+    <app-kpi-stat
+      title="ภาระงานที่ถืออยู่ (Active WIP)"
+      [value]="view().openCount"
+      hint="เพดานควบคุมไม่ควรเกิน 2 ใบต่อคน"
+      [badge]="view().openCount <= 2 ? 'WIP ปกติ' : 'WIP ล้นเพดาน'"
+      [badgeTone]="view().openCount <= 2 ? 'success' : 'danger'"
+      iconCss="e-icons e-folder-open"
+      [progress]="wipProgressPct()"
+      [accent]="view().openCount <= 2 ? 'success' : 'danger'"
+      layout="icon-start"
+    ></app-kpi-stat>
+
+    <!-- Quota Capacity Card -->
+    <app-kpi-stat
+      title="โควตาสัปดาห์คงเหลือ"
+      [value]="freeMdLabel() + ' MD'"
+      [hint]="'ระดับ ' + view().level + ' (โควตาเต็ม ' + view().quota + ' MD/สัปดาห์)'"
+      badge="Capacity"
+      badgeTone="teal"
+      iconCss="e-icons e-clock"
+      [progress]="quotaProgressPct()"
+      accent="teal"
+      layout="icon-start"
+    ></app-kpi-stat>
+
+    <!-- Closed Work Count Card -->
+    <app-kpi-stat
+      title="ใบงานที่ปิดสมบูรณ์แล้ว"
+      [value]="view().closedCount + ' ใบ'"
+      [hint]="view().trackLabel + ' · ข้อมูลสะสมรอบปัจจุบัน'"
+      badge="Delivered"
+      badgeTone="violet"
+      iconCss="e-icons e-check"
+      accent="violet"
+      layout="icon-start"
+    ></app-kpi-stat>
+  </div>
 
   <app-section-card
     title="Agenda งานเปิดของฉัน (เรียงตามกำหนดส่ง)"

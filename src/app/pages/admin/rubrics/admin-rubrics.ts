@@ -6,6 +6,7 @@ import { DEFAULT_RUBRICS, RubricDefinition } from '../../../core/rubrics';
 import { ThemeService } from '../../../core/theme.service';
 import {
   FlashMessagesComponent,
+  KpiStatCardComponent,
   PageHeadComponent,
   SectionCardComponent,
   SfGridColumn,
@@ -31,6 +32,7 @@ interface RubricGridRow {
   imports: [
     ButtonModule,
     PageHeadComponent,
+    KpiStatCardComponent,
     RouterLink,
     SectionCardComponent,
     FlashMessagesComponent,

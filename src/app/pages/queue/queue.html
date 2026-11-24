@@ -58,12 +58,12 @@
 
   <app-section-card
     title="วิเคราะห์แผนและข้อเสนอรับงาน"
-    subtitle="ข้อเสนอการจับคู่ใบงานกับพนักงานที่โควตาว่างและ WIP ยังไม่เต็ม"
-    [badge]="plan().plans.length + ' รายการ'"
+    subtitle="ข้อเสนอการจับคู่ใบงานกับพนักงานที่โควตาว่างและ WIP ยังไม่เต็ม (แสดงใบงานพร้อมจ่ายก่อน และตัวอย่างงานค้างรับ)"
+    [badge]="plan().plans.length + ' รายการ' + (actionablePlans().length ? ' (พร้อมจ่าย ' + actionablePlans().length + ' ใบ)' : '')"
     badgeTone="secondary"
   >
     <div class="grid grid-cols-1 gap-3">
-      @for (item of plan().plans; track item.ticket.id) {
+      @for (item of displayPlans(); track item.ticket.id) {
         <app-section-card variant="nested" [showHead]="false">
           <div
             class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between pl-3 border-l-4"
@@ -116,6 +116,18 @@
             }
           </div>
         </app-section-card>
+      }
+      @if (hasMoreBacklog()) {
+        <div class="flex items-center justify-center p-3">
+          <button
+            ejs-button
+            cssClass="e-outline e-primary"
+            type="button"
+            (click)="loadMorePlans()"
+          >
+            แสดงงานค้างรับเพิ่มอีก 30 ใบ (เหลือ {{ backlogPlans().length - planLimit() }} ใบ)
+          </button>
+        </div>
       }
     </div>
   </app-section-card>

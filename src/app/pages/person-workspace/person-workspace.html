@@ -28,6 +28,30 @@
           [value]="trackFilter()"
           (valueChange)="setTrackFilter($event)"
         />
+        <div class="inline-flex items-center rounded-lg border border-[var(--color-border-subtle)] p-0.5 bg-[var(--color-bg-subtle)]">
+          <button
+            ejs-button
+            cssClass="e-small"
+            [class.e-primary]="viewMode() === 'grid'"
+            [class.e-flat]="viewMode() !== 'grid'"
+            type="button"
+            title="มุมมองการ์ด (Card Grid)"
+            (click)="viewMode.set('grid')"
+          >
+            <span class="e-icons e-grid-view"></span>
+          </button>
+          <button
+            ejs-button
+            cssClass="e-small"
+            [class.e-primary]="viewMode() === 'table'"
+            [class.e-flat]="viewMode() !== 'table'"
+            type="button"
+            title="มุมมองตาราง (Compact Table)"
+            (click)="viewMode.set('table')"
+          >
+            <span class="e-icons e-table"></span>
+          </button>
+        </div>
         <a ejs-button cssClass="e-outline e-small" routerLink="/org/teams" queryParamsHandling="preserve">ดูตามแผนก</a>
       </div>
     </app-page-head>
@@ -36,6 +60,23 @@
       <app-section-card [showHead]="false">
         <p class="person-ws__empty m-0 py-8 text-center">ไม่พบพนักงานตามคำค้นหาหรือสายงานที่เลือก</p>
       </app-section-card>
+    } @else if (viewMode() === 'table') {
+      <ng-template #actionsTpl let-data>
+        <button
+          ejs-button
+          cssClass="e-primary e-small"
+          type="button"
+          (click)="selectPerson(data.id)"
+        >
+          เปิด Workspace
+        </button>
+      </ng-template>
+      <app-sf-grid
+        [data]="directoryTableRows()"
+        [columns]="directoryColumns"
+        [options]="directoryGridOptions"
+        [cellTemplates]="{ actions: actionsTpl }"
+      />
     } @else {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" appStagger [staggerStep]="40">
         @for (card of pagedPersonCards(); track card.person.id) {

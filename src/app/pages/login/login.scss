@@ -264,8 +264,8 @@
 
   &:focus {
     outline: none;
-    border-color: color-mix(in srgb, var(--login-blue-mid) 55%, var(--login-line));
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--login-blue-mid) 18%, transparent);
+    border-color: var(--login-blue-bright);
+    box-shadow: 0 0 0 3px rgba(59, 96, 220, 0.22), 0 2px 6px rgba(39, 70, 179, 0.08);
     background: #fff;
   }
 

@@ -75,13 +75,18 @@ export class QueuePage {
     { field: 'assignee', headerText: 'ผู้รับ', width: 150 },
   ];
   protected readonly queueGridOptions: SfGridOptions = listGridOptions({
-    height: '240',
+    id: 'queue-unassigned-grid-v2',
+    height: '280',
+    paging: true,
+    pageSize: 15,
+    pageSizes: [15, 30, 50],
   });
   protected readonly message = signal('');
   protected readonly error = signal('');
   protected readonly writebackEnabled = signal(false);
   protected readonly pendingAccept = signal<QueuePlan | null>(null);
   protected readonly accepting = signal(false);
+  protected readonly planLimit = signal(30);
 
   protected readonly writebackMessage = computed(() => {
     const item = this.pendingAccept();
@@ -108,23 +113,48 @@ export class QueuePage {
   protected readonly implementQueue = computed(() => {
     const tracks = new Set(this.scopedPeople().map((person) => person.track));
     const teamScoped = !!this.workspace.teamId();
-    return this.scorecard.ticketRows().filter((row) => {
-      if (!row.unassigned || row.track !== 'Implement') {
-        return false;
-      }
-      return !teamScoped || tracks.has('Implement') || tracks.has('IMP');
-    });
+    return this.scorecard
+      .ticketRows()
+      .filter((row) => {
+        if (!row.unassigned || row.track !== 'Implement') {
+          return false;
+        }
+        return !teamScoped || tracks.has('Implement') || tracks.has('IMP');
+      })
+      .slice(0, 150);
   });
   protected readonly researchQueue = computed(() => {
     const tracks = new Set(this.scopedPeople().map((person) => person.track));
     const teamScoped = !!this.workspace.teamId();
-    return this.scorecard.ticketRows().filter((row) => {
-      if (!row.unassigned || row.track !== 'RD') {
-        return false;
-      }
-      return !teamScoped || tracks.has('RD') || tracks.has('RND');
-    });
+    return this.scorecard
+      .ticketRows()
+      .filter((row) => {
+        if (!row.unassigned || row.track !== 'RD') {
+          return false;
+        }
+        return !teamScoped || tracks.has('RD') || tracks.has('RND');
+      })
+      .slice(0, 150);
   });
+
+  protected readonly actionablePlans = computed(() =>
+    this.plan().plans.filter((p) => p.personId != null),
+  );
+  protected readonly backlogPlans = computed(() =>
+    this.plan().plans.filter((p) => p.personId == null),
+  );
+  protected readonly displayPlans = computed(() => {
+    const actionable = this.actionablePlans();
+    const backlog = this.backlogPlans().slice(0, this.planLimit());
+    return [...actionable, ...backlog];
+  });
+  protected readonly hasMoreBacklog = computed(
+    () => this.backlogPlans().length > this.planLimit(),
+  );
+
+  protected loadMorePlans(): void {
+    this.planLimit.update((v) => v + 30);
+  }
 
   constructor() {
     void this.loadWritebackFlag();

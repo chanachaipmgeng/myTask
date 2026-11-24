@@ -870,6 +870,7 @@ export class IntegrationsController {
     const cached = this.avatarCache.get(opUserId);
     if (cached && cached.expiresAt > now) {
       if (!cached.ok || !cached.bytes) {
+        res.setHeader('Cache-Control', 'public, max-age=7200');
         res.status(404).end();
         return;
       }
@@ -881,18 +882,27 @@ export class IntegrationsController {
 
     const client = await this.syncService.getClient();
     if (!client) {
+      this.avatarCache.set(opUserId, {
+        ok: false,
+        contentType: 'text/plain',
+        bytes: null,
+        expiresAt: now + 2 * 3600_000,
+      });
+      res.setHeader('Cache-Control', 'public, max-age=7200');
       res.status(404).end();
       return;
     }
     try {
       const fetched = await client.fetchUserAvatar(opUserId);
+      const isOk = Boolean(fetched.ok && fetched.bytes);
       this.avatarCache.set(opUserId, {
-        ok: fetched.ok,
+        ok: isOk,
         contentType: fetched.contentType || 'image/jpeg',
         bytes: fetched.bytes,
-        expiresAt: now + 15 * 60_000,
+        expiresAt: now + (isOk ? 60 * 60_000 : 2 * 3600_000),
       });
-      if (!fetched.ok || !fetched.bytes) {
+      if (!isOk) {
+        res.setHeader('Cache-Control', 'public, max-age=7200');
         res.status(404).end();
         return;
       }
@@ -900,6 +910,13 @@ export class IntegrationsController {
       res.setHeader('Cache-Control', 'public, max-age=3600');
       res.status(200).send(fetched.bytes);
     } catch {
+      this.avatarCache.set(opUserId, {
+        ok: false,
+        contentType: 'text/plain',
+        bytes: null,
+        expiresAt: now + 2 * 3600_000,
+      });
+      res.setHeader('Cache-Control', 'public, max-age=7200');
       res.status(404).end();
     }
   }

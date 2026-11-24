@@ -4,12 +4,6 @@
     title="ทะเบียนเกณฑ์มาตรฐาน Rubric"
     description="ปรับแต่งเกณฑ์ประเมินขนาดงาน (Sizing), น้ำหนักคะแนนใบงาน (Ticket Score), และสูตรดัชนีชี้วัด (Person Index) แบบไดนามิกโดยไม่ต้องแก้ไขโค้ด"
     periodBadge="v2026.4"
-    [metrics]="[
-      { label: 'เกณฑ์ทั้งหมด', value: '7', unit: 'เกณฑ์', hint: 'Active ทั้งหมด' },
-      { label: 'กรอบขนาดงาน', value: '5', unit: 'ระดับ', hint: 'XS, S, M, L, XL' },
-      { label: 'คะแนนใบงานเต็ม', value: '100', unit: 'คะแนน', hint: 'On-time, Accuracy, Review, Reopen' },
-      { label: 'เป้าดัชนี R&D', value: '≥ 75.0', hint: 'DoD 40% · Spike 25% · Quota 20%' }
-    ]"
   >
     <div actions class="flex flex-wrap items-center gap-2">
       <a routerLink="/admin" ejs-button cssClass="e-outline e-small" iconCss="e-icons e-home">
@@ -23,6 +17,40 @@
       </button>
     </div>
   </app-page-head>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+    <app-kpi-stat
+      label="เกณฑ์ทั้งหมด"
+      value="7"
+      unit="เกณฑ์"
+      hint="Active ทั้งหมด (ไม่มีแบบปิดใช้งาน)"
+      icon="e-icons e-settings"
+      accent="teal"
+    />
+    <app-kpi-stat
+      label="กรอบขนาดงาน"
+      value="5"
+      unit="ระดับ"
+      hint="XS, S, M, L, XL (0.25 - 4.0 MD)"
+      icon="e-icons e-grid-view"
+      accent="info"
+    />
+    <app-kpi-stat
+      label="คะแนนใบงานเต็ม"
+      value="100"
+      unit="คะแนน"
+      hint="On-time, Accuracy, Review, Reopen"
+      icon="e-icons e-star-filled"
+      accent="violet"
+    />
+    <app-kpi-stat
+      label="เป้าดัชนี R&D"
+      value="≥ 75.0"
+      hint="DoD 40% · Spike 25% · Quota 20%"
+      icon="e-icons e-target"
+      accent="success"
+    />
+  </div>
 
   <app-flash-messages [success]="saveNotice()"></app-flash-messages>
 

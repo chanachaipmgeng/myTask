@@ -248,7 +248,7 @@ export interface SfChartOptions {
             <e-series
               [type]="s.type"
               [drawType]="s.drawType!"
-              [dataSource]="s.dataSource"
+              [dataSource]="s.dataSource ?? []"
               [xName]="s.xName"
               [yName]="s.yName"
               [name]="s.name!"
@@ -334,6 +334,7 @@ export class SfChartComponent implements AfterViewInit, OnDestroy {
 
   private resizeObserver?: ResizeObserver;
   private resizeTimer?: ReturnType<typeof setTimeout>;
+  private isDestroyed = false;
 
   protected readonly resolvedHeight = computed(() => this.options().height ?? '340px');
   protected readonly motionRefreshKey = computed(() =>
@@ -372,7 +373,9 @@ export class SfChartComponent implements AfterViewInit, OnDestroy {
       this.resizeObserver = new ResizeObserver(() => {
         if (this.resizeTimer) clearTimeout(this.resizeTimer);
         this.resizeTimer = setTimeout(() => {
-          this.chartRef?.refresh();
+          if (!this.isDestroyed && this.chartRef && !this.chartRef.isDestroyed) {
+            this.chartRef.refresh();
+          }
         }, 150);
       });
       this.resizeObserver.observe(this.hostBox.nativeElement);
@@ -380,6 +383,7 @@ export class SfChartComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.isDestroyed = true;
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
     this.resizeObserver?.disconnect();
   }
@@ -390,7 +394,11 @@ export class SfChartComponent implements AfterViewInit, OnDestroy {
 
   toggleFullscreen(): void {
     this.fullscreen.update((v) => !v);
-    setTimeout(() => this.chartRef?.refresh(), 100);
+    setTimeout(() => {
+      if (!this.isDestroyed && this.chartRef && !this.chartRef.isDestroyed) {
+        this.chartRef.refresh();
+      }
+    }, 100);
   }
 
   instance(): ChartComponent | undefined {

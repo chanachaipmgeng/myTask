@@ -7,6 +7,7 @@ import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import {
   PageHeadComponent,
   SectionCardComponent,
@@ -38,6 +39,7 @@ export interface ParetoCausePoint {
     PageHeadComponent,
     SectionCardComponent,
     StatusBadgeComponent,
+    KpiStatCardComponent,
     SfChartComponent,
     SfGridComponent,
     SfMessageComponent,

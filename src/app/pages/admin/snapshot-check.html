@@ -38,9 +38,13 @@
     </ng-template>
     <ng-template #diffTpl let-data>
       <span
-        class="font-mono font-bold"
+        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono font-bold"
+        [class.bg-emerald-500\/15]="data.diff >= 0"
         [class.text-emerald-600]="data.diff >= 0"
+        [class.dark:text-emerald-300]="data.diff >= 0"
+        [class.bg-rose-500\/15]="data.diff < 0"
         [class.text-rose-600]="data.diff < 0"
+        [class.dark:text-rose-300]="data.diff < 0"
       >
         {{ data.diff >= 0 ? '+' + (+data.diff).toFixed(1) : (+data.diff).toFixed(1) }}
       </span>

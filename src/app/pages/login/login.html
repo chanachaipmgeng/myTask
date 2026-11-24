@@ -115,9 +115,18 @@
           <div class="login-demo">
             <p class="login-demo__label">ทดสอบด่วน</p>
             <div class="login-demo__chips">
-              <button type="button" class="login-chip" (click)="quickLogin('paweena')">ปวีณา · Admin</button>
-              <button type="button" class="login-chip" (click)="quickLogin('chanachai')">ชนะชัย · Admin</button>
-              <button type="button" class="login-chip" (click)="quickLogin('nakarin')">นครินทร์ · Member</button>
+              <button type="button" class="login-chip" [disabled]="busy()" (click)="quickLogin('paweena')">
+                @if (busy()) { <span class="e-icons e-spinner e-spin mr-1"></span> }
+                ปวีณา · Admin
+              </button>
+              <button type="button" class="login-chip" [disabled]="busy()" (click)="quickLogin('chanachai')">
+                @if (busy()) { <span class="e-icons e-spinner e-spin mr-1"></span> }
+                ชนะชัย · Admin
+              </button>
+              <button type="button" class="login-chip" [disabled]="busy()" (click)="quickLogin('nakarin')">
+                @if (busy()) { <span class="e-icons e-spinner e-spin mr-1"></span> }
+                นครินทร์ · Member
+              </button>
             </div>
           </div>
         }

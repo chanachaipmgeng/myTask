@@ -2,12 +2,6 @@
   <app-page-head
     title="ศูนย์วิเคราะห์ข้อมูลเชิงลึก"
     description="ศูนย์กลางตรวจสอบคุณภาพข้อมูลที่ซิงก์มาจาก OpenProject + GitLab ตรวจจับค่าผิดปกติทางสถิติ (Z-Score Outlier), พยากรณ์ใบงานเสี่ยงหลุดแผน, วิเคราะห์คอขวดโมดูล และสรุปแนวโน้มพัฒนาการรายบุคคล (OLS Regression) เพื่อการโค้ชและติดตามงานครบวงจร"
-    [metrics]="[
-      { label: 'ความสมบูรณ์ข้อมูลซิงก์', value: report().syncHygiene.readinessScore, unit: '%', hint: 'Sync Readiness', tone: report().syncHygiene.readinessScore >= 80 ? 'good' : 'bad' },
-      { label: 'ข้อมูลไม่สอดคล้อง', value: report().syncHygiene.issueCount, unit: 'รายการ', hint: 'ใบสมบูรณ์ ' + report().syncHygiene.cleanTickets + ' / ' + report().syncHygiene.totalTickets },
-      { label: 'ค่าผิดปกติทางสถิติ', value: report().syncHygiene.outlierCount, unit: 'ใบ', hint: '|Z-Score| ≥ 1.8' },
-      { label: 'ใบเปิดเสี่ยงหลุดแผน', value: highRiskCount(), unit: 'ใบ', hint: 'จากใบที่เปิดอยู่ ' + report().deliveryRisks.length + ' ใบ', tone: highRiskCount() > 0 ? 'bad' : 'good' }
-    ]"
   >
     <div actions class="flex flex-wrap items-center gap-2">
       <span class="e-badge e-badge-violet e-badge-pill">
@@ -27,6 +21,54 @@
       <a ejs-button cssClass="e-outline e-btn-teal" routerLink="/integrations">ตั้งค่าการซิงก์</a>
     </div>
   </app-page-head>
+
+  <!-- Bento KPI Metrics Row -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <app-kpi-stat
+      title="ความสมบูรณ์ข้อมูลซิงก์"
+      [value]="report().syncHygiene.readinessScore + '%'"
+      hint="Sync Readiness Score"
+      [badge]="report().syncHygiene.readinessScore >= 80 ? 'พร้อมใช้งาน' : 'ต้องตรวจสอบ'"
+      [badgeTone]="report().syncHygiene.readinessScore >= 80 ? 'success' : 'warning'"
+      iconCss="e-icons e-sync"
+      [progress]="report().syncHygiene.readinessScore"
+      [accent]="report().syncHygiene.readinessScore >= 80 ? 'success' : 'warning'"
+      layout="icon-start"
+    ></app-kpi-stat>
+
+    <app-kpi-stat
+      title="ข้อมูลไม่สอดคล้อง"
+      [value]="report().syncHygiene.issueCount + ' รายการ'"
+      [hint]="'ใบสมบูรณ์ ' + report().syncHygiene.cleanTickets + ' / ' + report().syncHygiene.totalTickets"
+      [badge]="report().syncHygiene.issueCount === 0 ? 'สมบูรณ์ 100%' : 'มีจุดติดขัด'"
+      [badgeTone]="report().syncHygiene.issueCount === 0 ? 'success' : 'info'"
+      iconCss="e-icons e-circle-info"
+      [accent]="report().syncHygiene.issueCount === 0 ? 'teal' : 'info'"
+      layout="icon-start"
+    ></app-kpi-stat>
+
+    <app-kpi-stat
+      title="ค่าผิดปกติทางสถิติ"
+      [value]="report().syncHygiene.outlierCount + ' ใบ'"
+      hint="เกณฑ์ |Z-Score| ≥ 1.8"
+      [badge]="report().syncHygiene.outlierCount === 0 ? 'ปกติ' : 'พบ Outliers'"
+      [badgeTone]="report().syncHygiene.outlierCount === 0 ? 'success' : 'warning'"
+      iconCss="e-icons e-chart"
+      [accent]="report().syncHygiene.outlierCount === 0 ? 'success' : 'coral'"
+      layout="icon-start"
+    ></app-kpi-stat>
+
+    <app-kpi-stat
+      title="ใบเปิดเสี่ยงหลุดแผน"
+      [value]="highRiskCount() + ' ใบ'"
+      [hint]="'จากใบเปิด ' + report().deliveryRisks.length + ' ใบ'"
+      [badge]="highRiskCount() === 0 ? 'ความเสี่ยงต่ำ' : 'ต้องเฝ้าระวัง'"
+      [badgeTone]="highRiskCount() === 0 ? 'success' : 'danger'"
+      iconCss="e-icons e-warning"
+      [accent]="highRiskCount() === 0 ? 'teal' : 'danger'"
+      layout="icon-start"
+    ></app-kpi-stat>
+  </div>
 
   @if (message()) {
     <app-sf-message [content]="message()" severity="Success" />

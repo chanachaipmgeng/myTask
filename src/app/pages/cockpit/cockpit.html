@@ -80,57 +80,6 @@
   <!-- ========================================== -->
   <div class="ov-grid">
   <section class="ov-main bento-tier2-container" aria-label="การกระจายงานและแนวโน้มการส่งมอบ">
-    <div class="tier2-controls-bar">
-      <div class="tier2-filters">
-        <span class="control-label">ช่วงเวลา:</span>
-        <button
-          type="button"
-          class="pill-chip"
-          [class.is-active]="periodFilter() === 'ALL'"
-          (click)="periodFilter.set('ALL')"
-        >ทั้งหมด</button>
-        <button
-          type="button"
-          class="pill-chip"
-          [class.is-active]="periodFilter() === '1M'"
-          (click)="periodFilter.set('1M')"
-        >1 เดือน</button>
-        <button
-          type="button"
-          class="pill-chip"
-          [class.is-active]="periodFilter() === '2W'"
-          (click)="periodFilter.set('2W')"
-        >2 สัปดาห์</button>
-        <button
-          type="button"
-          class="pill-chip"
-          [class.is-active]="periodFilter() === '1W'"
-          (click)="periodFilter.set('1W')"
-        >1 สัปดาห์</button>
-      </div>
-
-      <div class="tier2-view-toggle">
-        <button
-          ejs-button
-          cssClass="e-small"
-          [class.e-primary]="viewMode() === 'combo'"
-          [class.e-outline]="viewMode() !== 'combo'"
-          (click)="viewMode.set('combo')"
-        >
-          <span class="e-icons e-chart"></span> กราฟรวม Dual-Axis
-        </button>
-        <button
-          ejs-button
-          cssClass="e-small"
-          [class.e-primary]="viewMode() === 'split'"
-          [class.e-outline]="viewMode() !== 'split'"
-          (click)="viewMode.set('split')"
-        >
-          <span class="e-icons e-grid-view"></span> กราฟแยก 2 แผง
-        </button>
-      </div>
-    </div>
-
     @if (viewMode() === 'combo') {
       <div class="bento-card bento-card--full bento-card--glow">
         <div class="bento-card__head">
@@ -144,10 +93,59 @@
               แกนซ้าย: ภาระงานสะสม (Stacked Column) · แกนขวา: อัตรา On-Time % และดัชนีคะแนน (Line) พร้อมเส้นเกณฑ์มาตรฐาน
             </span>
           </div>
-          <div class="head-actions">
+          <div class="head-actions flex items-center gap-2">
+            <div class="tier2-filters flex items-center gap-1">
+              <button
+                type="button"
+                class="pill-chip"
+                [class.is-active]="periodFilter() === 'ALL'"
+                (click)="periodFilter.set('ALL')"
+              >ทั้งหมด</button>
+              <button
+                type="button"
+                class="pill-chip"
+                [class.is-active]="periodFilter() === '1M'"
+                (click)="periodFilter.set('1M')"
+              >1 เดือน</button>
+              <button
+                type="button"
+                class="pill-chip"
+                [class.is-active]="periodFilter() === '2W'"
+                (click)="periodFilter.set('2W')"
+              >2 สัปดาห์</button>
+              <button
+                type="button"
+                class="pill-chip"
+                [class.is-active]="periodFilter() === '1W'"
+                (click)="periodFilter.set('1W')"
+              >1 สัปดาห์</button>
+            </div>
+            <div class="h-4 w-[1px] bg-[var(--color-border-subtle)] mx-1"></div>
+            <div class="tier2-view-toggle flex items-center">
+              <button
+                ejs-button
+                cssClass="e-small"
+                [class.e-primary]="viewMode() === 'combo'"
+                [class.e-outline]="viewMode() !== 'combo'"
+                (click)="viewMode.set('combo')"
+                title="กราฟรวม Dual-Axis"
+              >
+                <span class="e-icons e-chart"></span>
+              </button>
+              <button
+                ejs-button
+                cssClass="e-small"
+                [class.e-primary]="viewMode() === 'split'"
+                [class.e-outline]="viewMode() !== 'split'"
+                (click)="viewMode.set('split')"
+                title="กราฟแยก 2 แผง"
+              >
+                <span class="e-icons e-grid-view"></span>
+              </button>
+            </div>
             <button
               ejs-button
-              cssClass="bento-icon-btn e-flat e-small"
+              cssClass="bento-icon-btn e-flat e-small ml-1"
               iconCss="e-icons e-expand"
               type="button"
               title="ขยายกราฟเดี่ยวเต็มจอ"
@@ -300,8 +298,9 @@
   </section>
 
   <aside class="ov-side" aria-label="สรุปสุขภาพทีมและเรดาร์ความเสี่ยง">
+    <!-- Mini Bento Stat 1: Pace & Velocity Meter -->
     <div class="bento-card bento-pace">
-      <div class="bento-pace__label">สุขภาพทีม</div>
+      <div class="bento-pace__label">สุขภาพทีม &amp; จังหวะส่งมอบ</div>
       <div class="bento-pace__status" [attr.data-tone]="paceHealth().tone">
         {{ paceHealth().label }}
       </div>
@@ -320,6 +319,35 @@
           <div class="bento-pace__track">
             <i [style.width.%]="heroKpis().firstTimeRightRate"></i>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mini Bento Stat 2: Quick Metrics Grid -->
+    <div class="grid grid-cols-2 gap-2">
+      <div class="bento-card p-3 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-muted mb-1">
+          <span>งานในมือ (WIP)</span>
+          <span class="e-icons e-folder-open text-primary text-xs"></span>
+        </div>
+        <div class="text-xl font-bold tabular-nums text-primary">
+          {{ heroKpis().activeWipMd }} <span class="text-xs font-normal text-muted">MD</span>
+        </div>
+        <div class="text-[11px] text-muted truncate mt-0.5">
+          {{ heroKpis().activeCount }} ใบงานกำลังทำ
+        </div>
+      </div>
+
+      <div class="bento-card p-3 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-xs text-muted mb-1">
+          <span>ปิดสำเร็จ</span>
+          <span class="e-icons e-check text-emerald-500 text-xs"></span>
+        </div>
+        <div class="text-xl font-bold tabular-nums text-emerald-500">
+          {{ heroKpis().closedTotalMd }} <span class="text-xs font-normal text-muted">MD</span>
+        </div>
+        <div class="text-[11px] text-muted truncate mt-0.5">
+          {{ heroKpis().closedCount }} ใบงานที่ส่งมอบ
         </div>
       </div>
     </div>

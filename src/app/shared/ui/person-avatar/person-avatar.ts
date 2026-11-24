@@ -8,6 +8,9 @@ import { Person } from '../../../core/models';
 
 export type PersonAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
+/** Session-level cache of user avatar lookups that returned 404 to prevent repeated requests */
+const FAILED_AVATAR_USERS = new Set<string>();
+
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #2746b3 0%, #4f6ef7 100%)',
   'linear-gradient(135deg, #0d9488 0%, #2dd4bf 100%)',
@@ -98,10 +101,20 @@ export class PersonAvatarComponent {
     return opId != null ? `/api/integrations/openproject/users/${opId}/avatar` : null;
   });
 
+  private lookupKey(): string {
+    return (this.personId() || String(this.resolvedPerson()?.openprojectUserId ?? '') || this.name() || '').trim();
+  }
+
+  protected readonly isKnownFailed = computed(() => {
+    const key = this.lookupKey();
+    return Boolean(key && FAILED_AVATAR_USERS.has(key));
+  });
+
   protected readonly resolvedUrl = computed(() => {
+    if (this.isKnownFailed()) return null;
     const stage = this.imgStage();
-    if (stage === 0) return this.directUrl() ?? this.proxyUrl();
-    if (stage === 1) return this.proxyUrl();
+    if (stage === 0) return this.proxyUrl() ?? this.directUrl();
+    if (stage === 1) return this.directUrl();
     return null;
   });
 
@@ -161,7 +174,9 @@ export class PersonAvatarComponent {
     return AVATAR_GRADIENTS[hashIndex(seed)];
   });
 
-  protected readonly showImage = computed(() => Boolean(this.resolvedUrl()) && this.imgStage() < 2);
+  protected readonly showImage = computed(
+    () => !this.isKnownFailed() && Boolean(this.resolvedUrl()) && this.imgStage() < 2,
+  );
 
   constructor() {
     effect(() => {
@@ -173,11 +188,10 @@ export class PersonAvatarComponent {
   }
 
   protected onImgError(): void {
-    const cur = this.imgStage();
-    if (cur === 0 && this.directUrl() && this.proxyUrl() && this.directUrl() !== this.proxyUrl()) {
-      this.imgStage.set(1);
-    } else {
-      this.imgStage.set(2);
+    const key = this.lookupKey();
+    if (key) {
+      FAILED_AVATAR_USERS.add(key);
     }
+    this.imgStage.set(2);
   }
 }

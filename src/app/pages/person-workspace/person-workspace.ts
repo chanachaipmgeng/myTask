@@ -97,6 +97,43 @@ export class PersonWorkspacePage {
   protected readonly sortMode = signal<CardSortMode>('name');
   protected readonly cardPage = signal(1);
   protected readonly cardPageSize = CARD_PAGE_SIZE;
+  protected readonly viewMode = signal<'grid' | 'table'>('grid');
+
+  protected readonly directoryColumns: SfGridColumn[] = [
+    { field: 'nickname', headerText: 'พนักงาน', width: 200, cellType: 'person', personIdField: 'id' },
+    { field: 'jobTitle', headerText: 'ตำแหน่ง', width: 200 },
+    { field: 'trackLabel', headerText: 'สายงาน', width: 120, cellType: 'badge' },
+    { field: 'level', headerText: 'ระดับ', width: 90, cellType: 'badge' },
+    { field: 'index', headerText: 'ดัชนีพัฒนาการ', width: 140, format: 'N1', cellType: 'progress' },
+    { field: 'openCount', headerText: 'งานเปิด', width: 95, textAlign: 'Right', cellType: 'metric' },
+    { field: 'closedCount', headerText: 'ปิดแล้ว', width: 95, textAlign: 'Right', cellType: 'metric' },
+    { field: 'actions', headerText: 'จัดการ', width: 150, allowSorting: false },
+  ];
+
+  protected readonly directoryGridOptions: SfGridOptions = listGridOptions({
+    id: 'people-directory-grid-v1',
+    height: '480',
+    pageSize: 15,
+    pageSizes: [15, 30, 50, 100],
+    excelExport: true,
+    exportFileName: 'people-directory',
+  });
+
+  protected readonly directoryTableRows = computed(() =>
+    this.personCards().map((card) => ({
+      id: card.person.id,
+      nickname: card.person.nickname,
+      fullName: card.person.fullName,
+      jobTitle: card.person.jobTitle || card.person.role || '—',
+      track: card.person.track,
+      trackLabel: card.trackLabel,
+      level: card.person.level,
+      index: card.index,
+      target: card.target,
+      openCount: card.openCount,
+      closedCount: card.closedCount,
+    })),
+  );
   protected readonly trackChipOptions = computed(() =>
     listWorkspaceTrackChipOptions(this.scorecard.people()).map((item) =>
       item.id === 'All' ? { id: 'All', label: 'ทุกสาย' } : item,

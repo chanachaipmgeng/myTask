@@ -8,6 +8,8 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
+import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { MotionWrapperComponent } from '../../shared/motion/motion-wrapper';
 import {
   PageHeadComponent,
   SectionCardComponent,
@@ -32,6 +34,8 @@ import {
     PageHeadComponent,
     SectionCardComponent,
     StatusBadgeComponent,
+    KpiStatCardComponent,
+    MotionWrapperComponent,
     SfChartComponent,
     SfGridComponent,
     SfMessageComponent,
@@ -201,6 +205,22 @@ export class MyWorkspacePage {
     const openMd = this.view().openWork.reduce((sum, item) => sum + item.estimateMd, 0);
     const free = Math.max(0, quota - openMd - 1);
     return free.toFixed(2);
+  });
+
+  protected readonly trendSparklineData = computed<number[]>(() =>
+    this.view().trend.map((t) => t.index)
+  );
+
+  protected readonly wipProgressPct = computed(() =>
+    Math.min(100, Math.round((this.view().openCount / 2) * 100))
+  );
+
+  protected readonly quotaProgressPct = computed(() => {
+    const person = this.activePerson();
+    if (!person) return 0;
+    const quota = weeklyQuotas()[person.level] || 3.5;
+    const free = parseFloat(this.freeMdLabel()) || 0;
+    return Math.min(100, Math.round((free / quota) * 100));
   });
 
   /** Agenda card reveal — เปิดแผง checklist ทับการ์ดทีละใบ (Syncfusion Card Reveal) */

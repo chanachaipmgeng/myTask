@@ -141,6 +141,8 @@ export class SfDonutChartComponent implements AfterViewInit, OnDestroy {
 
   private resizeObserver?: ResizeObserver;
   private resizeTimer?: ReturnType<typeof setTimeout>;
+  private effectTimer?: ReturnType<typeof setTimeout>;
+  private isDestroyed = false;
 
   protected readonly resolvedLegend = computed<LegendSettingsModel>(() => ({
     visible: true,
@@ -178,7 +180,12 @@ export class SfDonutChartComponent implements AfterViewInit, OnDestroy {
       // Refresh reactive centerLabel color whenever theme switches
       this.theme.isDark();
       this.options();
-      setTimeout(() => this.donutRef?.refresh(), 40);
+      if (this.effectTimer) clearTimeout(this.effectTimer);
+      this.effectTimer = setTimeout(() => {
+        if (!this.isDestroyed && this.donutRef && !this.donutRef.isDestroyed) {
+          this.donutRef.refresh();
+        }
+      }, 40);
     });
   }
 
@@ -186,13 +193,19 @@ export class SfDonutChartComponent implements AfterViewInit, OnDestroy {
     if (typeof ResizeObserver !== 'undefined' && this.hostBox?.nativeElement) {
       this.resizeObserver = new ResizeObserver(() => {
         if (this.resizeTimer) clearTimeout(this.resizeTimer);
-        this.resizeTimer = setTimeout(() => this.donutRef?.refresh(), 150);
+        this.resizeTimer = setTimeout(() => {
+          if (!this.isDestroyed && this.donutRef && !this.donutRef.isDestroyed) {
+            this.donutRef.refresh();
+          }
+        }, 150);
       });
       this.resizeObserver.observe(this.hostBox.nativeElement);
     }
   }
 
   ngOnDestroy(): void {
+    this.isDestroyed = true;
+    if (this.effectTimer) clearTimeout(this.effectTimer);
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
     this.resizeObserver?.disconnect();
   }

@@ -4,13 +4,58 @@
     title="ตรวจสอบคุณภาพ QA และ Defect Leakage"
     description="ตรวจสอบ First-Time Right %, อัตราการตีกลับ (Reopen Rate), อัตราหลุดไป Production และหลักฐาน DoD ก่อนส่งทดสอบ"
     periodBadge="งวดปัจจุบัน: 2026-11"
-    [metrics]="[
-      { label: 'First-time right', value: kpis().firstTimeRightPct, unit: '%', hint: 'เป้าหมาย ≥ 85%', tone: kpis().firstTimeRightPct >= 85 ? 'good' : 'bad' },
-      { label: 'Reopen rate', value: kpis().reopenRatePct, unit: '%', hint: 'ตีกลับ ' + kpis().reopenCount + ' จาก ' + kpis().totalClosed + ' ใบ' },
-      { label: 'Bug escape', value: kpis().bugEscapePct, unit: '%', hint: 'หลุด Prod ' + kpis().bugEscapeCount + ' ใบ · เกณฑ์ ≤ 5%', tone: kpis().bugEscapePct <= 5 ? 'good' : 'bad' },
-      { label: 'DoD evidence', value: kpis().dodEvidencePct, unit: '%', hint: 'ขาดหลักฐาน ' + kpis().dodMissingCount + ' ใบ' }
-    ]"
   ></app-page-head>
+
+  <!-- Bento KPI Metrics Row -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+    <app-kpi-stat
+      title="First-Time Right %"
+      [value]="kpis().firstTimeRightPct + '%'"
+      hint="เป้าหมายมาตรฐาน ≥ 85%"
+      [badge]="kpis().firstTimeRightPct >= 85 ? 'ผ่านเกณฑ์' : 'ต่ำกว่าเป้า'"
+      [badgeTone]="kpis().firstTimeRightPct >= 85 ? 'success' : 'danger'"
+      iconCss="e-icons e-circle-check"
+      [progress]="kpis().firstTimeRightPct"
+      [accent]="kpis().firstTimeRightPct >= 85 ? 'success' : 'danger'"
+      layout="icon-start"
+    ></app-kpi-stat>
+
+    <app-kpi-stat
+      title="Reopen Rate %"
+      [value]="kpis().reopenRatePct + '%'"
+      [hint]="'ตีกลับ ' + kpis().reopenCount + ' จาก ' + kpis().totalClosed + ' ใบ'"
+      [badge]="kpis().reopenRatePct <= 15 ? 'ปกติ' : 'ตีกลับสูง'"
+      [badgeTone]="kpis().reopenRatePct <= 15 ? 'info' : 'warning'"
+      iconCss="e-icons e-repeat"
+      [progress]="kpis().reopenRatePct"
+      [accent]="kpis().reopenRatePct <= 15 ? 'info' : 'warning'"
+      layout="icon-start"
+    ></app-kpi-stat>
+
+    <app-kpi-stat
+      title="Bug Escape Rate %"
+      [value]="kpis().bugEscapePct + '%'"
+      [hint]="'หลุด Prod ' + kpis().bugEscapeCount + ' ใบ (เกณฑ์ ≤ 5%)'"
+      [badge]="kpis().bugEscapePct <= 5 ? 'ดีเยี่ยม' : 'หลุดเป้า'"
+      [badgeTone]="kpis().bugEscapePct <= 5 ? 'success' : 'danger'"
+      iconCss="e-icons e-bug"
+      [progress]="kpis().bugEscapePct"
+      [accent]="kpis().bugEscapePct <= 5 ? 'teal' : 'danger'"
+      layout="icon-start"
+    ></app-kpi-stat>
+
+    <app-kpi-stat
+      title="DoD Evidence %"
+      [value]="kpis().dodEvidencePct + '%'"
+      [hint]="'ขาดหลักฐาน ' + kpis().dodMissingCount + ' ใบ'"
+      [badge]="kpis().dodMissingCount === 0 ? 'หลักฐานครบ' : 'ต้องตามหลักฐาน'"
+      [badgeTone]="kpis().dodMissingCount === 0 ? 'success' : 'warning'"
+      iconCss="e-icons e-shield"
+      [progress]="kpis().dodEvidencePct"
+      [accent]="kpis().dodMissingCount === 0 ? 'violet' : 'coral'"
+      layout="icon-start"
+    ></app-kpi-stat>
+  </div>
 
   <app-section-card [showHead]="false">
     <ng-template #dodTabTpl>
