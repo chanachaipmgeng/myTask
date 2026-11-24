@@ -97,6 +97,9 @@ export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
     'Work in Progress': 'In Progress',
     'In development': 'In Progress',
     '*Request more information?': 'In Progress',
+    '*Monitor Case/Specified': 'In Progress',
+    '*Monitor Case/Specified ': 'In Progress',
+    Delayed: 'In Progress',
     Developed: 'Code Review',
     '*Developed': 'Ready for QA',
     'In review': 'Code Review',
@@ -108,11 +111,15 @@ export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
     Tested: 'In QA',
     '*Tested and Implement': 'Done',
     'Test failed': 'Reopened',
+    '*Test Failed and Re-Work': 'Reopened',
     Reopened: 'Reopened',
     Closed: 'Done',
+    'Completed/Closed': 'Done',
     Done: 'Done',
     Resolved: 'Done',
     Rejected: 'Done',
+    'Rejected/Not Applicable': 'Done',
+    Cancelled: 'Done',
     // Common Thai OpenProject status titles (lookup is case-insensitive).
     ใหม่: 'Backlog',
     'รอดำเนินการ': 'Backlog',
@@ -132,12 +139,25 @@ export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
   typeMap: {
     Bug: 'Bug-Fix',
     'DEV-Bugs Fix': 'Bug-Fix',
+    'SE-Incident': 'Bug-Fix',
     Feature: 'Feature',
     'DEV-Enhancement': 'Feature',
-    'DEV-Customization': 'CR',
+    'DEV-Feature': 'Feature',
     'DEV-Request': 'Feature',
+    'PM-Implement': 'Feature',
+    'PM-Milestone': 'Feature',
+    'SM-Activities': 'Feature',
+    'SM-Milestones': 'Feature',
+    'AC-Milestones': 'Feature',
+    'DEV-Customization': 'CR',
+    'DEV-(STD)Customization': 'CR',
+    'SE-Changes': 'CR',
     'SE-Request': 'Ops',
     'CS-Service Request': 'Ops',
+    'PM-Service Request': 'Ops',
+    'Request by Customer': 'Ops',
+    'INTERNAL RQ': 'Ops',
+    'RD-Wish List': 'Spike',
     'User story': 'Feature',
     Task: 'Feature',
     Epic: 'Feature',
@@ -251,6 +271,9 @@ export const OPENPROJECT_OWNED_FIELDS = [
   'dueOn',
   'opProject',
   'opId',
+  'opType',
+  'opTypeId',
+  'opStatus',
   'opParentId',
   'parentId',
   'source',
@@ -317,11 +340,27 @@ export function unlinkedAssignee(opUserId: number): string {
   return `op:${opUserId}`;
 }
 
+/** Maps any OpenProject type title dynamically into a Scorecard TicketType bucket via mapping + keyword heuristics. */
+export function inferTicketTypeFromOpName(typeName: string, mapping: OpenProjectMapping): TicketType {
+  const mapped = lookup(mapping.typeMap, typeName);
+  if (mapped) return mapped;
+  const lower = typeName.trim().toLowerCase();
+  if (!lower) return mapping.defaultType;
+  if (/investigat|root\s*cause/i.test(lower)) return 'Bug-Investigate';
+  if (/bug|defect|incident|hotfix|error|issue/i.test(lower)) return 'Bug-Fix';
+  if (/custom|cr\b|change/i.test(lower)) return 'CR';
+  if (/spike|poc|wish|research|r&d/i.test(lower)) return 'Spike';
+  if (/refactor|debt/i.test(lower)) return 'TechDebt';
+  if (/service|support|ops|helpdesk|customer|internal\s*rq/i.test(lower)) return 'Ops';
+  return mapping.defaultType;
+}
+
 export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   const { mapping } = ctx;
   const links = wp._links ?? {};
   const statusName = linkTitle(links['status']) || wp._embedded?.status?.name || '';
   const typeName = linkTitle(links['type']);
+  const opTypeId = idFromHref(singleLink(links['type'])?.href);
   const projectHref = singleLink(links['project'])?.href;
   const project = projectIdentifierFromHref(projectHref) || String(idFromHref(projectHref) ?? '');
   const projectTitle = linkTitle(links['project']);
@@ -344,20 +383,20 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   const size = asSize(customValue(wp, cf.size)) ?? sizeFromEstimate(estimateMd);
   const track =
     asTrack(customValue(wp, cf.track)) ?? mapping.projectTrack[project] ?? ctx.existing?.track ?? mapping.defaultTrack;
-  const type = asType(customValue(wp, cf.type)) ?? lookup(mapping.typeMap, typeName) ?? mapping.defaultType;
+  const type = asType(customValue(wp, cf.type)) ?? inferTicketTypeFromOpName(typeName, mapping);
   const variance = asVariance(customValue(wp, cf.variance));
   const unplanned = asBool(customValue(wp, cf.unplanned));
   const storyPoints = asStoryPoint(customValue(wp, cf.storyPoints));
-  const discipline = asDiscipline(customValue(wp, cf.discipline));
-  const workCategory = asWorkCategory(customValue(wp, cf.workCategory));
+  const discipline = asDisciplineOrRaw(customValue(wp, cf.discipline));
+  const workCategory = asWorkCategoryOrRaw(customValue(wp, cf.workCategory));
   const reviewRounds = asNonNegInt(customValue(wp, cf.reviewRounds));
   const blocker = asBool(customValue(wp, cf.blocker));
   const dodPassed = asBool(customValue(wp, cf.dodPassed));
   const inTimeBox = asBool(customValue(wp, cf.inTimeBox));
   const childTicketsSized = asBool(customValue(wp, cf.childTicketsSized));
   const mrLink = customValue(wp, cf.mrLink)?.trim() || null;
-  const bugCause = asBugCause(customValue(wp, cf.bugCause));
-  const pocResult = asPocResult(customValue(wp, cf.pocResult));
+  const bugCause = asBugCauseOrRaw(customValue(wp, cf.bugCause));
+  const pocResult = asPocResultOrRaw(customValue(wp, cf.pocResult));
   const weekOffsetCf = asNonNegInt(customValue(wp, cf.weekOffset));
   const category = linkTitle(links['category']);
 
@@ -433,6 +472,9 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     source: 'openproject',
     opId: wp.id,
     opProject: project,
+    opType: typeName || undefined,
+    opTypeId,
+    opStatus: statusName || undefined,
     opParentId,
     parentId,
     title: wp.subject ?? '',
@@ -697,34 +739,34 @@ function asStoryPoint(value: string | null): StoryPoint | null {
   return n !== null && (STORY_POINTS as readonly number[]).includes(n) ? (n as StoryPoint) : null;
 }
 
-function asDiscipline(value: string | null): Discipline | null {
+function asDisciplineOrRaw(value: string | null): Discipline | string | null {
   const v = value?.trim();
   if (!v) {
     return null;
   }
   const hit = (DISCIPLINES as readonly string[]).find((d) => d.toLowerCase() === v.toLowerCase());
-  return (hit as Discipline | undefined) ?? null;
+  return (hit as Discipline | undefined) ?? v.slice(0, 80);
 }
 
-function asWorkCategory(value: string | null): WorkCategory | null {
+function asWorkCategoryOrRaw(value: string | null): WorkCategory | string | null {
   const v = value?.trim();
   if (!v) {
     return null;
   }
   const hit = (WORK_CATEGORIES as readonly string[]).find((c) => c.toLowerCase() === v.toLowerCase());
-  return (hit as WorkCategory | undefined) ?? null;
+  return (hit as WorkCategory | undefined) ?? v.slice(0, 80);
 }
 
-function asBugCause(value: string | null): BugCause | null {
+function asBugCauseOrRaw(value: string | null): BugCause | string | null {
   const v = value?.trim();
   if (!v) {
     return null;
   }
   const hit = (BUG_CAUSES as readonly string[]).find((c) => c.toLowerCase() === v.toLowerCase());
-  return (hit as BugCause | undefined) ?? null;
+  return (hit as BugCause | undefined) ?? v.slice(0, 120);
 }
 
-function asPocResult(value: string | null): PocResult | null {
+function asPocResultOrRaw(value: string | null): PocResult | string | null {
   const v = value?.trim();
   if (!v) {
     return null;
@@ -734,7 +776,7 @@ function asPocResult(value: string | null): PocResult | null {
     return 'Alternative Chosen';
   }
   const hit = (POC_RESULTS as readonly string[]).find((c) => c.toLowerCase() === lower);
-  return (hit as PocResult | undefined) ?? null;
+  return (hit as PocResult | undefined) ?? v.slice(0, 80);
 }
 
 function round2(value: number): number {

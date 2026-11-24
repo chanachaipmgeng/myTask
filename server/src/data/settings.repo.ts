@@ -46,6 +46,8 @@ export function defaultSettings(): AppSettings {
       },
     },
     openprojectProjectCatalog: [],
+    openprojectTypeCatalog: [],
+    openprojectStatusCatalog: [],
     scorecardCycles: defaultCycleSettings(),
   };
 }
@@ -124,6 +126,44 @@ export function mergeSettings(raw: Partial<AppSettings> | null | undefined): App
             };
           })
       : base.openprojectProjectCatalog,
+    openprojectTypeCatalog: Array.isArray(raw.openprojectTypeCatalog)
+      ? raw.openprojectTypeCatalog
+          .filter(
+            (row) =>
+              row &&
+              typeof row === 'object' &&
+              typeof (row as { name?: unknown }).name === 'string',
+          )
+          .map((row) => {
+            const r = row as { id?: number; name: string; color?: string; isMilestone?: boolean };
+            return {
+              id: typeof r.id === 'number' ? r.id : 0,
+              name: r.name.trim(),
+              ...(r.color ? { color: String(r.color) } : {}),
+              isMilestone: Boolean(r.isMilestone),
+            };
+          })
+          .filter((r) => r.name.length > 0)
+      : base.openprojectTypeCatalog,
+    openprojectStatusCatalog: Array.isArray(raw.openprojectStatusCatalog)
+      ? raw.openprojectStatusCatalog
+          .filter(
+            (row) =>
+              row &&
+              typeof row === 'object' &&
+              typeof (row as { name?: unknown }).name === 'string',
+          )
+          .map((row) => {
+            const r = row as { id?: number; name: string; isClosed?: boolean; color?: string };
+            return {
+              id: typeof r.id === 'number' ? r.id : 0,
+              name: r.name.trim(),
+              isClosed: Boolean(r.isClosed),
+              ...(r.color ? { color: String(r.color) } : {}),
+            };
+          })
+          .filter((r) => r.name.length > 0)
+      : base.openprojectStatusCatalog,
     scorecardCycles: (() => {
       const normalized = normalizeCycleSettings(
         (raw as { scorecardCycles?: Parameters<typeof normalizeCycleSettings>[0] }).scorecardCycles,

@@ -8,8 +8,11 @@ export type WorkspaceTrackFilter = 'All' | Track | TrackCode;
 
 const TRACK_FILTER_CODES: readonly TrackCode[] = ['IMP', 'RND', 'QA', 'UXBA', 'SUP', 'INFRA'];
 
-/** ชิปสายงานมาตรฐาน 6 สาย (+ ทั้งหมด) */
-export function listWorkspaceTrackChipOptions(): { id: string; label: string }[] {
+/** ชิปสายงานไดนามิกตามข้อมูลจริงในระบบ (หรือครบ 6 สายเมื่อยังไม่มีข้อมูล) */
+export function listWorkspaceTrackChipOptions(
+  people?: readonly Person[],
+  tickets?: readonly Ticket[],
+): { id: string; label: string }[] {
   const shortLabel = (code: TrackCode): string => {
     switch (code) {
       case 'IMP':
@@ -26,9 +29,21 @@ export function listWorkspaceTrackChipOptions(): { id: string; label: string }[]
         return 'Infra';
     }
   };
+  const present = new Set<TrackCode>();
+  for (const p of people ?? []) {
+    if (p.active === false) continue;
+    if (p.track) present.add(normalizeTrack(p.track));
+  }
+  for (const t of tickets ?? []) {
+    if (t.track) present.add(normalizeTrack(t.track));
+  }
+  const codes =
+    present.size > 0
+      ? TRACK_FILTER_CODES.filter((code) => present.has(code))
+      : [...TRACK_FILTER_CODES];
   return [
     { id: 'All', label: 'ทั้งหมด' },
-    ...TRACK_FILTER_CODES.map((code) => ({ id: code, label: shortLabel(code) })),
+    ...codes.map((code) => ({ id: code, label: shortLabel(code) })),
   ];
 }
 
@@ -62,6 +77,8 @@ export function trackMatchesFilter(track: Track | string | null | undefined, fil
 export interface WorkspaceScope {
   teamId?: string;
   opProject?: string;
+  /** ชนิดใบงานจริงจาก OpenProject (opType) หรือ TicketType */
+  opType?: string;
   track?: WorkspaceTrackFilter;
   personId?: string;
   /** รหัสรอบประเมิน */
@@ -263,6 +280,7 @@ export function filterTicketsByWorkspace(
   const trackFilter = scope.track && scope.track !== 'All' ? scope.track : 'All';
   const personId = scope.personId?.trim() ?? '';
   const opProject = scope.opProject?.trim() ?? '';
+  const opType = scope.opType?.trim() ?? '';
   const range = resolveWorkspaceDateRange(scope, cycle);
   return tickets.filter((ticket) => {
     if (!trackMatchesFilter(ticket.track, trackFilter)) {
@@ -274,6 +292,12 @@ export function filterTicketsByWorkspace(
     if (opProject) {
       const key = resolveProjectKey(ticket);
       if (key !== opProject) {
+        return false;
+      }
+    }
+    if (opType) {
+      const displayType = (ticket.opType ?? '').trim() || ticket.type;
+      if (displayType !== opType && ticket.type !== opType) {
         return false;
       }
     }

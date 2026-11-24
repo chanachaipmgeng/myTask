@@ -181,13 +181,13 @@
     <ng-template #trackTemplate>
       <label class="toolbar-field">
         <span>สาย</span>
-        <app-sf-dropdown [items]="trackFilters" [value]="trackFilter()" [options]="{ width: '160px' }" (valueChange)="setTrackFilter($event)" />
+        <app-sf-dropdown [items]="trackFilters()" [value]="trackFilter()" [options]="{ width: '160px' }" (valueChange)="setTrackFilter($event)" />
       </label>
     </ng-template>
     <ng-template #typeTemplate>
       <label class="toolbar-field">
         <span>ชนิด</span>
-        <app-sf-dropdown [items]="typeFilters" [value]="typeFilter()" [options]="{ width: '180px' }" (valueChange)="setTypeFilter($event)" />
+        <app-sf-dropdown [items]="typeFilters()" [value]="typeFilter()" [options]="{ width: '215px', allowFiltering: true, filterBarPlaceholder: 'ค้นหาชนิดใบงาน...' }" (valueChange)="setTypeFilter($event)" />
       </label>
     </ng-template>
     <app-sf-toolbar
@@ -215,6 +215,9 @@
     </ng-template>
     <ng-template #trackTpl let-data>
       <app-status-badge [value]="data.trackLabel" [toneMap]="trackToneMap"></app-status-badge>
+    </ng-template>
+    <ng-template #typeTpl let-data>
+      <app-status-badge [label]="data.displayType" [tone]="typeTone(data.displayType)"></app-status-badge>
     </ng-template>
     <ng-template #assigneeTpl let-data>
       <app-person-avatar [name]="data.assignee" [showName]="true" size="xs"></app-person-avatar>
@@ -262,6 +265,7 @@
         workflowStatus: wfStatusTpl,
         manage: manageTpl,
         trackLabel: trackTpl,
+        displayType: typeTpl,
         assignee: assigneeTpl,
         weekOffsetLabel: weekTpl,
         blockerLabel: blockerTpl,
@@ -317,7 +321,7 @@
         <label class="field">
           <span>ผลลัพธ์ POC (สำหรับงาน Spike/R&D)</span>
           <app-sf-dropdown
-            [items]="pocResultOptions"
+            [items]="pocResultOptions()"
             [value]="editPocResult()"
             (valueChange)="onEditPocResultChange($event)"
           />
@@ -325,7 +329,7 @@
         <label class="field">
           <span>สาเหตุบั๊ก (สำหรับงาน Bug-Fix)</span>
           <app-sf-dropdown
-            [items]="bugCauseOptions"
+            [items]="bugCauseOptions()"
             [value]="editBugCause()"
             (valueChange)="onEditBugCauseChange($event)"
           />

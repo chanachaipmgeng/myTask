@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { effectiveRole } from '../../core/admin-settings';
+import { listWorkspaceTrackChipOptions } from '../../../../shared/domain/workspace-scope';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
@@ -51,14 +52,13 @@ export class WorkHandoffPage {
   protected readonly trackFilter = signal<string>('All');
   protected readonly onlyOverSla = signal<boolean>(false);
 
-  protected readonly trackOptions = [
-    { text: 'สายงาน: ทั้งหมด', value: 'All' },
-    { text: 'Implement (IMP)', value: 'IMP' },
-    { text: 'R&D (RND)', value: 'RND' },
-    { text: 'QA / Tester', value: 'QA' },
-    { text: 'UX-UI / BA', value: 'UXBA' },
-    { text: 'Infra / DevOps', value: 'INFRA' },
-  ];
+  protected readonly trackOptions = computed(() => {
+    const chips = listWorkspaceTrackChipOptions(this.scorecard.people(), this.scorecard.tickets());
+    return chips.map((c) => ({
+      text: c.id === 'All' ? 'สายงาน: ทั้งหมด' : `${c.label} (${c.id})`,
+      value: c.id,
+    }));
+  });
   protected readonly slaChipOptions: FilterChipOption[] = [
     { id: 'all', label: 'ทั้งหมด' },
     { id: 'over', label: 'เฉพาะที่เกิน SLA' },

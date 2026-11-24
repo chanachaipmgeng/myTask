@@ -459,6 +459,15 @@
                       />
                     </label>
                     <label class="workspace-filter-field">
+                      <span>ชนิดใบงาน (Type)</span>
+                      <app-sf-dropdown
+                        [items]="workspaceFilter.typeOptions()"
+                        [value]="workspaceFilter.opType()"
+                        [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชนิดใบงานจาก myProject...', placeholder: 'ทุกชนิดใบงาน', width: '100%', cssClass: 'e-outline' }"
+                        (valueChange)="onWorkspaceType($event)"
+                      />
+                    </label>
+                    <label class="workspace-filter-field">
                       <span>จากวัน</span>
                       <app-sf-datepicker
                         [value]="workspaceFilter.fromDate()"
@@ -478,7 +487,7 @@
                   <div class="filter-popover__tracks">
                     <span class="filter-popover__label">สายงาน</span>
                     <app-filter-chips
-                      [options]="workspaceFilter.trackChipOptions"
+                      [options]="workspaceFilter.trackChipOptions()"
                       [value]="workspaceFilter.track()"
                       (valueChange)="onWorkspaceTrack($event)"
                     ></app-filter-chips>

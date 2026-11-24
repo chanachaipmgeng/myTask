@@ -24,7 +24,7 @@
           (valueChange)="setSortMode($event)"
         />
         <app-filter-chips
-          [options]="trackChipOptions"
+          [options]="trackChipOptions()"
           [value]="trackFilter()"
           (valueChange)="setTrackFilter($event)"
         />

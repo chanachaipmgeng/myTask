@@ -12,7 +12,10 @@ import {
   GitBranchItem,
   cleanBranchToTicketTitle,
 } from '../../../../../shared/domain/git-branch';
-import { openprojectProjectCatalog } from '../../../core/admin-settings';
+import {
+  openprojectProjectCatalog,
+  openprojectTypeCatalog,
+} from '../../../core/admin-settings';
 import { ApiClient } from '../../../core/api-client';
 import { ScorecardService } from '../../../core/scorecard.service';
 import { ShellNotice } from '../../../core/shell-notice';
@@ -77,11 +80,22 @@ export class TicketCreateDialogComponent {
       .sort((a, b) => a.text.localeCompare(b.text, 'th'));
   });
 
-  protected readonly typeOptions = [
-    { text: 'Task (งานย่อย/พัฒนาระบบ)', value: 1 },
-    { text: 'Feature (ฟีเจอร์ใหม่)', value: 2 },
-    { text: 'Bugfix (แก้ไขบัก)', value: 3 },
-  ];
+  protected readonly typeOptions = computed(() => {
+    const catalog = openprojectTypeCatalog();
+    if (catalog.length > 0) {
+      const nonMilestone = catalog.filter((t) => !t.isMilestone);
+      const source = nonMilestone.length > 0 ? nonMilestone : catalog;
+      return source.map((t) => ({
+        text: t.name,
+        value: t.id,
+      }));
+    }
+    return [
+      { text: 'PM-Implement', value: 1 },
+      { text: 'DEV-Enhancement', value: 4 },
+      { text: 'DEV-Bugs Fix', value: 13 },
+    ];
+  });
 
   open(branch: GitBranchItem): void {
     this.branch.set(branch);
@@ -103,7 +117,13 @@ export class TicketCreateDialogComponent {
       branch.personId || this.scorecard.people()[0]?.id || '',
     );
     this.estimateMd.set(1.0);
-    this.selectedType.set(1);
+    const opts = this.typeOptions();
+    const bLower = branch.branchName.toLowerCase();
+    const preferred =
+      /^(fix|bug|hotfix)\b/i.test(bLower)
+        ? opts.find((o) => /bug|incident/i.test(o.text))
+        : opts.find((o) => /enhancement|request|feature|implement/i.test(o.text));
+    this.selectedType.set(preferred?.value ?? opts[0]?.value ?? 1);
 
     this.dialog?.open();
   }

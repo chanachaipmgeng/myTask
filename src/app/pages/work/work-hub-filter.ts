@@ -16,6 +16,7 @@ type PersistedHubFilter = {
   query: string;
   teamId: string;
   opProject: string;
+  opType: string;
   dueBucket: DueBucket;
   weekOffset: number;
 };
@@ -34,6 +35,8 @@ export class WorkHubFilter {
   readonly teamId = signal('');
   /** '' = ทุกโปรเจกต์ */
   readonly opProject = signal('');
+  /** '' = ทุกชนิดใบงาน */
+  readonly opType = signal('');
   readonly dueBucket = signal<DueBucket>('all');
   /** 0 = สัปดาห์นี้, -1 ย้อน, +1 ถัดไป */
   readonly weekOffset = signal(0);
@@ -50,6 +53,7 @@ export class WorkHubFilter {
     const assigneeId = this.assigneeId().trim();
     const teamId = this.teamId().trim();
     const opProject = this.opProject().trim();
+    const opType = this.opType().trim();
     const dueBucket = this.dueBucket();
     return {
       track: this.track(),
@@ -60,6 +64,7 @@ export class WorkHubFilter {
       ...(this.scope() === 'mine' && assigneeId ? { assigneeId } : {}),
       ...(teamId ? { teamId } : {}),
       ...(opProject ? { opProject } : {}),
+      ...(opType ? { opType } : {}),
       ...(people ? { people } : {}),
     };
   }
@@ -93,6 +98,9 @@ export class WorkHubFilter {
       if (typeof data.opProject === 'string') {
         this.opProject.set(data.opProject);
       }
+      if (typeof data.opType === 'string') {
+        this.opType.set(data.opType);
+      }
       if (
         data.dueBucket === 'all' ||
         data.dueBucket === 'overdue' ||
@@ -117,6 +125,7 @@ export class WorkHubFilter {
       query: this.query(),
       teamId: this.teamId(),
       opProject: this.opProject(),
+      opType: this.opType(),
       dueBucket: this.dueBucket(),
       weekOffset: this.weekOffset(),
     };

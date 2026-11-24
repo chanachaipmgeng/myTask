@@ -50,8 +50,9 @@
 
       <app-form-field label="ประเภทงาน (Type)">
         <app-sf-dropdown
-          [items]="typeOptions"
+          [items]="typeOptions()"
           [value]="selectedType()"
+          [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชนิดใบงานจาก myProject...' }"
           (valueChange)="selectedType.set(+$event)"
         />
       </app-form-field>

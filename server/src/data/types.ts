@@ -20,6 +20,20 @@ export interface OpenProjectCatalogEntry {
   activeTicketsCount?: number;
 }
 
+export interface OpenProjectTypeCatalogEntry {
+  id: number;
+  name: string;
+  color?: string;
+  isMilestone?: boolean;
+}
+
+export interface OpenProjectStatusCatalogEntry {
+  id: number;
+  name: string;
+  isClosed: boolean;
+  color?: string;
+}
+
 export interface AppSettings {
   weeklyQuotas: Record<Level, number>;
   trackWeights: TrackWeights;
@@ -29,6 +43,10 @@ export interface AppSettings {
   openprojectMapping: OpenProjectMapping;
   /** Snapshot โปรเจกต์จาก discovery — ใช้เป็น dropdown แม้ยังไม่มีใบซิงก์ */
   openprojectProjectCatalog: OpenProjectCatalogEntry[];
+  /** Snapshot ชนิดใบงานจริงจาก OpenProject (`/api/v3/types`) */
+  openprojectTypeCatalog?: OpenProjectTypeCatalogEntry[];
+  /** Snapshot สถานะจริงจาก OpenProject (`/api/v3/statuses`) */
+  openprojectStatusCatalog?: OpenProjectStatusCatalogEntry[];
   /** รอบประเมินปี/ช่วงวัน + ขอบเขตทีม */
   scorecardCycles: ScorecardCycleSettings;
 }

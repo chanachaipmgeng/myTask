@@ -172,14 +172,14 @@ export class WorkBoard {
   protected readonly selectedId = signal<string | null>(null);
   protected readonly blockMessage = signal('');
 
-  protected readonly discipline = signal<Discipline | ''>('');
-  protected readonly workCategory = signal<WorkCategory | ''>('');
+  protected readonly discipline = signal<string>('');
+  protected readonly workCategory = signal<string>('');
   protected readonly storyValue = signal('');
   protected readonly due = signal<Date | null>(null);
   protected readonly dueLocked = signal(false);
   protected readonly mrLink = signal('');
-  protected readonly pocResult = signal<PocResult | ''>('');
-  protected readonly bugCause = signal<BugCause | ''>('');
+  protected readonly pocResult = signal<string>('');
+  protected readonly bugCause = signal<string>('');
 
   protected readonly visibleTickets = computed(() =>
     filterWorkTickets(this.scorecard.tickets(), this.hub.filterOptions(this.scorecard.people())),
@@ -397,16 +397,11 @@ export class WorkBoard {
   }
 
   protected setDiscipline(val: string): void {
-    this.discipline.set(
-      val && this.disciplineOptions.some((option) => option.value === val)
-        ? (val as Discipline | '')
-        : '',
-    );
+    this.discipline.set(val ?? '');
   }
 
   protected setCategory(val: string): void {
-    const next =
-      val && this.categoryOptions.some((option) => option.value === val) ? (val as WorkCategory | '') : '';
+    const next = val ?? '';
     this.workCategory.set(next);
     if (next !== 'R&D-PoC') {
       this.pocResult.set('');
@@ -431,11 +426,11 @@ export class WorkBoard {
   }
 
   protected setPoc(val: string): void {
-    this.pocResult.set(this.pocOptions.some((option) => option.value === val) ? (val as PocResult | '') : '');
+    this.pocResult.set(val ?? '');
   }
 
   protected setCause(val: string): void {
-    this.bugCause.set(this.causeOptions.some((option) => option.value === val) ? (val as BugCause | '') : '');
+    this.bugCause.set(val ?? '');
   }
 
   protected saveFields(): void {

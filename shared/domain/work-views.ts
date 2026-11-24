@@ -18,6 +18,8 @@ export type WorkFilterOptions = {
   teamId?: string;
   /** กรองตามโปรเจกต์ OpenProject / โมดูล */
   opProject?: string;
+  /** กรองตามชนิดใบงานจริงจาก OpenProject (opType) หรือ TicketType */
+  opType?: string;
   /** กรองถังวันส่ง (all = ไม่กรอง) */
   dueBucket?: DueBucket;
   /** จันทร์ของสัปดาห์ที่กำลังดู (YYYY-MM-DD) — กรอง due ในสัปดาห์ + เกินกำหนดที่ยังค้าง */
@@ -279,12 +281,19 @@ function matchesQuery(ticket: Ticket, query: string): boolean {
   if (!q) {
     return true;
   }
-  const hay = `${ticket.id} ${ticket.title ?? ''} ${ticket.module} ${ticket.type} ${ticket.opProject ?? ''}`.toLowerCase();
+  const hay = `${ticket.id} ${ticket.title ?? ''} ${ticket.module} ${ticket.opType ?? ''} ${ticket.type} ${ticket.opProject ?? ''}`.toLowerCase();
   return hay.includes(q);
 }
 
 function peopleById(people: readonly Person[] | undefined): Map<string, Person> {
-  return new Map((people ?? []).map((person) => [person.id, person]));
+  const map = new Map<string, Person>();
+  for (const person of people ?? []) {
+    map.set(person.id, person);
+    if (person.openprojectUserId != null) {
+      map.set(`op:${person.openprojectUserId}`, person);
+    }
+  }
+  return map;
 }
 
 export function filterWorkTickets(
@@ -296,6 +305,7 @@ export function filterWorkTickets(
   const assigneeId = options?.assigneeId?.trim() ?? '';
   const teamId = options?.teamId?.trim() ?? '';
   const opProject = options?.opProject?.trim() ?? '';
+  const opType = options?.opType?.trim() ?? '';
   const dueBucket = options?.dueBucket ?? 'all';
   const today = options?.today ?? todayInBangkok();
   const weekStart = options?.weekStart?.trim() || mondayOfWeek(today);
@@ -307,6 +317,12 @@ export function filterWorkTickets(
     }
     if (assigneeId && ticket.assigneeId !== assigneeId) {
       return false;
+    }
+    if (opType) {
+      const displayType = (ticket.opType ?? '').trim() || ticket.type;
+      if (displayType !== opType && ticket.type !== opType) {
+        return false;
+      }
     }
     if (teamId) {
       const person = ticket.assigneeId ? peopleMap.get(ticket.assigneeId) : undefined;
@@ -628,7 +644,7 @@ export function workBacklogRows(
       id: ticket.id,
       title: ticket.title?.trim() || ticket.module || ticket.id,
       trackLabel: ticket.track === 'RD' ? 'R&D' : 'Implement',
-      type: ticket.type,
+      type: ticket.opType?.trim() || ticket.type,
       size: ticket.size,
       estimateMd: ticket.estimateMd,
       assignee: ticket.assigneeId ? (names.get(ticket.assigneeId) ?? ticket.assigneeId) : 'ยังไม่มีผู้รับ',
@@ -641,7 +657,7 @@ export function workListRows(
   people: readonly Person[],
   options?: WorkFilterOptions,
 ): WorkListRow[] {
-  const peopleMap = new Map(people.map((person) => [person.id, person]));
+  const peopleMap = peopleById(people);
   const today = options?.today ?? todayInBangkok();
   return filterWorkTickets(tickets, { ...options, people: options?.people ?? people }).map((ticket) => {
     const title = ticket.title?.trim() || ticket.module || ticket.id;
@@ -652,7 +668,7 @@ export function workListRows(
       id: ticket.id,
       workLabel: `${ticket.id} · ${title}`,
       title,
-      type: ticket.type,
+      type: ticket.opType?.trim() || ticket.type,
       assignee: person?.nickname ?? (ticket.assigneeId || 'Unassigned'),
       status: workflowStatusOf(ticket),
       size: ticket.size,

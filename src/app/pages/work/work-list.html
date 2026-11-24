@@ -22,6 +22,9 @@
   <ng-template #assigneeTpl let-data>
     <app-person-avatar [name]="data.assignee" [showName]="true" size="xs" />
   </ng-template>
+  <ng-template #typeTpl let-data>
+    <app-status-badge [label]="data.type" [tone]="typeTone(data.type)" />
+  </ng-template>
   <ng-template #statusTpl let-data>
     <app-status-badge [value]="data.status" [toneMap]="workflowStatusToneMap" />
   </ng-template>
@@ -53,6 +56,7 @@
     [columns]="columns"
     [cellTemplates]="{
       workLabel: workTpl,
+      type: typeTpl,
       assignee: assigneeTpl,
       status: statusTpl,
       policyDateLabel: policyDateTpl,

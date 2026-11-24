@@ -5,12 +5,17 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { map } from 'rxjs';
 import { GitBranchItem } from '../../../../shared/domain/git-branch';
-import { filterPeopleByWorkspace } from '../../../../shared/domain/workspace-scope';
+import {
+  WorkspaceTrackFilter,
+  filterPeopleByWorkspace,
+  listWorkspaceTrackChipOptions,
+  parseWorkspaceTrackFilter,
+} from '../../../../shared/domain/workspace-scope';
 import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
-import { Person, trackDisplayLabel } from '../../core/models';
+import { Person, normalizeTrack, trackDisplayLabel } from '../../core/models';
 import {
   CARD_PAGE_SIZE,
   CardSortMode,
@@ -88,15 +93,15 @@ export class PersonWorkspacePage {
   protected readonly trackToneMap = trackToneMap;
   protected readonly levelToneMap = levelToneMap;
   protected readonly query = signal('');
-  protected readonly trackFilter = signal<'All' | 'Implement' | 'RD'>('All');
+  protected readonly trackFilter = signal<WorkspaceTrackFilter>('All');
   protected readonly sortMode = signal<CardSortMode>('name');
   protected readonly cardPage = signal(1);
   protected readonly cardPageSize = CARD_PAGE_SIZE;
-  protected readonly trackChipOptions = [
-    { id: 'All', label: 'ทุกสาย' },
-    { id: 'Implement', label: 'Implement' },
-    { id: 'RD', label: 'R&D' },
-  ];
+  protected readonly trackChipOptions = computed(() =>
+    listWorkspaceTrackChipOptions(this.scorecard.people()).map((item) =>
+      item.id === 'All' ? { id: 'All', label: 'ทุกสาย' } : item,
+    ),
+  );
   protected readonly sortOptions = [
     { text: 'เรียงตามชื่อ', value: 'name' },
     { text: 'เรียงตามดัชนี (สูง→ต่ำ)', value: 'index' },
@@ -167,7 +172,7 @@ export class PersonWorkspacePage {
       .slice()
       .sort((a, b) => a.nickname.localeCompare(b.nickname, 'th'))
       .filter((person) => {
-        if (tf !== 'All' && person.track !== tf) return false;
+        if (tf !== 'All' && normalizeTrack(person.track) !== normalizeTrack(tf)) return false;
         if (!q) return true;
         return (
           person.nickname.toLowerCase().includes(q) ||
@@ -253,10 +258,8 @@ export class PersonWorkspacePage {
   }
 
   protected setTrackFilter(value: string): void {
-    if (value === 'All' || value === 'Implement' || value === 'RD') {
-      this.trackFilter.set(value);
-      this.cardPage.set(1);
-    }
+    this.trackFilter.set(parseWorkspaceTrackFilter(value));
+    this.cardPage.set(1);
   }
 
   protected setSortMode(value: string): void {

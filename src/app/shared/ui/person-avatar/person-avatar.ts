@@ -1,4 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  extractOpAvatarUserId,
+  normalizeOpenProjectAvatarUrl,
+} from '../../../../../shared/domain/op-team-staging';
 import { ScorecardService } from '../../../core/scorecard.service';
 import { Person } from '../../../core/models';
 
@@ -37,7 +41,8 @@ export class PersonAvatarComponent {
   readonly showName = input<boolean>(false);
   readonly subtitle = input<string | null | undefined>(null);
 
-  protected readonly imgFailed = signal(false);
+  /** 0 = direct /api/v3/users/:id/avatar, 1 = authenticated backend proxy, 2 = initials fallback */
+  protected readonly imgStage = signal<0 | 1 | 2>(0);
 
   protected readonly resolvedPerson = computed<Person | null>(() => {
     const roster = this.scorecard.roster();
@@ -45,9 +50,21 @@ export class PersonAvatarComponent {
     if (id) {
       const hit = roster.find((p) => p.id === id);
       if (hit) return hit;
+      const opMatch = /^op:(\d+)$/i.exec(id);
+      if (opMatch) {
+        const opId = Number(opMatch[1]);
+        const opHit = roster.find((p) => p.openprojectUserId === opId);
+        if (opHit) return opHit;
+      }
     }
     const rawName = this.name()?.trim();
     if (rawName && rawName !== '-' && rawName !== 'ยังไม่ระบุ') {
+      const opMatch = /^op:(\d+)$/i.exec(rawName);
+      if (opMatch) {
+        const opId = Number(opMatch[1]);
+        const opHit = roster.find((p) => p.openprojectUserId === opId);
+        if (opHit) return opHit;
+      }
       const lower = rawName.toLowerCase();
       return (
         roster.find(
@@ -61,10 +78,31 @@ export class PersonAvatarComponent {
     return null;
   });
 
-  protected readonly resolvedUrl = computed(() => {
+  protected readonly directUrl = computed(() => {
     const explicit = this.avatarUrl()?.trim();
-    if (explicit) return explicit;
-    return this.resolvedPerson()?.avatarUrl?.trim() || null;
+    const person = this.resolvedPerson();
+    if (explicit) {
+      return normalizeOpenProjectAvatarUrl(explicit, person?.openprojectUserId);
+    }
+    return normalizeOpenProjectAvatarUrl(person?.avatarUrl, person?.openprojectUserId);
+  });
+
+  protected readonly proxyUrl = computed(() => {
+    if (!this.scorecard.usingApi()) return null;
+    const person = this.resolvedPerson();
+    const rawOp = /^op:(\d+)$/i.exec((this.personId() || this.name() || '').trim());
+    const opId =
+      person?.openprojectUserId ??
+      (rawOp ? Number(rawOp[1]) : null) ??
+      extractOpAvatarUserId(this.directUrl());
+    return opId != null ? `/api/integrations/openproject/users/${opId}/avatar` : null;
+  });
+
+  protected readonly resolvedUrl = computed(() => {
+    const stage = this.imgStage();
+    if (stage === 0) return this.directUrl() ?? this.proxyUrl();
+    if (stage === 1) return this.proxyUrl();
+    return null;
   });
 
   protected readonly displayName = computed(() => {
@@ -123,17 +161,23 @@ export class PersonAvatarComponent {
     return AVATAR_GRADIENTS[hashIndex(seed)];
   });
 
-  protected readonly showImage = computed(() => Boolean(this.resolvedUrl()) && !this.imgFailed());
+  protected readonly showImage = computed(() => Boolean(this.resolvedUrl()) && this.imgStage() < 2);
 
   constructor() {
     effect(() => {
-      // Reset error state whenever the target URL changes
-      this.resolvedUrl();
-      this.imgFailed.set(false);
+      // Reset stage whenever target person or direct avatar URL changes
+      this.resolvedPerson()?.id;
+      this.directUrl();
+      this.imgStage.set(0);
     });
   }
 
   protected onImgError(): void {
-    this.imgFailed.set(true);
+    const cur = this.imgStage();
+    if (cur === 0 && this.directUrl() && this.proxyUrl() && this.directUrl() !== this.proxyUrl()) {
+      this.imgStage.set(1);
+    } else {
+      this.imgStage.set(2);
+    }
   }
 }

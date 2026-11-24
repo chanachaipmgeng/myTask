@@ -31,12 +31,17 @@ export function slugifyTeamName(raw: string): string {
 }
 
 /**
- * แมปชื่อแผนกจริงจาก OpenProject (customField1) → teamId/teamName ตามชื่อจริงใน myProject
- * โดยยังคงคำนวณ track (RD/Implement) และ isRd สำหรับสูตรคะแนนและกฎ staging
+ * แมปชื่อแผนกจริงจาก OpenProject (customField1 / customField2 / customField3) → teamId/teamName ตามชื่อจริงใน myProject
+ * พร้อมจำแนกสายงาน 6 สาย (IMP, RND/RD, QA, UXBA, SUP, INFRA) จากแผนก/ฝ่ายย่อย/ตำแหน่งจริง
  */
-export function mapDepartmentToTeam(department: string | null | undefined): DepartmentTeamMap {
+export function mapDepartmentToTeam(
+  department: string | null | undefined,
+  unit?: string | null,
+  jobTitle?: string | null,
+): DepartmentTeamMap {
   const raw = (department ?? '').trim();
   const lower = raw.toLowerCase();
+  const combined = `${raw} ${unit ?? ''} ${jobTitle ?? ''}`.toLowerCase();
   if (!raw) {
     return { teamId: 'unassigned', teamName: 'ยังไม่ระบุทีม', track: 'Implement', isRd: false };
   }
@@ -45,12 +50,64 @@ export function mapDepartmentToTeam(department: string | null | undefined): Depa
     lower.includes('research') ||
     lower === 'r&d' ||
     lower.includes('r&d');
+
+  let track: Track = isRd ? 'RD' : 'Implement';
+  if (
+    /\bqa\b|quality assurance|tester|testing/i.test(combined)
+  ) {
+    track = 'QA';
+  } else if (
+    /\bux\b|\bui\b|business analyst|\bba\b|product owner|product design/i.test(combined)
+  ) {
+    track = 'UXBA';
+  } else if (
+    /^se-|system engineer|devops|infra|network|security|cloud/i.test(combined)
+  ) {
+    track = 'INFRA';
+  } else if (
+    /^cs-|customer service|helpdesk|call center|support/i.test(combined)
+  ) {
+    track = 'SUP';
+  }
+
   return {
     teamId: slugifyTeamName(raw),
     teamName: raw,
-    track: isRd ? 'RD' : 'Implement',
+    track,
     isRd,
   };
+}
+
+/**
+ * แปลงลิงก์รูปโปรไฟล์จาก OpenProject ให้ใช้รูปแบบ API v3 มาตรฐานเสมอ:
+ * เช่น `https://myprojectplus.myhr.co.th/users/90/avatar` -> `https://myprojectplus.myhr.co.th/api/v3/users/90/avatar`
+ */
+export function normalizeOpenProjectAvatarUrl(
+  rawUrl: string | null | undefined,
+  opUserId?: number | null,
+  baseUrl?: string | null,
+): string | null {
+  const trimmed = (rawUrl ?? '').trim();
+  if (trimmed) {
+    const legacyMatch = /^(https?:\/\/[^/]+)\/users\/(\d+)\/avatar\/?$/i.exec(trimmed);
+    if (legacyMatch) {
+      return `${legacyMatch[1]}/api/v3/users/${legacyMatch[2]}/avatar`;
+    }
+    return trimmed;
+  }
+  if (opUserId != null && Number.isFinite(opUserId) && baseUrl?.trim()) {
+    return `${baseUrl.trim().replace(/\/+$/, '')}/api/v3/users/${opUserId}/avatar`;
+  }
+  return null;
+}
+
+/** ดึงหมายเลขผู้ใช้ OpenProject จาก URL รูปโปรไฟล์ทั้งแบบ `/api/v3/users/90/avatar` และ `/users/90/avatar` */
+export function extractOpAvatarUserId(url: string | null | undefined): number | null {
+  if (!url) return null;
+  const m = /\/(?:api\/v3\/)?users\/(\d+)\/avatar/i.exec(url.trim());
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? n : null;
 }
 
 export function teamLabelForId(teamId: string): string {

@@ -1,4 +1,5 @@
 import { Controller, Get, Inject, Req } from '@nestjs/common';
+import { normalizeOpenProjectAvatarUrl } from '../../../shared/domain/op-team-staging';
 import { computeEffectiveAllowedTeams } from '../../../shared/domain/team-visibility';
 import { listAllocations, listDisputes, listLeaves, listStageLogs } from '../data/multi-team.repo';
 import { listDepartments, listPeople, listTeams } from '../data/people.repo';
@@ -39,8 +40,10 @@ export class BootstrapController {
         getVisibilityConfig(this.db),
       ]);
     const staging = this.config.openproject.teamStaging;
+    const opBaseUrl = this.config.openproject.url;
     const people = rawPeople.map((p) => ({
       ...p,
+      avatarUrl: normalizeOpenProjectAvatarUrl(p.avatarUrl, p.openprojectUserId, opBaseUrl),
       allowedTeams: visibility.userOverrides[p.id] ?? [],
     }));
     const activePeopleIds = new Set(people.map((p) => p.id));
@@ -73,6 +76,11 @@ export class BootstrapController {
             authenticated: true,
             person: {
               ...authUser.person,
+              avatarUrl: normalizeOpenProjectAvatarUrl(
+                authUser.person.avatarUrl,
+                authUser.person.openprojectUserId,
+                opBaseUrl,
+              ),
               allowedTeams: visibility.userOverrides[authUser.person.id] ?? [],
             },
             access: authUser.access,

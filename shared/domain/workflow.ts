@@ -61,13 +61,13 @@ export const DISCIPLINE_LABELS: Record<Discipline, string> = {
 };
 
 export interface WorkflowFields {
-  discipline: Discipline | '';
-  workCategory: WorkCategory | '';
+  discipline: Discipline | string;
+  workCategory: WorkCategory | string;
   storyPoints: StoryPoint | null;
   firstDueOn: string | null;
   mrLink: string;
-  pocResult: PocResult | '';
-  bugCause: BugCause | '';
+  pocResult: PocResult | string;
+  bugCause: BugCause | string;
 }
 
 export interface VelocityRow {

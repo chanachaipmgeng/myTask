@@ -12,6 +12,7 @@ import {
   listGridOptions,
   StatusBadgeComponent,
   planToneMap,
+  toneForTicketType,
   toneForWeekLabel,
   workflowStatusToneMap,
   type BadgeTone,
@@ -44,7 +45,7 @@ export class WorkList {
     { field: 'workLabel', headerText: 'Work', width: 280 },
     { field: 'projectLabel', headerText: 'โปรเจกต์', width: 140 },
     { field: 'teamLabel', headerText: 'ทีม', width: 130 },
-    { field: 'type', headerText: 'Type', width: 110 },
+    { field: 'type', headerText: 'Type', width: 155 },
     { field: 'assignee', headerText: 'Assignee', width: 165 },
     { field: 'status', headerText: 'Status', width: 130 },
     { field: 'size', headerText: 'Size', width: 80 },
@@ -69,7 +70,7 @@ export class WorkList {
 
   protected readonly gridOptions = computed<SfGridOptions>(() =>
     listGridOptions({
-      id: this.isMine() ? 'my-work-operational-list-grid-v5' : 'work-operational-list-grid-v5',
+      id: this.isMine() ? 'my-work-operational-list-grid-v6' : 'work-operational-list-grid-v6',
       enablePersistence: true,
       filtering: 'Excel',
       grouping: this.groupByProject(),
@@ -92,6 +93,10 @@ export class WorkList {
 
   protected toggleGroupByProject(): void {
     this.groupByProject.update((v) => !v);
+  }
+
+  protected typeTone(label: string): BadgeTone {
+    return toneForTicketType(label);
   }
 
   protected weekTone(label: string): BadgeTone {

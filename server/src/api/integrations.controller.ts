@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Put, Post, Query, Req, Param, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, Put, Post, Query, Req, Res, Param, UnauthorizedException } from '@nestjs/common';
+import type { Response } from 'express';
 import { Inject } from '@nestjs/common';
 import { Ticket } from '../../../shared/domain/models';
 import { collectAlerts, projectedActual } from '../../../shared/domain/alerts';
@@ -77,6 +78,8 @@ export class IntegrationsController {
       hasToken: envConfigured || hasDbToken,
       mapping: settings.openprojectMapping,
       projectCatalog: settings.openprojectProjectCatalog,
+      typeCatalog: settings.openprojectTypeCatalog ?? [],
+      statusCatalog: settings.openprojectStatusCatalog ?? [],
       hoursPerMd: settings.hoursPerMd,
       lastRuns: runs,
       unmappedUsers: unmapped.map((row) => ({
@@ -847,6 +850,60 @@ export class IntegrationsController {
     }
   }
 
+  private readonly avatarCache = new Map<
+    number,
+    { ok: boolean; contentType: string; bytes: Buffer | null; expiresAt: number }
+  >();
+
+  @Public()
+  @Get('integrations/openproject/users/:opUserId/avatar')
+  async proxyOpenProjectUserAvatar(
+    @Param('opUserId') opUserIdRaw: string,
+    @Res() res: Response,
+  ) {
+    const opUserId = Number(opUserIdRaw);
+    if (!Number.isFinite(opUserId) || opUserId <= 0) {
+      res.status(400).end();
+      return;
+    }
+    const now = Date.now();
+    const cached = this.avatarCache.get(opUserId);
+    if (cached && cached.expiresAt > now) {
+      if (!cached.ok || !cached.bytes) {
+        res.status(404).end();
+        return;
+      }
+      res.setHeader('Content-Type', cached.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.status(200).send(cached.bytes);
+      return;
+    }
+
+    const client = await this.syncService.getClient();
+    if (!client) {
+      res.status(404).end();
+      return;
+    }
+    try {
+      const fetched = await client.fetchUserAvatar(opUserId);
+      this.avatarCache.set(opUserId, {
+        ok: fetched.ok,
+        contentType: fetched.contentType || 'image/jpeg',
+        bytes: fetched.bytes,
+        expiresAt: now + 15 * 60_000,
+      });
+      if (!fetched.ok || !fetched.bytes) {
+        res.status(404).end();
+        return;
+      }
+      res.setHeader('Content-Type', fetched.contentType || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.status(200).send(fetched.bytes);
+    } catch {
+      res.status(404).end();
+    }
+  }
+
   @Get('integrations/openproject/discovery')
   @Roles('admin', 'lead')
   async openProjectDiscovery(@Req() req: AuthedRequest) {
@@ -884,9 +941,27 @@ export class IntegrationsController {
             name: p.name ?? p.identifier ?? '',
             active: existing !== undefined ? existing.active : (p.active ?? true),
             assignedTeamIds: existing?.assignedTeamIds ?? [],
+            gitRepoIds: existing?.gitRepoIds ?? [],
+            gitRepoNames: existing?.gitRepoNames ?? [],
           };
         });
       settings.openprojectProjectCatalog = catalog;
+      settings.openprojectTypeCatalog = types
+        .filter((t) => t.name?.trim())
+        .map((t) => ({
+          id: t.id,
+          name: (t.name ?? '').trim(),
+          ...(t.color ? { color: t.color } : {}),
+          isMilestone: Boolean(t.isMilestone),
+        }));
+      settings.openprojectStatusCatalog = statuses
+        .filter((s) => s.name?.trim())
+        .map((s) => ({
+          id: s.id,
+          name: (s.name ?? '').trim(),
+          isClosed: Boolean(s.isClosed),
+          ...(s.color ? { color: s.color } : {}),
+        }));
       await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
       return {
         source: 'live' as const,

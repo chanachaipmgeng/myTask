@@ -220,7 +220,23 @@ export interface OpenProjectCatalogEntry {
   activeTicketsCount?: number;
 }
 
+export interface OpenProjectTypeCatalogEntry {
+  id: number;
+  name: string;
+  color?: string;
+  isMilestone?: boolean;
+}
+
+export interface OpenProjectStatusCatalogEntry {
+  id: number;
+  name: string;
+  isClosed: boolean;
+  color?: string;
+}
+
 export const openprojectProjectCatalog = signal<OpenProjectCatalogEntry[]>([]);
+export const openprojectTypeCatalog = signal<OpenProjectTypeCatalogEntry[]>([]);
+export const openprojectStatusCatalog = signal<OpenProjectStatusCatalogEntry[]>([]);
 export const teamStagingMode = signal<'rd' | 'all'>('all');
 
 export function applyRemoteSettings(settings: {
@@ -230,9 +246,17 @@ export function applyRemoteSettings(settings: {
   levelOverrides?: Record<string, string>;
   hoursPerMd?: number;
   openprojectProjectCatalog?: OpenProjectCatalogEntry[];
+  openprojectTypeCatalog?: OpenProjectTypeCatalogEntry[];
+  openprojectStatusCatalog?: OpenProjectStatusCatalogEntry[];
 }): void {
   if (Array.isArray(settings.openprojectProjectCatalog)) {
     openprojectProjectCatalog.set(settings.openprojectProjectCatalog);
+  }
+  if (Array.isArray(settings.openprojectTypeCatalog)) {
+    openprojectTypeCatalog.set(settings.openprojectTypeCatalog);
+  }
+  if (Array.isArray(settings.openprojectStatusCatalog)) {
+    openprojectStatusCatalog.set(settings.openprojectStatusCatalog);
   }
   if (settings.weeklyQuotas) {
     weeklyQuotas.set({

@@ -18,6 +18,7 @@ import {
   currentViewer,
   OpenProjectCatalogEntry,
   openprojectProjectCatalog,
+  openprojectTypeCatalog,
 } from './admin-settings';
 import { ScorecardService } from './scorecard.service';
 
@@ -45,6 +46,7 @@ export class WorkspaceFilter {
 
   readonly teamId = signal('');
   readonly opProject = signal('');
+  readonly opType = signal('');
   readonly track = signal<WorkspaceTrackFilter>('All');
   readonly personId = signal('');
   readonly cycleId = signal('');
@@ -77,6 +79,7 @@ export class WorkspaceFilter {
   readonly scope = computed<WorkspaceScope>(() => ({
     teamId: this.teamId(),
     opProject: this.opProject(),
+    opType: this.opType(),
     track: this.track(),
     personId: this.personId(),
     cycleId: this.cycleId(),
@@ -90,6 +93,7 @@ export class WorkspaceFilter {
     () =>
       !!this.teamId() ||
       !!this.opProject() ||
+      !!this.opType() ||
       !!this.personId() ||
       this.track() !== 'All' ||
       !!this.cycleId() ||
@@ -206,7 +210,27 @@ export class WorkspaceFilter {
     ];
   });
 
-  readonly trackChipOptions = listWorkspaceTrackChipOptions();
+  readonly typeOptions = computed(() => {
+    const seen = new Set<string>();
+    for (const entry of openprojectTypeCatalog()) {
+      const name = entry.name?.trim();
+      if (name) seen.add(name);
+    }
+    for (const t of this.scorecard.tickets()) {
+      const label = (t.opType ?? '').trim() || t.type;
+      if (label) seen.add(label);
+    }
+    return [
+      { text: 'ทุกชนิดใบงาน', value: '' },
+      ...[...seen]
+        .sort((a, b) => a.localeCompare(b, 'th'))
+        .map((name) => ({ text: name, value: name })),
+    ];
+  });
+
+  readonly trackChipOptions = computed(() =>
+    listWorkspaceTrackChipOptions(this.scorecard.people(), this.scorecard.tickets()),
+  );
 
   readonly selectedPersonLabel = computed(() => {
     const id = this.personId();
@@ -234,8 +258,11 @@ export class WorkspaceFilter {
     if (project?.value) {
       parts.push(project.text);
     }
+    if (this.opType()) {
+      parts.push(this.opType());
+    }
     if (this.track() !== 'All') {
-      const chip = this.trackChipOptions.find((row) => row.id === this.track());
+      const chip = this.trackChipOptions().find((row) => row.id === this.track());
       parts.push(chip?.label ?? this.track());
     }
     if (this.personId()) {
@@ -253,6 +280,7 @@ export class WorkspaceFilter {
     effect(() => {
       const teamId = this.teamId();
       const opProject = this.opProject();
+      const opType = this.opType();
       const track = this.track();
       const personId = this.personId();
       const cycleId = this.cycleId();
@@ -265,6 +293,7 @@ export class WorkspaceFilter {
       const next = this.filterQueryParams({
         teamId,
         opProject,
+        opType,
         track,
         personId,
         cycleId,
@@ -276,8 +305,9 @@ export class WorkspaceFilter {
       if (
         normalizeParam(current['teamId']) === normalizeParam(next['teamId'] as string | undefined) &&
         normalizeParam(current['project']) === normalizeParam(next['project'] as string | undefined) &&
+        normalizeParam(current['type']) === normalizeParam(next['type'] as string | undefined) &&
         parseTrack(current['track']) === parseTrack(next['track'] as string | undefined) &&
-        normalizeParam(current['person']) === normalizeParam(next['person'] as string | undefined) &&
+        normalizeParam(current['person']) === normalizeParam(next['person']) &&
         normalizeParam(current['cycle']) === normalizeParam(next['cycle'] as string | undefined) &&
         normalizeParam(current['from']) === normalizeParam(next['from'] as string | undefined) &&
         normalizeParam(current['to']) === normalizeParam(next['to'] as string | undefined) &&
@@ -294,6 +324,7 @@ export class WorkspaceFilter {
     const params: Params = {};
     const teamId = scope.teamId?.trim() ?? '';
     const opProject = scope.opProject?.trim() ?? '';
+    const opType = scope.opType?.trim() ?? '';
     const personId = scope.personId?.trim() ?? '';
     const cycleId = scope.cycleId?.trim() ?? '';
     const fromDate = isIsoDay(scope.fromDate) ? scope.fromDate : '';
@@ -302,6 +333,7 @@ export class WorkspaceFilter {
     const yearCe = typeof scope.yearCe === 'number' ? scope.yearCe : null;
     params['teamId'] = teamId || null;
     params['project'] = opProject || null;
+    params['type'] = opType || null;
     params['person'] = personId || null;
     params['track'] = track === 'All' ? null : track;
     params['cycle'] = cycleId || null;
@@ -327,6 +359,10 @@ export class WorkspaceFilter {
 
   setProject(opProject: string): void {
     this.opProject.set(normalizeParam(opProject));
+  }
+
+  setType(opType: string): void {
+    this.opType.set(normalizeParam(opType));
   }
 
   setTrack(track: string): void {
@@ -383,6 +419,7 @@ export class WorkspaceFilter {
   clear(): void {
     this.teamId.set('');
     this.opProject.set('');
+    this.opType.set('');
     this.track.set('All');
     this.personId.set('');
     this.cycleId.set('');
@@ -402,6 +439,7 @@ export class WorkspaceFilter {
   private applyFromParams(params: Params): void {
     const nextTeam = normalizeParam(params['teamId'] as string | undefined);
     const nextProject = normalizeParam(params['project'] as string | undefined);
+    const nextType = normalizeParam(params['type'] as string | undefined);
     const nextPerson = normalizeParam(params['person'] as string | undefined);
     const nextTrack = parseTrack(params['track'] as string | undefined);
     const nextCycle = normalizeParam(params['cycle'] as string | undefined);
@@ -411,6 +449,7 @@ export class WorkspaceFilter {
     const urlHasFilter = !!(
       nextTeam ||
       nextProject ||
+      nextType ||
       nextPerson ||
       nextTrack !== 'All' ||
       nextCycle ||
@@ -424,6 +463,7 @@ export class WorkspaceFilter {
     }
     if (this.teamId() !== nextTeam) this.teamId.set(nextTeam);
     if (this.opProject() !== nextProject) this.opProject.set(nextProject);
+    if (this.opType() !== nextType) this.opType.set(nextType);
     if (this.personId() !== nextPerson) this.personId.set(nextPerson);
     if (this.track() !== nextTrack) this.track.set(nextTrack);
     if (this.cycleId() !== nextCycle) this.cycleId.set(nextCycle);

@@ -5,6 +5,7 @@ import { AccessRole, Person } from '../../../../shared/domain/models';
 import {
   isPersonActiveForStaging,
   mapDepartmentToTeam,
+  normalizeOpenProjectAvatarUrl,
   teamLabelForId,
 } from '../../../../shared/domain/op-team-staging';
 import { todayInBangkok } from '../../../../shared/domain/workflow';
@@ -18,7 +19,7 @@ import {
   upsertPerson,
   upsertTeam,
 } from '../../data/people.repo';
-import { connectionToken, getConnection, getSettings } from '../../data/settings.repo';
+import { connectionToken, getConnection, getSettings, saveSettings } from '../../data/settings.repo';
 import {
   finishSyncRun,
   getWorkItemByOpId,
@@ -114,6 +115,29 @@ export class OpenProjectSyncService implements OnModuleInit {
       const settings = await getSettings(this.db);
       const mapping = settings.openprojectMapping;
       const client = new OpenProjectClient(creds.url, creds.token);
+      // Refresh OpenProject Type & Status catalogs dynamically during sync (best-effort)
+      try {
+        const [opTypes, opStatuses] = await Promise.all([client.listTypes(), client.listStatuses()]);
+        settings.openprojectTypeCatalog = opTypes
+          .filter((t) => t.name?.trim())
+          .map((t) => ({
+            id: t.id,
+            name: (t.name ?? '').trim(),
+            ...(t.color ? { color: t.color } : {}),
+            isMilestone: Boolean(t.isMilestone),
+          }));
+        settings.openprojectStatusCatalog = opStatuses
+          .filter((s) => s.name?.trim())
+          .map((s) => ({
+            id: s.id,
+            name: (s.name ?? '').trim(),
+            isClosed: Boolean(s.isClosed),
+            ...(s.color ? { color: s.color } : {}),
+          }));
+        await saveSettings(this.db, settings, startedBy);
+      } catch (catErr) {
+        this.log.warn(`Skipped OP type/status catalog refresh: ${catErr instanceof Error ? catErr.message : catErr}`);
+      }
       const spentHours = await this.loadSpentHours(client, since);
       const staging = this.config.openproject.teamStaging;
       const personByOp = await this.refreshUserMap(client, staging === 'rd');
@@ -373,8 +397,8 @@ export class OpenProjectSyncService implements OnModuleInit {
         const deptTitle = user._links?.customField1?.title ?? null;
         const unitTitle = user._links?.customField2?.title ?? null;
         const roleTitle = user._links?.customField3?.title ?? null;
-        const avatarUrl = user.avatar ?? (opUserId ? `${creds.url}/users/${opUserId}/avatar` : null);
-        const teamMap = mapDepartmentToTeam(deptTitle);
+        const avatarUrl = normalizeOpenProjectAvatarUrl(user.avatar, opUserId, creds.url);
+        const teamMap = mapDepartmentToTeam(deptTitle, unitTitle, roleTitle);
         const staging = this.config.openproject.teamStaging;
         const locked = user.status === 'locked';
         const active = isPersonActiveForStaging(staging, { isRd: teamMap.isRd, locked });

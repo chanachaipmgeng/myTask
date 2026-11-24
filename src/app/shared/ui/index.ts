@@ -7,6 +7,7 @@ export {
   weekToneMap,
   trackToneMap,
   ticketTypeToneMap,
+  toneForTicketType,
   levelToneMap,
   sizeToneMap,
   yesNoToneMap,

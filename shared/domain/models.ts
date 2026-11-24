@@ -120,14 +120,14 @@ export interface Ticket {
   note: string;
   /** Pipeline column. Missing values are derived from assignee and closed. */
   workflowStatus?: WorkflowStatus;
-  discipline?: Discipline | '';
-  workCategory?: WorkCategory | '';
+  discipline?: Discipline | string;
+  workCategory?: WorkCategory | string;
   storyPoints?: StoryPoint | null;
   /** First promised delivery date. Locked once set. */
   firstDueOn?: string | null;
   mrLink?: string;
-  pocResult?: PocResult | '';
-  bugCause?: BugCause | '';
+  pocResult?: PocResult | string;
+  bugCause?: BugCause | string;
   /** Set by the system when the card enters In Progress. */
   actualStartOn?: string | null;
   /** Set by the system when the card enters Ready for QA. */
@@ -137,6 +137,11 @@ export interface Ticket {
   /** OpenProject work package id when source is openproject. */
   opId?: number | null;
   opProject?: string;
+  /** Raw OpenProject Type name (e.g. 'DEV-Bugs Fix', 'CS-Service Request', 'PM-Implement') & id */
+  opType?: string;
+  opTypeId?: number | null;
+  /** Raw OpenProject Status name (e.g. 'Work in Progress', '*Testing in Progress') */
+  opStatus?: string;
   /** Parent ticket ID in the scorecard (e.g. OP-10 or RD-SPIKE) for Gantt hierarchy. */
   parentId?: string | null;
   /** Parent work package ID in OpenProject when source is openproject. */

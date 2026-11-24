@@ -558,6 +558,32 @@ export class OpenProjectClient {
     return idFromHref(entry._links?.workPackage?.href);
   }
 
+  /** Fetches raw avatar bytes from `/api/v3/users/:id/avatar` using API token Basic Auth. */
+  async fetchUserAvatar(
+    opUserId: number,
+  ): Promise<{ ok: boolean; status: number; contentType: string; bytes: Buffer | null }> {
+    const url = `${this.baseUrl.replace(/\/+$/, '')}/api/v3/users/${opUserId}/avatar`;
+    const auth = Buffer.from(`apikey:${this.token}`).toString('base64');
+    const response = await this.fetchImpl(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'image/*,*/*;q=0.8',
+        Authorization: `Basic ${auth}`,
+      },
+    });
+    if (!response.ok) {
+      return { ok: false, status: response.status, contentType: '', bytes: null };
+    }
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const ab = await response.arrayBuffer();
+    return {
+      ok: true,
+      status: response.status,
+      contentType,
+      bytes: Buffer.from(ab),
+    };
+  }
+
   private async get<T>(path: string): Promise<T> {
     return this.request<T>(path, { method: 'GET' });
   }

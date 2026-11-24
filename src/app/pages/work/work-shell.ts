@@ -74,9 +74,10 @@ export class WorkShell {
     const scope: WorkHubScope = this.route.snapshot.data['scope'] === 'mine' ? 'mine' : 'team';
     this.filter.scope.set(scope);
     this.filter.restoreFromStorage(scope);
-    // Global workspace wins for team / project / track (cross-page URL)
+    // Global workspace wins for team / project / track / type (cross-page URL)
     this.filter.teamId.set(this.workspace.teamId());
     this.filter.opProject.set(this.workspace.opProject());
+    this.filter.opType.set(this.workspace.opType());
     this.filter.track.set(this.workspace.track());
     if (scope === 'mine') {
       const personId = currentSession()?.person.id ?? currentViewer().id;
@@ -87,9 +88,11 @@ export class WorkShell {
     effect(() => {
       const teamId = this.workspace.teamId();
       const opProject = this.workspace.opProject();
+      const opType = this.workspace.opType();
       const track = this.workspace.track();
       if (this.filter.teamId() !== teamId) this.filter.teamId.set(teamId);
       if (this.filter.opProject() !== opProject) this.filter.opProject.set(opProject);
+      if (this.filter.opType() !== opType) this.filter.opType.set(opType);
       if (this.filter.track() !== track) this.filter.track.set(track);
     });
     effect(() => {
@@ -98,6 +101,7 @@ export class WorkShell {
       this.filter.query();
       this.filter.teamId();
       this.filter.opProject();
+      this.filter.opType();
       this.filter.dueBucket();
       this.filter.weekOffset();
       this.filter.persist();

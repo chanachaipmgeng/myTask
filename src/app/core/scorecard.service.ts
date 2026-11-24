@@ -75,6 +75,9 @@ export interface TicketRow {
   track: Track;
   trackLabel: string;
   type: Ticket['type'];
+  displayType: string;
+  opType?: string;
+  opStatus?: string;
   module: string;
   size: Ticket['size'];
   points: number;
@@ -167,7 +170,14 @@ function formatDate(iso: string | null): string {
 }
 
 function personById(people: readonly Person[]): Map<string, Person> {
-  return new Map(people.map((person) => [person.id, person]));
+  const map = new Map<string, Person>();
+  for (const person of people) {
+    map.set(person.id, person);
+    if (person.openprojectUserId != null) {
+      map.set(`op:${person.openprojectUserId}`, person);
+    }
+  }
+  return map;
 }
 
 interface LocalSnapshot {
@@ -632,6 +642,9 @@ export class ScorecardService {
         track: ticket.track,
         trackLabel: trackLabel(ticket.track),
         type: ticket.type,
+        displayType: ticket.opType?.trim() || ticket.type,
+        opType: ticket.opType,
+        opStatus: ticket.opStatus,
         module: ticket.module,
         size: ticket.size,
         points: score.points,

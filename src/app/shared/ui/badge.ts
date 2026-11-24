@@ -93,7 +93,7 @@ export const trackToneMap: Record<string, BadgeTone> = {
   'Infra / DevOps / Sec': 'coral',
 };
 
-/** ชนิดใบงาน (Ticket Type) */
+/** ชนิดใบงาน (Ticket Type & OpenProject Dynamic Type) */
 export const ticketTypeToneMap: Record<string, BadgeTone> = {
   Feature: 'primary',
   CR: 'indigo',
@@ -103,6 +103,21 @@ export const ticketTypeToneMap: Record<string, BadgeTone> = {
   'Bug-Investigate': 'danger',
   'Bug-Fix': 'danger',
 };
+
+/** คำนวณโทนป้ายสำหรับชนิดใบงานทั้งแบบมาตรฐานและชื่อจริงที่ดึงมาจาก OpenProject */
+export function toneForTicketType(label: string | null | undefined): BadgeTone {
+  const v = (label ?? '').trim();
+  if (!v) return 'secondary';
+  if (v in ticketTypeToneMap) return ticketTypeToneMap[v]!;
+  const lower = v.toLowerCase();
+  if (/bug|defect|incident|hotfix|error/i.test(lower)) return 'danger';
+  if (/custom|cr\b|change/i.test(lower)) return 'indigo';
+  if (/spike|wish|poc|research/i.test(lower)) return 'violet';
+  if (/service|support|ops|customer|internal\s*rq/i.test(lower)) return 'coral';
+  if (/milestone/i.test(lower)) return 'teal';
+  if (/debt|refactor/i.test(lower)) return 'warning';
+  return 'primary';
+}
 
 /** ระดับประสบการณ์ (Seniority Level) */
 export const levelToneMap: Record<string, BadgeTone> = {

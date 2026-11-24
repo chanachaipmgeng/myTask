@@ -13,7 +13,7 @@
     <div actions class="flex flex-wrap gap-3 items-end">
       <app-form-field label="สายงาน" variant="filter">
         <app-sf-dropdown
-          [items]="trackOptions"
+          [items]="trackOptions()"
           [value]="trackFilter()"
           [options]="{ width: '180px', allowFiltering: false }"
           (valueChange)="setTrack($event)"

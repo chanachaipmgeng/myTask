@@ -13,7 +13,7 @@
 | ชนิด | พาธ |
 |---|---|
 | Workspace Rules | `.agents/rules/myhr-ui-and-teams.md`, `.agents/rules/syncfusion-wrappers.md`, `.cursor/rules/*.mdc` |
-| Project Skills | `.agents/skills/manday-docker-stack/SKILL.md`, `.cursor/skills/*/SKILL.md` (`scorecard-verify`, `openproject-fields`, `work-hub`) |
+| Project Skills | `.agents/skills/manday-docker-stack/SKILL.md`, `.agents/skills/openproject-fields/SKILL.md`, `.cursor/skills/*/SKILL.md` |
 
 ## คำสั่งตรวจขั้นต่ำ & Windows Shell Guardrail
 
@@ -25,6 +25,7 @@ npm --prefix server run build
 ```
 
 - **Windows PowerShell 5.1 Guardrail**: ห้ามใช้ตัวคั่น `&&` หรือ ternary `? :` ในคำสั่ง PowerShell (จะเกิด `ParserError: InvalidEndOfLine`) ให้คั่นคำสั่งด้วย `;` หรือตรวจ `if ($LASTEXITCODE -eq 0) { ... }` เสมอ
+- **Windows Parallel `edit_file` Guardrail**: ห้ามเรียก `edit_file` ขนานหลายรายการใส่**ไฟล์เดียวกัน**ในเทิร์นเดียวบน Windows (จะติด `user-mapped section open`) ให้รวมการแก้ในไฟล์เดียวกันเป็นบล็อกเดียวหรือแยกเทิร์น
 - **Docker Stack (`npm run docker:up|ps|logs|down`)**: `web` (`:8080` Nginx SPA + proxy `/api/`), `api` (`:3000` NestJS), `db` (`:5433` Postgres 16), `adminer` (`:8088`), `db-backup` (`--profile backup`) · คอนเทนเนอร์ `node:22-bookworm-slim` ไม่มี `wget`/`curl` ต้องใช้ Native Node `fetch('http://127.0.0.1:3000/api/health')` คู่กับ `@Public() @Get('health')` เสมอ
 
 ## Angular UI, MyHR Prism Color System & Syncfusion
@@ -69,6 +70,8 @@ npm --prefix server run build
   - Writeback: `OPENPROJECT_WRITEBACK` (ค่าเริ่ม `false`) PATCH assignee/dates พร้อม Dialog ยืนยันเมื่อมี `opId` · KPI Snapshot จับรายเดือน/ไตรมาส (`canCaptureKpi`) · Python Analytics Hub (`/insights`, `/api/analytics/report|run`)
 - **OpenProject & GitLab Sync Invariants**:
   - **`firstDueOn` Protection**: ห้ามเขียนทับ `tickets.first_due_on` ที่มีค่าอยู่แล้วตอนซิงก์ OpenProject เด็ดขาด ยกเว้นมีรายการอนุมัติ `APPROVED` ใน `ticket_due_shifts`
+  - **Policy & Auto-SLA Dates (`shared/domain/policy-sla.ts`)**: `myprojectplus.myhr.co.th` เก็บวันที่ใน Custom Fields (`customField43` Receipt, `customField44` Reply, `customField45` Plan, `customField46` CF Due, `customField163` Alert, `customField185` Policy, `customField219` Bug Cause) · ลำดับหา `dueOn` / `firstDueOn` แรกเข้าคือ `dueDate → cfDueDate → policyDate → planDate` · ใช้ `replyDate` เป็น Fair Cutoff (`devDeliveredOn`) fallback เมื่อไม่มี `readyForQaAt` · เมื่อเปิด Auto-SLA ให้บวกวันทำการข้ามเสาร์-อาทิตย์และติด `slaAutoFilled` (`Auto`) เฉพาะใน Scorecard (ห้าม Writeback ทับใบงานเดิมบน myProject ยกเว้นตอนสร้างใบใหม่ผ่าน `create-from-branch`)
+  - **Alert Kind Exhaustiveness**: เมื่อเพิ่มชนิด `TicketAlert['kind']` ใน `shared/domain/alerts.ts` ต้องอัปเดตให้ครบ 4 จุดเสมอ: `ScorecardService` (`alert.kind === 'overrun' ? rules.overrun : rules.deadline`), `api-client.ts` (`sendTeams`), `teams-notify.ts` (`TeamsEventKind` + `messageFor`) & `pages/teams/teams.ts`, และ `integrations.controller.ts` (`sendTeams`)
   - **OpenProject Pagination & Custom Fields**: พารามิเตอร์ `offset` ของ API v3 คือ **1-based page number** ต้องเพิ่มทีละ `offset += 1` (ห้าม `offset += pageSize`) · `_links.customField1` = แผนก, `customField2` = ฝ่ายย่อย (`unit`), `customField3` = ตำแหน่ง (`job_title`)
   - **Team Staging & Visibility**: ช่วงทดสอบเฉพาะทีมใช้ `people.active = false` (ไม่ลบแถว) กรองผ่าน `listPeople(db, true)` · สิทธิ์ข้ามแผนกบังคับใช้ 2 ชั้นทั้ง Backend (`team_visibility_rules`, `user_allowed_teams`) และ Frontend (`WorkspaceScope.allowedTeams`) · Smart Merge Sync ของ `/admin/projects` ต้องรักษาค่า `active` และ `assignedTeamIds` เดิมเสมอ
   - **GitLab Sync**: ดึง MR, `reviewers`, `approved_by` (`/approvals`) และตรวจจับ Unmatched Branches เพื่อสร้างใบงาน myProject ผูกกลับอัตโนมัติ

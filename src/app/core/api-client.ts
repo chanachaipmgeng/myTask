@@ -87,6 +87,20 @@ export interface DiscoveredOpCustomFieldDto {
   sampleWpType?: string;
 }
 
+export interface OpenProjectTypeCatalogDto {
+  id: number;
+  name: string;
+  color?: string;
+  isMilestone?: boolean;
+}
+
+export interface OpenProjectStatusCatalogDto {
+  id: number;
+  name: string;
+  isClosed: boolean;
+  color?: string;
+}
+
 export interface BootstrapSettings {
   weeklyQuotas: Record<string, number>;
   trackWeights: TrackWeights;
@@ -95,6 +109,8 @@ export interface BootstrapSettings {
   hoursPerMd: number;
   openprojectMapping: unknown;
   openprojectProjectCatalog?: OpenProjectCatalogEntry[];
+  openprojectTypeCatalog?: OpenProjectTypeCatalogDto[];
+  openprojectStatusCatalog?: OpenProjectStatusCatalogDto[];
   scorecardCycles?: {
     cycles: import('../../../shared/domain/scorecard-cycle').ScorecardCycle[];
     activeCycleId: string | null;

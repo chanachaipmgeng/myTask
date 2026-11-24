@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { currentViewer, effectiveRole } from '../../core/admin-settings';
+import { currentViewer, effectiveRole, openprojectTypeCatalog } from '../../core/admin-settings';
 import { scorePartNotes } from '../../core/kpi-meaning';
 import { MyProjectSyncAdapter } from '../../core/myproject-sync';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -40,6 +40,7 @@ import {
   closedToneMap,
   dodToneMap,
   toneForAlertLabel,
+  toneForTicketType,
   trackToneMap,
   unplannedYesNoToneMap,
   weekToneMap,
@@ -50,7 +51,7 @@ import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-s
 import { listWorkspaceTrackChipOptions, parseWorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
 type TrackFilter = WorkspaceTrackFilter;
-type TypeFilter = TicketType | 'All';
+type TypeFilter = string;
 
 @Component({
   selector: 'app-tickets',
@@ -111,7 +112,7 @@ export class TicketsPage {
     { field: 'workflowStatus', headerText: 'สถานะงาน', width: 140 },
     { field: 'manage', headerText: 'จัดการใบงาน', width: 215, allowFiltering: false, allowSorting: false },
     { field: 'trackLabel', headerText: 'สาย', width: 110 },
-    { field: 'type', headerText: 'ชนิด', width: 140 },
+    { field: 'displayType', headerText: 'ชนิด', width: 155 },
     { field: 'module', headerText: 'โมดูล', width: 120 },
     { field: 'size', headerText: 'ขนาด', width: 80 },
     { field: 'points', headerText: 'Points', width: 90, textAlign: 'Right' },
@@ -152,7 +153,7 @@ export class TicketsPage {
   ];
 
   protected readonly ticketGridOptions: SfGridOptions = listGridOptions({
-    id: this.isMine ? 'my-tickets-score-grid-v4' : 'tickets-score-grid-v4',
+    id: this.isMine ? 'my-tickets-score-grid-v5' : 'tickets-score-grid-v5',
     enablePersistence: true,
     pageSize: 10,
     search: false,
@@ -186,10 +187,12 @@ export class TicketsPage {
   protected readonly trackOptions = listWorkspaceTrackChipOptions()
     .filter((row) => row.id !== 'All')
     .map((row) => ({ text: row.label, value: row.id }));
-  protected readonly trackFilters = listWorkspaceTrackChipOptions().map((row) => ({
-    text: row.id === 'All' ? 'ทุกสาย' : row.label,
-    value: row.id,
-  }));
+  protected readonly trackFilters = computed(() =>
+    listWorkspaceTrackChipOptions(this.scorecard.people(), this.scorecard.tickets()).map((row) => ({
+      text: row.id === 'All' ? 'ทุกสาย' : row.label,
+      value: row.id,
+    })),
+  );
   protected readonly typeOptions = [
     { text: 'Feature', value: 'Feature' },
     { text: 'CR', value: 'CR' },
@@ -199,7 +202,25 @@ export class TicketsPage {
     { text: 'Ops', value: 'Ops' },
     { text: 'TechDebt', value: 'TechDebt' },
   ];
-  protected readonly typeFilters = [{ text: 'ทุกชนิด', value: 'All' }, ...this.typeOptions];
+  protected readonly typeFilters = computed(() => {
+    const seen = new Set<string>();
+    for (const entry of openprojectTypeCatalog()) {
+      const name = entry.name?.trim();
+      if (name) seen.add(name);
+    }
+    for (const row of this.scorecard.ticketRows()) {
+      if (row.displayType) seen.add(row.displayType);
+    }
+    if (seen.size === 0) {
+      for (const opt of this.typeOptions) seen.add(opt.value);
+    }
+    return [
+      { text: 'ทุกชนิด', value: 'All' },
+      ...[...seen]
+        .sort((a, b) => a.localeCompare(b, 'th'))
+        .map((name) => ({ text: name, value: name })),
+    ];
+  });
   protected readonly sizeOptions = this.sizes.map((item) => ({
     text: `${item.size} · ${item.points} points · ${item.md} MD`,
     value: item.size,
@@ -240,6 +261,10 @@ export class TicketsPage {
     if (this.trackFilter() !== track) {
       this.trackFilter.set(track);
     }
+    const wsType = this.workspace.opType() || 'All';
+    if (this.typeFilter() !== wsType) {
+      this.typeFilter.set(wsType);
+    }
   });
 
   protected readonly track = signal<Track>('Implement');
@@ -268,29 +293,51 @@ export class TicketsPage {
   protected readonly editWorkflowStatus = signal<WorkflowStatus>('In Progress');
   protected readonly editActualMd = signal<number | null>(0);
   protected readonly editMrLink = signal('');
-  protected readonly editPocResult = signal<PocResult | ''>('');
-  protected readonly editBugCause = signal<BugCause | ''>('');
+  protected readonly editPocResult = signal<string>('');
+  protected readonly editBugCause = signal<string>('');
   protected readonly editIsPaused = signal(false);
   protected readonly editPausedDays = signal<number | null>(0);
   protected readonly editUnitTestDone = signal(false);
   protected readonly editMrAttached = signal(false);
   protected readonly editNote = signal('');
 
-  protected readonly pocResultOptions: { text: string; value: PocResult | '' }[] = [
-    { text: '— ไม่ระบุ —', value: '' },
-    { text: 'Adopted (นำไปใช้จริง)', value: 'Adopted' },
-    { text: 'Alternative Chosen (ใช้ทางเลือกอื่น)', value: 'Alternative Chosen' },
-    { text: 'Dropped (ยุติแนวทางนี้)', value: 'Dropped' },
-  ];
+  protected readonly pocResultOptions = computed<{ text: string; value: string }[]>(() => {
+    const base: { text: string; value: string }[] = [
+      { text: '— ไม่ระบุ —', value: '' },
+      { text: 'Adopted (นำไปใช้จริง)', value: 'Adopted' },
+      { text: 'Alternative Chosen (ใช้ทางเลือกอื่น)', value: 'Alternative Chosen' },
+      { text: 'Dropped (ยุติแนวทางนี้)', value: 'Dropped' },
+    ];
+    const seen = new Set(base.map((b) => b.value));
+    for (const t of this.scorecard.tickets()) {
+      const val = (t.pocResult ?? '').trim();
+      if (val && !seen.has(val)) {
+        seen.add(val);
+        base.push({ text: val, value: val });
+      }
+    }
+    return base;
+  });
 
-  protected readonly bugCauseOptions: { text: string; value: BugCause | '' }[] = [
-    { text: '— ไม่ระบุ —', value: '' },
-    { text: 'Logic (ตรรกะโค้ด)', value: 'Logic' },
-    { text: 'UI (หน้าจอ/การแสดงผล)', value: 'UI' },
-    { text: 'API (การเชื่อมต่อ/ข้อมูล)', value: 'API' },
-    { text: 'Requirement (โจทย์/สเปกเปลี่ยน)', value: 'Requirement' },
-    { text: 'Environment (เซิร์ฟเวอร์/ตั้งค่า)', value: 'Environment' },
-  ];
+  protected readonly bugCauseOptions = computed<{ text: string; value: string }[]>(() => {
+    const base: { text: string; value: string }[] = [
+      { text: '— ไม่ระบุ —', value: '' },
+      { text: 'Logic (ตรรกะโค้ด)', value: 'Logic' },
+      { text: 'UI (หน้าจอ/การแสดงผล)', value: 'UI' },
+      { text: 'API (การเชื่อมต่อ/ข้อมูล)', value: 'API' },
+      { text: 'Requirement (โจทย์/สเปกเปลี่ยน)', value: 'Requirement' },
+      { text: 'Environment (เซิร์ฟเวอร์/ตั้งค่า)', value: 'Environment' },
+    ];
+    const seen = new Set(base.map((b) => b.value));
+    for (const t of this.scorecard.tickets()) {
+      const val = (t.bugCause ?? '').trim();
+      if (val && !seen.has(val)) {
+        seen.add(val);
+        base.push({ text: val, value: val });
+      }
+    }
+    return base;
+  });
 
   protected readonly workflowStatusOptions = computed(() => {
     const base: { text: string; value: WorkflowStatus }[] = [
@@ -320,9 +367,13 @@ export class TicketsPage {
       .filter(
         (row) =>
           (track === 'All' || normalizeTrack(row.track) === normalizeTrack(track)) &&
-          (type === 'All' || row.type === type),
+          (type === 'All' || row.displayType === type || row.type === type),
       )
-      .filter((row) => query === '' || `${row.id} ${row.module} ${row.assignee}`.toLowerCase().includes(query));
+      .filter(
+        (row) =>
+          query === '' ||
+          `${row.id} ${row.module} ${row.displayType} ${row.assignee}`.toLowerCase().includes(query),
+      );
   });
 
   protected readonly myTicketStats = computed(() => {
@@ -379,11 +430,11 @@ export class TicketsPage {
   }
 
   protected onEditPocResultChange(value: string): void {
-    this.editPocResult.set((value ?? '') as PocResult | '');
+    this.editPocResult.set(value ?? '');
   }
 
   protected onEditBugCauseChange(value: string): void {
-    this.editBugCause.set((value ?? '') as BugCause | '');
+    this.editBugCause.set(value ?? '');
   }
 
   protected saveSelfUpdate(): void {
@@ -443,9 +494,13 @@ export class TicketsPage {
   }
 
   protected setTypeFilter(value: string): void {
-    if (value === 'All' || this.typeOptions.some((option) => option.value === value)) {
-      this.typeFilter.set(value as TypeFilter);
-    }
+    const v = (value ?? '').trim() || 'All';
+    this.typeFilter.set(v);
+    this.workspace.setType(v === 'All' ? '' : v);
+  }
+
+  protected typeTone(label: string): BadgeTone {
+    return toneForTicketType(label);
   }
 
   protected setChoice(field: 'track' | 'type' | 'size' | 'weekOffset' | 'variance' | 'blocker' | 'closed' | 'dodPassed' | 'inTimeBox' | 'childTicketsSized' | 'unplanned' | 'assigneeId', value: string): void {

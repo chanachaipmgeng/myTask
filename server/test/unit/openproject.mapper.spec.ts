@@ -356,4 +356,59 @@ describe('Policy & SLA dates sync + Auto-SLA rules', () => {
     assert.equal(matched.alertDate, 'customField163');
     assert.equal(matched.policyDate, 'customField185');
   });
+
+  it('preserves raw OpenProject opType, opTypeId, opStatus, custom bugCause, and normalizes /api/v3/users/:id/avatar URLs', async () => {
+    const {
+      normalizeOpenProjectAvatarUrl,
+      extractOpAvatarUserId,
+      mapDepartmentToTeam,
+    } = await import('../../../shared/domain/op-team-staging');
+
+    assert.equal(
+      normalizeOpenProjectAvatarUrl('https://myprojectplus.myhr.co.th/users/90/avatar', 90),
+      'https://myprojectplus.myhr.co.th/api/v3/users/90/avatar',
+    );
+    assert.equal(
+      normalizeOpenProjectAvatarUrl(null, 90, 'https://myprojectplus.myhr.co.th/'),
+      'https://myprojectplus.myhr.co.th/api/v3/users/90/avatar',
+    );
+    assert.equal(
+      extractOpAvatarUserId('https://myprojectplus.myhr.co.th/api/v3/users/90/avatar'),
+      90,
+    );
+    assert.equal(
+      mapDepartmentToTeam('RD-Research and Development', 'RD-QA', 'RD-Quality Assurance').track,
+      'QA',
+    );
+
+    const ctx: MapContext = {
+      ...baseCtx(),
+      mapping: {
+        ...DEFAULT_OPENPROJECT_MAPPING,
+        customFields: {
+          ...DEFAULT_OPENPROJECT_MAPPING.customFields,
+          bugCause: 'customField219',
+        },
+      },
+    };
+    const wp: OpWorkPackage = {
+      id: 74001,
+      subject: 'Customer service portal login timeout',
+      estimatedTime: 'PT12H',
+      customField219: 'Session token expired on SSO callback',
+      _links: {
+        status: { href: '/api/v3/statuses/9', title: '*Testing in Progress' },
+        type: { href: '/api/v3/types/6', title: 'CS-Service Request' },
+        project: { href: '/api/v3/projects/cs', title: 'CS' },
+        assignee: { href: '/api/v3/users/10', title: 'Itsara' },
+      },
+    };
+    const ticket = mapWorkPackage(wp, ctx);
+    assert.equal(ticket.opType, 'CS-Service Request');
+    assert.equal(ticket.opTypeId, 6);
+    assert.equal(ticket.opStatus, '*Testing in Progress');
+    assert.equal(ticket.type, 'Ops');
+    assert.equal(ticket.workflowStatus, 'In QA');
+    assert.equal(ticket.bugCause, 'Session token expired on SSO callback');
+  });
 });
