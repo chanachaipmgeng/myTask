@@ -185,6 +185,7 @@
 }
 
 .hero-band__metric {
+  --m-accent: var(--hb-banner-accent);
   position: relative;
   min-width: 0;
   padding: 6px 18px;
@@ -194,6 +195,13 @@
   gap: 4px;
   transition: background-color 0.18s ease;
   animation: kpiStripEnter var(--dur-base) var(--ease-crisp) both;
+
+  &[data-accent='teal'] { --m-accent: #0d9488; }
+  &[data-accent='violet'] { --m-accent: #7c3aed; }
+  &[data-accent='emerald'] { --m-accent: #10b981; }
+  &[data-accent='amber'] { --m-accent: #f59e0b; }
+  &[data-accent='rose'] { --m-accent: #e11d48; }
+  &[data-accent='cyan'] { --m-accent: #0284c7; }
 
   &:nth-child(1) {
     animation-delay: 100ms;
@@ -220,18 +228,19 @@
     left: 18px;
     right: 18px;
     top: 0;
-    height: 2px;
+    height: 2.5px;
     border-radius: 999px;
-    background: var(--hb-banner-accent);
-    opacity: 0;
-    transform: scaleX(0.4);
+    background: var(--m-accent);
+    opacity: 0.42;
+    transform: scaleX(0.32);
+    transform-origin: left center;
     transition:
       opacity var(--dur-fast) ease,
       transform var(--dur-fast) var(--ease-spring);
   }
 
   &:hover {
-    background-color: rgba(39, 70, 179, 0.055);
+    background-color: color-mix(in srgb, var(--m-accent) 7%, transparent);
 
     &::after {
       opacity: 1;
@@ -240,7 +249,7 @@
 
     .hero-band__value {
       transform: scale(1.035);
-      color: var(--hb-banner-accent);
+      color: var(--m-accent);
     }
 
     .hero-band__trend {
@@ -314,6 +323,15 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.hero-band__swatch {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--m-accent);
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--m-accent) 18%, transparent);
 }
 
 .hero-band__label {

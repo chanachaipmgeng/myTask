@@ -50,8 +50,8 @@
                 <span class="person-dir-card__name">{{ card.person.nickname }}</span>
                 <span class="person-dir-card__role">{{ card.person.jobTitle || card.person.role }}</span>
                 <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                  <app-status-badge [label]="card.trackLabel" [tone]="card.person.track === 'RD' ? 'info' : 'primary'" />
-                  <app-status-badge [label]="card.person.level" tone="secondary" />
+                  <app-status-badge [value]="card.person.track" [label]="card.trackLabel" [toneMap]="trackToneMap" />
+                  <app-status-badge [value]="card.person.level" [toneMap]="levelToneMap" />
                 </div>
               </div>
             </div>
@@ -67,7 +67,12 @@
                   {{ card.indexLabel }}
                 </span>
               </div>
-              <div class="person-dir-card__bar">
+              <div
+                class="person-dir-card__bar"
+                [class.is-good]="card.onTarget"
+                [class.is-warn]="!card.onTarget && card.index >= 60"
+                [class.is-low]="card.index < 60"
+              >
                 <span [style.width.%]="card.index > 100 ? 100 : card.index"></span>
               </div>
             </div>
@@ -165,15 +170,27 @@
               title="ดัชนีพัฒนาการ"
               [value]="(personRow()?.index ?? 0).toFixed(1)"
               [progress]="personRow()?.index ?? 0"
+              [accent]="(personRow()?.index ?? 0) >= (personRow()?.target ?? 75) ? 'success' : 'warning'"
               layout="stack"
             ></app-kpi-stat>
             <app-kpi-stat
               title="แผนส่งมอบ"
               [value]="(personRow()?.planRawPct ?? 0).toFixed(1) + '%'"
+              accent="teal"
               layout="stack"
             ></app-kpi-stat>
-            <app-kpi-stat title="ใบเปิด" [value]="openTickets().length" layout="stack"></app-kpi-stat>
-            <app-kpi-stat title="ปิดแล้ว" [value]="closedTickets().length" layout="stack"></app-kpi-stat>
+            <app-kpi-stat
+              title="ใบเปิด"
+              [value]="openTickets().length"
+              [accent]="openTickets().length > 3 ? 'coral' : 'info'"
+              layout="stack"
+            ></app-kpi-stat>
+            <app-kpi-stat
+              title="ปิดแล้ว"
+              [value]="closedTickets().length"
+              accent="violet"
+              layout="stack"
+            ></app-kpi-stat>
           </div>
           <app-section-card title="งานเปิดล่าสุด" [subtitle]="person.nickname">
             <ul class="person-ws__ticket-list">

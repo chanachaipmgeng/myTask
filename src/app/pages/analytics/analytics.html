@@ -10,13 +10,13 @@
     ]"
   >
     <div actions class="flex flex-wrap items-center gap-2">
-      <span class="e-badge e-badge-info e-badge-pill">
+      <span class="e-badge e-badge-violet e-badge-pill">
         Engine: {{ report().engine === 'python' ? 'Python 3 Statistical Engine' : 'TypeScript Domain Engine' }}
       </span>
       <button
         ejs-button
         id="run-python-analytics"
-        cssClass="e-primary"
+        cssClass="e-btn-violet"
         iconCss="e-icons e-play"
         type="button"
         [disabled]="running()"
@@ -24,7 +24,7 @@
       >
         รันวิเคราะห์ด้วย Python ตอนนี้
       </button>
-      <a ejs-button cssClass="e-outline" routerLink="/integrations">ตั้งค่าการซิงก์</a>
+      <a ejs-button cssClass="e-outline e-btn-teal" routerLink="/integrations">ตั้งค่าการซิงก์</a>
     </div>
   </app-page-head>
 

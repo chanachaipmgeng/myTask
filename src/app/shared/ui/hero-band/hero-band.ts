@@ -3,13 +3,18 @@ import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper
 import { CountUpDirective } from '../count-up';
 import { PersonAvatarComponent } from '../person-avatar/person-avatar';
 
+export type HeroBandAccent = 'primary' | 'teal' | 'violet' | 'amber' | 'emerald' | 'rose' | 'cyan';
+
 export interface HeroBandMetric {
   label: string;
   value: string | number;
   unit?: string;
   hint?: string;
   tone?: 'good' | 'bad' | 'neutral';
+  accent?: HeroBandAccent;
 }
+
+const DEFAULT_SLOT_ACCENTS: readonly HeroBandAccent[] = ['primary', 'teal', 'violet', 'emerald', 'amber', 'cyan'];
 
 @Component({
   selector: 'app-hero-band',
@@ -34,6 +39,13 @@ export class HeroBandComponent {
 
   protected metricCountDelay(index: number): number {
     return 100 + index * 55;
+  }
+
+  protected metricAccent(metric: HeroBandMetric, index: number): HeroBandAccent {
+    if (metric.accent) return metric.accent;
+    if (metric.tone === 'bad') return 'rose';
+    if (metric.tone === 'good' && index === 0) return 'emerald';
+    return DEFAULT_SLOT_ACCENTS[index % DEFAULT_SLOT_ACCENTS.length]!;
   }
 
   protected get refreshSignature(): string {

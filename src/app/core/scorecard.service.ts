@@ -16,6 +16,7 @@ import {
   trackWeights,
   weeklyQuotas,
 } from './admin-settings';
+import { trackHexColor } from '../../../shared/domain/palette';
 import { collectAlerts } from './alerts';
 import { ApiClient } from './api-client';
 import { planNewWork } from './capacity';
@@ -688,7 +689,7 @@ export class ScorecardService {
         reworkPct: score.reworkRate * 100,
         sidePct,
         sideLabel: `${formatPercent(sidePct)}% · ${sideState}`,
-        color: person.track === 'RD' ? '#3ec6e0' : '#7eb6ff',
+        color: trackHexColor(person.track),
         target: INDEX_TARGET,
       };
     });

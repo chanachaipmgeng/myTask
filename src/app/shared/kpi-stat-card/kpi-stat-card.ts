@@ -29,7 +29,7 @@ import { BadgeTone, badgeToneClass } from '../ui/badge';
 import { CountUpDirective } from '../ui/count-up';
 
 export type { BadgeTone as KpiBadgeTone } from '../ui/badge';
-export type KpiAccent = 'default' | 'success' | 'warning' | 'danger' | 'info';
+export type KpiAccent = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'teal' | 'violet' | 'coral';
 export type KpiLayout = 'stack' | 'icon-start' | 'icon-end';
 export type KpiTrendDirection = 'up' | 'down' | 'flat';
 export type KpiSparklineType = 'Line' | 'Area' | 'Column' | 'WinLoss';
@@ -38,10 +38,13 @@ export type KpiSparklineData = number[] | readonly KpiSparklinePoint[];
 
 const ACCENT_SPARK: Record<KpiAccent, string> = {
   default: '#4c68e5',
-  success: '#34d399',
-  warning: '#fbbf24',
-  danger: '#fb7185',
-  info: '#38bdf8',
+  success: '#10b981',
+  warning: '#f59e0b',
+  danger: '#f43f5e',
+  info: '#0ea5e9',
+  teal: '#14b8a6',
+  violet: '#8b5cf6',
+  coral: '#f97316',
 };
 
 @Component({
@@ -86,11 +89,15 @@ export class KpiStatCardComponent implements AfterViewInit, OnChanges {
   protected mappedGlowTone(): MotionGlowTone {
     switch (this.accent) {
       case 'success':
+      case 'teal':
         return 'good';
       case 'warning':
+      case 'coral':
         return 'warning';
       case 'danger':
         return 'danger';
+      case 'violet':
+        return 'ai';
       case 'info':
         return 'primary';
       default:
@@ -125,7 +132,13 @@ export class KpiStatCardComponent implements AfterViewInit, OnChanges {
   }
 
   protected fillColor(): string {
-    return this.progressColor || this.theme.progressFill();
+    if (this.progressColor) {
+      return this.progressColor;
+    }
+    if (this.accent !== 'default') {
+      return ACCENT_SPARK[this.accent] ?? this.theme.progressFill();
+    }
+    return this.theme.progressFill();
   }
 
   protected sparkFill(): string {

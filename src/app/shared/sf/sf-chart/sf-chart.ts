@@ -44,6 +44,7 @@ import {
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ThemeService } from '../../../core/theme.service';
 import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
+import { prismChartPalette } from '../../ui/palette';
 
 export interface SfChartSeriesConfig {
   type:
@@ -117,9 +118,9 @@ export function scorePartWaterfallSeries(points: readonly object[]): SfChartSeri
       xName: 'label',
       yName: 'points',
       name: 'คะแนนใบเฉลี่ย',
-      fill: '#4c68e5',
-      summaryFillColor: '#2e4fc8',
-      negativeFillColor: '#e35d6a',
+      fill: '#0d9488',
+      summaryFillColor: '#2746b3',
+      negativeFillColor: '#e11d48',
       columnWidth: 0.55,
       connector: { color: '#94a3b8', width: 1.5 },
       sumIndexes: [points.length - 1],
@@ -229,7 +230,7 @@ export interface SfChartOptions {
         [style.height]="fullscreen() ? 'calc(100vh - 96px)' : resolvedHeight()"
         background="transparent"
         [theme]="theme.sfTheme()"
-        [palettes]="nordicPalettes"
+        [palettes]="prismPalettes()"
         [title]="options().title ?? ''"
         [primaryXAxis]="primaryXAxis()"
         [primaryYAxis]="primaryYAxis()"
@@ -320,7 +321,7 @@ export class SfChartComponent implements AfterViewInit, OnDestroy {
 
   protected readonly fullscreen = signal(false);
   protected readonly chartArea = { border: { width: 0 } };
-  protected readonly nordicPalettes = ['#2e4fc8', '#38bdf8', '#10b981', '#6366f1', '#f59e0b', '#f43f5e'];
+  protected readonly prismPalettes = computed(() => prismChartPalette(this.theme.isDark()));
   protected readonly defaultCornerRadius = { topLeft: 8, topRight: 8 };
   protected readonly barCornerRadius = { topRight: 8, bottomRight: 8 };
   protected readonly flatCornerRadius = {};

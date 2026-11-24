@@ -1,4 +1,14 @@
-export type BadgeTone = 'info' | 'success' | 'warning' | 'danger' | 'primary' | 'secondary';
+export type BadgeTone =
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'primary'
+  | 'secondary'
+  | 'teal'
+  | 'violet'
+  | 'coral'
+  | 'indigo';
 
 /** @deprecated ใช้ BadgeTone — คง alias เพื่อไม่พัง import เดิมของ KPI */
 export type KpiBadgeTone = BadgeTone;
@@ -10,6 +20,10 @@ const TONE_CLASS: Record<BadgeTone, string> = {
   danger: 'e-badge-danger',
   primary: 'e-badge-primary',
   secondary: 'e-badge-secondary',
+  teal: 'e-badge-teal',
+  violet: 'e-badge-violet',
+  coral: 'e-badge-coral',
+  indigo: 'e-badge-indigo',
 };
 
 export function badgeToneClass(tone: BadgeTone = 'info', pill = true): string {
@@ -28,18 +42,19 @@ export function resolveBadgeTone(
   if (value == null || value === '') {
     return fallback;
   }
-  if (toneMap && toneMap[String(value)]) {
-    return toneMap[String(value)];
+  const key = String(value);
+  if (toneMap && toneMap[key]) {
+    return toneMap[key];
   }
   return fallback;
 }
 
-/** สถานะ workflow บน Board / Work List */
+/** สถานะ workflow บน Board / Work List — แยกสีแต่ละขั้นตอนชัดเจนไม่ชนกัน */
 export const workflowStatusToneMap: Record<string, BadgeTone> = {
   Backlog: 'secondary',
   'In Progress': 'primary',
-  'Code Review': 'warning',
-  'Ready for QA': 'info',
+  'Code Review': 'violet',
+  'Ready for QA': 'coral',
   'In QA': 'info',
   Reopened: 'danger',
   Done: 'success',
@@ -49,7 +64,7 @@ export const workflowStatusToneMap: Record<string, BadgeTone> = {
 
 /** ป้ายแผนงาน (Work List) */
 export const planToneMap: Record<string, BadgeTone> = {
-  ในแผน: 'success',
+  ในแผน: 'teal',
   นอกแผน: 'warning',
 };
 
@@ -60,11 +75,51 @@ export const weekToneMap: Record<string, BadgeTone> = {
   'เลื่อน 2+': 'danger',
 };
 
-/** สายงาน */
+/** สายงานครบทั้ง 6 สายงาน + alias */
 export const trackToneMap: Record<string, BadgeTone> = {
+  IMP: 'primary',
   Implement: 'primary',
-  'R&D': 'info',
-  RD: 'info',
+  RND: 'teal',
+  'R&D': 'teal',
+  RD: 'teal',
+  'R&D (FE / BE / AI)': 'teal',
+  QA: 'info',
+  'QA / Tester': 'info',
+  UXBA: 'violet',
+  'Product / BA / UX': 'violet',
+  SUP: 'warning',
+  'Support / Helpdesk': 'warning',
+  INFRA: 'coral',
+  'Infra / DevOps / Sec': 'coral',
+};
+
+/** ชนิดใบงาน (Ticket Type) */
+export const ticketTypeToneMap: Record<string, BadgeTone> = {
+  Feature: 'primary',
+  CR: 'indigo',
+  Spike: 'violet',
+  Ops: 'coral',
+  TechDebt: 'warning',
+  'Bug-Investigate': 'danger',
+  'Bug-Fix': 'danger',
+};
+
+/** ระดับประสบการณ์ (Seniority Level) */
+export const levelToneMap: Record<string, BadgeTone> = {
+  Senior: 'violet',
+  Mid: 'teal',
+  Junior: 'info',
+  FirstMonth: 'warning',
+  เดือนแรก: 'warning',
+};
+
+/** ขนาดใบงาน (T-shirt Size) */
+export const sizeToneMap: Record<string, BadgeTone> = {
+  XS: 'teal',
+  S: 'info',
+  M: 'primary',
+  L: 'violet',
+  XL: 'coral',
 };
 
 /** ใช่/ไม่ — ทั่วไป */
@@ -90,7 +145,7 @@ export const dodToneMap: Record<string, BadgeTone> = {
 
 export const unplannedYesNoToneMap: Record<string, BadgeTone> = {
   ใช่: 'warning',
-  ไม่: 'success',
+  ไม่: 'teal',
 };
 
 /** ป้ายสัปดาห์แบบไดนามิก เช่น `เลื่อน +2` บน Work List */

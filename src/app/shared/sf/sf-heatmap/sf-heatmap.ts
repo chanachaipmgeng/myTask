@@ -36,9 +36,10 @@ const INDEX_PALETTE: PaletteSettingsModel = {
   type: 'Gradient',
   emptyPointColor: 'rgba(148, 163, 184, 0.16)',
   palette: [
-    { value: 0, color: '#e35d6a', label: 'ต่ำ' },
-    { value: 75, color: '#f0b429', label: 'เป้า 75' },
-    { value: 100, color: '#2e4fc8', label: 'สูง' },
+    { value: 0, color: '#f43f5e', label: 'ต่ำ' },
+    { value: 65, color: '#f59e0b', label: 'ต้องเร่ง' },
+    { value: 80, color: '#0ea5e9', label: 'ผ่านเป้า' },
+    { value: 100, color: '#10b981', label: 'ดีเยี่ยม' },
   ],
 };
 

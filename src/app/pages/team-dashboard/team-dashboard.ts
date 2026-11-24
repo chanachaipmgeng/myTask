@@ -33,6 +33,7 @@ import {
   listGridOptions,
   SfMessageComponent,
   SfTextBoxComponent,
+  prismChartPalette,
 } from '../../shared/ui';
 import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
@@ -100,7 +101,7 @@ export class TeamDashboard {
   protected readonly snapshotError = signal('');
   protected readonly loadingSnapshot = signal(false);
 
-  protected readonly palette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6'];
+  protected readonly palette = prismChartPalette(false);
   protected readonly target = INDEX_TARGET;
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
@@ -177,10 +178,10 @@ export class TeamDashboard {
     const seriesMarker = { visible: true, width: 7, height: 7, shape: 'Circle', isFilled: true };
     const targetMarker = { visible: true, width: 8, height: 8, shape: 'Diamond', isFilled: true, fill: '#f0b429', border: { width: 1, color: '#f0b429' } };
     return [
-      { type: 'Line', dataSource: pts, xName: 'month', yName: 'plan', name: 'ปิดตามแผน', width: 2.5, fill: '#2e4fc8', marker: seriesMarker },
-      { type: 'Line', dataSource: pts, xName: 'month', yName: 'accuracy', name: 'ความแม่น', width: 2.5, fill: '#3ec6e0', marker: seriesMarker },
-      { type: 'Line', dataSource: pts, xName: 'month', yName: 'rework', name: 'Rework', width: 2.5, fill: '#e35d6a', marker: seriesMarker },
-      { type: 'Line', dataSource: pts, xName: 'month', yName: 'target', name: 'เป้า 75', width: 2, fill: '#f0b429', dashArray: '6,4', marker: targetMarker },
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'plan', name: 'ปิดตามแผน', width: 2.5, fill: '#2746b3', marker: seriesMarker },
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'accuracy', name: 'ความแม่น', width: 2.5, fill: '#0d9488', marker: seriesMarker },
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'rework', name: 'Rework', width: 2.5, fill: '#e11d48', marker: seriesMarker },
+      { type: 'Line', dataSource: pts, xName: 'month', yName: 'target', name: 'เป้า 75', width: 2, fill: '#f59e0b', dashArray: '6,4', marker: targetMarker },
     ];
   });
   protected readonly monthlyChartOptions: SfChartOptions = {
@@ -195,9 +196,10 @@ export class TeamDashboard {
 
   protected readonly quotaSeries = computed<SfChartSeriesConfig[]>(() => {
     const pts = this.quotaPoints();
+    const freeFill = this.theme.isDark() ? '#1e3a5f' : '#99f6e4';
     return [
-      { type: 'StackingColumn', dataSource: pts, xName: 'nickname', yName: 'used', name: 'ใช้แล้ว', fill: '#2e4fc8', columnWidth: 0.48 },
-      { type: 'StackingColumn', dataSource: pts, xName: 'nickname', yName: 'free', name: 'ว่าง', fill: '#c7d2fe', columnWidth: 0.48, cornerRadius: { topLeft: 8, topRight: 8 } },
+      { type: 'StackingColumn', dataSource: pts, xName: 'nickname', yName: 'used', name: 'ใช้แล้ว', fill: '#0d9488', columnWidth: 0.48 },
+      { type: 'StackingColumn', dataSource: pts, xName: 'nickname', yName: 'free', name: 'ว่าง', fill: freeFill, columnWidth: 0.48, cornerRadius: { topLeft: 8, topRight: 8 } },
     ];
   });
   protected readonly quotaChartOptions: SfChartOptions = {
@@ -213,9 +215,9 @@ export class TeamDashboard {
   protected readonly mdCompSeries = computed<SfChartSeriesConfig[]>(() => {
     const pts = this.mdCompositionPoints();
     return [
-      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'plannedMd', name: 'Planned (ในแผน)', fill: '#2e4fc8', opacity: 0.82 },
-      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#3ec6e0', opacity: 0.82 },
-      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'mdMandateMd', name: '⚡ MD Mandate (สั่งตรง)', fill: '#f59e0b', opacity: 0.88 },
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'plannedMd', name: 'Planned (ในแผน)', fill: '#2746b3', opacity: 0.84 },
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#0d9488', opacity: 0.84 },
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'mdMandateMd', name: '⚡ MD Mandate (สั่งตรง)', fill: '#f59e0b', opacity: 0.9 },
     ];
   });
   protected readonly mdCompChartOptions: SfChartOptions = {

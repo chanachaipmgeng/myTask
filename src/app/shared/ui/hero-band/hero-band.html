@@ -54,8 +54,9 @@
   @if (metrics.length) {
     <div class="hero-band__kpi-strip">
       @for (metric of metrics; track $index) {
-        <div class="hero-band__metric">
+        <div class="hero-band__metric" [attr.data-accent]="metricAccent(metric, $index)">
           <div class="hero-band__metric-head">
+            <span class="hero-band__swatch" aria-hidden="true"></span>
             <span class="hero-band__label">{{ metric.label }}</span>
             @if (metric.tone === 'good') {
               <span class="hero-band__trend is-good" aria-hidden="true">▲</span>

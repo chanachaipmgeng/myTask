@@ -38,7 +38,7 @@
 
         <button
           ejs-button
-          cssClass="e-primary e-small"
+          cssClass="e-btn-teal e-small"
           type="button"
           (click)="loadProject(p.identifier)"
         >
@@ -62,7 +62,7 @@
         [value]="p.stats.totalEstimateMd"
         [hint]="'ใช้จริงแล้ว ' + p.stats.totalActualMd + ' MD'"
         iconCss="e-icons e-timeline-work-week"
-        accent="info"
+        accent="teal"
       />
 
       <app-kpi-stat
@@ -78,7 +78,7 @@
         [value]="p.stats.blockerCount + p.stats.defectCount"
         [hint]="'ติด Block ' + p.stats.blockerCount + ' · บั๊ก ' + p.stats.defectCount + ' ใบ'"
         iconCss="e-icons e-warning"
-        [accent]="p.stats.blockerCount > 0 ? 'danger' : 'default'"
+        [accent]="p.stats.blockerCount > 0 ? 'danger' : 'violet'"
       />
     </div>
 
@@ -128,7 +128,8 @@
               </div>
               <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden">
                 <div
-                  class="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                  class="h-3 rounded-full transition-all duration-500"
+                  [style.background]="p.stats.progressPercent >= 80 ? 'linear-gradient(90deg, #059669, #10b981)' : 'linear-gradient(90deg, #2746b3, #14b8a6)'"
                   [style.width.%]="p.stats.progressPercent"
                 ></div>
               </div>
@@ -158,12 +159,15 @@
         >
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
             @for (st of p.stats.stageDistribution; track st.status) {
-              <div class="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between">
+              <div
+                class="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between"
+                [style.borderTop]="'3px solid ' + stageColor(st.status || st.label)"
+              >
                 <div class="text-xs font-medium text-[color:var(--text-muted)]">{{ st.label }}</div>
                 <div class="flex items-baseline justify-between mt-2">
-                  <span class="text-2xl font-bold text-slate-800 dark:text-slate-100 font-mono">{{ st.count }}</span>
+                  <span class="text-2xl font-bold font-mono" [style.color]="stageColor(st.status || st.label)">{{ st.count }}</span>
                   @if (st.delayedCount > 0) {
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 font-bold">
+                    <span class="e-badge e-badge-danger e-badge-pill">
                       ค้าง {{ st.delayedCount }}
                     </span>
                   }
@@ -181,13 +185,16 @@
           @if (p.stats.trackBreakdown.length > 0) {
             <div class="space-y-3 pt-2">
               @for (trk of p.stats.trackBreakdown; track trk.track) {
-                <div class="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                <div
+                  class="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30"
+                  [style.borderLeft]="'3px solid ' + trackColor(trk.track)"
+                >
                   <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                    <span class="w-3 h-3 rounded-full" [style.backgroundColor]="trackColor(trk.track)"></span>
                     <span class="text-sm font-medium">{{ trk.label }}</span>
                   </div>
                   <div class="text-xs font-mono">
-                    <strong>{{ trk.count }}</strong> ใบ ({{ trk.estimateMd }} MD)
+                    <strong [style.color]="trackColor(trk.track)">{{ trk.count }}</strong> ใบ ({{ trk.estimateMd }} MD)
                   </div>
                 </div>
               }
@@ -363,7 +370,7 @@
                       @if (!b.ticketId) {
                         <button
                           ejs-button
-                          cssClass="e-primary e-small"
+                          cssClass="e-success e-small"
                           type="button"
                           (click)="onCreateTicketFromBranch(b)"
                         >

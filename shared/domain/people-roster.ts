@@ -1,5 +1,6 @@
 import { collectAlerts } from './alerts';
 import { Person, Ticket, Track } from './models';
+import { trackHexColor } from './palette';
 import {
   INDEX_TARGET,
   TrackWeights,
@@ -83,7 +84,7 @@ export function buildPeopleRoster(
       reworkPct: round1(score.reworkRate * 100),
       sidePct: round1(sidePct),
       sideLabel: `${formatPercent(sidePct)}% · ${sideState}`,
-      color: person.track === 'RD' ? '#3ec6e0' : '#7eb6ff',
+      color: trackHexColor(person.track),
       target: INDEX_TARGET,
       openCount: open.length,
       closedCount: closed.length,

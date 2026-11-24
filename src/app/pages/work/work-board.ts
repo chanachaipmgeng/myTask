@@ -22,6 +22,10 @@ import {
   SfMultiSelectComponent,
   SfTextBoxComponent,
   SfTimelineComponent,
+  badgeToneClass,
+  resolveBadgeTone,
+  sizeToneMap,
+  trackToneMap,
 } from '../../shared/ui';
 import {
   BUG_CAUSES,
@@ -85,6 +89,14 @@ export class WorkBoard {
   private readonly ticketDetail = inject(TicketDetailService);
   protected readonly theme = inject(ThemeService);
   private readonly boardRevision = signal(0);
+
+  protected sizeBadgeClass(size: string): string {
+    return badgeToneClass(resolveBadgeTone(size, sizeToneMap, 'info'));
+  }
+
+  protected trackBadgeClass(track: string): string {
+    return badgeToneClass(resolveBadgeTone(track, trackToneMap, 'primary'));
+  }
 
   @ViewChild('blockDialog') private blockDialog?: ConfirmDialogComponent;
   @ViewChild('editDialog') private editDialog?: SfDialogComponent;

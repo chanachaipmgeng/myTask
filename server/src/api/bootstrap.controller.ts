@@ -17,6 +17,12 @@ export class BootstrapController {
   ) {}
 
   @Public()
+  @Get('health')
+  health() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  }
+
+  @Public()
   @Get('bootstrap')
   async bootstrap(@Req() req: AuthedRequest) {
     const [rawPeople, allTickets, settings, departments, teams, disputes, leaves, stageLogs, allocations, visibility] =

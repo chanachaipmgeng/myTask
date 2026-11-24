@@ -19,7 +19,7 @@
           (valueChange)="setTrack($event)"
         />
       </app-form-field>
-      <button ejs-button cssClass="e-outline" iconCss="e-icons e-refresh" (click)="scorecard.reloadFromApi()">
+      <button ejs-button cssClass="e-outline e-btn-teal" iconCss="e-icons e-refresh" (click)="scorecard.reloadFromApi()">
         ซิงก์ข้อมูล
       </button>
     </div>
@@ -61,7 +61,7 @@
               @if (item.canPing && (role() === 'admin' || role() === 'lead')) {
                 <button
                   ejs-button
-                  cssClass="e-small e-outline e-primary"
+                  cssClass="e-small e-outline e-warning"
                   iconCss="e-icons e-comment-show"
                   (click)="pingTarget(item.ticketIds[0], item.blockingTeam)"
                 >

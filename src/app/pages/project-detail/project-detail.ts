@@ -32,7 +32,10 @@ import {
   SfMultiSelectComponent,
   TicketCreateDialogComponent,
   listGridOptions,
+  trackHexColor,
+  workflowStageHexColor,
 } from '../../shared/ui';
+import { ThemeService } from '../../core/theme.service';
 
 type ProjectDetailTab = 'overview' | 'tickets' | 'git' | 'teams';
 
@@ -87,6 +90,15 @@ export class ProjectDetailPage {
   private readonly scorecard = inject(ScorecardService);
   private readonly ticketDetail = inject(TicketDetailService);
   private readonly notice = inject(ShellNotice);
+  protected readonly theme = inject(ThemeService);
+
+  protected stageColor(status: string): string {
+    return workflowStageHexColor(status, this.theme.isDark());
+  }
+
+  protected trackColor(track: string): string {
+    return trackHexColor(track, this.theme.isDark());
+  }
 
   readonly canEdit = computed(() => {
     const role = currentViewer().access;

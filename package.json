@@ -10,7 +10,12 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "verify": "tsx scripts/verify-scores.ts",
-    "seed:full": "tsx scripts/seed-full-data.ts"
+    "seed:full": "tsx scripts/seed-full-data.ts",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:build": "docker compose build",
+    "docker:logs": "docker compose logs -f",
+    "docker:ps": "docker compose ps"
   },
   "private": true,
   "packageManager": "npm@10.9.9",

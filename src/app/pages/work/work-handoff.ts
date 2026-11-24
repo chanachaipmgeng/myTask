@@ -97,10 +97,10 @@ export class WorkHandoffPage {
   protected readonly stageAgingSeries = computed<SfChartSeriesConfig[]>(() => {
     const data = this.stageAgingData();
     return [
-      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'inProgressHours', name: 'In Progress', fill: '#4c68e5', columnWidth: 0.6 },
-      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'reviewHours', name: 'Code Review', fill: '#f59e0b', columnWidth: 0.6 },
-      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'qaHours', name: 'In QA', fill: '#3ec6e0', columnWidth: 0.6 },
-      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'blockedHours', name: 'Blocked', fill: '#e35d6a', columnWidth: 0.6, cornerRadius: { topRight: 4, bottomRight: 4 } },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'inProgressHours', name: 'In Progress', fill: '#2746b3', columnWidth: 0.6 },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'reviewHours', name: 'Code Review', fill: '#7c3aed', columnWidth: 0.6 },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'qaHours', name: 'In QA', fill: '#0284c7', columnWidth: 0.6 },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'blockedHours', name: 'Blocked', fill: '#e11d48', columnWidth: 0.6, cornerRadius: { topRight: 4, bottomRight: 4 } },
     ];
   });
 
@@ -136,8 +136,8 @@ export class WorkHandoffPage {
   });
 
   protected readonly statusToneMap: Record<string, BadgeTone> = {
-    'Code Review': 'warning',
-    'Ready for QA': 'info',
+    'Code Review': 'violet',
+    'Ready for QA': 'coral',
     'In QA': 'info',
     blocked: 'danger',
   };

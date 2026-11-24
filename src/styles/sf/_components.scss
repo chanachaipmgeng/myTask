@@ -1,25 +1,248 @@
 // -----------------------------------------------------------------------------
-// 1) Buttons — แบรนด์สีหลักเท่านั้น ไม่ขยับตำแหน่งด้วย transform
+// 1) Buttons & Status Badges — MyHR Prism Multi-Accent System (Zero Transform)
+//    - Primary คงเอกลักษณ์สีบริษัท Corporate Royal Blue (#2746b3 / #2e4fc8)
+//    - ปุ่มรองและป้ายสถานะแยกสีตามบริบท ครบทั้ง Light & Dark Mode
 // -----------------------------------------------------------------------------
-.shell-main .e-btn.e-primary:not(:disabled),
+.shell-main .e-btn.e-primary:not(.e-outline):not(:disabled),
 .appbar-chip-btn.e-primary:not(:disabled),
-.page-head .e-btn.e-primary:not(:disabled),
-.section-card .e-btn.e-primary:not(:disabled) {
+.page-head .e-btn.e-primary:not(.e-outline):not(:disabled),
+.section-card .e-btn.e-primary:not(.e-outline):not(:disabled),
+.e-dialog .e-btn.e-primary:not(.e-outline):not(:disabled) {
   background: var(--primary) !important;
   border-color: var(--primary-hover) !important;
   color: #ffffff !important;
 }
 
-.shell-main .e-btn.e-primary:not(:disabled):hover,
-.page-head .e-btn.e-primary:not(:disabled):hover,
-.section-card .e-btn.e-primary:not(:disabled):hover {
+.shell-main .e-btn.e-primary:not(.e-outline):not(:disabled):hover,
+.page-head .e-btn.e-primary:not(.e-outline):not(:disabled):hover,
+.section-card .e-btn.e-primary:not(.e-outline):not(:disabled):hover,
+.e-dialog .e-btn.e-primary:not(.e-outline):not(:disabled):hover {
   background: var(--primary-hover) !important;
 }
 
-.shell-main .e-btn.e-outline:not(:disabled):hover,
-.section-card .e-btn.e-outline:not(:disabled):hover {
+.shell-main .e-btn.e-outline:not(.e-success):not(.e-info):not(.e-warning):not(.e-danger):not(.e-btn-teal):not(.e-btn-violet):not(:disabled):hover,
+.section-card .e-btn.e-outline:not(.e-success):not(.e-info):not(.e-warning):not(.e-danger):not(.e-btn-teal):not(.e-btn-violet):not(:disabled):hover {
   border-color: var(--primary) !important;
   color: var(--primary-bright) !important;
+}
+
+/* Solid Semantic Action Buttons */
+.e-btn.e-success:not(.e-outline):not(:disabled),
+.e-btn.e-btn-emerald:not(.e-outline):not(:disabled) {
+  background: #059669 !important;
+  border-color: #047857 !important;
+  color: #ffffff !important;
+  &:hover {
+    background: #047857 !important;
+  }
+}
+
+.e-btn.e-info:not(.e-outline):not(:disabled),
+.e-btn.e-btn-teal:not(.e-outline):not(:disabled) {
+  background: #0d9488 !important;
+  border-color: #0f766e !important;
+  color: #ffffff !important;
+  &:hover {
+    background: #0f766e !important;
+  }
+}
+
+.e-btn.e-btn-violet:not(.e-outline):not(:disabled) {
+  background: #7c3aed !important;
+  border-color: #6d28d9 !important;
+  color: #ffffff !important;
+  &:hover {
+    background: #6d28d9 !important;
+  }
+}
+
+.e-btn.e-warning:not(.e-outline):not(:disabled) {
+  background: #d97706 !important;
+  border-color: #b45309 !important;
+  color: #ffffff !important;
+  &:hover {
+    background: #b45309 !important;
+  }
+}
+
+.e-btn.e-danger:not(.e-outline):not(:disabled) {
+  background: #e11d48 !important;
+  border-color: #be123c !important;
+  color: #ffffff !important;
+  &:hover {
+    background: #be123c !important;
+  }
+}
+
+/* Tinted Outline Action Buttons */
+.e-btn.e-outline.e-success:not(:disabled),
+.e-btn.e-outline.e-btn-emerald:not(:disabled) {
+  border-color: rgba(16, 185, 129, 0.42) !important;
+  color: var(--emerald, #059669) !important;
+  background: rgba(16, 185, 129, 0.06) !important;
+  &:hover {
+    background: rgba(16, 185, 129, 0.14) !important;
+    border-color: #10b981 !important;
+  }
+}
+
+.e-btn.e-outline.e-info:not(:disabled),
+.e-btn.e-outline.e-btn-teal:not(:disabled) {
+  border-color: rgba(20, 184, 166, 0.42) !important;
+  color: var(--teal, #0d9488) !important;
+  background: rgba(20, 184, 166, 0.06) !important;
+  &:hover {
+    background: rgba(20, 184, 166, 0.14) !important;
+    border-color: #14b8a6 !important;
+  }
+}
+
+.e-btn.e-outline.e-btn-violet:not(:disabled) {
+  border-color: rgba(139, 92, 246, 0.42) !important;
+  color: var(--violet, #7c3aed) !important;
+  background: rgba(139, 92, 246, 0.06) !important;
+  &:hover {
+    background: rgba(139, 92, 246, 0.14) !important;
+    border-color: #8b5cf6 !important;
+  }
+}
+
+.e-btn.e-outline.e-warning:not(:disabled) {
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  color: var(--amber, #d97706) !important;
+  background: rgba(245, 158, 11, 0.07) !important;
+  &:hover {
+    background: rgba(245, 158, 11, 0.15) !important;
+    border-color: #f59e0b !important;
+  }
+}
+
+.e-btn.e-outline.e-danger:not(:disabled) {
+  border-color: rgba(244, 63, 94, 0.42) !important;
+  color: var(--rose, #e11d48) !important;
+  background: rgba(244, 63, 94, 0.06) !important;
+  &:hover {
+    background: rgba(244, 63, 94, 0.14) !important;
+    border-color: #f43f5e !important;
+  }
+}
+
+/* Soft-Tinted SaaS Status & Track Badges (Dark Mode Default) */
+.e-badge:not(.e-badge-notification) {
+  font-weight: 700 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.01em;
+  padding: 3px 9px !important;
+  line-height: 1.35 !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  background: var(--b-bg, rgba(148, 163, 184, 0.16)) !important;
+  border-color: var(--b-border, rgba(148, 163, 184, 0.3)) !important;
+  color: var(--b-fg, #cbd5e1) !important;
+}
+
+.e-badge-primary:not(.e-badge-notification) {
+  --b-bg: rgba(59, 130, 246, 0.18);
+  --b-border: rgba(96, 165, 250, 0.38);
+  --b-fg: #93c5fd;
+}
+.e-badge-teal:not(.e-badge-notification) {
+  --b-bg: rgba(20, 184, 166, 0.18);
+  --b-border: rgba(45, 212, 191, 0.38);
+  --b-fg: #5eead4;
+}
+.e-badge-info:not(.e-badge-notification) {
+  --b-bg: rgba(14, 165, 233, 0.18);
+  --b-border: rgba(56, 189, 248, 0.38);
+  --b-fg: #7dd3fc;
+}
+.e-badge-violet:not(.e-badge-notification) {
+  --b-bg: rgba(139, 92, 246, 0.2);
+  --b-border: rgba(167, 139, 250, 0.4);
+  --b-fg: #c4b5fd;
+}
+.e-badge-indigo:not(.e-badge-notification) {
+  --b-bg: rgba(99, 102, 241, 0.2);
+  --b-border: rgba(129, 140, 248, 0.4);
+  --b-fg: #a5b4fc;
+}
+.e-badge-success:not(.e-badge-notification) {
+  --b-bg: rgba(16, 185, 129, 0.18);
+  --b-border: rgba(52, 211, 153, 0.38);
+  --b-fg: #6ee7b7;
+}
+.e-badge-warning:not(.e-badge-notification) {
+  --b-bg: rgba(245, 158, 11, 0.18);
+  --b-border: rgba(251, 191, 36, 0.4);
+  --b-fg: #fcd34d;
+}
+.e-badge-coral:not(.e-badge-notification) {
+  --b-bg: rgba(249, 115, 22, 0.18);
+  --b-border: rgba(251, 146, 60, 0.4);
+  --b-fg: #fdba74;
+}
+.e-badge-danger:not(.e-badge-notification) {
+  --b-bg: rgba(244, 63, 94, 0.18);
+  --b-border: rgba(251, 113, 133, 0.4);
+  --b-fg: #fda4af;
+}
+.e-badge-secondary:not(.e-badge-notification) {
+  --b-bg: rgba(148, 163, 184, 0.15);
+  --b-border: rgba(148, 163, 184, 0.28);
+  --b-fg: #cbd5e1;
+}
+
+body.e-light-mode {
+  .e-badge-primary:not(.e-badge-notification) {
+    --b-bg: #eef4ff;
+    --b-border: #c7d9fe;
+    --b-fg: #1f3da8;
+  }
+  .e-badge-teal:not(.e-badge-notification) {
+    --b-bg: #ecfdf5;
+    --b-border: #99f6e4;
+    --b-fg: #0f766e;
+  }
+  .e-badge-info:not(.e-badge-notification) {
+    --b-bg: #f0f9ff;
+    --b-border: #bae6fd;
+    --b-fg: #0369a1;
+  }
+  .e-badge-violet:not(.e-badge-notification) {
+    --b-bg: #f5f3ff;
+    --b-border: #ddd6fe;
+    --b-fg: #6d28d9;
+  }
+  .e-badge-indigo:not(.e-badge-notification) {
+    --b-bg: #eef2ff;
+    --b-border: #c7d2fe;
+    --b-fg: #4338ca;
+  }
+  .e-badge-success:not(.e-badge-notification) {
+    --b-bg: #ecfdf5;
+    --b-border: #a7f3d0;
+    --b-fg: #047857;
+  }
+  .e-badge-warning:not(.e-badge-notification) {
+    --b-bg: #fffbeb;
+    --b-border: #fde68a;
+    --b-fg: #b45309;
+  }
+  .e-badge-coral:not(.e-badge-notification) {
+    --b-bg: #fff7ed;
+    --b-border: #fed7aa;
+    --b-fg: #c2410c;
+  }
+  .e-badge-danger:not(.e-badge-notification) {
+    --b-bg: #fff1f2;
+    --b-border: #fecdd3;
+    --b-fg: #be123c;
+  }
+  .e-badge-secondary:not(.e-badge-notification) {
+    --b-bg: #f1f5f9;
+    --b-border: #cbd5e1;
+    --b-fg: #475569;
+  }
 }
 
 // -----------------------------------------------------------------------------

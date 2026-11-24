@@ -28,6 +28,7 @@ import {
   listGridOptions,
   SfMessageComponent,
   SfTextBoxComponent,
+  prismChartPalette,
 } from '../../shared/ui';
 import {
   defaultThaiSpeechButtonSettings,
@@ -121,7 +122,7 @@ export class PersonDashboard {
     labelStyle: this.axisFont,
     lineStyle: { width: 0 },
   };
-  protected readonly piePalette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6'];
+  protected readonly piePalette = prismChartPalette(false);
 
   protected readonly commonChartOptions: SfChartOptions = {
     height: '300px',
@@ -209,24 +210,24 @@ export class PersonDashboard {
   protected readonly effortSeries = computed<SfChartSeriesConfig[]>(() => {
     const bars = this.view().effortBars;
     return [
-      { type: 'Column', dataSource: bars, xName: 'label', yName: 'estimateMd', name: 'Estimate MD', fill: '#4c68e5', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
-      { type: 'Column', dataSource: bars, xName: 'label', yName: 'actualMd', name: 'Actual MD', fill: '#3ec6e0', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+      { type: 'Column', dataSource: bars, xName: 'label', yName: 'estimateMd', name: 'Estimate MD', fill: '#2746b3', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+      { type: 'Column', dataSource: bars, xName: 'label', yName: 'actualMd', name: 'Actual MD', fill: '#0d9488', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
     ];
   });
 
   protected readonly qualitySeries = computed<SfChartSeriesConfig[]>(() => {
     const bars = this.view().qualityBars;
     return [
-      { type: 'Column', dataSource: bars, xName: 'label', yName: 'reviewRounds', name: 'รอบรีวิว', fill: '#7465e8', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
-      { type: 'Column', dataSource: bars, xName: 'label', yName: 'reopenCount', name: 'Reopen', fill: '#e35d6a', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+      { type: 'Column', dataSource: bars, xName: 'label', yName: 'reviewRounds', name: 'รอบรีวิว', fill: '#7c3aed', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+      { type: 'Column', dataSource: bars, xName: 'label', yName: 'reopenCount', name: 'Reopen', fill: '#e11d48', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
     ];
   });
 
   protected readonly mdCompSeries = computed<SfChartSeriesConfig[]>(() => {
     const pts = this.mdComposition();
     return [
-      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'plannedMd', name: 'Planned (ในแผน)', fill: '#4c68e5', opacity: 0.85 },
-      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#3ec6e0', opacity: 0.85 },
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'plannedMd', name: 'Planned (ในแผน)', fill: '#2746b3', opacity: 0.85 },
+      { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#0d9488', opacity: 0.85 },
       { type: 'StackingArea', dataSource: pts, xName: 'month', yName: 'mdMandateMd', name: '⚡ MD Mandate (สั่งตรง)', fill: '#f59e0b', opacity: 0.9 },
     ];
   });
@@ -234,8 +235,8 @@ export class PersonDashboard {
   protected readonly radarSeries = computed<SfChartSeriesConfig[]>(() => {
     const data = this.competencyRadarData();
     return [
-      { type: 'Radar', drawType: 'Line', dataSource: data, xName: 'dimension', yName: 'personScore', name: 'ผลงานตนเอง', width: 2.5, fill: '#4c68e5', marker: { visible: true, width: 6, height: 6, fill: '#4c68e5' } },
-      { type: 'Radar', drawType: 'Line', dataSource: data, xName: 'dimension', yName: 'teamAvg', name: 'ค่าเฉลี่ยทีม', width: 2, dashArray: '4,4', fill: '#a855f7', marker: { visible: true, width: 5, height: 5, fill: '#a855f7' } },
+      { type: 'Radar', drawType: 'Line', dataSource: data, xName: 'dimension', yName: 'personScore', name: 'ผลงานตนเอง', width: 2.5, fill: '#0d9488', marker: { visible: true, width: 6, height: 6, fill: '#0d9488' } },
+      { type: 'Radar', drawType: 'Line', dataSource: data, xName: 'dimension', yName: 'teamAvg', name: 'ค่าเฉลี่ยทีม', width: 2, dashArray: '4,4', fill: '#7c3aed', marker: { visible: true, width: 5, height: 5, fill: '#7c3aed' } },
     ];
   });
 

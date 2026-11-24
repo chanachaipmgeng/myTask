@@ -83,7 +83,19 @@
     display: block;
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #2746b3, #3b60dc);
+    background: linear-gradient(90deg, #0d9488, #14b8a6);
+  }
+
+  &.is-good > span {
+    background: linear-gradient(90deg, #059669, #10b981);
+  }
+
+  &.is-warn > span {
+    background: linear-gradient(90deg, #d97706, #f59e0b);
+  }
+
+  &.is-low > span {
+    background: linear-gradient(90deg, #e11d48, #fb7185);
   }
 }
 

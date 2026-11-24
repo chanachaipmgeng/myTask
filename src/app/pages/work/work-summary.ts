@@ -15,6 +15,10 @@ import {
   SfDonutChartOptions,
   SfMessageComponent,
   StatusBadgeComponent,
+  prismChartPalette,
+  trackHexColor,
+  wipLoadHexColor,
+  workflowStageHexColor,
   workflowStatusToneMap,
 } from '../../shared/ui';
 import { WorkHubFilter } from './work-hub-filter';
@@ -73,13 +77,18 @@ export class WorkSummary {
   }
 
   protected readonly statusDonutOptions = computed<SfDonutChartOptions>(() => {
-    const total = this.view().statusShare.reduce((sum, row) => sum + row.y, 0);
+    const share = this.view().statusShare;
+    const total = share.reduce((sum, row) => sum + row.y, 0);
+    const dark = this.theme.isDark();
+    const palettes = share.length
+      ? share.map((row) => workflowStageHexColor(row.x, dark))
+      : prismChartPalette(dark);
     return {
       height: '270px',
       innerRadius: '62%',
       radius: '82%',
       centerLabel: `${total}<br>ใบ`,
-      palettes: this.palette,
+      palettes,
       legend: { visible: true, position: 'Right', alignment: 'Center' },
       exportable: true,
       exportFileName: 'work-status-donut',
@@ -87,31 +96,43 @@ export class WorkSummary {
   });
 
   protected readonly trackDonutOptions = computed<SfDonutChartOptions>(() => {
-    const total = this.view().trackShare.reduce((sum, row) => sum + row.y, 0);
+    const share = this.view().trackShare;
+    const total = share.reduce((sum, row) => sum + row.y, 0);
+    const dark = this.theme.isDark();
+    const palettes = share.length
+      ? share.map((row) => trackHexColor(row.x, dark))
+      : prismChartPalette(dark);
     return {
       height: '270px',
       innerRadius: '62%',
       radius: '82%',
       centerLabel: `${total}<br>ใบ`,
-      palettes: this.palette,
+      palettes,
       legend: { visible: true, position: 'Right', alignment: 'Center' },
       exportable: true,
       exportFileName: 'work-track-donut',
     };
   });
 
-  protected readonly wipChartSeries = computed<SfChartSeriesConfig[]>(() => [
-    {
-      type: 'Column',
-      dataSource: this.view().wipBars,
-      xName: 'nickname',
-      yName: 'openMd',
-      name: 'WIP MD',
-      fill: '#2e4fc8',
-      columnWidth: 0.45,
-      cornerRadius: { topLeft: 8, topRight: 8 },
-    },
-  ]);
+  protected readonly wipChartSeries = computed<SfChartSeriesConfig[]>(() => {
+    const dark = this.theme.isDark();
+    const bars = this.view().wipBars.map((b) => ({
+      ...b,
+      barColor: wipLoadHexColor(b.openMd, dark),
+    }));
+    return [
+      {
+        type: 'Column',
+        dataSource: bars,
+        xName: 'nickname',
+        yName: 'openMd',
+        name: 'WIP MD',
+        pointColorMapping: 'barColor',
+        columnWidth: 0.45,
+        cornerRadius: { topLeft: 8, topRight: 8 },
+      },
+    ];
+  });
 
   protected readonly wipXAxis = { valueType: 'Category' as const, majorGridLines: { width: 0 } };
   protected readonly wipYAxis = {

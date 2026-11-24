@@ -26,6 +26,7 @@ import {
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ThemeService } from '../../../core/theme.service';
 import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
+import { prismChartPalette } from '../../ui/palette';
 
 export interface SfDonutChartOptions {
   height?: string;
@@ -93,7 +94,7 @@ export interface SfDonutChartOptions {
             [yName]="yName()"
             [innerRadius]="options().innerRadius ?? '68%'"
             [radius]="options().radius ?? '86%'"
-            [palettes]="options().palettes ?? defaultPalettes"
+            [palettes]="options().palettes ?? defaultPalettes()"
             [border]="sliceBorder()"
             [dataLabel]="dataLabel"
           ></e-accumulation-series>
@@ -131,7 +132,7 @@ export class SfDonutChartComponent implements AfterViewInit, OnDestroy {
   readonly options = input<SfDonutChartOptions>({});
   readonly pointClick = output<IPointEventArgs>();
 
-  protected readonly defaultPalettes = ['#2e4fc8', '#38bdf8', '#10b981', '#6366f1', '#f59e0b', '#f43f5e'];
+  protected readonly defaultPalettes = computed(() => prismChartPalette(this.theme.isDark()));
   protected readonly sliceBorder = computed(() => ({
     width: 2.5,
     color: this.theme.isDark() ? '#0f1838' : '#ffffff',

@@ -38,8 +38,8 @@
           }
         </div>
         <div class="flex items-center gap-1">
-          <span class="e-badge e-badge-info e-badge-pill">{{ data.size }}</span>
-          <span class="e-badge e-badge-secondary e-badge-pill">{{ data.trackLabel }}</span>
+          <span [class]="sizeBadgeClass(data.size)">{{ data.size }}</span>
+          <span [class]="trackBadgeClass(data.track || data.trackLabel)">{{ data.trackLabel }}</span>
         </div>
       </div>
       <p class="m-0 text-xs font-medium line-clamp-2">{{ data.title }}</p>

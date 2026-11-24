@@ -6,7 +6,7 @@
     <div actions class="flex flex-wrap items-center gap-2">
       <button
         ejs-button
-        cssClass="e-primary"
+        cssClass="e-btn-teal"
         type="button"
         [disabled]="syncingBranches()"
         (click)="syncBranchesFromGitLab()"
@@ -16,7 +16,7 @@
       </button>
 
       @if (isMine) {
-        <a ejs-button cssClass="e-outline" iconCss="e-icons e-table-1" routerLink="/me/tickets">
+        <a ejs-button cssClass="e-outline e-btn-violet" iconCss="e-icons e-table" routerLink="/me/tickets">
           แนบลิงก์ MR ในตารางใบงานของฉัน
         </a>
       }
@@ -55,7 +55,7 @@
     <ng-template #branchActionTpl let-data>
       <button
         ejs-button
-        cssClass="e-primary e-small"
+        cssClass="e-success e-small"
         type="button"
         (click)="onCreateTicketFromBranch(data)"
       >

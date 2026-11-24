@@ -254,9 +254,13 @@ let nextGridId = 1;
               } @else if (col.cellType === 'progress') {
                 <ng-template #template let-rowData>
                   <div class="sf-grid-progress">
-                    <span class="sf-grid-progress__val">{{ formatMetric(rowData[col.field!], col.format) }}{{ col.suffix ?? '' }}</span>
+                    <span class="sf-grid-progress__val" [style.color]="progressBandColor(rowData[col.field!])">{{ formatMetric(rowData[col.field!], col.format) }}{{ col.suffix ?? '' }}</span>
                     <span class="sf-grid-progress__track">
-                      <span class="sf-grid-progress__fill" [style.width.%]="clampPct(rowData[col.field!])"></span>
+                      <span
+                        class="sf-grid-progress__fill"
+                        [style.width.%]="clampPct(rowData[col.field!])"
+                        [style.background]="progressBandGradient(rowData[col.field!])"
+                      ></span>
                     </span>
                   </div>
                 </ng-template>
@@ -346,17 +350,61 @@ export class SfGridComponent {
     เกินเป้า: 'danger',
     FAIL: 'danger',
     Reopened: 'danger',
+    Blocked: 'danger',
+    blocked: 'danger',
+    สูงมาก: 'danger',
+    สูง: 'coral',
+    ปานกลาง: 'warning',
+    ต่ำ: 'success',
     WARN: 'warning',
     'In Progress': 'primary',
-    Implement: 'primary',
-    'R&D': 'info',
-    'Code Review': 'info',
-    'Ready for QA': 'warning',
+    'Code Review': 'violet',
+    'Ready for QA': 'coral',
     'In QA': 'info',
-    Senior: 'primary',
-    Mid: 'info',
-    Junior: 'secondary',
+    Backlog: 'secondary',
+    IMP: 'primary',
+    Implement: 'primary',
+    RND: 'teal',
+    RD: 'teal',
+    'R&D': 'teal',
+    'R&D (FE / BE / AI)': 'teal',
+    QA: 'info',
+    'QA / Tester': 'info',
+    UXBA: 'violet',
+    'Product / BA / UX': 'violet',
+    SUP: 'warning',
+    'Support / Helpdesk': 'warning',
+    INFRA: 'coral',
+    'Infra / DevOps / Sec': 'coral',
+    Feature: 'primary',
+    CR: 'indigo',
+    Spike: 'violet',
+    Ops: 'coral',
+    TechDebt: 'warning',
+    'Bug-Fix': 'danger',
+    'Bug-Investigate': 'danger',
+    Senior: 'violet',
+    Mid: 'teal',
+    Junior: 'info',
+    FirstMonth: 'warning',
+    เดือนแรก: 'warning',
   };
+
+  protected progressBandColor(value: unknown): string {
+    const pct = this.clampPct(value);
+    if (pct >= 85) return 'var(--emerald, #059669)';
+    if (pct >= 75) return 'var(--teal, #0d9488)';
+    if (pct >= 60) return 'var(--amber, #d97706)';
+    return 'var(--rose, #e11d48)';
+  }
+
+  protected progressBandGradient(value: unknown): string {
+    const pct = this.clampPct(value);
+    if (pct >= 85) return 'linear-gradient(90deg, #059669, #10b981)';
+    if (pct >= 75) return 'linear-gradient(90deg, #0d9488, #14b8a6)';
+    if (pct >= 60) return 'linear-gradient(90deg, #d97706, #f59e0b)';
+    return 'linear-gradient(90deg, #e11d48, #fb7185)';
+  }
 
   protected resolveCellBadgeTone(col: SfGridColumn, value: unknown): BadgeTone {
     if (col.badgeTone) return col.badgeTone;

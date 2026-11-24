@@ -29,8 +29,10 @@ import {
   StatusBadgeComponent,
   TicketCreateDialogComponent,
   listGridOptions,
+  levelToneMap,
   pageSlice,
   totalPages,
+  trackToneMap,
   workflowStatusToneMap,
 } from '../../shared/ui';
 
@@ -83,6 +85,8 @@ export class PersonWorkspacePage {
 
   protected readonly tabs = TABS;
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
+  protected readonly trackToneMap = trackToneMap;
+  protected readonly levelToneMap = levelToneMap;
   protected readonly query = signal('');
   protected readonly trackFilter = signal<'All' | 'Implement' | 'RD'>('All');
   protected readonly sortMode = signal<CardSortMode>('name');

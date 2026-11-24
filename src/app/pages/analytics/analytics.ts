@@ -128,8 +128,8 @@ export class AnalyticsPage {
   protected readonly bottleneckSeries = computed<SfChartSeriesConfig[]>(() => {
     const mods = this.report().bottlenecks.modules;
     return [
-      { type: 'Column', dataSource: mods, xName: 'module', yName: 'avgReviewRounds', name: 'รอบรีวิวเฉลี่ย', fill: '#4c68e5', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
-      { type: 'Column', dataSource: mods, xName: 'module', yName: 'reopenTotal', name: 'จำนวน Reopen รวม', fill: '#e35d6a', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+      { type: 'Column', dataSource: mods, xName: 'module', yName: 'avgReviewRounds', name: 'รอบรีวิวเฉลี่ย', fill: '#7c3aed', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
+      { type: 'Column', dataSource: mods, xName: 'module', yName: 'reopenTotal', name: 'จำนวน Reopen รวม', fill: '#e11d48', columnWidth: 0.45, cornerRadius: { topLeft: 4, topRight: 4 } },
     ];
   });
   protected readonly bottleneckChartOptions: SfChartOptions = {

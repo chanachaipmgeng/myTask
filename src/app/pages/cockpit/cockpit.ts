@@ -493,11 +493,11 @@ export class CockpitPage implements OnInit {
   protected readonly comboSeries = computed<SfChartSeriesConfig[]>(() => {
     const data = this.comboOverviewData();
     return [
-      { type: 'StackingColumn', dataSource: data, xName: 'month', yName: 'plannedMd', name: 'Planned MD (ในแผน)', fill: '#3b82f6' },
-      { type: 'StackingColumn', dataSource: data, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#06b6d4' },
+      { type: 'StackingColumn', dataSource: data, xName: 'month', yName: 'plannedMd', name: 'Planned MD (ในแผน)', fill: '#2746b3' },
+      { type: 'StackingColumn', dataSource: data, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#0d9488' },
       { type: 'StackingColumn', dataSource: data, xName: 'month', yName: 'mdMandateMd', name: '⚡ งานสั่งตรงจาก MD', fill: '#f59e0b' },
       { type: 'Line', yAxisName: 'rateAxis', dataSource: data, xName: 'month', yName: 'onTimeRate', name: 'ส่งมอบตรงเวลา (%)', width: 2.5, fill: '#10b981', marker: { visible: true, width: 6, height: 6, fill: '#10b981' } },
-      { type: 'Line', yAxisName: 'rateAxis', dataSource: data, xName: 'month', yName: 'avgIndex', name: 'ดัชนีคะแนนจริง', width: 2, dashArray: '4,4', fill: '#a855f7', marker: { visible: true, width: 5, height: 5, fill: '#a855f7' } },
+      { type: 'Line', yAxisName: 'rateAxis', dataSource: data, xName: 'month', yName: 'avgIndex', name: 'ดัชนีคะแนนจริง', width: 2, dashArray: '4,4', fill: '#7c3aed', marker: { visible: true, width: 5, height: 5, fill: '#7c3aed' } },
     ];
   });
   protected readonly comboChartOptions: SfChartOptions = {
@@ -514,8 +514,8 @@ export class CockpitPage implements OnInit {
   protected readonly workloadSeries = computed<SfChartSeriesConfig[]>(() => {
     const data = this.workloadData();
     return [
-      { type: 'StackingArea', dataSource: data, xName: 'month', yName: 'plannedMd', name: 'Planned (ในแผน)', fill: '#3b82f6', opacity: 0.85 },
-      { type: 'StackingArea', dataSource: data, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#06b6d4', opacity: 0.85 },
+      { type: 'StackingArea', dataSource: data, xName: 'month', yName: 'plannedMd', name: 'Planned (ในแผน)', fill: '#2746b3', opacity: 0.85 },
+      { type: 'StackingArea', dataSource: data, xName: 'month', yName: 'unplannedGeneralMd', name: 'Unplanned ทั่วไป', fill: '#0d9488', opacity: 0.85 },
       { type: 'StackingArea', dataSource: data, xName: 'month', yName: 'mdMandateMd', name: '⚡ งานสั่งตรงจาก MD', fill: '#f59e0b', opacity: 0.95 },
     ];
   });
@@ -569,9 +569,9 @@ export class CockpitPage implements OnInit {
   protected readonly stageSeries = computed<SfChartSeriesConfig[]>(() => {
     const data = this.stageAgingData();
     return [
-      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'devHours', name: 'Dev ทำงาน', fill: '#3b82f6' },
-      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'reviewHours', name: 'รอ/ตรวจ MR', fill: '#f59e0b' },
-      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'qaHours', name: 'รอ/ตรวจ QA', fill: '#10b981' },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'devHours', name: 'Dev ทำงาน', fill: '#2746b3' },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'reviewHours', name: 'รอ/ตรวจ MR', fill: '#7c3aed' },
+      { type: 'StackingBar', dataSource: data, xName: 'track', yName: 'qaHours', name: 'รอ/ตรวจ QA', fill: '#06b6d4' },
     ];
   });
   protected readonly stageChartOptions: SfChartOptions = {

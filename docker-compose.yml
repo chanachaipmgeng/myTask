@@ -3,18 +3,21 @@ services:
     image: postgres:16-alpine
     container_name: manday-db
     environment:
-      POSTGRES_DB: manday
-      POSTGRES_USER: manday
-      POSTGRES_PASSWORD: manday
+      POSTGRES_DB: ${POSTGRES_DB:-manday}
+      POSTGRES_USER: ${POSTGRES_USER:-manday}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-manday}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - manday-db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U manday -d manday"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-manday} -d ${POSTGRES_DB:-manday}"]
       interval: 3s
       timeout: 3s
       retries: 20
+    networks:
+      - manday-net
+    restart: unless-stopped
 
   api:
     build:
@@ -25,17 +28,18 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://manday:manday@db:5432/manday
+      DATABASE_URL: postgres://${POSTGRES_USER:-manday}:${POSTGRES_PASSWORD:-manday}@db:5432/${POSTGRES_DB:-manday}
       HOST: 0.0.0.0
       PORT: 3000
-      APP_URL: http://localhost:8080
-      AUTH_DEV_LOGIN: "true"
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      AUTH_DEV_LOGIN: ${AUTH_DEV_LOGIN:-true}
       TOKEN_ENC_KEY: ${TOKEN_ENC_KEY:-dev-only-insecure-key-change-me-please}
       SESSION_DAYS: ${SESSION_DAYS:-7}
       OPENPROJECT_URL: ${OPENPROJECT_URL:-}
       OPENPROJECT_API_TOKEN: ${OPENPROJECT_API_TOKEN:-}
       OPENPROJECT_WRITEBACK: ${OPENPROJECT_WRITEBACK:-false}
       OPENPROJECT_SYNC_CRON: ${OPENPROJECT_SYNC_CRON:-*/15 * * * *}
+      OPENPROJECT_TEAM_STAGING: ${OPENPROJECT_TEAM_STAGING:-all}
       GITLAB_URL: ${GITLAB_URL:-}
       GITLAB_OAUTH_CLIENT_ID: ${GITLAB_OAUTH_CLIENT_ID:-}
       GITLAB_OAUTH_CLIENT_SECRET: ${GITLAB_OAUTH_CLIENT_SECRET:-}
@@ -45,7 +49,15 @@ services:
       TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL:-}
       TEAMS_DEFAULT_CHANNEL: ${TEAMS_DEFAULT_CHANNEL:-scorecard-alerts}
     ports:
-      - "3000:3000"
+      - "${API_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - manday-net
     restart: unless-stopped
 
   web:
@@ -56,10 +68,62 @@ services:
         SYNCFUSION_LICENSE: ${SYNCFUSION_LICENSE:-}
     container_name: manday-web
     depends_on:
-      - api
+      api:
+        condition: service_started
     ports:
-      - "8080:8080"
+      - "${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - manday-net
     restart: unless-stopped
+
+  adminer:
+    image: adminer:latest
+    container_name: manday-adminer
+    depends_on:
+      - db
+    ports:
+      - "${ADMINER_PORT:-8088}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    networks:
+      - manday-net
+    restart: unless-stopped
+
+  db-backup:
+    image: prodrigestivill/postgres-backup-local:16-alpine
+    container_name: manday-db-backup
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: ${POSTGRES_DB:-manday}
+      POSTGRES_USER: ${POSTGRES_USER:-manday}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-manday}
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+      HEALTHCHECK_PORT: 80
+    volumes:
+      - ./backups:/backups
+    networks:
+      - manday-net
+    restart: unless-stopped
+    profiles:
+      - backup
+
+networks:
+  manday-net:
+    name: manday-net
+    driver: bridge
 
 volumes:
   manday-db:
+    name: manday-db
+
