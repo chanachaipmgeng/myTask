@@ -1,9 +1,9 @@
 <app-section-card
-  [title]="isMine() ? 'แบ็กล็อกของฉัน' : 'รายการงานรอจัดสรร (Backlog)'"
+  [title]="isMine() ? 'งานรอจัดของฉัน' : 'งานรอจัด'"
   [subtitle]="
     isMine()
-      ? 'ใบที่รับผิดชอบแล้วยังอยู่ในสถานะ Backlog · เปิดบอร์ดเพื่อเริ่มงาน'
-      : 'ใบใน Backlog หรือยังไม่มีผู้รับ · สำหรับจัดคิวเต็มรูปแบบไปที่คิวงานใหม่'
+      ? 'ใบที่รับผิดชอบแล้วยังรอเริ่มงาน · เปิดบอร์ดเพื่อเริ่มได้'
+      : 'ใบที่ยังรอจัดผู้รับ · จัดคิวเต็มรูปแบบได้ที่คิวจ่ายงาน'
   "
   [badge]="rows().length + ' ใบ'"
   badgeTone="info"
@@ -15,7 +15,7 @@
   }
 
   @if (rows().length === 0) {
-    <p class="fine">{{ isMine() ? 'ยังไม่มีใบ Backlog ที่มอบหมายให้คุณ' : 'ไม่มีใบใน Backlog ตามตัวกรองปัจจุบัน' }}</p>
+    <p class="fine">{{ isMine() ? 'ยังไม่มีงานรอจัดที่มอบหมายให้คุณ' : 'ไม่มีงานรอจัดตามตัวกรองปัจจุบัน' }}</p>
   } @else {
     <ng-template #idTpl let-data>
       <button ejs-button cssClass="e-link e-small font-semibold" type="button" (click)="openTicket(data.id)">

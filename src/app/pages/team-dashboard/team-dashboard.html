@@ -28,10 +28,57 @@
     <button ejs-button cssClass="e-outline" type="button" (click)="drillToTickets()" title="ไปใบงานพร้อมฟิลเตอร์ทีม/สาย">
       ดูใบงาน
     </button>
-    <button ejs-button cssClass="e-outline" type="button" (click)="drillToPeople()" title="ไปผังคนพร้อมฟิลเตอร์ทีม">
+    <button ejs-button cssClass="e-outline" type="button" (click)="drillToPeople()" title="ไปรายชื่อพนักงานพร้อมฟิลเตอร์ทีม">
       ดูคน
     </button>
+    @if (workspace.teamId()) {
+      <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearManagedTeam()">
+        ล้างทีมที่เลือก
+      </button>
+    }
   </div>
+
+  <app-section-card
+    title="ทีมที่ดูแล"
+    subtitle="เลือกทีมเพื่อกรองรายชื่อสมาชิกด้านล่าง"
+    [badge]="managedTeamCards().length + ' ทีม'"
+    badgeTone="info"
+  >
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+      @for (card of managedTeamCards(); track card.id) {
+        <button
+          type="button"
+          class="team-dash-team-card text-left p-3.5 rounded-[var(--radius-nested,12px)] border border-[color:var(--line)] bg-[color:var(--card)] shadow-xs transition-shadow"
+          [class.is-selected]="workspace.teamId() === card.id"
+          (click)="selectManagedTeam(card.id)"
+          [attr.aria-label]="'กรองทีม ' + card.name"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="m-0 font-bold text-sm text-[color:var(--ink)] truncate">{{ card.name }}</p>
+              <p class="m-0 mt-1 text-xs text-[color:var(--muted)] truncate">{{ card.trackSummary }}</p>
+            </div>
+            <span class="text-xs font-semibold tabular-nums text-[color:var(--primary)] flex-shrink-0">
+              {{ card.memberCount }} คน
+            </span>
+          </div>
+          <div class="flex items-center gap-2 mt-2">
+            <app-person-avatar [personId]="card.leadId" [name]="card.leadName" [showName]="true" size="xs" />
+          </div>
+          @let preview = teamMembersPreview(card.id);
+          @if (preview.length) {
+            <div class="flex items-center -space-x-2 mt-2">
+              @for (m of preview; track m.id) {
+                <app-person-avatar [personId]="m.id" [name]="m.nickname" size="sm" />
+              }
+            </div>
+          }
+        </button>
+      } @empty {
+        <p class="text-xs text-muted m-0">ยังไม่มีทีมในขอบเขตที่ดูแล</p>
+      }
+    </div>
+  </app-section-card>
 
   @if (canCapture()) {
     <app-section-card [showHead]="false">
@@ -98,6 +145,64 @@
       }
     </app-section-card>
   }
+
+  <app-section-card
+    title="รายชื่อสมาชิกในทีม"
+    subtitle="คลิกเพื่อเปิดรายละเอียดพนักงานที่ดูแล (สมาชิกเปิดได้เฉพาะตัวเอง)"
+    [badge]="teamMembers().length + ' คน'"
+    badgeTone="info"
+  >
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      @for (member of teamMembers(); track member.id) {
+        @if (member.canOpen) {
+          <button
+            type="button"
+            class="p-3.5 rounded-[var(--radius-nested,12px)] border border-[color:var(--line)] bg-[color:var(--card)] flex items-center justify-between gap-3 shadow-xs text-left w-full cursor-pointer hover:shadow-[var(--shadow-card-hover)] transition-shadow"
+            (click)="openMember(member.id)"
+            [attr.aria-label]="'เปิดรายละเอียด ' + member.nickname"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <app-person-avatar [personId]="member.id" [name]="member.nickname" size="md" />
+              <div class="flex flex-col min-w-0">
+                <span class="font-bold text-sm text-[color:var(--ink)] truncate">{{ member.nickname }} ({{ member.fullName }})</span>
+                <span class="text-xs text-[color:var(--muted)] truncate">{{ member.role }}</span>
+                <span class="text-xs font-medium text-[color:var(--primary)] mt-0.5">งานที่ถือ: {{ member.activeTicketsCount }} ใบ · โควตา {{ member.quotaMd }} MD</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end flex-shrink-0">
+              <span class="text-xs text-[color:var(--muted)]">ดัชนี</span>
+              <span
+                class="font-bold text-base tabular-nums"
+                [class.text-emerald-500]="member.index >= 75"
+                [class.text-amber-500]="member.index < 75"
+              >{{ member.index > 0 ? member.index.toFixed(1) : '—' }}</span>
+            </div>
+          </button>
+        } @else {
+          <div class="p-3.5 rounded-[var(--radius-nested,12px)] border border-[color:var(--line)] bg-[color:var(--card)] flex items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-3 min-w-0">
+              <app-person-avatar [personId]="member.id" [name]="member.nickname" size="md" />
+              <div class="flex flex-col min-w-0">
+                <span class="font-bold text-sm text-[color:var(--ink)] truncate">{{ member.nickname }} ({{ member.fullName }})</span>
+                <span class="text-xs text-[color:var(--muted)] truncate">{{ member.role }}</span>
+                <span class="text-xs font-medium text-[color:var(--primary)] mt-0.5">งานที่ถือ: {{ member.activeTicketsCount }} ใบ · โควตา {{ member.quotaMd }} MD</span>
+              </div>
+            </div>
+            <div class="flex flex-col items-end flex-shrink-0">
+              <span class="text-xs text-[color:var(--muted)]">ดัชนี</span>
+              <span
+                class="font-bold text-base tabular-nums"
+                [class.text-emerald-500]="member.index >= 75"
+                [class.text-amber-500]="member.index < 75"
+              >{{ member.index > 0 ? member.index.toFixed(1) : '—' }}</span>
+            </div>
+          </div>
+        }
+      } @empty {
+        <p class="text-xs text-muted m-0">ไม่พบรายชื่อสมาชิกในทีมที่เลือก</p>
+      }
+    </div>
+  </app-section-card>
 
   <div class="card-grid-2">
     <app-section-card [title]="'สัดส่วนงานทีม ' + context.yearLabel" subtitle="ภาพรวมภาระงานทั้งปีแบ่งตามประเภท">

@@ -9,7 +9,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
   styleUrl: './hub-shell.scss',
 })
 export class MineShell {
-  protected readonly heading = computed(() => 'ผลงานวันนี้');
+  protected readonly heading = computed(() => 'งานของฉัน');
   protected readonly basePath = '/me';
   protected readonly tabs = computed(() => [] as { text: string; path: string; icon: string }[]);
   protected readonly showTabs = computed(() => false);

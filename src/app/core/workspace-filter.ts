@@ -51,6 +51,7 @@ export class WorkspaceFilter {
   readonly opType = signal('');
   readonly track = signal<WorkspaceTrackFilter>('All');
   readonly personId = signal('');
+  readonly statusScope = signal<'unclosed' | 'closed' | 'all'>('unclosed');
   readonly cycleId = signal('');
   readonly fromDate = signal('');
   readonly toDate = signal('');
@@ -62,6 +63,14 @@ export class WorkspaceFilter {
   readonly isFilteringSelf = computed(
     () => !!this.selfPersonId() && this.personId() === this.selfPersonId(),
   );
+
+  /** ทีมสังกัดของผู้ใช้ปัจจุบัน */
+  readonly selfTeamId = computed(() => {
+    const id = this.selfPersonId();
+    if (!id) return '';
+    const me = this.scorecard.people().find((p) => p.id === id);
+    return me ? resolvePersonTeamId(me) : '';
+  });
 
   private readonly urlQuery = toSignal(
     this.router.events.pipe(
@@ -93,6 +102,7 @@ export class WorkspaceFilter {
       opType: this.opType(),
       track: isMember ? 'All' : this.track(),
       personId: isMember ? this.selfPersonId() : this.personId(),
+      statusScope: this.statusScope(),
       cycleId: this.cycleId(),
       fromDate: this.fromDate(),
       toDate: this.toDate(),
@@ -109,6 +119,7 @@ export class WorkspaceFilter {
       !!this.opType() ||
       (!isMember && !!this.personId()) ||
       (!isMember && this.track() !== 'All') ||
+      this.statusScope() !== 'unclosed' ||
       !!this.cycleId() ||
       !!this.fromDate() ||
       !!this.toDate() ||
@@ -309,6 +320,11 @@ export class WorkspaceFilter {
     if (!isMember && this.personId()) {
       parts.push(this.selectedPersonLabel() || this.personId());
     }
+    if (this.statusScope() === 'closed') {
+      parts.push('เฉพาะงานที่ปิดแล้ว');
+    } else if (this.statusScope() === 'all') {
+      parts.push('ทุกสถานะ (รวมปิดแล้ว)');
+    }
     if (isMember) {
       return parts.length ? `งานของฉัน · ${parts.join(' · ')}` : 'เฉพาะงานของฉัน';
     }
@@ -324,6 +340,8 @@ export class WorkspaceFilter {
       untracked(() => this.applyFromParams(q));
     });
 
+    // ค่าเริ่มต้นไม่กรองทีม (ทุกทีมในองค์กร / ทุกทีมในสิทธิ์) — ตั้ง teamId เฉพาะเมื่อ URL หรือผู้ใช้เลือก
+
     effect(() => {
       const teamId = this.teamId();
       const opProject = this.opProject();
@@ -331,6 +349,7 @@ export class WorkspaceFilter {
       const track = this.track();
       const personId = this.personId();
       const cycleId = this.cycleId();
+      const statusScope = this.statusScope();
       const fromDate = this.fromDate();
       const toDate = this.toDate();
       const yearCe = this.yearCe();
@@ -343,6 +362,7 @@ export class WorkspaceFilter {
         opType,
         track,
         personId,
+        statusScope,
         cycleId,
         fromDate,
         toDate,
@@ -355,6 +375,7 @@ export class WorkspaceFilter {
         normalizeParam(current['type']) === normalizeParam(next['type'] as string | undefined) &&
         parseTrack(current['track']) === parseTrack(next['track'] as string | undefined) &&
         normalizeParam(current['person']) === normalizeParam(next['person']) &&
+        normalizeParam(current['statusScope']) === normalizeParam(next['statusScope'] as string | undefined) &&
         normalizeParam(current['cycle']) === normalizeParam(next['cycle'] as string | undefined) &&
         normalizeParam(current['from']) === normalizeParam(next['from'] as string | undefined) &&
         normalizeParam(current['to']) === normalizeParam(next['to'] as string | undefined) &&
@@ -373,6 +394,7 @@ export class WorkspaceFilter {
     const opProject = scope.opProject?.trim() ?? '';
     const opType = scope.opType?.trim() ?? '';
     const personId = scope.personId?.trim() ?? '';
+    const statusScope = scope.statusScope ?? 'unclosed';
     const cycleId = scope.cycleId?.trim() ?? '';
     const fromDate = isIsoDay(scope.fromDate) ? scope.fromDate : '';
     const toDate = isIsoDay(scope.toDate) ? scope.toDate : '';
@@ -382,6 +404,7 @@ export class WorkspaceFilter {
     params['project'] = opProject || null;
     params['type'] = opType || null;
     params['person'] = personId || null;
+    params['statusScope'] = statusScope === 'unclosed' ? null : statusScope;
     params['track'] = track === 'All' ? null : track;
     params['cycle'] = cycleId || null;
     params['from'] = fromDate || null;
@@ -418,6 +441,10 @@ export class WorkspaceFilter {
 
   setPerson(personId: string): void {
     this.personId.set(normalizeParam(personId));
+  }
+
+  setStatusScope(scope: 'unclosed' | 'closed' | 'all'): void {
+    this.statusScope.set(scope);
   }
 
   toggleMineOnly(): void {
@@ -474,11 +501,13 @@ export class WorkspaceFilter {
   }
 
   clear(): void {
+    // ทุกทีมในองค์กร / ทุกทีมในสิทธิ์ — ไม่คืนทีมตัวเอง
     this.teamId.set('');
     this.opProject.set('');
     this.opType.set('');
     this.track.set('All');
     this.personId.set('');
+    this.statusScope.set('unclosed');
     this.cycleId.set('');
     this.fromDate.set('');
     this.toDate.set('');
@@ -498,6 +527,9 @@ export class WorkspaceFilter {
     const nextProject = normalizeParam(params['project'] as string | undefined);
     const nextType = normalizeParam(params['type'] as string | undefined);
     const nextPerson = normalizeParam(params['person'] as string | undefined);
+    const nextStatusScopeRaw = normalizeParam(params['statusScope'] as string | undefined).toLowerCase();
+    const nextStatusScope =
+      nextStatusScopeRaw === 'closed' || nextStatusScopeRaw === 'all' ? (nextStatusScopeRaw as 'closed' | 'all') : 'unclosed';
     const nextTrack = parseTrack(params['track'] as string | undefined);
     const nextCycle = normalizeParam(params['cycle'] as string | undefined);
     const nextFrom = isIsoDay(params['from'] as string | undefined) ? String(params['from']) : '';
@@ -508,6 +540,7 @@ export class WorkspaceFilter {
       nextProject ||
       nextType ||
       nextPerson ||
+      nextStatusScope !== 'unclosed' ||
       nextTrack !== 'All' ||
       nextCycle ||
       nextFrom ||
@@ -522,6 +555,7 @@ export class WorkspaceFilter {
     if (this.opProject() !== nextProject) this.opProject.set(nextProject);
     if (this.opType() !== nextType) this.opType.set(nextType);
     if (this.personId() !== nextPerson) this.personId.set(nextPerson);
+    if (this.statusScope() !== nextStatusScope) this.statusScope.set(nextStatusScope);
     if (this.track() !== nextTrack) this.track.set(nextTrack);
     if (this.cycleId() !== nextCycle) this.cycleId.set(nextCycle);
     if (this.fromDate() !== nextFrom) this.fromDate.set(nextFrom);

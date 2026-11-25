@@ -7,7 +7,7 @@
     </app-section-card>
   } @else {
     <app-page-head
-      [title]="(isMine() ? 'วิเคราะห์ผลงานเชิงลึกของฉัน · ' : '') + view().name + ' · ' + view().role"
+      [title]="(isMine() ? 'วิเคราะห์รายคนของฉัน · ' : '') + view().name + ' · ' + view().role"
       [avatarName]="view().name"
       [description]="
         view().trackLabel +
@@ -62,7 +62,7 @@
           </button>
         }
         <button ejs-button cssClass="e-outline" iconCss="e-icons e-arrow-left" type="button" (click)="back()">
-          {{ isMine() ? 'กลับหน้าผลงานวันนี้' : 'กลับรายชื่อพนักงาน' }}
+          {{ isMine() ? 'กลับหน้างานของฉัน' : 'กลับรายชื่อพนักงาน' }}
         </button>
       </div>
     </app-page-head>

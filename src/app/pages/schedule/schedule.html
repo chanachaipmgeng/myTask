@@ -73,9 +73,9 @@
         </span>
       </div>
 
-      @if (boardModel().shown === 0) {
+      @if (boardModel().shown === 0 || boardModel().people.length === 0) {
         <app-sf-message
-          content="ไม่มีใบงานที่แสดงในปฏิทินตามตัวกรองสาย/คนปัจจุบัน (ต้องมีผู้รับและช่วงวันที่)"
+          content="ไม่มีใบงานหรือรายชื่อคนในปฏิทินตามตัวกรองสาย/ทีม/คนปัจจุบัน (ต้องมีผู้รับและช่วงวันที่)"
           severity="Info"
         />
       } @else {
@@ -120,6 +120,8 @@
             [options]="scheduleOptions()"
             (created)="onScheduleCreated()"
             (actionBegin)="onActionBegin($event)"
+            (actionComplete)="onActionComplete($event)"
+            (dataBound)="onDataBound()"
             (navigating)="onNavigating($event)"
             (eventClick)="onEventClick($event)"
             (popupOpen)="onPopupOpen($event)"

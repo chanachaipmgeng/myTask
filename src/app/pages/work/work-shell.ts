@@ -23,17 +23,17 @@ import { WorkHubFilter, WorkHubScope } from './work-hub-filter';
 const TEAM_TABS = [
   { text: 'สรุป', path: 'summary', icon: 'e-icons e-chart' },
   { text: 'ไทม์ไลน์', path: 'timeline', icon: 'e-icons e-timeline-work-week' },
-  { text: 'แบ็กล็อก', path: 'backlog', icon: 'e-icons e-list-unordered' },
+  { text: 'งานรอจัด', path: 'backlog', icon: 'e-icons e-list-unordered' },
   { text: 'บอร์ด', path: 'board', icon: 'e-icons e-columns' },
   { text: 'รายการ', path: 'list', icon: 'e-icons e-table' },
   { text: 'คิวจ่ายงาน', path: 'queue', icon: 'e-icons e-people' },
-  { text: 'ส่งต่อ & SLA', path: 'handoff', icon: 'e-icons e-clock' },
+  { text: 'งานค้าง & SLA', path: 'handoff', icon: 'e-icons e-clock' },
 ] as const;
 
 const MINE_TABS = [
   { text: 'สรุป', path: 'summary', icon: 'e-icons e-chart' },
   { text: 'ไทม์ไลน์', path: 'timeline', icon: 'e-icons e-timeline-work-week' },
-  { text: 'แบ็กล็อก', path: 'backlog', icon: 'e-icons e-list-unordered' },
+  { text: 'งานรอจัด', path: 'backlog', icon: 'e-icons e-list-unordered' },
   { text: 'บอร์ด', path: 'board', icon: 'e-icons e-columns' },
   { text: 'รายการ', path: 'list', icon: 'e-icons e-table' },
 ] as const;
@@ -102,11 +102,10 @@ export class WorkShell {
       if (this.filter.assigneeId() !== targetAssignee) {
         this.filter.assigneeId.set(targetAssignee);
       }
+      // ทีมมาจาก Global เท่านั้น (รวมค่าว่าง = ทุกทีม) — ไม่ค้างทีมเก่าจาก sessionStorage
       const nextTeam = nextScope === 'mine' ? '' : this.workspace.teamId();
-      if (nextTeam) {
-        if (this.filter.teamId() !== nextTeam) this.filter.teamId.set(nextTeam);
-      } else if (nextScope === 'mine') {
-        if (this.filter.teamId() !== '') this.filter.teamId.set('');
+      if (this.filter.teamId() !== nextTeam) {
+        this.filter.teamId.set(nextTeam);
       }
       const opProject = this.workspace.opProject();
       const opType = this.workspace.opType();
@@ -146,7 +145,7 @@ export class WorkShell {
   });
   protected readonly tabs = computed(() => (this.isMine() ? MINE_TABS : TEAM_TABS));
   protected readonly heading = computed(() =>
-    this.isMine() ? 'ฮับงานของฉัน (ค้าง/บอร์ด)' : 'ฮับงานค้าง & แผนทีม',
+    this.isMine() ? 'งานของฉัน' : 'งานทีม',
   );
   protected readonly subheading = computed(() =>
     this.isMine()

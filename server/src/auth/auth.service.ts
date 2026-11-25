@@ -117,6 +117,7 @@ export class AuthService {
       if (!isBootstrap) {
         throw new UnauthorizedException('GitLab user is not linked to a person');
       }
+      // teamId ว่างไว้ให้ sync-users จาก myProject เติมแผนกจริง — ไม่ hardcode stub `implement`
       person = await upsertPerson(this.db, {
         id: `gl-${profile.username.toLowerCase()}`,
         nickname: profile.name || profile.username,
@@ -128,7 +129,7 @@ export class AuthService {
         access: 'admin',
         email: profile.email,
         gitlabUsername: profile.username,
-        teamId: 'implement',
+        teamId: '',
       });
     }
     return this.issueSession(person, res);

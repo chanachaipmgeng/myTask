@@ -35,6 +35,14 @@
   @if (errorMessage()) {
     <app-sf-message [content]="errorMessage()" severity="Error" />
   }
+  @if (isTruncated()) {
+    <div class="mb-2">
+      <app-sf-message
+        content="แสดง 150 ใบงานแรกตามลำดับวันที่ เพื่อความรวดเร็วในการเรนเดอร์ไทม์ไลน์ (สามารถกรองเฉพาะคนหรือโปรเจกต์เพิ่มเติมได้)"
+        severity="Info"
+      />
+    </div>
+  }
 
   @if (tasks().length === 0) {
     <p class="fine">ไม่พบใบงานที่มีช่วงวันที่ตามตัวกรองปัจจุบัน</p>

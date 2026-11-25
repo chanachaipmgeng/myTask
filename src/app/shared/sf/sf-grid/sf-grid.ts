@@ -13,6 +13,7 @@ import {
   AggregateRowModel,
   AggregateService,
   ColumnChooserService,
+  DataStateChangeEventArgs,
   EditService,
   EditSettingsModel,
   ExcelExportService,
@@ -114,7 +115,18 @@ export interface SfGridOptions {
   editSettings?: EditSettingsModel;
   extraToolbar?: (string | object)[];
   motion?: MotionInput;
+  /**
+   * Syncfusion custom remote binding — ผูก `(dataStateChange)` และส่ง
+   * `data` เป็น `{ result, count }` จาก API มาตรฐาน ListPageResult
+   */
+  remote?: boolean;
 }
+
+/** รูปแบบ dataSource สำหรับ Syncfusion custom binding */
+export type SfGridRemoteData<T extends object = object> = {
+  result: T[];
+  count: number;
+};
 
 /** ขนาดหน้ามาตรฐานสำหรับรายการตารางปฏิบัติการ */
 export const LIST_PAGE_SIZES = [12, 25, 50, 100] as const;
@@ -173,7 +185,7 @@ let nextGridId = 1;
       <ejs-grid
         #gridRef
         [id]="gridId()"
-        [dataSource]="data()"
+        [dataSource]="gridDataSource()"
         [allowPaging]="paging()"
         [pageSettings]="pageSettings()"
         [allowSorting]="sorting()"
@@ -200,6 +212,7 @@ let nextGridId = 1;
         (rowSelected)="rowSelected.emit($event)"
         (rowDataBound)="rowDataBound.emit($event)"
         (actionComplete)="actionComplete.emit($event)"
+        (dataStateChange)="onDataStateChange($event)"
       >
         <e-columns>
           @for (col of columns(); track col.field || col.headerText) {
@@ -326,7 +339,7 @@ export class SfGridComponent {
 
   @ViewChild('gridRef') private gridRef?: GridComponent;
 
-  readonly data = input<object[]>([]);
+  readonly data = input<object[] | SfGridRemoteData<object>>([]);
   readonly columns = input<readonly SfGridColumn[]>([]);
   readonly cellTemplates = input<Record<string, TemplateRef<{ $implicit: any }>>>({});
   readonly aggregates = input<readonly SfGridAggregate[]>([]);
@@ -337,8 +350,20 @@ export class SfGridComponent {
   readonly toolbarAction = output<ClickEventArgs>();
   readonly actionComplete = output<any>();
   readonly cellAction = output<{ column: SfGridColumn; row: any }>();
+  /** Syncfusion custom remote binding — ยิงเมื่อ paging/sorting/filtering/search */
+  readonly dataStateChange = output<DataStateChangeEventArgs>();
 
   protected readonly String = String;
+
+  protected readonly remoteEnabled = computed(() => !!this.options().remote);
+
+  protected readonly gridDataSource = computed(() => {
+    const raw = this.data();
+    if (raw && !Array.isArray(raw) && Array.isArray((raw as SfGridRemoteData).result)) {
+      return raw;
+    }
+    return Array.isArray(raw) ? raw : [];
+  });
 
   private readonly defaultBadgeTones: Record<string, BadgeTone> = {
     ว่าง: 'success',
@@ -433,10 +458,15 @@ export class SfGridComponent {
 
   protected readonly gridId = computed(() => this.options().id || this.autoId);
   protected readonly motionRefreshKey = computed(() => {
-    const rows = this.data();
+    const raw = this.data();
+    const rows = Array.isArray(raw)
+      ? raw
+      : ((raw as SfGridRemoteData | undefined)?.result ?? []);
     const first = rows[0] as Record<string, unknown> | undefined;
     const headKey = first ? String(first['id'] ?? first['code'] ?? first['personId'] ?? '') : '';
-    return `${rows.length}:${headKey}`;
+    const total =
+      !Array.isArray(raw) && raw && 'count' in raw ? Number((raw as SfGridRemoteData).count) : rows.length;
+    return `${total}:${rows.length}:${headKey}`;
   });
   protected readonly paging = computed(() => this.options().paging ?? true);
   protected readonly sorting = computed(() => this.options().sorting ?? true);
@@ -532,6 +562,13 @@ export class SfGridComponent {
       return;
     }
     this.toolbarAction.emit(args);
+  }
+
+  protected onDataStateChange(args: DataStateChangeEventArgs): void {
+    if (!this.remoteEnabled()) {
+      return;
+    }
+    this.dataStateChange.emit(args);
   }
 
   exportExcel(fileName?: string): void {

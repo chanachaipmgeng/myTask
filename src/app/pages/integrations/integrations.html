@@ -79,6 +79,31 @@
                 [disabled]="!canEdit()"
                 placeholder="เช่น myhr-core, rd-spike"
               />
+              @if (projectsEmptyWarning()) {
+                <app-sf-message
+                  severity="Warning"
+                  content="ยังไม่ระบุโปรเจกต์ — การซิงก์จะดึงทุกโปรเจกต์ที่ token เห็น (ช้า / DB ใหญ่). แนะนำใส่ identifier หรือกดใช้จาก catalog"
+                />
+              }
+            </label>
+            <label class="field">
+              <span>defaultTrack (เมื่อ CF/โปรเจกต์ไม่ระบุสาย)</span>
+              <app-sf-dropdown
+                [items]="defaultTrackOptions"
+                [value]="defaultTrack()"
+                (valueChange)="defaultTrack.set($event)"
+                [disabled]="!canEdit()"
+              />
+            </label>
+            <label class="field md:col-span-2">
+              <span>projectTrack JSON (identifier → สายงาน 6 สาย)</span>
+              <app-sf-textbox
+                [value]="projectTrackText()"
+                (valueChange)="projectTrackText.set($event)"
+                [disabled]="!canEdit()"
+                [multiline]="true"
+                placeholder='{"myhr-core":"Implement","rd-lab":"RD"}'
+              />
             </label>
             <div class="field md:col-span-2 flex flex-wrap gap-2 items-center">
               <span class="text-sm opacity-80">

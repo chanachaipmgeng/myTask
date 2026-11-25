@@ -81,6 +81,8 @@ export interface WorkspaceScope {
   opType?: string;
   track?: WorkspaceTrackFilter;
   personId?: string;
+  /** สถานะใบงาน: 'unclosed' (ยังไม่ปิด - ค่าเริ่มต้น), 'closed' (ปิดแล้ว), 'all' (ทั้งหมด) */
+  statusScope?: 'unclosed' | 'closed' | 'all';
   /** รหัสรอบประเมิน */
   cycleId?: string;
   /** รวมวันเริ่ม YYYY-MM-DD */
@@ -305,6 +307,13 @@ export function filterTicketsByWorkspace(
       if (!ticket.assigneeId || !peopleInTeams.has(ticket.assigneeId)) {
         return false;
       }
+    }
+    const statusScope = scope.statusScope;
+    if (statusScope === 'unclosed' && ticket.closed) {
+      return false;
+    }
+    if (statusScope === 'closed' && !ticket.closed) {
+      return false;
     }
     if (range && !ticketInDateRange(ticket, range.fromDate, range.toDate)) {
       return false;

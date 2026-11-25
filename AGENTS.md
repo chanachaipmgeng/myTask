@@ -12,8 +12,8 @@
 
 | ชนิด | พาธ |
 |---|---|
-| Workspace Rules | `.agents/rules/myhr-ui-and-teams.md`, `.agents/rules/syncfusion-wrappers.md`, `.cursor/rules/*.mdc` |
-| Project Skills | `.agents/skills/manday-docker-stack/SKILL.md`, `.agents/skills/openproject-fields/SKILL.md`, `.cursor/skills/*/SKILL.md` |
+| Workspace Rules | `.agents/rules/myhr-ui-and-teams.md`, `.agents/rules/syncfusion-wrappers.md`, `.cursor/rules/*.mdc` (รวม `workspace-filter.mdc`) |
+| Project Skills | `.agents/skills/manday-docker-stack/SKILL.md`, `.agents/skills/openproject-fields/SKILL.md`, `.cursor/skills/*/SKILL.md` (รวม `workspace-filter`, `work-hub`, `scorecard-verify`, `openproject-fields`) |
 
 ## คำสั่งตรวจขั้นต่ำ & Windows Shell Guardrail
 
@@ -36,7 +36,8 @@ npm --prefix server run build
   - **6 สายงาน**: `IMP`/`Implement` (`primary` `#2746b3`) · `RND`/`RD` (`teal` `#0d9488`) · `QA` (`info` `#0284c7`) · `UXBA` (`violet` `#7c3aed`) · `SUP` (`warning` `#d97706`) · `INFRA` (`coral` `#ea580c`)
   - **Workflow Stages**: `Backlog` (`secondary`) · `In Progress` (`primary`) · `Code Review` (`violet`) · `Ready for QA` (`coral`) · `In QA` (`info`) · `Done` (`success`) · `Reopened`/`Blocked` (`danger`)
   - **Soft-Tinted Pill Badges (`BadgeTone` 10 โทน)**: `.e-badge:not(.e-badge-notification)` ใช้พื้นโปร่งแสง + ขอบ 1px (`--b-bg`, `--b-border`, `--b-fg`) ส่วน `.e-badge-notification` บนกระดิ่ง AppBar คงสีแดงทึบ
-  - **Semantic Action Buttons (ห้ามใส่ `:hover transform`)**: `.e-primary` (CTA หลัก), `.e-success` (`+ สร้างใบงาน`/อนุมัติ/Resume), `.e-info`/`.e-btn-teal` (ซิงก์ GitLab/myProject/รีเฟรช), `.e-btn-violet` (วิเคราะห์ Python/AI/OLS), `.e-warning` (Ping SLA/อุทธรณ์), `.e-danger` (ตีกลับ Dev/ลบ) ทั้งทึบและ `.e-outline`
+  - **Semantic Action Buttons (ห้ามใส่ `:hover transform`)**: `.e-primary` (CTA หลัก), `.e-success` (`+ สร้างใบงาน`/อนุมัติ/Resume), `.e-info`/`.e-btn-teal` (ซิงก์ GitLab/myProject/รีเฟรช), `.e-btn-violet` (วิเคราะห์ทีม/AI), `.e-warning` (Ping SLA/ขอทบทวนคะแนน), `.e-danger` (ตีกลับ Dev/ลบ) ทั้งทึบและ `.e-outline`
+  - **Wording UI ภาษาไทยที่เข้าใจง่าย**: หลีกเลี่ยงคำทับศัพท์งงๆ บนเมนู/หัวหน้า — เช่น `/cockpit` แสดงเป็น **ภาพรวมงาน** (ไม่ใช้「ค็อกพิท/ห้องบัญชาการ」) · **ขอทบทวนคะแนน** (ไม่ใช้「อุทธรณ์」) · **ตรวจคุณภาพ QA** (ไม่โชว์ DoD Gate บนหัวข้อ) · **งานรอจัด** (แทน Backlog/แบ็กล็อก) · **งานค้าง & SLA** (แทน คอขวด) · route โค้ดคงเดิม
   - **Multi-Accent KPI & Charts**: `app-kpi-stat` รองรับ `KpiAccent` 8 โทน (`default|success|warning|danger|info|teal|violet|coral`) · `app-hero-band` มีจุดสี Prism หน้าหัวข้อดัชนี · ชาร์ตผูก `[theme]="theme.sfTheme()"` + `prismChartPalette(theme.isDark())` · Heatmap ใช้ 4 ช่วง (`0:#f43f5e` → `65:#f59e0b` → `80:#0ea5e9` → `100:#10b981`)
 - **Surface, Theme & SCSS Budget**:
   - โทเคนใน `src/styles.scss`: `--radius-panel` 24 → `--radius-card` 18 → `--radius-nested` 14 · `--shadow-card*` · `--ease-crisp` / `--ease-nordic` + `--dur-*` · ตัวเลข KPI ใช้ `tabular-nums`
@@ -45,7 +46,7 @@ npm --prefix server run build
   - มือถือ ($\le 640$px): `.e-dialog` กว้าง `calc(100vw - 16px) !important` และ `.e-btn.e-small` สูงขั้นต่ำ `36px` · คอนเทนเนอร์รายการยาวใส่ `pb-16`/`pb-20` กันปุ่มลอย `ขึ้นบน` บังปุ่มท้ายหน้า · `ejs-toast` วาง Bottom-Right เสมอ · Global Filter เหลือปุ่ม「ตัวกรอง」+ ป็อปโอเวอร์ · drawer ใบงานเต็มจอ · Kanban/Gantt/Schedule เลื่อนในกรอบ · `.hub-underline-tab` สูงแตะ $\ge 40$px
 - **Shell, AppBar, Unified Sidebar & Navigation**:
   - **หลังล็อกอินทุกสิทธิ์ → `/me`** (`login.ts` + GitLab SSO `${APP_URL}/me`) · เมนูแอดมินยังโผล่ตามสิทธิ์บน Sidebar
-  - Sidebar (`#app-nav` กว้าง `244px` / พับ `64px` ต้องตรงกันทั้ง `app.scss` และ `src/styles.scss`): Desktop sticky `100vh`, Mobile fixed `z-index: 1200` · Active Pill วัดพิกัดด้วย `getBoundingClientRect()` + `ResizeObserver` · **ห้ามแยกชุดเมนู `/me/*` ซ้ำซ้อนกับเมนูหลัก**: ทุกสิทธิ์ใช้เมนู `พื้นที่ทำงาน` ชุดเดียวกัน (`/me`, `/cockpit`, `/work`, `/schedule`, `/quality`, `/mygit` — โดย Member กรองข้อมูลเฉพาะตัวเองอัตโนมัติ ส่วน Lead/Admin เห็นตัวกรอง `ทีม`, `พนักงาน`, `เฉพาะฉัน` เพิ่มบน Global Filter Bar) พร้อมเพิ่มหมวด `บริหารทีม` (`/workspace/people` · คิวจ่ายงานเป็นแท็บ `/work/queue`) ให้ `lead`/`admin` และหมวด `โซนแอดมิน` (`/admin`, `/admin/projects`, `/admin/rubrics`, `/admin/snapshot-check`, `/integrations`) ให้ `admin` · `matchNavId(url, role)` ต้องคืน `id` ตรงกับ `SidebarSection.items[].id` เสมอ
+  - Sidebar (`#app-nav` กว้าง `244px` / พับ `64px` ต้องตรงกันทั้ง `app.scss` และ `src/styles.scss`): Desktop sticky `100vh`, Mobile fixed `z-index: 1200` · Active Pill วัดพิกัดด้วย `getBoundingClientRect()` + `ResizeObserver` · **ห้ามแยกชุดเมนู `/me/*` ซ้ำซ้อนกับเมนูหลัก**: เมนูหลักชุดเดียวกัน — งานของฉัน · ภาพรวมงาน · ทีมของฉัน · **งานทีม** (Member ป้ายเป็น **งานของฉัน** route `/work`) · Git & MR · ปฏิทิน & วันลา · คะแนน & วิเคราะห์ · หมวด `บริหารทีม`: lead「คนในทีม」· หมวด `ตั้งค่าระบบ`: admin「พนักงาน & ทีม」(จุดเดียว แท็บ พนักงาน|ทีม · `/org/teams` redirect) · `/admin` · projects · rubrics · snapshot-check · integrations · `matchNavId` ต้องตรง `SidebarSection.items[].id` · `/work/team-time` → `hub-work`
   - AppBar: ค้นหา · สถานะ API · แจ้งเตือน · สลับธีม — **ไม่**ใส่ชื่อหน้าซ้ำหัวหน้าเนื้อหา · **ไม่**ปุ่ม「ดูในมุม Member」· **ไม่**อวาตาร์/สลับบัญชี (โปรไฟล์+ออกจากระบบท้าย Sidebar)
   - `::ng-deep .shell-appbar.e-appbar` ต้องกำหนด `overflow: visible !important; z-index: 100 !important; flex-wrap: nowrap !important;` สูงคงที่ 56px และแผงลอยภายใน AppBar (เช่น `.navbar-search-panel`) ต้องใช้ `z-index: 1050` เพื่อไม่โดนตัดขอบหรือจมหลัง `.workspace-filter-bar` (`z-index: 25`)
   - Omnisearch (`⌘K`): ค้นโปรเจกต์ต้องเช็กทั้ง `String(p.id).includes(q)`, `name`, และ `identifier` และกรองตาม `effectiveAllowedTeams`

@@ -5,10 +5,14 @@ import { filter, map, startWith } from 'rxjs';
 import { effectiveRole } from '../../core/admin-settings';
 
 const ALL_QUALITY_TABS = [
-  { text: 'QA / DoD', path: 'audit', icon: 'e-icons e-check-box', managerOnly: true },
   { text: 'ตารางคะแนน', path: 'tickets', icon: 'e-icons e-table', managerOnly: false },
-  { text: 'เวลา 3 ทาง', path: 'time-audit', icon: 'e-icons e-clock', managerOnly: false },
-  { text: 'อุทธรณ์คะแนน', path: 'disputes', icon: 'e-icons e-edit', managerOnly: false },
+  { text: 'วิเคราะห์รายคน', path: 'ols', icon: 'e-icons e-user', managerOnly: false },
+  { text: 'เช็กเวลา 3 ทาง', path: 'time-audit', icon: 'e-icons e-clock', managerOnly: false },
+  { text: 'ขอทบทวนคะแนน', path: 'disputes', icon: 'e-icons e-edit', managerOnly: false },
+  { text: 'งาน AI & Spike', path: 'ai', icon: 'e-icons e-chart', managerOnly: false },
+  { text: 'ตรวจคุณภาพ QA', path: 'audit', icon: 'e-icons e-check-box', managerOnly: true },
+  { text: 'วิเคราะห์ทีม', path: 'report', icon: 'e-icons e-chart', managerOnly: true },
+  { text: 'โหมดจำลอง', path: 'mockup', icon: 'e-icons e-play', managerOnly: true },
 ] as const;
 
 @Component({
@@ -22,7 +26,7 @@ export class QualityShell {
   private readonly router = inject(Router);
   protected readonly basePath = '/quality';
   protected readonly heading = computed(() =>
-    effectiveRole() === 'member' ? 'คะแนน & อุทธรณ์ของฉัน' : 'คุณภาพ & คะแนนทีม',
+    effectiveRole() === 'member' ? 'คะแนน & วิเคราะห์ของฉัน' : 'คะแนน & วิเคราะห์',
   );
   protected readonly tabs = computed(() =>
     effectiveRole() === 'member'
@@ -46,15 +50,23 @@ export class QualityShell {
     const found = list.find(
       (tab) => path === `${this.basePath}/${tab.path}` || path.startsWith(`${this.basePath}/${tab.path}/`),
     );
-    return found?.path ?? (effectiveRole() === 'member' ? 'tickets' : 'audit');
+    return found?.path ?? 'tickets';
   });
 
   constructor() {
     effect(() => {
       const role = effectiveRole();
       const path = this.url().split('?')[0] ?? '';
-      if (role === 'member' && path.startsWith('/quality/audit')) {
-        void this.router.navigate(['/quality/tickets'], { queryParamsHandling: 'preserve', replaceUrl: true });
+      if (
+        role === 'member' &&
+        (path.startsWith('/quality/audit') ||
+          path.startsWith('/quality/report') ||
+          path.startsWith('/quality/mockup'))
+      ) {
+        void this.router.navigate(['/quality/tickets'], {
+          queryParamsHandling: 'preserve',
+          replaceUrl: true,
+        });
       }
     });
   }

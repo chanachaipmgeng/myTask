@@ -32,17 +32,18 @@ alwaysApply: true
 - อย่าแก้ไฟล์แผน `.cursor/plans/` ของผู้ใช้เว้นแต่ถูกขอ
 - อย่า commit `.agents/` `.claude/` `skills-lock.json` หรือ `.env`
 
-## Navigation / Global Filter (P20–P21)
+## Navigation / Global Filter (P20–P30)
 
-- **หลังล็อกอินทุกสิทธิ์ → `/me`** (`login.ts` + GitLab callback `${appUrl}/me`) · สิทธิ์แอดมินยังอยู่ · เปิดโซนแอดมินจาก Sidebar เอง
-- Sidebar lead = hub แบน: ของฉัน · ทีม (`/workspace/people`) · งานทีม · คุณภาพ · วิเคราะห์ · คิวจ่ายงานเป็นแท็บ `/work/queue` — อย่าใส่ «ทีมการ์ด» ซ้ำบน rail (ค้นหาเมนู/`/org/teams` หรือปุ่มใน Person WS)
-- AppBar: ค้นหา · สถานะ API · แจ้งเตือน · สลับธีม — **ไม่**ใส่ชื่อหน้าซ้ำหัวหน้าเนื้อหา · **ไม่**ปุ่ม「ดูในมุม Member」· **ไม่**อวาตาร์/สลับบัญชี (โปรไฟล์+ออกจากระบบท้าย Sidebar)
-- Global Filter: ชิปสาย 6 รหัสผ่าน `listWorkspaceTrackChipOptions` / `normalizeTrack` · กรองคน/ใบด้วย `filterPeopleByWorkspace` / `filterTicketsByWorkspace` · chip คนเมื่อมี `personId` · ที่ ≤640px ซ่อนช่องเดสก์ท็อป เปิดผ่านป็อปโอเวอร์「ตัวกรอง」
-- สวิตช์สถานะ/แท็บอินบ็อกซ์ที่ใช้กรองในหน้า (เช่น `/mygit`, `/admin/projects`) ต้องใช้ `app-filter-chips` — ห้ามวาด segmented ปุ่มดิบ
-- `/work` shell: กรองสัปดาห์/ถังวัน/ค้นหาเท่านั้น — ทีม·สาย·โปรเจกต์อ่านจาก `WorkspaceFilter` · `clearContext` ห้ามเรียก `workspace.clear()` ทั้งก้อน
-- `/me` MineShell แท็บสั้น 6 ชุด (วันนี้ · ค็อกพิท · งาน · ปฏิทิน · คุณภาพ · ข้อมูล)
-- Person Workspace: รายชื่อซ้าย scope โดยไม่ใส่ `personId` · แท็บงานตั้ง person แล้วไป `/work/list`
-- มือถือ ≤640px: ลิ้นชักใบงานเต็มจอ · `.hub-underline-tab` สูงแตะ ≥40px · Kanban/Gantt/Schedule เลื่อนในกรอบ · คอนเทนเนอร์รายการยาวเว้น `pb` กันปุ่มลอย
+- **หลังล็อกอินทุกสิทธิ์ → `/me`** (`login.ts` + GitLab callback `${appUrl}/me`) · สิทธิ์แอดมินยังอยู่ · เปิดเมนูตั้งค่าระบบจาก Sidebar เอง
+- **Wording UI**: `/cockpit` = **ภาพรวมงาน** · ขอทบทวนคะแนน · ตรวจคุณภาพ QA · งานรอจัด · งานค้าง & SLA · Member ป้าย Sidebar「งานของฉัน」(route `/work`) — route โค้ดคงเดิม
+- Sidebar: lead「คนในทีม」→ `/workspace/people` · admin「พนักงาน & ทีม」รายการเดียว (แท็บ พนักงาน|ทีม) · `/org/teams` redirect มาแท็บทีม — อย่าใส่การ์ดทีมซ้ำบน rail
+- AppBar: ค้นหา · สถานะ API · แจ้งเตือน · สลับธีม — **ไม่**ชื่อหน้าซ้ำ · **ไม่**ปุ่ม「ดูในมุม Member」· **ไม่**อวาตาร์สลับบัญชี
+- Global Filter: ค่าเริ่ม `teamId` ว่าง · `clear()` = ทุกทีม (ไม่คืน `selfTeamId`) · ชิปสาย 6 รหัส · กรองด้วย `filterPeopleByWorkspace` / `filterTicketsByWorkspace` · ≤640px ป็อปโอเวอร์「ตัวกรอง」
+- **เจ้าของตัวกรองตามหน้า**: `/work` = สัปดาห์/ถังวัน/ค้นหาเท่านั้น (`WorkHubFilter` ไม่ persist team/track) · Person WS เลือกคนแค่ route (เขียน Global `person` เฉพาะเจาะ `/work`) · handoff ใช้ `applyToTickets` · schedule โหมดทีม sync `setTeam`/`setPerson` · ห้ามสร้างหน้ากรองกลางใหม่
+- สวิตช์สถานะในหน้าใช้ `app-filter-chips` — ห้าม segmented ปุ่มดิบ
+- `/me` MineShell = **งานของฉัน** · `/team` = ทีมที่ดูแล + สมาชิกคลิกได้ (member เห็นทั้งทีม)
+- Person Workspace: directory ไม่กรองด้วย route `personId` ในรายชื่อ · `matchNavId`: `/work/team-time` → `hub-work` (ไม่ดึง `hub-team`)
+- มือถือ ≤640px: drawer ใบงานเต็มจอ · `.hub-underline-tab` ≥40px · Kanban/Gantt/Schedule เลื่อนในกรอบ
 
 ## สิทธิ์แจกงาน / Board / Gantt / writeback / KPI snapshot
 

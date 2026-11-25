@@ -1,7 +1,7 @@
 <section class="page flex flex-col gap-4">
   <app-page-head
-    [title]="isMine() ? 'กล่องงาน Git & MR ของฉัน (Git Inbox)' : 'กล่องงาน Git & MR ทีม (Git Inbox)'"
-    description="ศูนย์รวมคิวรีวิว Merge Request, ตรวจรับรอบรีวิว, และแปลง Branch ที่ยังไม่ผูกเป็นใบงาน myProject ทันที"
+    [title]="isMine() ? 'Git & MR ของฉัน' : 'Git & MR'"
+    description="คิวรีวิว MR, ตรวจรอบรีวิว, และสร้างใบงานจาก Branch ที่ยังไม่ผูก myProject"
   >
     <div actions class="flex flex-wrap items-center gap-2">
       <button
@@ -143,7 +143,7 @@
   @if ((inboxTab() === 'all' || inboxTab() === 'tickets') && isMine()) {
     <app-section-card
       title="สถานะลิงก์ Merge Request ในใบงานของฉัน"
-      subtitle="ตรวจสอบว่าใบงานที่รับผิดชอบแนบลิงก์ MR ครบถ้วนก่อนส่งตรวจ DoD Gate"
+      subtitle="ตรวจสอบว่าใบงานที่รับผิดชอบแนบลิงก์ MR ครบถ้วนก่อนส่งตรวจ QA"
       [badge]="myTicketsWithMr().length + ' ใบ'"
       badgeTone="info"
     >

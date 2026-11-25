@@ -370,7 +370,7 @@ export class PersonDashboard {
     return [
       { dimension: 'ส่งตรง (On-Time)', personScore: myOnTime, teamAvg: teamOnTime },
       { dimension: 'แม่นยำ (Accuracy)', personScore: myAccuracy, teamAvg: teamAccuracy },
-      { dimension: 'DoD Gate (คุณภาพ)', personScore: myQuality, teamAvg: teamQuality },
+      { dimension: 'คุณภาพส่งมอบ', personScore: myQuality, teamAvg: teamQuality },
       { dimension: 'โควตา (Quota)', personScore: myQuotaPct, teamAvg: teamQuotaPct },
       { dimension: 'รีวิวโค้ด (Peer)', personScore: myPeer, teamAvg: teamPeer },
       { dimension: 'AI & นวัตกรรม', personScore: mySpike, teamAvg: teamSpike },

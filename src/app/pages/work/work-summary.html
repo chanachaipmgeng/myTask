@@ -33,7 +33,15 @@
             </header>
             @for (project of bucket.projects; track project.projectKey) {
               <div class="stuck-project">
-                <h4 class="stuck-project__title">{{ project.projectLabel }}</h4>
+                <div class="flex items-center justify-between gap-2">
+                  <h4 class="stuck-project__title">
+                    {{ project.projectLabel }}
+                    @if (project.totalCount && project.totalCount > project.items.length) {
+                      <span class="text-xs text-muted font-normal">(แสดง {{ project.items.length }}/{{ project.totalCount }} ใบ)</span>
+                    }
+                  </h4>
+                  <a routerLink="/work/list" class="text-xs text-primary hover:underline" [title]="'ดูรายการเต็ม ' + project.projectLabel">ดูตารางรายการ →</a>
+                </div>
                 <ul class="stuck-list">
                   @for (item of project.items; track item.id) {
                     <li class="stuck-list__item">

@@ -59,7 +59,11 @@ type CustomFieldKey =
   | 'mrLink'
   | 'bugCause'
   | 'pocResult'
-  | 'weekOffset';
+  | 'weekOffset'
+  | 'baselineDue'
+  | 'exceptionTag'
+  | 'rdWorkTrack'
+  | 'spikeOutcome';
 
 function emptyCustomFields(): Record<CustomFieldKey, string> {
   return {
@@ -87,6 +91,10 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
     bugCause: '',
     pocResult: '',
     weekOffset: '',
+    baselineDue: '',
+    exceptionTag: '',
+    rdWorkTrack: '',
+    spikeOutcome: '',
   };
 }
 
@@ -129,7 +137,12 @@ export class IntegrationsPage {
   protected readonly enabled = signal(true);
   protected readonly hoursPerMd = signal(6);
   protected readonly projectsText = signal('');
+  protected readonly projectTrackText = signal('{}');
+  protected readonly defaultTrack = signal('Implement');
   protected readonly teamStaging = signal<'rd' | 'all'>('all');
+  protected readonly projectsEmptyWarning = computed(
+    () => !this.projectsText().split(',').map((s) => s.trim()).filter(Boolean).length,
+  );
   protected readonly projectCatalog = signal<
     { id: number; identifier: string; name: string; active: boolean }[]
   >([]);
@@ -154,7 +167,7 @@ export class IntegrationsPage {
   protected readonly customFieldRows: { key: CustomFieldKey; label: string; hint: string }[] = [
     ...this.slaCustomFieldRows,
     { key: 'size', label: 'Size', hint: 'XS S M L XL' },
-    { key: 'track', label: 'Track', hint: 'Implement / RD' },
+    { key: 'track', label: 'Track', hint: 'Implement · RD · QA · UXBA · SUP · INFRA' },
     { key: 'type', label: 'Type', hint: 'Feature / Bug / Spike …' },
     { key: 'variance', label: 'Variance', hint: 'NONE REQ BLK ENV LEG' },
     { key: 'unplanned', label: 'Unplanned', hint: 'boolean' },
@@ -170,6 +183,19 @@ export class IntegrationsPage {
     { key: 'bugCause', label: 'Bug cause', hint: 'Logic UI API …' },
     { key: 'pocResult', label: 'PoC result', hint: 'Adopted / Dropped …' },
     { key: 'weekOffset', label: 'Week offset', hint: '0 1 2+ ถ้าคำนวณไม่ได้' },
+    { key: 'baselineDue', label: 'Baseline Due', hint: 'วันที่ baseline จาก CF' },
+    { key: 'exceptionTag', label: 'Exception Tag', hint: 'เช่น BUG / EXCEPTION' },
+    { key: 'rdWorkTrack', label: 'RD Work Track', hint: 'แนวงาน R&D จาก CF' },
+    { key: 'spikeOutcome', label: 'Spike Outcome', hint: 'ผล Spike / PoC จาก CF' },
+  ];
+
+  protected readonly defaultTrackOptions: { text: string; value: string }[] = [
+    { text: 'Implement (IMP)', value: 'Implement' },
+    { text: 'R&D (RND)', value: 'RD' },
+    { text: 'QA', value: 'QA' },
+    { text: 'Product / BA / UX (UXBA)', value: 'UXBA' },
+    { text: 'Support (SUP)', value: 'SUP' },
+    { text: 'Infra / DevOps (INFRA)', value: 'INFRA' },
   ];
 
   protected readonly generalCustomFieldRows = this.customFieldRows.filter(
@@ -296,6 +322,8 @@ export class IntegrationsPage {
         ? (info.mapping['projects'] as string[])
         : [];
       this.projectsText.set(mappedProjects.join(', '));
+      this.projectTrackText.set(JSON.stringify(info.mapping['projectTrack'] ?? {}, null, 2));
+      this.defaultTrack.set(String(info.mapping['defaultTrack'] ?? 'Implement'));
       this.statusMapText.set(JSON.stringify(info.mapping['statusMap'] ?? {}, null, 2));
       this.typeMapText.set(JSON.stringify(info.mapping['typeMap'] ?? {}, null, 2));
       const custom = (info.mapping['customFields'] ?? {}) as Record<string, string>;
@@ -406,11 +434,13 @@ export class IntegrationsPage {
     try {
       let statusMap: Record<string, string> = {};
       let typeMap: Record<string, string> = {};
+      let projectTrack: Record<string, string> = {};
       try {
         statusMap = JSON.parse(this.statusMapText() || '{}') as Record<string, string>;
         typeMap = JSON.parse(this.typeMapText() || '{}') as Record<string, string>;
+        projectTrack = JSON.parse(this.projectTrackText() || '{}') as Record<string, string>;
       } catch {
-        this.error.set('statusMap / typeMap ต้องเป็น JSON object');
+        this.error.set('statusMap / typeMap / projectTrack ต้องเป็น JSON object');
         return;
       }
       const current = this.data()?.mapping ?? {};
@@ -438,6 +468,8 @@ export class IntegrationsPage {
         projects,
         statusMap,
         typeMap,
+        projectTrack,
+        defaultTrack: this.defaultTrack(),
         customFields: {
           ...((current['customFields'] as Record<string, string> | undefined) ?? {}),
           ...customFields,

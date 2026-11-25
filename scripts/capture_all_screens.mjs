@@ -1,95 +1,165 @@
-import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, statSync } from 'node:fs';
+/**
+ * แคปหน้าจอโหมดสว่างสำหรับคู่มือ
+ * ต้องมี ng serve (:4200) + API (:3000) และ AUTH_DEV_LOGIN เปิด
+ *
+ *   node scripts/capture_all_screens.mjs
+ *   node scripts/capture_all_screens.mjs --from=22-admin.png
+ *   node scripts/capture_all_screens.mjs --person=paweena
+ *
+ * ต้องมี playwright (ติดตั้งชั่วคราวได้: npm i -D --no-save playwright)
+ *
+ * หมายเหตุ: หลังล็อกอินใช้ SPA navigate (Angular Router) แทน page.goto
+ * เพื่อคง session ในหน่วยความจำ — หลีกเลี่ยงเด้ง /login ตอนโหลดซ้ำ
+ */
+import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { createRequire } from 'node:module';
+import { spawnSync } from 'node:child_process';
 
-const edgePath = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
-const outputDir = resolve('docs/manual_assets');
-/** บังคับแคปโหมดสว่างทุกหน้า (ไม่พึ่ง localStorage ของโปรไฟล์ headless) */
+const require = createRequire(import.meta.url);
+const BASE = process.env.CAPTURE_BASE || 'http://127.0.0.1:4200';
+const API = process.env.CAPTURE_API || 'http://127.0.0.1:3000';
 const CAPTURE_THEME = 'light';
+const PERSON = (process.argv.find((a) => a.startsWith('--person=')) || '--person=paweena').slice(
+  '--person='.length,
+);
 
-if (!existsSync(outputDir)) {
-  mkdirSync(outputDir, { recursive: true });
+const PERSON_LABEL = {
+  paweena: 'ปวีณา',
+  chanachai: 'ชนะชัย',
+  nakarin: 'นครินทร์',
+  watchara: 'วัชระ',
+  itsara: 'อิสรภาพ',
+};
+
+const outputDir = resolve('docs/manual-screenshots');
+const legacyDir = resolve('docs/manual_assets');
+
+for (const dir of [outputDir, legacyDir]) {
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
-function withTheme(url, theme = CAPTURE_THEME) {
+function withTheme(url) {
   const u = new URL(url);
-  u.searchParams.set('theme', theme);
+  u.searchParams.set('theme', CAPTURE_THEME);
   return u.toString();
 }
 
+/** route มาตรฐานปัจจุบัน — ชื่อไฟล์แนวคู่มือ */
 const screens = [
-  { name: '01_login.png', url: 'http://127.0.0.1:4200/login', wait: 4000 },
-  { name: '02_team_dashboard.png', url: 'http://127.0.0.1:4200/team', wait: 6000 },
-  { name: '03_my_workspace.png', url: 'http://127.0.0.1:4200/me', wait: 5000 },
-  { name: '04_work_summary.png', url: 'http://127.0.0.1:4200/work/summary', wait: 5000 },
-  { name: '05_work_timeline.png', url: 'http://127.0.0.1:4200/work/timeline', wait: 6000 },
-  { name: '06_work_backlog.png', url: 'http://127.0.0.1:4200/work/backlog', wait: 5000 },
-  { name: '07_work_board.png', url: 'http://127.0.0.1:4200/work/board', wait: 6000 },
-  { name: '08_work_list.png', url: 'http://127.0.0.1:4200/work/list', wait: 5000 },
-  { name: '09_tickets_scorecard.png', url: 'http://127.0.0.1:4200/tickets', wait: 6000 },
-  { name: '10_people_board.png', url: 'http://127.0.0.1:4200/people', wait: 5000 },
-  { name: '11_person_detail.png', url: 'http://127.0.0.1:4200/people/paweena', wait: 6000 },
-  { name: '12_schedule.png', url: 'http://127.0.0.1:4200/schedule', wait: 6000 },
-  { name: '13_ai_tracking.png', url: 'http://127.0.0.1:4200/ai', wait: 5000 },
-  { name: '14_analytics.png', url: 'http://127.0.0.1:4200/analytics', wait: 6000 },
-  { name: '15_integrations.png', url: 'http://127.0.0.1:4200/integrations', wait: 5000 },
-  { name: '16_admin.png', url: 'http://127.0.0.1:4200/admin', wait: 5000 },
-  { name: '17_mockup.png', url: 'http://127.0.0.1:4200/mockup', wait: 5000 },
-  { name: '19_light_mode_team.png', url: 'http://127.0.0.1:4200/team', wait: 6000 },
-  { name: '20_queue.png', url: 'http://127.0.0.1:4200/queue', wait: 5000 },
-  { name: '21_work_handoff.png', url: 'http://127.0.0.1:4200/work/handoff', wait: 6000 },
-  { name: '22_quality_audit.png', url: 'http://127.0.0.1:4200/quality/audit', wait: 6000 },
-  { name: '23_time_audit.png', url: 'http://127.0.0.1:4200/analytics/time-audit', wait: 5000 },
-  { name: '24_tickets_disputes.png', url: 'http://127.0.0.1:4200/tickets/disputes', wait: 5000 },
-  { name: '25_snapshot_check.png', url: 'http://127.0.0.1:4200/admin/snapshot-check', wait: 5000 },
-  { name: '26_admin_rubrics.png', url: 'http://127.0.0.1:4200/admin/rubrics', wait: 5000 },
-  { name: '27_cockpit.png', url: 'http://127.0.0.1:4200/cockpit', wait: 6000 },
-  { name: '28_me_cockpit.png', url: 'http://127.0.0.1:4200/me/cockpit', wait: 6000 },
-  { name: '29_mygit.png', url: 'http://127.0.0.1:4200/mygit', wait: 5000 },
-  { name: '30_teams.png', url: 'http://127.0.0.1:4200/teams', wait: 5000 },
-  { name: '31_cockpit_light.png', url: 'http://127.0.0.1:4200/cockpit', wait: 6000 },
-  // v2026.6 — เมนูใหม่ / หน้า member ย่อย + เวลาทีมใน Work Hub
-  { name: '32_me_time_log.png', url: 'http://127.0.0.1:4200/me/time-log', wait: 5000 },
-  { name: '33_work_team_time.png', url: 'http://127.0.0.1:4200/work/team-time', wait: 5000 },
-  { name: '34_me_work_hub.png', url: 'http://127.0.0.1:4200/me/work/summary', wait: 5000 },
-  { name: '35_me_tickets.png', url: 'http://127.0.0.1:4200/me/tickets', wait: 5000 },
-  { name: '36_me_analytics.png', url: 'http://127.0.0.1:4200/me/analytics', wait: 6000 },
-  { name: '37_me_time_audit.png', url: 'http://127.0.0.1:4200/me/time-audit', wait: 5000 },
-  { name: '38_me_disputes.png', url: 'http://127.0.0.1:4200/me/disputes', wait: 5000 },
+  { name: '01-login.png', url: `${BASE}/login`, wait: 1500, skipAuth: true },
+  { name: '02-me.png', url: `${BASE}/me`, wait: 3500 },
+  { name: '03-me-cockpit.png', url: `${BASE}/cockpit`, wait: 4500 },
+  { name: '04-cockpit.png', url: `${BASE}/cockpit`, wait: 4500 },
+  { name: '05-team.png', url: `${BASE}/team`, wait: 4500 },
+  { name: '06-workspace-people.png', url: `${BASE}/workspace/people`, wait: 3500 },
+  { name: '07-people.png', url: `${BASE}/people`, wait: 3500 },
+  { name: '08-org-teams.png', url: `${BASE}/org/teams`, wait: 3500 },
+  { name: '09-work-summary.png', url: `${BASE}/work/summary`, wait: 3500 },
+  { name: '09b-work-backlog.png', url: `${BASE}/work/backlog`, wait: 3500 },
+  { name: '10-work-board.png', url: `${BASE}/work/board`, wait: 4500 },
+  { name: '11-work-timeline.png', url: `${BASE}/work/timeline`, wait: 4500 },
+  { name: '11-person-detail.png', url: `${BASE}/people/paweena`, wait: 4500 },
+  { name: '12-work-list.png', url: `${BASE}/work/list`, wait: 3500 },
+  { name: '13-queue.png', url: `${BASE}/work/queue`, wait: 3500 },
+  { name: '13b-work-handoff.png', url: `${BASE}/work/handoff`, wait: 4500 },
+  { name: '13c-work-team-time.png', url: `${BASE}/work/team-time`, wait: 3500 },
+  { name: '14-schedule.png', url: `${BASE}/schedule`, wait: 4500 },
+  { name: '15-quality-audit.png', url: `${BASE}/quality/audit`, wait: 4500 },
+  { name: '16-quality-tickets.png', url: `${BASE}/quality/tickets`, wait: 4500 },
+  { name: '16b-quality-ols.png', url: `${BASE}/quality/ols`, wait: 3500 },
+  { name: '17-quality-time-audit.png', url: `${BASE}/quality/time-audit`, wait: 3500 },
+  { name: '18-quality-disputes.png', url: `${BASE}/quality/disputes`, wait: 3500 },
+  { name: '19-insights-report.png', url: `${BASE}/quality/report`, wait: 4500 },
+  { name: '20-insights-mygit.png', url: `${BASE}/mygit`, wait: 3500 },
+  { name: '21-insights-ai.png', url: `${BASE}/quality/ai`, wait: 3500 },
+  { name: '22-admin.png', url: `${BASE}/admin`, wait: 3500 },
+  { name: '23-admin-rubrics.png', url: `${BASE}/admin/rubrics`, wait: 3500 },
+  { name: '24-admin-snapshot-check.png', url: `${BASE}/admin/snapshot-check`, wait: 3500 },
+  { name: '25-integrations.png', url: `${BASE}/integrations`, wait: 3500 },
+  { name: '26-teams.png', url: `${BASE}/teams`, wait: 3500 },
+  { name: '27-admin-projects.png', url: `${BASE}/admin/projects`, wait: 4500 },
+  { name: '28-project-detail-health.png', url: `${BASE}/org/projects/331`, wait: 4500 },
+  { name: '28-project-detail-tickets.png', url: `${BASE}/org/projects/331?tab=tickets`, wait: 3500 },
+  { name: '28-project-detail-git.png', url: `${BASE}/org/projects/331?tab=git`, wait: 3500 },
+  { name: '29-quality-mockup.png', url: `${BASE}/quality/mockup`, wait: 3500 },
 ].map((s) => ({ ...s, url: withTheme(s.url) }));
 
-function capture(screen) {
-  const dest = join(outputDir, screen.name);
-  console.log(`Capturing ${screen.name} from ${screen.url} (wait ${screen.wait}ms)...`);
-  const result = spawnSync(edgePath, [
-    '--headless=new',
-    '--disable-gpu',
-    '--window-size=1600,1050',
-    '--hide-scrollbars',
-    '--timeout=45000',
-    `--virtual-time-budget=${screen.wait}`,
-    `--screenshot=${dest}`,
-    screen.url,
-  ], {
-    timeout: 60000,
-    killSignal: 'SIGTERM',
-  });
-
-  if (result.error) {
-    console.error(`⚠️  ${screen.name}: ${result.error.message}`);
-  } else if (result.status !== 0 && result.status != null) {
-    console.error(`⚠️  ${screen.name}: Edge exit ${result.status}`);
-  }
-
-  if (existsSync(dest)) {
-    const size = statSync(dest).size;
-    console.log(`✅ ${screen.name}: ${(size / 1024).toFixed(1)} KB`);
-  } else {
-    console.error(`❌ Failed to capture ${screen.name}`);
+function loadPlaywright() {
+  try {
+    return require('playwright');
+  } catch {
+    console.log('Installing playwright (temporary, --no-save)...');
+    const r = spawnSync('npm', ['i', '-D', '--no-save', 'playwright'], {
+      cwd: resolve('.'),
+      stdio: 'inherit',
+      shell: true,
+    });
+    if (r.status !== 0) {
+      throw new Error('ติดตั้ง playwright ไม่สำเร็จ — รัน: npm i -D playwright');
+    }
+    return require('playwright');
   }
 }
 
-function run() {
+function mirrorLegacy(name) {
+  const src = join(outputDir, name);
+  if (!existsSync(src)) return;
+  const legacyName = name.replace(/-/g, '_');
+  try {
+    copyFileSync(src, join(legacyDir, legacyName));
+  } catch {
+    /* ignore */
+  }
+}
+
+async function ensureLoggedIn(page) {
+  const label = PERSON_LABEL[PERSON] || PERSON;
+  await page.goto(withTheme(`${BASE}/login`), { waitUntil: 'domcontentloaded', timeout: 90000 });
+  await page.waitForTimeout(3000);
+
+  if (!page.url().includes('/login')) {
+    console.log('✅ already authenticated →', page.url());
+    return;
+  }
+
+  const chip = page.locator('button.login-chip', { hasText: label }).first();
+  await chip.waitFor({ state: 'visible', timeout: 20000 });
+  await chip.click();
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 45000 });
+  await page.waitForTimeout(2500);
+  console.log('✅ Dev Quick Login as', PERSON, '→', page.url());
+}
+
+/** Client-side navigate ผ่าน Angular Router บน app-root (dev mode) */
+async function spaNavigate(page, absoluteUrl) {
+  const u = new URL(absoluteUrl);
+  const segments = u.pathname.split('/').filter(Boolean);
+  const queryParams = Object.fromEntries(u.searchParams.entries());
+  const ok = await page.evaluate(
+    async ({ segments: segs, queryParams: qp }) => {
+      const ng = window.ng;
+      const root = document.querySelector('app-root');
+      if (!ng?.getComponent || !root) return { ok: false, reason: 'no ng' };
+      const comp = ng.getComponent(root);
+      if (!comp?.router?.navigate) return { ok: false, reason: 'no router' };
+      try {
+        const commands = ['/', ...segs];
+        const nav = await comp.router.navigate(commands, { queryParams: qp });
+        return { ok: true, nav, url: location.pathname };
+      } catch (e) {
+        return { ok: false, reason: String(e?.message || e) };
+      }
+    },
+    { segments, queryParams },
+  );
+  if (!ok?.ok) {
+    throw new Error(`SPA navigate failed for ${u.pathname}: ${ok?.reason || 'unknown'}`);
+  }
+  await page.waitForTimeout(400);
+}
+
+async function run() {
   const fromArg = process.argv.find((a) => a.startsWith('--from='));
   const fromName = fromArg ? fromArg.slice('--from='.length) : '';
   let list = screens;
@@ -98,11 +168,69 @@ function run() {
     if (idx >= 0) list = screens.slice(idx);
     else console.warn(`--from=${fromName} not found; capturing all`);
   }
-  console.log(`Starting light-mode capture of ${list.length}/${screens.length} screens via Edge Headless...`);
-  for (const s of list) {
-    capture(s);
+
+  console.log(`Capturing ${list.length}/${screens.length} → ${outputDir}`);
+  console.log(`Theme=${CAPTURE_THEME} · person=${PERSON} · base=${BASE}`);
+
+  const health = await fetch(`${API}/api/health`).catch(() => null);
+  if (!health?.ok) {
+    console.error('❌ API ไม่พร้อมที่', API);
+    process.exit(1);
   }
+  const web = await fetch(`${BASE}/`).catch(() => null);
+  if (!web?.ok) {
+    console.error('❌ เว็บไม่พร้อมที่', BASE);
+    process.exit(1);
+  }
+
+  const { chromium } = loadPlaywright();
+  const browser = await chromium.launch({
+    channel: 'msedge',
+    headless: true,
+  });
+  const context = await browser.newContext({
+    viewport: { width: 1600, height: 1050 },
+    deviceScaleFactor: 1,
+  });
+  const page = await context.newPage();
+
+  await ensureLoggedIn(page);
+
+  for (const screen of list) {
+    const dest = join(outputDir, screen.name);
+    process.stdout.write(`Capturing ${screen.name} ... `);
+    try {
+      if (screen.skipAuth) {
+        const bare = await browser.newContext({
+          viewport: { width: 1600, height: 1050 },
+        });
+        const loginPage = await bare.newPage();
+        await loginPage.goto(screen.url, { waitUntil: 'networkidle', timeout: 60000 });
+        await loginPage.waitForTimeout(screen.wait);
+        await loginPage.screenshot({ path: dest, fullPage: false });
+        await bare.close();
+      } else {
+        await spaNavigate(page, screen.url);
+        if (page.url().includes('/login')) {
+          await ensureLoggedIn(page);
+          await spaNavigate(page, screen.url);
+        }
+        await page.waitForTimeout(screen.wait);
+        await page.screenshot({ path: dest, fullPage: false });
+      }
+      const kb = (statSync(dest).size / 1024).toFixed(1);
+      console.log(`✅ ${kb} KB · ${page.url().replace(BASE, '')}`);
+      mirrorLegacy(screen.name);
+    } catch (err) {
+      console.log(`❌ ${err instanceof Error ? err.message : err}`);
+    }
+  }
+
+  await browser.close();
   console.log('🎉 All screen captures completed!');
 }
 
-run();
+run().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

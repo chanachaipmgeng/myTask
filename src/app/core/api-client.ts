@@ -23,13 +23,21 @@ export interface AuditLogDto {
   createdAt: string;
 }
 
-/** Query ร่วมกับเซิร์ฟเวอร์สำหรับลิสต์ที่แบ่งหน้า */
+/** Query ร่วมกับเซิร์ฟเวอร์สำหรับลิสต์ที่แบ่งหน้า (มาตรฐานเดียวกับ Syncfusion custom binding) */
 export interface ListQueryParams {
   q?: string;
   page?: number;
   pageSize?: number;
   sort?: string;
   dir?: 'asc' | 'desc';
+  teamId?: string;
+  assigneeId?: string;
+  statusScope?: 'unclosed' | 'closed' | 'all';
+  project?: string;
+  opType?: string;
+  track?: string;
+  /** โปรเจกต์/เอนทิตี active flag */
+  active?: 'all' | 'active' | 'inactive';
 }
 
 export interface ListPageResult<T> {
@@ -37,6 +45,30 @@ export interface ListPageResult<T> {
   total: number;
   page: number;
   pageSize: number;
+  /** Syncfusion custom binding shape */
+  result?: T[];
+  count?: number;
+}
+
+/** แปลง DataStateChange ของ Syncfusion Grid → ListQueryParams */
+export function listQueryFromGridState(state: {
+  skip?: number;
+  take?: number;
+  sorted?: { name?: string; direction?: string }[];
+  search?: { key?: string }[];
+}): ListQueryParams {
+  const take = Math.max(1, Number(state.take) || 12);
+  const skip = Math.max(0, Number(state.skip) || 0);
+  const sorted = state.sorted?.[0];
+  const searchKey = state.search?.find((s) => !!s.key?.trim())?.key?.trim();
+  const dirRaw = (sorted?.direction ?? '').toLowerCase();
+  return {
+    page: Math.floor(skip / take) + 1,
+    pageSize: take,
+    sort: sorted?.name?.trim() || undefined,
+    dir: dirRaw.startsWith('desc') ? 'desc' : 'asc',
+    q: searchKey || undefined,
+  };
 }
 
 function toListQueryString(params?: ListQueryParams): string {
@@ -49,6 +81,13 @@ function toListQueryString(params?: ListQueryParams): string {
   if (params.pageSize != null) query.set('pageSize', String(params.pageSize));
   if (params.sort?.trim()) query.set('sort', params.sort.trim());
   if (params.dir) query.set('dir', params.dir);
+  if (params.teamId?.trim()) query.set('teamId', params.teamId.trim());
+  if (params.assigneeId?.trim()) query.set('assigneeId', params.assigneeId.trim());
+  if (params.statusScope?.trim()) query.set('statusScope', params.statusScope.trim());
+  if (params.project?.trim()) query.set('project', params.project.trim());
+  if (params.opType?.trim()) query.set('opType', params.opType.trim());
+  if (params.track?.trim()) query.set('track', params.track.trim());
+  if (params.active && params.active !== 'all') query.set('active', params.active);
   const text = query.toString();
   return text ? `?${text}` : '';
 }
@@ -77,7 +116,14 @@ export interface OpenProjectCatalogEntry {
   name: string;
   active: boolean;
   assignedTeamIds?: string[];
+  gitRepoIds?: string[];
+  gitRepoNames?: string[];
   activeTicketsCount?: number;
+  totalTickets?: number;
+  closedTicketsCount?: number;
+  progressPercent?: number;
+  sampleAssigneeIds?: string[];
+  nextDueOn?: string | null;
 }
 
 export interface DiscoveredOpCustomFieldDto {
@@ -489,8 +535,18 @@ export class ApiClient {
     });
   }
 
-  getProjects(): Promise<{ projects: OpenProjectCatalogEntry[] }> {
-    return api('/api/org/projects');
+  getProjects(params?: ListQueryParams): Promise<
+    ListPageResult<OpenProjectCatalogEntry> & {
+      projects: OpenProjectCatalogEntry[];
+      summary?: {
+        totalProjects: number;
+        activeProjects: number;
+        totalActiveTickets: number;
+        unassignedTeamsCount: number;
+      };
+    }
+  > {
+    return api(`/api/org/projects${toListQueryString(params)}`);
   }
 
   getProjectDetail(id: string | number): Promise<{ ok: boolean; project: ProjectDetail; message?: string }> {
@@ -611,8 +667,8 @@ export class ApiClient {
     return api('/api/v2/analytics/time-audit');
   }
 
-  getDisputes(): Promise<any> {
-    return api('/api/v2/disputes');
+  getDisputes(params?: ListQueryParams): Promise<any> {
+    return api(`/api/v2/disputes${toListQueryString(params)}`);
   }
 
   createDispute(body: {
@@ -638,8 +694,13 @@ export class ApiClient {
     return api('/api/v2/snapshots/preflight-check');
   }
 
-  getLeaves(): Promise<{ ok: boolean; leaves: import('./models').EmployeeLeave[] }> {
-    return api('/api/v2/leaves');
+  getLeaves(params?: ListQueryParams): Promise<
+    ListPageResult<import('./models').EmployeeLeave> & {
+      ok: boolean;
+      leaves: import('./models').EmployeeLeave[];
+    }
+  > {
+    return api(`/api/v2/leaves${toListQueryString(params)}`);
   }
 
   createLeave(body: Omit<import('./models').EmployeeLeave, 'id'> & { id?: string }): Promise<{

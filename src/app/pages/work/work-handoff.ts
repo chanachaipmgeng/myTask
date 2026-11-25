@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { effectiveRole } from '../../core/admin-settings';
+import { computeHandoffSlaSummary } from '../../../../shared/domain/multi-team';
 import { listWorkspaceTrackChipOptions } from '../../../../shared/domain/workspace-scope';
+import { effectiveRole } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
+import { WorkspaceFilter } from '../../core/workspace-filter';
 import {
   BadgeTone,
   FilterChipOption,
@@ -47,9 +49,9 @@ export class WorkHandoffPage {
   protected readonly theme = inject(ThemeService);
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
+  private readonly workspace = inject(WorkspaceFilter);
 
   protected readonly role = effectiveRole;
-  protected readonly trackFilter = signal<string>('All');
   protected readonly onlyOverSla = signal<boolean>(false);
 
   protected readonly trackOptions = computed(() => {
@@ -65,17 +67,19 @@ export class WorkHandoffPage {
   ];
   protected readonly slaChipValue = computed(() => (this.onlyOverSla() ? 'over' : 'all'));
 
-  protected readonly report = this.scorecard.handoffReport;
+  /** ฐานรายงานตาม Global Filter (ทีม/คน/สาย/สถานะ) */
+  protected readonly report = computed(() => {
+    const people = this.workspace.applyToPeople(this.scorecard.people());
+    const tickets = this.workspace.applyToTickets(this.scorecard.tickets(), this.scorecard.people());
+    return computeHandoffSlaSummary(tickets, this.scorecard.stageLogs(), people);
+  });
   protected readonly kpis = computed(() => this.report().kpis);
   protected readonly stageAgingData = computed(() => this.report().stageAging);
   protected readonly blockerMatrix = computed(() => this.report().blockerMatrix);
+  protected readonly trackFilter = computed(() => this.workspace.track());
 
   protected readonly filteredTickets = computed(() => {
     let list = this.report().tickets;
-    const tf = this.trackFilter();
-    if (tf !== 'All') {
-      list = list.filter((t) => t.ownerTrack === tf || t.ownerTrack.includes(tf));
-    }
     if (this.onlyOverSla()) {
       list = list.filter((t) => t.isOverSla);
     }
@@ -143,7 +147,7 @@ export class WorkHandoffPage {
   };
 
   protected setTrack(value: unknown): void {
-    this.trackFilter.set(String(value ?? 'All'));
+    this.workspace.setTrack(String(value ?? 'All'));
   }
 
   protected toggleOverSla(): void {

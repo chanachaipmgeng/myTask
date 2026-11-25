@@ -218,6 +218,11 @@ export interface OpenProjectCatalogEntry {
   gitRepoIds?: string[];
   gitRepoNames?: string[];
   activeTicketsCount?: number;
+  totalTickets?: number;
+  closedTicketsCount?: number;
+  progressPercent?: number;
+  sampleAssigneeIds?: string[];
+  nextDueOn?: string | null;
 }
 
 export interface OpenProjectTypeCatalogEntry {

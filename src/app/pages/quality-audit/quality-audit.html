@@ -1,8 +1,8 @@
 <section class="page">
   <app-page-head
     breadcrumb="ภาพรวมและวิเคราะห์ > ตรวจสอบคุณภาพ QA &amp; Defect Audit (/quality/audit)"
-    title="ตรวจสอบคุณภาพ QA และ Defect Leakage"
-    description="ตรวจสอบ First-Time Right %, อัตราการตีกลับ (Reopen Rate), อัตราหลุดไป Production และหลักฐาน DoD ก่อนส่งทดสอบ"
+    title="ตรวจคุณภาพ QA"
+    description="ดู % ส่งผ่านรอบแรก, อัตราตีกลับ, บั๊กหลุดไป Production และหลักฐานส่งมอบก่อนเข้า QA"
     periodBadge="งวดปัจจุบัน: 2026-11"
   ></app-page-head>
 
@@ -38,19 +38,19 @@
       [hint]="'หลุด Prod ' + kpis().bugEscapeCount + ' ใบ (เกณฑ์ ≤ 5%)'"
       [badge]="kpis().bugEscapePct <= 5 ? 'ดีเยี่ยม' : 'หลุดเป้า'"
       [badgeTone]="kpis().bugEscapePct <= 5 ? 'success' : 'danger'"
-      iconCss="e-icons e-bug"
+      iconCss="e-icons e-warning"
       [progress]="kpis().bugEscapePct"
       [accent]="kpis().bugEscapePct <= 5 ? 'teal' : 'danger'"
       layout="icon-start"
     ></app-kpi-stat>
 
     <app-kpi-stat
-      title="DoD Evidence %"
+      title="หลักฐานส่งมอบ %"
       [value]="kpis().dodEvidencePct + '%'"
       [hint]="'ขาดหลักฐาน ' + kpis().dodMissingCount + ' ใบ'"
       [badge]="kpis().dodMissingCount === 0 ? 'หลักฐานครบ' : 'ต้องตามหลักฐาน'"
       [badgeTone]="kpis().dodMissingCount === 0 ? 'success' : 'warning'"
-      iconCss="e-icons e-shield"
+      iconCss="e-icons e-check"
       [progress]="kpis().dodEvidencePct"
       [accent]="kpis().dodMissingCount === 0 ? 'violet' : 'coral'"
       layout="icon-start"
@@ -62,7 +62,7 @@
       <div class="pt-4 flex flex-col gap-4">
         <app-sf-message
           severity="Warning"
-          content="DoD Gate Verifier: ตรวจอัตโนมัติว่ามีลิงก์ MR, Unit Test ผ่าน และผล Staging Verified ครบหรือไม่ — หากไม่ครบ QA สามารถกดตีกลับ Dev ได้ทันที"
+          content="ตรวจอัตโนมัติว่ามีลิงก์ MR, Unit Test ผ่าน และผล Staging ครบหรือไม่ — หากไม่ครบ QA กดตีกลับ Dev ได้ทันที"
         />
 
         <ng-template #dodTicketTpl let-data>

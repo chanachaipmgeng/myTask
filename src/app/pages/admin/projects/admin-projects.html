@@ -1,7 +1,7 @@
 <div class="admin-projects-page">
   <app-page-head
     title="จัดการแคตตาล็อกโปรเจกต์"
-    description="ตรวจสอบ เปิด/ปิดสถานะ Active และกำหนดทีมที่รับผิดชอบของโปรเจกต์เพื่อควบคุมการมองเห็นทั่วทั้งระบบ"
+    description="ค้นหา เรียง และแบ่งหน้ารายการโปรเจกต์ · เปิด/ปิดการใช้งาน · กำหนดทีมที่รับผิดชอบ"
   >
     <div actions class="flex flex-wrap items-center gap-2">
       <button
@@ -14,180 +14,342 @@
         {{ syncing() ? 'กำลังซิงก์โปรเจกต์...' : 'ซิงก์โปรเจกต์จาก myProject' }}
       </button>
 
-      <a
-        routerLink="/admin"
-        ejs-button
-        cssClass="e-outline"
-      >
+      <a routerLink="/admin" ejs-button cssClass="e-outline">
         <span class="e-icons e-settings me-1"></span>
         ตั้งค่าระบบ
       </a>
     </div>
   </app-page-head>
 
-  <!-- KPI Strip -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
     <app-kpi-stat
       title="โปรเจกต์ทั้งหมด"
-      [value]="totalProjects()"
-      hint="แคตตาล็อกที่มีในระบบทั้งหมด"
+      [value]="summary().totalProjects"
+      hint="ตามตัวกรองปัจจุบัน"
       iconCss="e-icons e-folder"
       accent="info"
     />
 
     <app-kpi-stat
-      title="เปิดใช้งาน (Active)"
-      [value]="activeProjects()"
-      [hint]="'คิดเป็น ' + activePercentage() + '% ของทั้งหมด'"
+      title="เปิดใช้งาน"
+      [value]="summary().activeProjects"
+      hint="โปรเจกต์ที่มองเห็นในระบบ"
       iconCss="e-icons e-check"
       accent="success"
     />
 
     <app-kpi-stat
-      title="ใบงานคงค้างรวม (WIP)"
-      [value]="totalActiveTickets()"
-      hint="ตั๋วงานที่กำลังดำเนินงานในระบบ"
+      title="ใบงานคงค้างรวม"
+      [value]="summary().totalActiveTickets"
+      hint="ตั๋วงานที่ยังไม่ปิด"
       iconCss="e-icons e-chart"
       accent="default"
     />
 
     <app-kpi-stat
       title="ยังไม่ระบุทีม"
-      [value]="unassignedTeamsCount()"
+      [value]="summary().unassignedTeamsCount"
       hint="โปรเจกต์ส่วนกลางที่เปิดให้ทุกทีม"
       iconCss="e-icons e-people"
       accent="warning"
     />
   </div>
 
-  <!-- Main Card with Filters and DataGrid -->
   <app-section-card
-    title="รายชื่อและคอนฟิกโปรเจกต์"
-    subtitle="จัดการเปิด/ปิดการมองเห็นและจำกัดสิทธิ์ทีมที่เข้าถึงโปรเจกต์"
+    title="รายชื่อโปรเจกต์"
+    subtitle="ค้นหา · เรียง · แบ่งหน้าจาก API มาตรฐาน · สลับการ์ด/ตาราง"
   >
-    <!-- Filter bar -->
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <div class="flex flex-wrap items-center gap-3">
-        <div class="w-72">
+    <div class="admin-projects-toolbar">
+      <div class="admin-projects-toolbar__filters">
+        <div class="admin-projects-toolbar__search">
           <app-sf-textbox
             [value]="searchQuery()"
             [options]="{ placeholder: 'ค้นหาชื่อหรือรหัสโปรเจกต์...', clearButton: true }"
-            (valueInput)="searchQuery.set($event)"
-            (valueChange)="searchQuery.set($event)"
+            (valueInput)="onSearchInput($event)"
+            (valueChange)="onSearchInput($event)"
           />
         </div>
 
-        <div class="w-72">
+        <div class="admin-projects-toolbar__team">
           <app-sf-dropdown
             [items]="teamFilterOptions()"
             [value]="filterTeam()"
             [options]="{ placeholder: 'กรองตามทีม...' }"
-            (valueChange)="filterTeam.set($event)"
+            (valueChange)="onTeamFilter($event)"
+          />
+        </div>
+
+        <div class="admin-projects-toolbar__sort">
+          <app-sf-dropdown
+            [items]="sortOptions"
+            [value]="sortValue()"
+            [options]="{ placeholder: 'เรียงลำดับ...', width: '220px' }"
+            (valueChange)="onSortChange($event)"
           />
         </div>
       </div>
 
-      <app-filter-chips
-        [options]="statusFilterChips"
-        [value]="filterStatus()"
-        (valueChange)="onStatusFilter($event)"
-      />
+      <div class="admin-projects-toolbar__chips">
+        <app-filter-chips
+          [options]="viewModeChips"
+          [value]="viewMode()"
+          (valueChange)="onViewMode($event)"
+        />
+        <app-filter-chips
+          [options]="statusFilterChips"
+          [value]="filterStatus()"
+          (valueChange)="onStatusFilter($event)"
+        />
+      </div>
     </div>
 
-    <!-- Column Templates -->
-    <ng-template #identifierTpl let-data>
-      <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-[color:var(--surface-sunken)] border border-[color:var(--line)]">
-        {{ data.identifier }}
-      </span>
-    </ng-template>
+    @if (loading()) {
+      <p class="admin-projects-empty">กำลังโหลดโปรเจกต์…</p>
+    } @else if (viewMode() === 'cards') {
+      <div class="admin-projects-card-grid" role="list">
+        @for (project of projects(); track project.id) {
+          <article
+            class="project-card"
+            role="listitem"
+            [attr.aria-label]="'โปรเจกต์ ' + project.name"
+          >
+            <app-section-card [showHead]="false" variant="nested">
+              <div class="project-card__body">
+                <div class="project-card__head">
+                  <button
+                    type="button"
+                    class="project-card__identity"
+                    (click)="openProjectDetail(project)"
+                  >
+                    <span class="project-card__avatar" aria-hidden="true">
+                      {{ projectInitials(project) }}
+                    </span>
+                    <span class="project-card__titles">
+                      <span class="project-card__name">{{ project.name }}</span>
+                      <span class="project-card__meta">
+                        {{ project.identifier }}
+                        · ทีม {{ teamLabels(project) }}
+                        @if (project.gitRepoNames?.length) {
+                          · Git {{ project.gitRepoNames!.length }} repo
+                        }
+                      </span>
+                    </span>
+                  </button>
 
-    <ng-template #nameTpl let-data>
-      <div class="flex items-center gap-2 py-1">
-        <span class="e-icons e-folder text-blue-500"></span>
-        <a
-          [routerLink]="['/org/projects', data.id || data.identifier]"
-          class="font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-          title="ดูแดชบอร์ดสุขภาพและรายละเอียดโปรเจกต์"
-        >
-          {{ data.name }}
-        </a>
+                  <app-status-badge
+                    [value]="project.active !== false ? 'เปิดใช้งาน' : 'ปิดใช้งาน'"
+                    [tone]="project.active !== false ? 'success' : 'secondary'"
+                  />
+                </div>
+
+                <p class="project-card__tasks">
+                  ปิดแล้ว
+                  <strong class="tabular-nums">
+                    {{ project.closedTicketsCount || 0 }}/{{ project.totalTickets || 0 }}
+                  </strong>
+                  ใบ
+                  <span class="project-card__tasks-open">
+                    · ค้าง {{ project.activeTicketsCount || 0 }}
+                  </span>
+                </p>
+
+                <div class="project-card__people" (click)="$event.stopPropagation()">
+                  <span class="project-card__label">คนถืองาน</span>
+                  @if (visibleAssignees(project).length) {
+                    <div class="project-card__avatars">
+                      @for (pid of visibleAssignees(project); track pid) {
+                        <app-person-avatar
+                          [personId]="pid"
+                          [name]="personName(pid)"
+                          size="sm"
+                        />
+                      }
+                      @if (assigneeOverflow(project) > 0) {
+                        <span class="project-card__more">+{{ assigneeOverflow(project) }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="project-card__muted">ยังไม่มีผู้รับใบเปิด</span>
+                  }
+                </div>
+
+                <div class="project-card__progress">
+                  <div class="project-card__progress-label">
+                    <span>ความคืบหน้า</span>
+                    <span class="tabular-nums">{{ project.progressPercent || 0 }}%</span>
+                  </div>
+                  <app-sf-progress
+                    [id]="'proj-prog-' + project.id"
+                    height="10"
+                    [value]="project.progressPercent || 0"
+                    [options]="{ trackThickness: 10, progressThickness: 10, tone: 'auto' }"
+                  />
+                </div>
+
+                <div class="project-card__due">
+                  <span class="project-card__label">กำหนดส่งถัดไป</span>
+                  <span class="tabular-nums">{{ formatDue(project.nextDueOn) }}</span>
+                </div>
+
+                <div class="project-card__teams" (click)="$event.stopPropagation()">
+                  <span class="project-card__label">ทีมที่รับผิดชอบ</span>
+                  <app-sf-multiselect
+                    [items]="teamSelectOptions()"
+                    [value]="project.assignedTeamIds || []"
+                    [disabled]="!canEdit()"
+                    [options]="{ placeholder: 'ทุกทีม…', width: '100%', mode: 'Box' }"
+                    (valueChange)="onTeamsChange(project, $event)"
+                  />
+                </div>
+
+                <div class="project-card__actions" (click)="$event.stopPropagation()">
+                  <div class="project-card__active">
+                    <app-sf-checkbox
+                      [checked]="project.active !== false"
+                      [disabled]="!canEdit()"
+                      (checkedChange)="onToggleActive(project, $event)"
+                    />
+                    <span>เปิดใช้งาน</span>
+                  </div>
+                  <div class="project-card__buttons">
+                    <button
+                      ejs-button
+                      cssClass="e-small e-primary"
+                      type="button"
+                      (click)="openProjectDetail(project)"
+                    >
+                      แดชบอร์ด
+                    </button>
+                    <button
+                      ejs-button
+                      cssClass="e-small e-outline"
+                      type="button"
+                      (click)="viewTickets(project)"
+                    >
+                      ดูงาน
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </app-section-card>
+          </article>
+        } @empty {
+          <app-section-card
+            title="ไม่พบโปรเจกต์"
+            subtitle="ลองเปลี่ยนคำค้นหา ทีม หรือสถานะ"
+            variant="nested"
+          >
+            <p class="admin-projects-empty">ยังไม่มีรายการตามตัวกรองปัจจุบัน</p>
+          </app-section-card>
+        }
       </div>
-    </ng-template>
 
-    <ng-template #activeTicketsTpl let-data>
-      <span
-        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tabular-nums"
-        [class.bg-blue-50]="data.activeTicketsCount > 0"
-        [class.text-blue-700]="data.activeTicketsCount > 0"
-        [class.bg-slate-100]="!data.activeTicketsCount"
-        [class.text-slate-500]="!data.activeTicketsCount"
-      >
-        {{ data.activeTicketsCount || 0 }}
-      </span>
-    </ng-template>
+      <div class="admin-projects-pager">
+        <span class="admin-projects-pager__label">{{ pageLabel() }}</span>
+        <app-sf-pager
+          id="admin-projects-card-pager"
+          [page]="page()"
+          [pageSize]="pageSize()"
+          [total]="total()"
+          [pageSizes]="true"
+          (pageChange)="onCardPagerChange($event)"
+        />
+      </div>
+    } @else {
+      <ng-template #identifierTpl let-data>
+        <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-[color:var(--surface-sunken)] border border-[color:var(--line)]">
+          {{ data.identifier }}
+        </span>
+      </ng-template>
 
-    <ng-template #assignedTeamsTpl let-data>
-      <app-sf-multiselect
-        [items]="teamSelectOptions()"
-        [value]="data.assignedTeamIds || []"
-        [disabled]="!canEdit()"
-        [options]="{ placeholder: 'ทุกทีม (ไม่จำกัด)...', width: '100%', mode: 'Box' }"
-        (valueChange)="onTeamsChange(data, $event)"
-      />
-    </ng-template>
+      <ng-template #nameTpl let-data>
+        <div class="flex items-center gap-2 py-1">
+          <span class="e-icons e-folder text-blue-500"></span>
+          <a
+            [routerLink]="['/org/projects', data.id || data.identifier]"
+            class="font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            title="ดูแดชบอร์ดสุขภาพและรายละเอียดโปรเจกต์"
+          >
+            {{ data.name }}
+          </a>
+        </div>
+      </ng-template>
 
-    <ng-template #activeTpl let-data>
-      <div class="flex items-center justify-center gap-2">
-        <app-sf-checkbox
-          [checked]="data.active !== false"
+      <ng-template #activeTicketsTpl let-data>
+        <span
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold tabular-nums"
+          [class.bg-blue-50]="data.activeTicketsCount > 0"
+          [class.text-blue-700]="data.activeTicketsCount > 0"
+          [class.bg-slate-100]="!data.activeTicketsCount"
+          [class.text-slate-500]="!data.activeTicketsCount"
+        >
+          {{ data.activeTicketsCount || 0 }}
+        </span>
+      </ng-template>
+
+      <ng-template #assignedTeamsTpl let-data>
+        <app-sf-multiselect
+          [items]="teamSelectOptions()"
+          [value]="data.assignedTeamIds || []"
           [disabled]="!canEdit()"
-          (checkedChange)="onToggleActive(data, $event)"
+          [options]="{ placeholder: 'ทุกทีม (ไม่จำกัด)...', width: '100%', mode: 'Box' }"
+          (valueChange)="onTeamsChange(data, $event)"
         />
-        <app-status-badge
-          [value]="data.active !== false ? 'เปิดใช้งาน' : 'ปิดใช้งาน'"
-          [tone]="data.active !== false ? 'success' : 'secondary'"
+      </ng-template>
+
+      <ng-template #activeTpl let-data>
+        <div class="flex items-center justify-center gap-2">
+          <app-sf-checkbox
+            [checked]="data.active !== false"
+            [disabled]="!canEdit()"
+            (checkedChange)="onToggleActive(data, $event)"
+          />
+          <app-status-badge
+            [value]="data.active !== false ? 'เปิดใช้งาน' : 'ปิดใช้งาน'"
+            [tone]="data.active !== false ? 'success' : 'secondary'"
+          />
+        </div>
+      </ng-template>
+
+      <ng-template #actionsTpl let-data>
+        <div class="flex items-center justify-center gap-1.5">
+          <a
+            [routerLink]="['/org/projects', data.id || data.identifier]"
+            ejs-button
+            cssClass="e-small e-primary"
+            title="ดูแดชบอร์ดสุขภาพและรายละเอียดโปรเจกต์"
+          >
+            <span class="e-icons e-chart me-1"></span>
+            แดชบอร์ด
+          </a>
+          <button
+            ejs-button
+            cssClass="e-small e-outline"
+            title="ดูใบงานทั้งหมดในโปรเจกต์นี้"
+            (click)="viewTickets(data)"
+          >
+            <span class="e-icons e-eye me-1"></span>
+            ดูงาน
+          </button>
+        </div>
+      </ng-template>
+
+      <div class="admin-projects-grid-wrap">
+        <app-sf-grid
+          [data]="remoteGridData()"
+          [columns]="gridColumns"
+          [cellTemplates]="{
+            identifier: identifierTpl,
+            name: nameTpl,
+            activeTicketsCount: activeTicketsTpl,
+            assignedTeamIds: assignedTeamsTpl,
+            active: activeTpl,
+            actions: actionsTpl
+          }"
+          [options]="gridOptions"
+          (dataStateChange)="onGridDataStateChange($event)"
         />
       </div>
-    </ng-template>
-
-    <ng-template #actionsTpl let-data>
-      <div class="flex items-center justify-center gap-1.5">
-        <a
-          [routerLink]="['/org/projects', data.id || data.identifier]"
-          ejs-button
-          cssClass="e-small e-primary"
-          title="ดูแดชบอร์ดสุขภาพและรายละเอียดโปรเจกต์"
-        >
-          <span class="e-icons e-chart me-1"></span>
-          แดชบอร์ด
-        </a>
-        <button
-          ejs-button
-          cssClass="e-small e-outline"
-          title="ดูใบงานทั้งหมดในโปรเจกต์นี้"
-          (click)="viewTickets(data)"
-        >
-          <span class="e-icons e-eye me-1"></span>
-          ดูงาน
-        </button>
-      </div>
-    </ng-template>
-
-    <!-- DataGrid: เลื่อนในคอนเทนเนอร์ กันดันหน้าแนวนอน -->
-    <div class="admin-projects-grid-wrap">
-      <app-sf-grid
-        [data]="filteredProjects()"
-        [columns]="gridColumns"
-        [cellTemplates]="{
-          identifier: identifierTpl,
-          name: nameTpl,
-          activeTicketsCount: activeTicketsTpl,
-          assignedTeamIds: assignedTeamsTpl,
-          active: activeTpl,
-          actions: actionsTpl
-        }"
-        [options]="gridOptions"
-      />
-    </div>
+    }
   </app-section-card>
 </div>

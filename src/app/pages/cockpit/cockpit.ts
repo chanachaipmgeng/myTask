@@ -2,9 +2,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  OnDestroy,
   OnInit,
   ViewChild,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -65,13 +67,22 @@ interface QualityPiePoint {
   templateUrl: './cockpit.html',
   styleUrl: './cockpit.scss',
 })
-export class CockpitPage implements OnInit {
+export class CockpitPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   protected readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
   private readonly workspace = inject(WorkspaceFilter);
 
   @ViewChild('cockpitRoot') private cockpitRoot?: ElementRef<HTMLElement>;
+
+  constructor() {
+    effect(() => {
+      const tv = this.isTvMode();
+      if (typeof document !== 'undefined') {
+        document.body.classList.toggle('cockpit-tv-active', tv);
+      }
+    });
+  }
 
   /** True when viewing as Member (or legacy /me/cockpit); false for Lead/Admin team & org cockpit */
   protected readonly isMine = computed(
@@ -405,7 +416,7 @@ export class CockpitPage implements OnInit {
         label: 'ต้องดูแล',
         tone: 'warning' as const,
         hint: blocked > 0
-          ? `พบคอขวดวิกฤต ${blocked} รายการ · ตรวจเรดาร์ด้านล่าง`
+          ? `พบงานติดวิกฤต ${blocked} รายการ · ตรวจเรดาร์ด้านล่าง`
           : `On-time ${kpis.onTimeRate}% · DoD ${kpis.firstTimeRightRate}% ต่ำกว่าเป้า`,
       };
     }
@@ -612,15 +623,15 @@ export class CockpitPage implements OnInit {
       case 'combo':
         return 'เจาะลึก: ภาพรวมภาระงานและอัตราความสำเร็จ (Dual-Axis Overview Combo)';
       case 'workload':
-        return 'เจาะลึก: สัดส่วนภาระงาน (Planned vs Unplanned vs MD Mandate)';
+        return 'เจาะลึก: สัดส่วนภาระงาน (ตามแผน / นอกแผน / สั่งตรง)';
       case 'trend':
-        return 'เจาะลึก: แนวโน้มดัชนีคะแนนและการถดถอยเชิงเส้น (OLS Regression)';
+        return 'เจาะลึก: แนวโน้มคะแนนและเส้นวิเคราะห์';
       case 'quality':
-        return 'เจาะลึก: คุณภาพการส่งมอบรอบแรกและสาเหตุ Reopen (DoD Gate)';
+        return 'เจาะลึก: คุณภาพส่งมอบรอบแรกและสาเหตุเปิดใบซ้ำ';
       case 'stage':
-        return 'เจาะลึก: เวลาค้างแต่ละขั้นตอนแยกตามสายงาน (Stage Aging SLA)';
+        return 'เจาะลึก: เวลาค้างแต่ละขั้นตอนแยกตามสายงาน';
       case 'bottlenecks':
-        return 'เจาะลึก: รายการงานที่ติดบล็อกและข้อเสนอแนะ AI Coach';
+        return 'เจาะลึก: งานที่ติดบล็อกและคำแนะนำ'
       default:
         return 'รายละเอียดเจาะลึก';
     }
@@ -639,6 +650,12 @@ export class CockpitPage implements OnInit {
           }
         }
       });
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('cockpit-tv-active');
     }
   }
 

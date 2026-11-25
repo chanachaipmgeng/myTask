@@ -191,7 +191,22 @@ export class WorkBoard {
   protected readonly cards = computed(() => {
     this.boardRevision();
     const names = new Map(this.scorecard.people().map((person) => [person.id, person.nickname]));
-    return this.visibleTickets().map((ticket) => {
+    // เพื่อป้องกัน DOM Freeze เมื่อมีใบงานจำนวนมหาศาล (เช่น 14,000+ ใบใน Backlog)
+    // เราจัดกลุ่มและจำกัดจำนวนการ์ดไม่เกิน 50 ใบต่อคอลัมน์บน Kanban board โดยเรียงตามลำดับความสำคัญ
+    const countsByStatus = new Map<string, number>();
+    const MAX_CARDS_PER_COLUMN = 50;
+
+    const filteredList = this.visibleTickets().filter((ticket) => {
+      const status = workflowStatusOf(ticket);
+      const count = countsByStatus.get(status) ?? 0;
+      if (count >= MAX_CARDS_PER_COLUMN) {
+        return false;
+      }
+      countsByStatus.set(status, count + 1);
+      return true;
+    });
+
+    return filteredList.map((ticket) => {
       const assigneeLabel = names.get(ticket.assigneeId) ?? 'ยังไม่มีผู้รับ';
       const trackLabel = ticket.track === 'RD' ? 'R&D' : 'Implement';
       const projectLabel = resolveProjectLabel(ticket);

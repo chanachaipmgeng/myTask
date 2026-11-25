@@ -32,7 +32,10 @@ services:
       HOST: 0.0.0.0
       PORT: 3000
       APP_URL: ${APP_URL:-http://localhost:8080}
+      # Dev stack ค่าเริ่มเปิด Dev Login — production ต้องตั้ง AUTH_DEV_LOGIN=false และ NODE_ENV=production
+      NODE_ENV: ${NODE_ENV:-development}
       AUTH_DEV_LOGIN: ${AUTH_DEV_LOGIN:-true}
+      DISABLE_AUTO_SEED: ${DISABLE_AUTO_SEED:-false}
       TOKEN_ENC_KEY: ${TOKEN_ENC_KEY:-dev-only-insecure-key-change-me-please}
       SESSION_DAYS: ${SESSION_DAYS:-7}
       OPENPROJECT_URL: ${OPENPROJECT_URL:-}

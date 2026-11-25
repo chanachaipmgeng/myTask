@@ -1,24 +1,10 @@
-<section class="page">
+﻿<section class="page">
   <app-page-head
-    [title]="'พื้นที่ของฉัน · ' + view().name + ' (' + view().role + ')'"
+    [title]="'พื้นที่ของฉัน · ' + view().name"
+    [badge]="view().role"
     [avatarName]="view().name"
-    description="แดชบอร์ดส่วนตัว Bento สำหรับติดตามภาระงาน โควตาคงเหลือ และดัชนีพัฒนาเทียบกับเกณฑ์ตนเอง"
-  >
-    <div actions class="flex flex-wrap gap-2">
-      <a ejs-button cssClass="e-primary" iconCss="e-icons e-timeline-work-week" routerLink="/work">
-        เปิดกระดานงาน &amp; แผน
-      </a>
-      <a ejs-button cssClass="e-outline" iconCss="e-icons e-chart" routerLink="/insights/ols">
-        วิเคราะห์ผลงาน (OLS)
-      </a>
-      <a ejs-button cssClass="e-outline" iconCss="e-icons e-table" routerLink="/quality/tickets">
-        ตารางคะแนน
-      </a>
-      <a ejs-button cssClass="e-outline" iconCss="e-icons e-clock" routerLink="/quality/time-audit">
-        เช็กเวลา 3 ทาง
-      </a>
-    </div>
-  </app-page-head>
+    description="แดชบอร์ดส่วนตัวสำหรับติดตามภาระงาน โควตาคงเหลือ และดัชนีพัฒนาเทียบกับเกณฑ์ตนเอง"
+  />
 
   <!-- ======================================================== -->
   <!-- Bento Row 1 (8:4): Hero Performance Index + AI Coach     -->
@@ -89,33 +75,48 @@
             </div>
 
             <!-- Mini Sparkline in Hero -->
-            <div class="w-full md:w-56 h-14 flex flex-col justify-end">
-              <div class="flex items-center justify-between text-xs text-muted mb-1">
-                <span>แนวโน้ม 5 เดือน</span>
+            <div class="w-full md:w-60 flex flex-col justify-center shrink-0">
+              <div class="flex items-center justify-between text-xs text-muted mb-1.5">
+                <span>แนวโน้ม {{ trendSparkline().count }} งวด</span>
                 <span class="font-semibold text-primary">ล่าสุด {{ view().indexLabel }}</span>
               </div>
-              <div class="h-10">
-                <app-kpi-stat
-                  [sparklineData]="trendSparklineData()"
-                  sparklineType="Area"
-                  accent="teal"
-                  sparklineId="my-hero-trend"
-                  layout="stack"
-                  value=""
-                  title=""
-                ></app-kpi-stat>
+              <div class="h-10 w-full overflow-hidden rounded-md bg-[var(--color-bg-subtle)] border border-[var(--color-border-subtle)] relative">
+                <svg class="w-full h-full block" viewBox="0 0 200 40" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="heroTrendGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#14b8a6" stop-opacity="0.32" />
+                      <stop offset="100%" stop-color="#14b8a6" stop-opacity="0.02" />
+                    </linearGradient>
+                  </defs>
+                  <!-- Target 75 guide line -->
+                  <line x1="4" [attr.y1]="trendSparkline().targetY" x2="196" [attr.y2]="trendSparkline().targetY" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3" opacity="0.65" />
+                  <!-- Area fill -->
+                  <path [attr.d]="trendSparkline().areaPath" fill="url(#heroTrendGrad)" />
+                  <!-- Line stroke -->
+                  <path [attr.d]="trendSparkline().linePath" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  <!-- Points -->
+                  @for (pt of trendSparkline().coords; track $index) {
+                    <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="2.5" fill="#14b8a6" />
+                  }
+                  <!-- Latest Point Dot -->
+                  <circle [attr.cx]="trendSparkline().latest.x" [attr.cy]="trendSparkline().latest.y" r="4" fill="#14b8a6" stroke="#ffffff" stroke-width="1.5" />
+                </svg>
               </div>
             </div>
           </div>
 
           <!-- Component Metrics Pill Group -->
           @if (myCoaching(); as coach) {
-            <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--color-border-subtle)] text-xs">
-              <span class="text-muted font-medium">มิติการส่งมอบ:</span>
-              <app-status-badge [label]="'ส่งตรงเวลา ' + coach.onTimePct + '%'" tone="success"></app-status-badge>
-              <app-status-badge [label]="'ความแม่นยำประเมินขนาด ' + coach.estimationAccuracyPct + '%'" tone="info"></app-status-badge>
-              <app-status-badge [label]="'ผ่านรีวิวรอบแรก ' + coach.firstPassPct + '%'" tone="primary"></app-status-badge>
-              <span class="ml-auto text-muted font-mono">{{ coach.trendLabel }} (Slope {{ coach.trendSlope }})</span>
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-3 mt-3 border-t border-[var(--color-border-subtle)] text-xs">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-muted font-medium">มิติการส่งมอบ:</span>
+                <app-status-badge [label]="'ส่งตรงเวลา ' + coach.onTimePct + '%'" tone="success"></app-status-badge>
+                <app-status-badge [label]="'ความแม่นยำประเมินขนาด ' + coach.estimationAccuracyPct + '%'" tone="info"></app-status-badge>
+                <app-status-badge [label]="'ผ่านรีวิวรอบแรก ' + coach.firstPassPct + '%'" tone="primary"></app-status-badge>
+              </div>
+              <span class="text-xs font-mono text-muted bg-[var(--color-bg-subtle)] px-2 py-0.5 rounded-full border border-[var(--color-border-subtle)] whitespace-nowrap">
+                {{ coach.trendLabel }} · Slope {{ coach.trendSlope }}
+              </span>
             </div>
           }
         </app-section-card>
@@ -154,8 +155,8 @@
               </div>
 
               <div class="text-right">
-                <a routerLink="/insights/ols" class="text-xs text-primary font-medium hover:underline inline-flex items-center gap-1">
-                  ดูแบบจำลอง OLS เต็มรูปแบบ <span class="e-icons e-arrow-right text-[10px]"></span>
+                <a routerLink="/quality/ols" class="text-xs text-primary font-medium hover:underline inline-flex items-center gap-1">
+                  ดูวิเคราะห์รายคนเต็มรูปแบบ <span class="e-icons e-arrow-right text-[10px]"></span>
                 </a>
               </div>
             </div>
@@ -174,7 +175,7 @@
     <!-- WIP Limits Card -->
     <app-kpi-stat
       title="ภาระงานที่ถืออยู่ (Active WIP)"
-      [value]="view().openCount"
+      [value]="view().openCount + ' ใบ'"
       hint="เพดานควบคุมไม่ควรเกิน 2 ใบต่อคน"
       [badge]="view().openCount <= 2 ? 'WIP ปกติ' : 'WIP ล้นเพดาน'"
       [badgeTone]="view().openCount <= 2 ? 'success' : 'danger'"
@@ -205,6 +206,7 @@
       badge="Delivered"
       badgeTone="violet"
       iconCss="e-icons e-check"
+      [progress]="closedProgressPct()"
       accent="violet"
       layout="icon-start"
     ></app-kpi-stat>
@@ -221,7 +223,7 @@
     @if (dueAgenda().length === 0) {
       <app-sf-message content="ตอนนี้ไม่มีใบงานเปิด — สบายใจได้ชั่วคราว" severity="Success" />
     } @else {
-      <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3" [class.lg:grid-cols-2]="dueAgenda().length > 1">
         @for (item of dueAgenda(); track item.id) {
           <div
             class="agenda-reveal"
@@ -230,7 +232,7 @@
             <app-section-card
               variant="nested"
               [title]="item.id + ' · ' + item.title"
-              [subtitle]="'กำหนดส่ง ' + item.dueLabel + ' · Est ' + item.estimateMd + ' MD · ' + item.status"
+              [subtitle]="'กำหนดส่ง ' + item.dueLabel + ' · Est ' + item.estimateMd + ' MD'"
             >
               <div actions class="flex flex-wrap gap-2">
                 @if (item.slipped) {
@@ -379,7 +381,7 @@
         <ng-template #openActionsTpl let-data>
           <div class="flex flex-wrap items-center gap-1.5">
             <a ejs-button cssClass="e-primary e-small" routerLink="/quality/tickets">อัปเดต</a>
-            <a ejs-button cssClass="e-outline e-small" [routerLink]="['/quality/disputes']" [queryParams]="{ ticketId: data.id }">อุทธรณ์</a>
+            <a ejs-button cssClass="e-outline e-small" [routerLink]="['/quality/disputes']" [queryParams]="{ ticketId: data.id }">ขอทบทวน</a>
           </div>
         </ng-template>
         <app-sf-grid

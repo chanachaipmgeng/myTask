@@ -9,7 +9,8 @@ alwaysApply: false
 - `/work` (ฮับบริหารงาน) เป็นฮับแท็บ Summary · Timeline · Backlog · Board · List · คิวจ่ายงาน (`/work/queue`, lead/admin) · Handoff & SLA — อย่าสร้างเมนูซ้ำสำหรับ Board หรือใส่คิวจ่ายงานบน Sidebar
 - **P21**: แถบ `/work` ไม่มี dropdown ทีม/โปรเจกต์/track — อ่านจาก Global Filter · เหลือสัปดาห์/ถังวัน/ค้นหาใบ ผ่าน `app-filter-chips` · ชิปสาย 6 รหัสอยู่ที่ Global Filter · ห้ามวาด segmented ปุ่มสถานะเอง (ใช้ `app-filter-chips` เช่น `/mygit` inbox · `/admin/projects` สถานะเปิด/ปิด)
 - **มือถือ ≤640px**: Global Filter เหลือปุ่ม「ตัวกรอง」+ ป็อปโอเวอร์ · Kanban/Gantt/Schedule เลื่อนในกรอบ · cockpit ไม่ล็อก 100vh · drawer ใบงานเต็มจอ
-- **Person Workspace** `/workspace/people`: master-detail · รายชื่อซ้ายห้ามกรอง `personId` · ปุ่มงานตั้ง `person` แล้วไป `/work/list`
+- **Person Workspace** `/workspace/people`: แท็บ พนักงาน|ทีม · master-detail · รายชื่อ directory ห้ามกรองด้วย route person · เลือกคน = route อย่างเดียว · ปุ่มงานถึงค่อย `setPerson` แล้วไป `/work/list` · admin Sidebar「พนักงาน & ทีม」จุดเดียว (`/org/teams` redirect)
+- **ทีมของฉัน** `/team`: บล็อกทีมที่ดูแล + สมาชิกคลิกได้ · member แสดงสมาชิกทั้งทีม
 - หน้าจอตรวจสอบใหม่ 5 หน้าจอ (หน้าจอที่ 21–25) ห่อด้วย `app-section-card` (`e-card.section-card`) + KPI แถวบนด้วย `app-kpi-stat`:
   - `/work/handoff`: Stage Aging `StackingBar` + Blocker Matrix (`app-section-card` nested) + Grid ตรึง 2 คอลัมน์ + `ejs-message` Fair Cutoff
   - `/quality/audit`: `ejs-tab` ใน `app-section-card` (DoD Gate + Reopen) · ป้ายสถานะเป็น `e-badge` · แบนเนอร์ DoD เป็น `ejs-message`

@@ -128,7 +128,7 @@ export class QualityAuditPage {
   });
 
   protected readonly qualityTabs = computed<SfTabItem[]>(() => [
-    { id: 'dod', header: `ตรวจสอบหลักฐาน DoD ก่อนเข้า QA (${this.dodChecklist().length})` },
+    { id: 'dod', header: `ตรวจหลักฐานส่งมอบก่อนเข้า QA (${this.dodChecklist().length})` },
     { id: 'reopen', header: `วิเคราะห์สาเหตุ Reopen & Bug Escape (${this.reopenEscapes().length})` },
   ]);
 
@@ -140,7 +140,7 @@ export class QualityAuditPage {
     { field: 'unitTestLabel', headerText: 'Unit Test', width: 110 },
     { field: 'ciStatusLabel', headerText: 'CI Pipeline', width: 120 },
     { field: 'stagingVerified', headerText: 'ผล Staging', width: 110 },
-    { field: 'dodStatus', headerText: 'สถานะหลักฐาน DoD', width: 130 },
+    { field: 'dodStatus', headerText: 'สถานะหลักฐานส่งมอบ', width: 130 },
     { field: 'action', headerText: 'การจัดการ', width: 110, textAlign: 'Center' },
   ];
   protected readonly dodGridOptions: SfGridOptions = listGridOptions({
@@ -249,9 +249,9 @@ export class QualityAuditPage {
       closed: false,
       closedOn: null,
       reopenCount: (ticket.reopenCount ?? 0) + 1,
-      note: `${ticket.note ? ticket.note + ' · ' : ''}ตีกลับจาก QA DoD Gate ไปยัง ${devName}`,
+      note: `${ticket.note ? ticket.note + ' · ' : ''}ตีกลับจาก QA ไปยัง ${devName}`,
     };
     this.scorecard.replaceTicket(updated);
-    this.notice.warning(`ส่งการ์ด ${ticketId} ตีกลับไปยัง ${devName} เนื่องจากหลักฐาน DoD ไม่ครบถ้วน`);
+    this.notice.warning(`ส่งการ์ด ${ticketId} ตีกลับไปยัง ${devName} เนื่องจากหลักฐานส่งมอบไม่ครบ`);
   }
 }

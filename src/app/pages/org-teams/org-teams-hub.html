@@ -1,7 +1,7 @@
 <section class="page org-teams-hub flex flex-col gap-4">
   <app-page-head
     title="ทีมในองค์กร"
-    description="เลือกการ์ดทีมเพื่อเข้า Workspace — ดูคน งาน คะแนน และค็อกพิทของทีมนั้น (กรองด้วย teamId ข้ามหน้า)"
+    description="เลือกการ์ดทีมเพื่อดูคน งาน คะแนน และภาพรวมของทีมนั้น (กรองทีมติดไปหน้าอื่นด้วย)"
     [metrics]="[
       { label: 'จำนวนทีม', value: '' + cards().length },
       { label: 'สมาชิก active', value: '' + totalMembers() },
@@ -63,13 +63,13 @@
                 งานทีม →
               </span>
               <span class="px-2 py-1 rounded bg-[var(--color-bg-subtle)] font-medium text-emerald-600 hover:underline">
-                ค็อกพิท →
+                ภาพรวม →
               </span>
               <span class="px-2 py-1 rounded bg-[var(--color-bg-subtle)] font-medium text-muted hover:underline">
                 คะแนน →
               </span>
             </div>
-            <p class="org-team-card__hint">คลิกเพื่อเข้า Workspace ทีม</p>
+            <p class="org-team-card__hint">คลิกเพื่อเปิดหน้าทีม</p>
           </div>
         </app-section-card>
       </button>

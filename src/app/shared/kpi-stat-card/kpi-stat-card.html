@@ -37,20 +37,19 @@
         </div>
 
         @if (progress !== null && progress !== undefined) {
-          <div #progressHost class="kpi-stat__progress">
-            <ejs-progressbar
-              type="Linear"
-              [theme]="theme.sfTheme()"
-              [width]="progressWidth"
-              height="12"
-              [minimum]="0"
-              [maximum]="100"
-              [value]="progress"
-              [trackThickness]="8"
-              [progressThickness]="8"
-              [progressColor]="fillColor()"
-              [trackColor]="theme.progressTrack()"
-            ></ejs-progressbar>
+          <div
+            class="kpi-stat__progress w-full h-2 rounded-full overflow-hidden relative"
+            [style.backgroundColor]="theme.progressTrack()"
+            role="progressbar"
+            [attr.aria-valuenow]="progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <div
+              class="h-full rounded-full transition-all duration-500 ease-out"
+              [style.width.%]="progress"
+              [style.backgroundColor]="fillColor()"
+            ></div>
           </div>
         }
 

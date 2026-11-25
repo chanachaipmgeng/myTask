@@ -55,7 +55,10 @@ description: >-
 การซิงค์พนักงาน (`POST /api/integrations/openproject/sync-users`):
 1. จับคู่กับพนักงานเดิมตาม `openprojectUserId` -> `email` -> `login` -> `login prefix`
 2. ดึงรูปโปรไฟล์เก็บลง `people.avatar_url` และตำแหน่งลง `people.job_title`
-3. กรองแผนก `RD-*` ตั้งเป็น `track = 'RD'`, `team_id = 'rd'` และ `active = true` แผนกอื่นเป็น `active = false`
+3. แมปแผนกจริง → `teamId = slugify(department)` + สายงาน 6 สายผ่าน `mapDepartmentToTeam` (ไม่บังคับ `team_id = 'rd'`)
+4. สถานะ `active` ตาม `OPENPROJECT_TEAM_STAGING` + `isPersonActiveForStaging`:
+   - `all` (ค่าเริ่ม): ทุกคนที่ไม่ได้ locked เป็น active
+   - `rd` (POC): เฉพาะแผนก R&D เป็น active · แผนกอื่นถูกปิดหลัง sync
 
 ## Assign / Dates Writeback & Integrations (P1–P2 ปิดแล้ว)
 

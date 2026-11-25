@@ -193,6 +193,14 @@ export interface Ticket {
     policy?: boolean;
     reply?: boolean;
   };
+  /** Optional myProject CF: baseline promised date */
+  baselineDue?: string | null;
+  /** Optional tag e.g. BUG / EXCEPTION from OpenProject CF */
+  exceptionTag?: string | null;
+  /** Optional R&D work-track label from CF */
+  rdWorkTrack?: string | null;
+  /** Optional Spike / PoC outcome text from CF */
+  spikeOutcome?: string | null;
 }
 
 export interface DodChecklist {

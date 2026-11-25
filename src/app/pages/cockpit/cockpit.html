@@ -5,13 +5,13 @@
   [class.is-fullscreen]="isFullscreen()"
 >
   <app-hero-band
-    badge="LIVE COCKPIT"
+    badge="สด"
     [live]="true"
-    [title]="isMine() ? 'ค็อกพิทของฉัน' : 'ห้องบัญชาการ'"
-    [subtitle]="isMine() ? 'ดัชนี ภาระงาน และแนวโน้มส่วนบุคคล' : (filterHint() || 'ทีมทั้งหมด · ภาพรวมองค์กร')"
+    [title]="isMine() ? 'ภาพรวมของฉัน' : 'ภาพรวมงาน'"
+    [subtitle]="isMine() ? 'คะแนน ภาระงาน และแนวโน้มของตัวเอง' : (filterHint() || 'ทีมทั้งหมด · ดูภาพรวมองค์กร')"
     [metrics]="bandMetrics()"
     actionsLayout="row"
-    ariaLabel="ดัชนีภาพรวมสำคัญ"
+    ariaLabel="ตัวเลขภาพรวมสำคัญ"
   >
     <button
       ejs-button
@@ -242,7 +242,7 @@
         <div class="bento-card__head">
           <div class="head-info">
             <div class="head-title-row">
-              <span class="head-title">เกณฑ์คุณภาพ (DoD Gate)</span>
+              <span class="head-title">เกณฑ์คุณภาพส่งมอบ</span>
               <span class="head-badge head-badge--blue">First-Time Right</span>
             </div>
             <span class="head-desc">สัดส่วนส่งมอบผ่านรอบแรก vs รีวิวซ้ำ</span>
@@ -357,7 +357,7 @@
       <div class="bento-card__head">
         <div class="head-info">
           <div class="head-title-row">
-            <span class="head-title">เรดาร์คอขวด & ความเสี่ยง</span>
+            <span class="head-title">เรดาร์ความเสี่ยง</span>
             <span class="head-badge head-badge--rose">AI Radar</span>
           </div>
           <span class="head-desc">งานที่ติดบล็อกหรือใช้เวลาเกินเกณฑ์</span>
@@ -517,7 +517,7 @@
             [options]="qualityMaxDonutOptions"
           />
           <div class="p-4 flex flex-col justify-center">
-            <h4 class="text-lg font-bold mb-3">เกณฑ์การประเมินคุณภาพรอบแรก (DoD Gate)</h4>
+            <h4 class="text-lg font-bold mb-3">เกณฑ์คุณภาพส่งมอบรอบแรก</h4>
             <ul class="space-y-2 text-sm text-slate-300">
               <li>• <strong>First-Time Right (FTR):</strong> ใบงานที่ผ่าน Code Review & QA ได้ในรอบเดียว การันตี 20 คะแนนรีวิว</li>
               <li>• <strong>Rework:</strong> มีการแก้ไขโค้ดซ้ำ 2 รอบขึ้นไป หรือมีข้อเสนอแนะด้านความปลอดภัย</li>

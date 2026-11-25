@@ -76,6 +76,8 @@ export interface SfScheduleOptions {
         [eventSettings]="eventSettings()"
         (created)="created.emit()"
         (actionBegin)="actionBegin.emit($event)"
+        (actionComplete)="handleActionComplete($event)"
+        (dataBound)="handleDataBound()"
         (eventClick)="eventClick.emit($event)"
         (eventRendered)="eventRendered.emit($event)"
         (navigating)="navigating.emit($event)"
@@ -131,10 +133,38 @@ export class SfScheduleComponent implements AfterViewInit, OnDestroy {
 
   readonly created = output<void>();
   readonly actionBegin = output<ActionEventArgs>();
+  readonly actionComplete = output<ActionEventArgs>();
+  readonly dataBound = output<void>();
   readonly eventClick = output<EventClickArgs>();
   readonly eventRendered = output<EventRenderedArgs>();
   readonly navigating = output<NavigatingEventArgs>();
   readonly popupOpen = output<PopupOpenEventArgs>();
+
+  protected handleActionComplete(args: ActionEventArgs): void {
+    try {
+      this.scheduleRef?.hideSpinner();
+    } catch {
+      // ignore
+    }
+    this.actionComplete.emit(args);
+  }
+
+  protected handleDataBound(): void {
+    try {
+      this.scheduleRef?.hideSpinner();
+    } catch {
+      // ignore
+    }
+    this.dataBound.emit();
+  }
+
+  hideSpinner(): void {
+    try {
+      this.scheduleRef?.hideSpinner();
+    } catch {
+      // ignore
+    }
+  }
 
   protected readonly defaultViews: View[] = ['TimelineDay', 'TimelineWeek', 'TimelineMonth', 'Agenda'];
 

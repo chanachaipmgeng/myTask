@@ -211,6 +211,48 @@ export class MyWorkspacePage {
     this.view().trend.map((t) => t.index)
   );
 
+  protected readonly closedProgressPct = computed(() => {
+    const closed = this.view().closedCount;
+    const total = closed + this.view().openCount;
+    return total > 0 ? Math.min(100, Math.round((closed / total) * 100)) : 100;
+  });
+
+  protected readonly trendSparkline = computed(() => {
+    const raw = this.view().trend.map((t) => t.index);
+    const points = raw.length > 0 ? [...raw, this.view().index] : [this.view().index];
+    const width = 200;
+    const height = 40;
+    const paddingX = 8;
+    const paddingY = 6;
+    const minVal = 0;
+    const maxVal = 100;
+
+    const stepX = (width - paddingX * 2) / Math.max(1, points.length - 1);
+    const coords = points.map((val, idx) => {
+      const clamped = Math.max(minVal, Math.min(maxVal, val));
+      const x = paddingX + idx * stepX;
+      const y = (height - paddingY) - ((clamped - minVal) / (maxVal - minVal)) * (height - paddingY * 2);
+      return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, val };
+    });
+
+    const linePath = coords.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ');
+    const lastX = coords[coords.length - 1].x;
+    const firstX = coords[0].x;
+    const bottomY = height;
+    const areaPath = `${linePath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
+
+    const targetY = (height - paddingY) - ((75 - minVal) / (maxVal - minVal)) * (height - paddingY * 2);
+
+    return {
+      coords,
+      linePath,
+      areaPath,
+      targetY: Math.round(targetY * 10) / 10,
+      latest: coords[coords.length - 1],
+      count: points.length,
+    };
+  });
+
   protected readonly wipProgressPct = computed(() =>
     Math.min(100, Math.round((this.view().openCount / 2) * 100))
   );

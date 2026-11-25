@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
-import { AccessRole, Person } from '../../../../shared/domain/models';
+import { AccessRole, Level, Person } from '../../../../shared/domain/models';
+import { WEEKLY_QUOTA } from '../../../../shared/domain/scoring';
 import {
   isPersonActiveForStaging,
   mapDepartmentToTeam,
@@ -43,6 +44,31 @@ export interface SyncResult {
   updated: number;
   unchanged: number;
   errors: string[];
+}
+
+/** ตรวจ job title ว่าเป็นหัวหน้าทีม (ทุกสาย ไม่จำกัด R&D) */
+function jobTitleLooksLikeLead(roleTitle: string | null | undefined): boolean {
+  const t = (roleTitle ?? '').toLowerCase();
+  if (!t) return false;
+  return (
+    t.includes('lead') ||
+    t.includes('หัวหน้า') ||
+    t.includes('manager') ||
+    t.includes('ผู้จัดการ') ||
+    t.includes('team lead') ||
+    t.includes('tech lead')
+  );
+}
+
+function plannedMdForLevel(
+  level: Level,
+  weeklyQuotas: Partial<Record<Level, number>> | undefined,
+): number {
+  const fromSettings = weeklyQuotas?.[level];
+  if (typeof fromSettings === 'number' && Number.isFinite(fromSettings) && fromSettings > 0) {
+    return fromSettings;
+  }
+  return WEEKLY_QUOTA[level] ?? WEEKLY_QUOTA.Mid;
 }
 
 @Injectable()
@@ -141,6 +167,16 @@ export class OpenProjectSyncService implements OnModuleInit {
       const spentHours = await this.loadSpentHours(client, since);
       const staging = this.config.openproject.teamStaging;
       const personByOp = await this.refreshUserMap(client, staging === 'rd');
+      const peopleForTrack = await listPeople(this.db, staging === 'rd');
+      const personTrackById = new Map(
+        peopleForTrack.filter((p) => p.track).map((p) => [p.id, p.track] as const),
+      );
+
+      if (!mapping.projects?.length) {
+        this.log.warn(
+          'OpenProject sync: mapping.projects is empty — syncing every project the token can see. Set project identifiers on /integrations to narrow scope.',
+        );
+      }
 
       const updatedSince = since ? since.toISOString() : null;
       for await (const wp of client.paginateWorkPackages({
@@ -179,6 +215,7 @@ export class OpenProjectSyncService implements OnModuleInit {
             mapping,
             hoursPerMd: settings.hoursPerMd,
             personByOpUser: personByOp,
+            personTrackById,
             spentHours,
             existing: existing ?? undefined,
             activities,
@@ -356,6 +393,8 @@ export class OpenProjectSyncService implements OnModuleInit {
       throw new Error('OpenProject URL/token is not configured');
     }
     const client = new OpenProjectClient(creds.url, creds.token);
+    const settings = await getSettings(this.db);
+    const weeklyQuotas = settings.weeklyQuotas;
 
     const errors: string[] = [];
     let total = 0;
@@ -468,12 +507,8 @@ export class OpenProjectSyncService implements OnModuleInit {
           if (user.admin && patch.access !== 'admin') {
             patch.access = 'admin';
             changed = true;
-          } else if (
-            !user.admin &&
-            teamMap.isRd &&
-            roleTitle?.toLowerCase().includes('lead') &&
-            patch.access === 'member'
-          ) {
+          } else if (!user.admin && jobTitleLooksLikeLead(roleTitle) && patch.access === 'member') {
+            // ไม่ทับ admin/lead ที่ตั้งเอง — ยกเฉพาะ member → lead จากตำแหน่ง
             patch.access = 'lead';
             changed = true;
           }
@@ -506,20 +541,17 @@ export class OpenProjectSyncService implements OnModuleInit {
             (name.includes(' ') ? name.split(' ')[0] : name) ||
             login ||
             `User ${opUserId}`;
+          const level: Level = 'Mid';
           const newPerson: Person & { access?: AccessRole; active?: boolean } = {
             id: candidateId,
             nickname,
             fullName: name,
             role: roleTitle || (user.admin ? 'Lead' : 'Developer'),
-            level: 'Mid',
+            level,
             track: teamMap.track,
-            plannedMd: 3.5,
+            plannedMd: plannedMdForLevel(level, weeklyQuotas),
             teamId: teamMap.teamId,
-            access: user.admin
-              ? 'admin'
-              : teamMap.isRd && roleTitle?.toLowerCase().includes('lead')
-                ? 'lead'
-                : 'member',
+            access: user.admin ? 'admin' : jobTitleLooksLikeLead(roleTitle) ? 'lead' : 'member',
             email,
             gitlabUsername: candidateGitlab,
             openprojectUserId: opUserId,

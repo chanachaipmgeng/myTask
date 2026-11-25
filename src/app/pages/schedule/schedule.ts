@@ -9,8 +9,10 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { map } from 'rxjs';
 import {
   ActionEventArgs,
   EventClickArgs,
@@ -149,9 +151,23 @@ export class SchedulePage {
   private readonly workspace = inject(WorkspaceFilter);
   protected readonly theme = inject(ThemeService);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly isMine = computed(
-    () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
+  private readonly queryScope = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('scope'))),
+    { initialValue: this.route.snapshot.queryParamMap.get('scope') },
   );
+  private readonly routeData = toSignal(this.route.data, {
+    initialValue: this.route.snapshot.data,
+  });
+
+  protected readonly isMine = computed(() => {
+    const q = this.queryScope();
+    if (q === 'team') return false;
+    if (q === 'mine') return true;
+    const dataScope = this.routeData()?.['scope'] ?? this.route.snapshot.data['scope'];
+    if (dataScope === 'team') return false;
+    if (dataScope === 'mine') return true;
+    return true; // Default /schedule is personal calendar (our own schedule!)
+  });
 
   private readonly scopedPeople = computed(() => {
     const people = this.scorecard.people();
@@ -184,21 +200,25 @@ export class SchedulePage {
     currentView: 'TimelineMonth',
     views: ['TimelineMonth', 'TimelineWeek', 'Agenda'],
     firstDayOfWeek: 1,
-    group: { resources: ['People'] },
+    group: this.boardModel().people.length > 0 ? { resources: ['People'] } : {},
     rowAutoHeight: true,
     height: this.scheduleHeight(),
   }));
-  protected readonly scheduleResources = computed<SfScheduleResource[]>(() => [
-    {
-      field: 'OwnerId',
-      title: 'คน',
-      name: 'People',
-      dataSource: this.boardModel().people,
-      textField: 'Text',
-      idField: 'Id',
-      colorField: 'Color',
-    },
-  ]);
+  protected readonly scheduleResources = computed<SfScheduleResource[]>(() =>
+    this.boardModel().people.length > 0
+      ? [
+          {
+            field: 'OwnerId',
+            title: 'คน',
+            name: 'People',
+            dataSource: this.boardModel().people,
+            textField: 'Text',
+            idField: 'Id',
+            colorField: 'Color',
+          },
+        ]
+      : [],
+  );
 
   protected readonly chartPrimaryX = {
     valueType: 'Category' as const,
@@ -281,8 +301,12 @@ export class SchedulePage {
   }
 
   protected setTeam(teamId: string): void {
-    this.selectedTeam.set(teamId || 'All');
+    const next = teamId || 'All';
+    this.selectedTeam.set(next);
     this.resourcePage.set(1);
+    if (!this.isMine()) {
+      this.workspace.setTeam(next === 'All' ? '' : next);
+    }
   }
 
   protected readonly dayFilter = signal<DayFilter>('ALL');
@@ -443,6 +467,9 @@ export class SchedulePage {
     const value = raw?.trim() || 'All';
     this.personId.set(value);
     this.resourcePage.set(1);
+    if (!this.isMine()) {
+      this.workspace.setPerson(value === 'All' ? '' : value);
+    }
   }
 
   protected setDayFilter(value: string): void {
@@ -451,7 +478,18 @@ export class SchedulePage {
 
   protected onScheduleCreated(): void {
     this.syncScheduleHeight();
-    queueMicrotask(() => this.board()?.instance()?.refresh());
+    queueMicrotask(() => {
+      this.board()?.instance()?.refresh();
+      this.board()?.hideSpinner();
+    });
+  }
+
+  protected onActionComplete(args: ActionEventArgs): void {
+    this.board()?.hideSpinner();
+  }
+
+  protected onDataBound(): void {
+    this.board()?.hideSpinner();
   }
 
   protected onActionBegin(args: ActionEventArgs): void {

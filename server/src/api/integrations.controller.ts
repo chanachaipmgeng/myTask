@@ -542,6 +542,15 @@ export class IntegrationsController {
   async syncBranches(@Req() req: AuthedRequest) {
     const gitlab = await this.resolveGitLab();
     if (!gitlab) {
+      if (this.config.production) {
+        return {
+          ok: false,
+          source: 'disabled',
+          totalBranches: 0,
+          unmatchedCount: 0,
+          message: 'โหมด production: ปิด demo GitLab branches — ตั้ง GITLAB URL/token ก่อนซิงก์',
+        };
+      }
       // In offline / unconfigured mode, provide demo branches so developers & reviewers can test the workflow
       const demoBranches = [
         {
@@ -728,7 +737,7 @@ export class IntegrationsController {
       }
     }
 
-    const hoursPerMd = settings.hoursPerMd || 8;
+    const hoursPerMd = settings.hoursPerMd || 6;
     const estimatedHours = (body.estimateMd ?? 1) * hoursPerMd;
     const today = todayInBangkok();
     const mapping = settings.openprojectMapping;

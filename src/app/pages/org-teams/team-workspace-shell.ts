@@ -12,7 +12,7 @@ const TEAM_WS_TABS = [
   { text: 'คน', path: 'people', icon: 'e-icons e-people', absolute: '/workspace/people' },
   { text: 'งาน', path: 'work', icon: 'e-icons e-timeline-work-week', absolute: '' },
   { text: 'คะแนน', path: 'tickets', icon: 'e-icons e-table', absolute: '' },
-  { text: 'ค็อกพิท', path: 'cockpit', icon: 'e-icons e-grid-view', absolute: '' },
+  { text: 'ภาพรวม', path: 'cockpit', icon: 'e-icons e-grid-view', absolute: '' },
 ] as const;
 
 @Component({

@@ -61,9 +61,9 @@ export const routes: Routes = [
       { path: 'tickets', pathMatch: 'full', redirectTo: '/quality/tickets' },
       { path: 'time-audit', pathMatch: 'full', redirectTo: '/quality/time-audit' },
       { path: 'disputes', pathMatch: 'full', redirectTo: '/quality/disputes' },
-      { path: 'analytics', pathMatch: 'full', redirectTo: '/insights/ols' },
-      { path: 'mygit', pathMatch: 'full', redirectTo: '/insights/mygit' },
-      { path: 'ai', pathMatch: 'full', redirectTo: '/insights/ai' },
+      { path: 'analytics', pathMatch: 'full', redirectTo: '/quality/ols' },
+      { path: 'mygit', pathMatch: 'full', redirectTo: '/mygit' },
+      { path: 'ai', pathMatch: 'full', redirectTo: '/quality/ai' },
     ],
   },
 
@@ -82,6 +82,7 @@ export const routes: Routes = [
   },
 
   // Unified Quality & Score Hub (ทุกสิทธิ์ใช้ร่วมกัน · QA/DoD เฉพาะ Lead/Admin)
+  // Unified Quality, Score & Analytics Hub (ผลงาน & วิเคราะห์)
   {
     path: 'quality',
     canActivate: [requireRoles('admin', 'lead', 'member')],
@@ -90,16 +91,17 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        redirectTo: () => (effectiveRole() === 'member' ? 'tickets' : 'audit'),
-      },
-      {
-        path: 'audit',
-        canActivate: [requireRoles('admin', 'lead')],
-        loadComponent: () => import('./pages/quality-audit/quality-audit').then((m) => m.QualityAuditPage),
+        redirectTo: 'tickets',
       },
       {
         path: 'tickets',
         loadComponent: () => import('./pages/tickets/tickets').then((m) => m.TicketsPage),
+      },
+      {
+        path: 'ols',
+        loadComponent: () =>
+          import('./pages/person-dashboard/person-dashboard').then((m) => m.PersonDashboard),
+        data: { hubOls: true },
       },
       {
         path: 'time-audit',
@@ -109,38 +111,19 @@ export const routes: Routes = [
         path: 'disputes',
         loadComponent: () => import('./pages/tickets/disputes').then((m) => m.DisputesPage),
       },
-    ],
-  },
-
-  // Unified Insights & Git Hub (ทุกสิทธิ์ใช้ร่วมกัน · ศูนย์วิเคราะห์ทีม/จำลอง เฉพาะ Lead/Admin)
-  {
-    path: 'insights',
-    canActivate: [requireRoles('admin', 'lead', 'member')],
-    loadComponent: () => import('./pages/hub-shells/insights-shell').then((m) => m.InsightsShell),
-    children: [
       {
-        path: '',
-        pathMatch: 'full',
-        redirectTo: () => (effectiveRole() === 'member' ? 'ols' : 'report'),
+        path: 'ai',
+        loadComponent: () => import('./pages/ai-tracking/ai-tracking').then((m) => m.AiTrackingPage),
+      },
+      {
+        path: 'audit',
+        canActivate: [requireRoles('admin', 'lead')],
+        loadComponent: () => import('./pages/quality-audit/quality-audit').then((m) => m.QualityAuditPage),
       },
       {
         path: 'report',
         canActivate: [requireRoles('admin', 'lead')],
         loadComponent: () => import('./pages/analytics/analytics').then((m) => m.AnalyticsPage),
-      },
-      {
-        path: 'ols',
-        loadComponent: () =>
-          import('./pages/person-dashboard/person-dashboard').then((m) => m.PersonDashboard),
-        data: { hubOls: true },
-      },
-      {
-        path: 'mygit',
-        loadComponent: () => import('./pages/mygit/mygit').then((m) => m.MyGitPage),
-      },
-      {
-        path: 'ai',
-        loadComponent: () => import('./pages/ai-tracking/ai-tracking').then((m) => m.AiTrackingPage),
       },
       {
         path: 'mockup',
@@ -150,18 +133,43 @@ export const routes: Routes = [
     ],
   },
 
+  // กล่องงาน Git & MR (Git Inbox)
+  {
+    path: 'mygit',
+    canActivate: [requireRoles('admin', 'lead', 'member')],
+    loadComponent: () => import('./pages/mygit/mygit').then((m) => m.MyGitPage),
+  },
+  { path: 'git-inbox', redirectTo: 'mygit', pathMatch: 'full' },
+
   // Legacy redirects → hubs
+  { path: 'insights', redirectTo: 'quality', pathMatch: 'full' },
+  { path: 'insights/ols', redirectTo: 'quality/ols', pathMatch: 'full' },
+  { path: 'insights/report', redirectTo: 'quality/report', pathMatch: 'full' },
+  { path: 'insights/mygit', redirectTo: 'mygit', pathMatch: 'full' },
+  { path: 'insights/ai', redirectTo: 'quality/ai', pathMatch: 'full' },
+  { path: 'insights/mockup', redirectTo: 'quality/mockup', pathMatch: 'full' },
   { path: 'analytics/time-audit', redirectTo: 'quality/time-audit', pathMatch: 'full' },
   { path: 'tickets/disputes', redirectTo: 'quality/disputes', pathMatch: 'full' },
-  { path: 'analytics', redirectTo: 'insights', pathMatch: 'full' },
-  { path: 'mygit', redirectTo: 'insights/mygit', pathMatch: 'full' },
-  { path: 'ai', redirectTo: 'insights/ai', pathMatch: 'full' },
+  { path: 'analytics', redirectTo: 'quality/report', pathMatch: 'full' },
+  { path: 'ai', redirectTo: 'quality/ai', pathMatch: 'full' },
   { path: 'tickets', redirectTo: 'quality/tickets', pathMatch: 'full' },
 
   {
     path: 'team',
-    canActivate: [requireRoles('admin', 'lead')],
+    canActivate: [requireRoles('admin', 'lead', 'member')],
     loadComponent: () => import('./pages/team-dashboard/team-dashboard').then((m) => m.TeamDashboard),
+  },
+  {
+    path: 'team/time',
+    canActivate: [requireRoles('admin', 'lead', 'member')],
+    loadComponent: () => import('./pages/work/team-time').then((m) => m.TeamTimePage),
+    data: { scope: 'team' },
+  },
+  {
+    path: 'team/schedule',
+    canActivate: [requireRoles('admin', 'lead', 'member')],
+    loadComponent: () => import('./pages/schedule/schedule').then((m) => m.SchedulePage),
+    data: { scope: 'team' },
   },
   {
     path: 'cockpit',
@@ -171,7 +179,8 @@ export const routes: Routes = [
   {
     path: 'org/teams',
     canActivate: [requireRoles('admin', 'lead')],
-    loadComponent: () => import('./pages/org-teams/org-teams-hub').then((m) => m.OrgTeamsHubPage),
+    loadComponent: () =>
+      import('./pages/org-teams/redirect-org-teams-hub').then((m) => m.RedirectOrgTeamsHub),
   },
   {
     path: 'org/teams/:teamId',
@@ -290,7 +299,7 @@ export const routes: Routes = [
   },
   {
     path: 'mockup',
-    redirectTo: 'insights/mockup',
+    redirectTo: 'quality/mockup',
     pathMatch: 'full',
   },
 ];

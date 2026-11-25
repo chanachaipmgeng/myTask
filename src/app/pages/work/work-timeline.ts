@@ -142,12 +142,17 @@ export class WorkTimeline {
     ),
   );
 
+  private static readonly MAX_GANTT_TASKS = 150;
+
   /**
    * Resource View: แบน ParentID · clone ResourceInfo เฉพาะ id ที่อยู่ใน resources
    * (กัน constructResourceViewDataSource พังเมื่อ object ไม่มี resourceId)
+   * จำกัด 150 รายการแรก เพื่อความลื่นไหลระดับ 60fps ของ Gantt DOM
    */
+  protected readonly isTruncated = computed(() => this.tasks().length > WorkTimeline.MAX_GANTT_TASKS);
+
   protected readonly ganttTasks = computed(() => {
-    const list = this.tasks();
+    const list = this.tasks().slice(0, WorkTimeline.MAX_GANTT_TASKS);
     const known = new Map(this.resources().map((r) => [r.resourceId, r.resourceName]));
     const resourceMode = this.viewMode() === 'resource';
     return list.map((task) => {

@@ -17,7 +17,18 @@ export interface OpenProjectCatalogEntry {
   assignedTeamIds?: string[];
   gitRepoIds?: string[];
   gitRepoNames?: string[];
+  /** Open / WIP tickets (list API only). */
   activeTicketsCount?: number;
+  /** All tickets linked to this project (list API only). */
+  totalTickets?: number;
+  /** Closed tickets (list API only). */
+  closedTicketsCount?: number;
+  /** 0–100 from closed MD or closed/total count (list API only). */
+  progressPercent?: number;
+  /** Up to 5 distinct open-ticket assignees (list API only). */
+  sampleAssigneeIds?: string[];
+  /** Earliest open firstDueOn/dueOn ISO day (list API only). */
+  nextDueOn?: string | null;
 }
 
 export interface OpenProjectTypeCatalogEntry {

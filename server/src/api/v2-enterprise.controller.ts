@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
 import {
@@ -18,6 +19,7 @@ import {
 } from '../../../shared/domain/multi-team';
 import { EmployeeLeave, TicketAllocation, TicketDispute } from '../../../shared/domain/models';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
+import { compareByField, parseListQuery, toListPageResult } from '../common/list-query';
 import { APP_CONFIG, AppConfig } from '../config';
 import {
   deleteLeave,
@@ -165,10 +167,53 @@ export class V2EnterpriseController {
   }
 
   @Get('disputes')
-  async getDisputes(@Req() req: AuthedRequest) {
+  async getDisputes(
+    @Req() req: AuthedRequest,
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('sort') sort?: string,
+    @Query('dir') dir?: string,
+    @Query('statusScope') statusScope?: string,
+  ) {
+    const listQuery = parseListQuery(
+      { q, page, pageSize, sort, dir, statusScope },
+      { defaultSort: 'createdAt', defaultDir: 'desc', defaultPageSize: 25 },
+    );
     const requesterId = req.authUser?.access === 'member' ? req.authUser.person.id : undefined;
-    const disputes = await listDisputes(this.db, requesterId);
-    return { ok: true, disputes };
+    let disputes = await listDisputes(this.db, requesterId);
+
+    if (listQuery.statusScope === 'unclosed') {
+      disputes = disputes.filter((d) => d.status === 'PENDING');
+    } else if (listQuery.statusScope === 'closed') {
+      disputes = disputes.filter((d) => d.status !== 'PENDING');
+    }
+
+    if (listQuery.q) {
+      const needle = listQuery.q.toLowerCase();
+      disputes = disputes.filter(
+        (d) =>
+          d.id.toLowerCase().includes(needle) ||
+          d.disputeCode.toLowerCase().includes(needle) ||
+          d.ticketId.toLowerCase().includes(needle) ||
+          d.reason.toLowerCase().includes(needle) ||
+          d.status.toLowerCase().includes(needle),
+      );
+    }
+
+    const sortField = listQuery.sort || 'createdAt';
+    disputes = disputes
+      .slice()
+      .sort((a, b) => compareByField(a, b, sortField, listQuery.dir));
+
+    const pageResult = toListPageResult(disputes, listQuery);
+    return {
+      ok: true,
+      ...pageResult,
+      disputes: pageResult.items,
+      result: pageResult.items,
+      count: pageResult.total,
+    };
   }
 
   @Post('disputes')
@@ -279,9 +324,47 @@ export class V2EnterpriseController {
   }
 
   @Get('leaves')
-  async getLeaves() {
-    const leaves = await listLeaves(this.db);
-    return { ok: true, leaves };
+  async getLeaves(
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('sort') sort?: string,
+    @Query('dir') dir?: string,
+    @Query('assigneeId') assigneeId?: string,
+  ) {
+    const listQuery = parseListQuery(
+      { q, page, pageSize, sort, dir, assigneeId },
+      { defaultSort: 'leaveDate', defaultDir: 'desc', defaultPageSize: 25 },
+    );
+    let leaves = await listLeaves(this.db);
+
+    if (listQuery.assigneeId) {
+      leaves = leaves.filter((row) => row.userId === listQuery.assigneeId);
+    }
+
+    if (listQuery.q) {
+      const needle = listQuery.q.toLowerCase();
+      leaves = leaves.filter(
+        (row) =>
+          row.id.toLowerCase().includes(needle) ||
+          row.userId.toLowerCase().includes(needle) ||
+          row.leaveType.toLowerCase().includes(needle) ||
+          (row.reason ?? '').toLowerCase().includes(needle) ||
+          row.leaveDate.toLowerCase().includes(needle),
+      );
+    }
+
+    const sortField = listQuery.sort || 'leaveDate';
+    leaves = leaves.slice().sort((a, b) => compareByField(a, b, sortField, listQuery.dir));
+
+    const pageResult = toListPageResult(leaves, listQuery);
+    return {
+      ok: true,
+      ...pageResult,
+      leaves: pageResult.items,
+      result: pageResult.items,
+      count: pageResult.total,
+    };
   }
 
   @Roles('admin', 'lead')

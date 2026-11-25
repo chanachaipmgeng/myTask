@@ -2,14 +2,23 @@ import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req } from '@
 import { extractTicketIdFromText } from '../../../shared/domain/gitlab-mr';
 import { Ticket, TicketDueShift, TicketStageLog } from '../../../shared/domain/models';
 import { scoreTicket } from '../../../shared/domain/scoring';
-import { addWorkingDays, applyGanttDateEdit, detectActiveWipTickets } from '../../../shared/domain/work-views';
+import { computeEffectiveAllowedTeams } from '../../../shared/domain/team-visibility';
+import {
+  addWorkingDays,
+  applyGanttDateEdit,
+  detectActiveWipTickets,
+  resolvePersonTeamId,
+  resolveProjectKey,
+} from '../../../shared/domain/work-views';
+import { filterTicketsByWorkspace } from '../../../shared/domain/workspace-scope';
 import { todayInBangkok, workflowStatusOf } from '../../../shared/domain/workflow';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
-import { compareByField, paginateItems, parseListQuery } from '../common/list-query';
+import { compareByField, parseListQuery, toListPageResult } from '../common/list-query';
 import { APP_CONFIG, AppConfig } from '../config';
 import { closeOpenStageLog, insertDueShift, insertStageLog } from '../data/multi-team.repo';
-import { getPerson } from '../data/people.repo';
+import { getPerson, listPeople } from '../data/people.repo';
 import { connectionToken, getConnection, getSettings } from '../data/settings.repo';
+import { getVisibilityConfig } from '../data/visibility.repo';
 import {
   getWorkItem,
   insertWorkItems,
@@ -32,17 +41,79 @@ export class WorkItemsController {
 
   @Get()
   async list(
+    @Req() req: AuthedRequest,
     @Query('q') q?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('sort') sort?: string,
     @Query('dir') dir?: string,
+    @Query('teamId') teamId?: string,
+    @Query('assigneeId') assigneeId?: string,
+    @Query('statusScope') statusScope?: string,
+    @Query('project') project?: string,
+    @Query('opType') opType?: string,
+    @Query('track') track?: string,
   ) {
     const listQuery = parseListQuery(
-      { q, page, pageSize, sort, dir },
+      { q, page, pageSize, sort, dir, teamId, assigneeId, statusScope, project, opType, track },
       { defaultSort: 'id', defaultDir: 'asc' },
     );
-    let tickets = await listWorkItems(this.db);
+    const [rawTickets, people, visibility] = await Promise.all([
+      listWorkItems(this.db),
+      listPeople(this.db),
+      getVisibilityConfig(this.db),
+    ]);
+    const peopleMap = new Map(people.map((p) => [p.id, p]));
+    const allowedTeams = req.authUser?.person
+      ? computeEffectiveAllowedTeams(req.authUser.person, visibility)
+      : null;
+
+    let tickets =
+      allowedTeams === null
+        ? rawTickets
+        : filterTicketsByWorkspace(rawTickets, people, { allowedTeams });
+
+    // Filter by statusScope (unclosed by default if requested)
+    if (listQuery.statusScope === 'unclosed') {
+      tickets = tickets.filter((ticket) => !ticket.closed);
+    } else if (listQuery.statusScope === 'closed') {
+      tickets = tickets.filter((ticket) => ticket.closed);
+    }
+
+    // Filter by Assignee
+    if (listQuery.assigneeId) {
+      tickets = tickets.filter((ticket) => ticket.assigneeId === listQuery.assigneeId);
+    }
+
+    // Filter by Team
+    if (listQuery.teamId) {
+      tickets = tickets.filter((ticket) => {
+        const person = ticket.assigneeId ? peopleMap.get(ticket.assigneeId) : undefined;
+        return resolvePersonTeamId(person, ticket.track) === listQuery.teamId;
+      });
+    }
+
+    // Filter by Project
+    if (listQuery.project) {
+      tickets = tickets.filter((ticket) => {
+        const key = resolveProjectKey(ticket);
+        return key === listQuery.project || ticket.opProject === listQuery.project;
+      });
+    }
+
+    // Filter by Type
+    if (listQuery.opType) {
+      tickets = tickets.filter(
+        (ticket) => ticket.opType === listQuery.opType || ticket.type === listQuery.opType,
+      );
+    }
+
+    // Filter by Track
+    if (listQuery.track && listQuery.track !== 'All') {
+      tickets = tickets.filter((ticket) => ticket.track === listQuery.track);
+    }
+
+    // Search query
     if (listQuery.q) {
       const needle = listQuery.q.toLowerCase();
       tickets = tickets.filter(
@@ -53,15 +124,24 @@ export class WorkItemsController {
           (ticket.assigneeId ?? '').toLowerCase().includes(needle),
       );
     }
+
     const sortField = listQuery.sort || 'id';
     tickets = tickets
       .slice()
       .sort((a, b) => compareByField(a, b, sortField, listQuery.dir));
-    const pageResult = paginateItems(tickets, listQuery);
+
+    const pageResult = toListPageResult(tickets, listQuery);
+    const unclosedCount = rawTickets.filter((t) => !t.closed).length;
+    const closedCount = rawTickets.filter((t) => t.closed).length;
+
     return {
       ...pageResult,
+      unclosedCount,
+      closedCount,
       /** คงชื่อเดิมไว้ให้ผู้เรียกเก่าที่อ่าน `.tickets` */
       tickets: pageResult.items,
+      result: pageResult.items,
+      count: pageResult.total,
     };
   }
 

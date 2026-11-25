@@ -22,6 +22,8 @@ export type WorkFilterOptions = {
   opType?: string;
   /** กรองถังวันส่ง (all = ไม่กรอง) */
   dueBucket?: DueBucket;
+  /** สถานะใบงาน: 'unclosed' (ยังไม่ปิด - ค่าเริ่ม), 'closed' (ปิดแล้ว), 'all' (ทั้งหมด) */
+  statusScope?: 'unclosed' | 'closed' | 'all';
   /** จันทร์ของสัปดาห์ที่กำลังดู (YYYY-MM-DD) — กรอง due ในสัปดาห์ + เกินกำหนดที่ยังค้าง */
   weekStart?: string;
   /** รายชื่อคนสำหรับแมป assignee → teamId (จำเป็นเมื่อใช้ teamId) */
@@ -141,6 +143,7 @@ export interface OpenWorkProjectGroup {
   projectKey: string;
   projectLabel: string;
   items: OpenWorkItem[];
+  totalCount?: number;
 }
 
 export interface OpenWorkBucketGroup {
@@ -216,11 +219,15 @@ export function resolvePersonTeamId(person: Person | undefined, ticketTrack?: Tr
   return 'unassigned';
 }
 
-export function resolveTeamLabel(teamId: string, person?: Person): string {
+export function resolveTeamLabel(
+  teamId: string,
+  person?: Person,
+  teams?: readonly { id: string; name?: string | null }[],
+): string {
   if (person?.department?.trim()) {
     return person.department.trim();
   }
-  return teamLabelForId(teamId);
+  return teamLabelForId(teamId, teams);
 }
 
 export function resolveProjectKey(ticket: Ticket): string {
@@ -307,11 +314,18 @@ export function filterWorkTickets(
   const opProject = options?.opProject?.trim() ?? '';
   const opType = options?.opType?.trim() ?? '';
   const dueBucket = options?.dueBucket ?? 'all';
+  const statusScope = options?.statusScope;
   const today = options?.today ?? todayInBangkok();
   const weekStart = options?.weekStart?.trim() || mondayOfWeek(today);
   const peopleMap = peopleById(options?.people);
 
   return tickets.filter((ticket) => {
+    if (statusScope === 'unclosed' && ticket.closed) {
+      return false;
+    }
+    if (statusScope === 'closed' && !ticket.closed) {
+      return false;
+    }
     if (!matchesTrack(ticket, track) || !matchesQuery(ticket, query)) {
       return false;
     }
@@ -448,9 +462,13 @@ export function groupOpenWorkByDueBucket(
       .map(([projectKey, items]) => ({
         projectKey: projectKey === '__none__' ? '' : projectKey,
         projectLabel: items[0]?.projectLabel ?? 'ไม่มีโปรเจกต์',
-        items: items.sort((a, b) => (a.dueOn ?? '9999').localeCompare(b.dueOn ?? '9999') || a.id.localeCompare(b.id)),
+        totalCount: items.length,
+        items: items
+          .sort((a, b) => (a.dueOn ?? '9999').localeCompare(b.dueOn ?? '9999') || a.id.localeCompare(b.id))
+          .slice(0, 6),
       }))
-      .sort((a, b) => a.projectLabel.localeCompare(b.projectLabel, 'th'));
+      .sort((a, b) => (b.totalCount ?? 0) - (a.totalCount ?? 0) || a.projectLabel.localeCompare(b.projectLabel, 'th'))
+      .slice(0, 10);
     return {
       bucket,
       label: DUE_BUCKET_LABELS[bucket],

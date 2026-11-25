@@ -1,0 +1,15 @@
+---
+description: เจ้าของตัวกรอง Global vs ตามหน้า — กันรั่ว team/person ข้าม hub
+globs: src/app/core/workspace-filter.ts,src/app/pages/work/work-hub-filter.ts,src/app/pages/work/work-shell.ts,src/app/pages/work/work-handoff.ts,src/app/pages/person-workspace/**/*,src/app/pages/team-dashboard/**/*,src/app/pages/schedule/schedule.ts,src/app/app.ts,shared/domain/workspace-scope.ts,shared/domain/team-visibility.ts
+alwaysApply: false
+---
+
+# Workspace Filter ownership
+
+- ค่าเริ่ม `WorkspaceFilter.teamId` ว่าง · `clear()` ตั้งทีมเป็น `''` — ห้ามคืน `selfTeamId`
+- `/work`: sync `teamId` จาก Global รวมค่าว่าง · `WorkHubFilter` persist แค่ query/dueBucket/weekOffset
+- Person Workspace: เลือกคนอัปเดต route อย่างเดียว · `setPerson` เฉพาะเจาะออกไป `/work` · ชิปสายผูก `workspace.setTrack` (ไม่ซ้อน local track)
+- `/team` member: roster/ชาร์ตใช้คนทั้งทีมตัวเอง ไม่ผ่าน `applyToPeople` ที่ force person=self สำหรับรายชื่อ
+- Handoff: `computeHandoffSlaSummary(applyToTickets(...), stageLogs, applyToPeople(...))`
+- Schedule โหมดทีม: `setTeam`/`setPerson` ท้องถิ่นต้องเขียนกลับ Global
+- อย่าสร้างหน้ากรองกลาง · อย่าใส่การ์ดทีมซ้ำบน Sidebar (admin ใช้「พนักงาน & ทีม」จุดเดียว)

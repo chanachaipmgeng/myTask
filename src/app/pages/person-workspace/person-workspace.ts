@@ -8,14 +8,17 @@ import { GitBranchItem } from '../../../../shared/domain/git-branch';
 import {
   WorkspaceTrackFilter,
   filterPeopleByWorkspace,
+  listTeamWorkspaceCards,
   listWorkspaceTrackChipOptions,
   parseWorkspaceTrackFilter,
 } from '../../../../shared/domain/workspace-scope';
+import { resolvePersonTeamId } from '../../../../shared/domain/work-views';
+import { effectiveRole } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
-import { Person, normalizeTrack, trackDisplayLabel } from '../../core/models';
+import { Person, trackDisplayLabel } from '../../core/models';
 import {
   CARD_PAGE_SIZE,
   CardSortMode,
@@ -42,6 +45,7 @@ import {
 } from '../../shared/ui';
 
 type PersonWsTab = 'overview' | 'work' | 'tickets' | 'schedule' | 'analytics' | 'git';
+type DirectoryView = 'people' | 'teams';
 
 const TABS: { id: PersonWsTab; text: string; icon: string }[] = [
   { id: 'overview', text: 'ภาพรวม', icon: 'e-icons e-home' },
@@ -93,11 +97,21 @@ export class PersonWorkspacePage {
   protected readonly trackToneMap = trackToneMap;
   protected readonly levelToneMap = levelToneMap;
   protected readonly query = signal('');
-  protected readonly trackFilter = signal<WorkspaceTrackFilter>('All');
   protected readonly sortMode = signal<CardSortMode>('name');
   protected readonly cardPage = signal(1);
   protected readonly cardPageSize = CARD_PAGE_SIZE;
   protected readonly viewMode = signal<'grid' | 'table'>('grid');
+  protected readonly directoryView = signal<DirectoryView>('people');
+  protected readonly teamQuery = signal('');
+
+  protected readonly directoryTitle = computed(() =>
+    effectiveRole() === 'admin' ? 'พนักงาน & ทีม' : 'คนในทีม',
+  );
+  protected readonly directoryDescription = computed(() =>
+    this.directoryView() === 'teams'
+      ? 'เลือกการ์ดทีมเพื่อกรองรายชื่อพนักงานในทีมนั้น'
+      : 'เลือกการ์ดพนักงานเพื่อเปิด Workspace งาน คะแนน ปฏิทิน และบทวิเคราะห์รายบุคคล',
+  );
 
   protected readonly directoryColumns: SfGridColumn[] = [
     { field: 'nickname', headerText: 'พนักงาน', width: 200, cellType: 'person', personIdField: 'id' },
@@ -139,6 +153,8 @@ export class PersonWorkspacePage {
       item.id === 'All' ? { id: 'All', label: 'ทุกสาย' } : item,
     ),
   );
+  /** ชิปสายบน directory = Global track (มิติเดียว ไม่ซ้อน) */
+  protected readonly trackFilter = computed(() => this.workspace.track());
   protected readonly sortOptions = [
     { text: 'เรียงตามชื่อ', value: 'name' },
     { text: 'เรียงตามดัชนี (สูง→ต่ำ)', value: 'index' },
@@ -153,6 +169,16 @@ export class PersonWorkspacePage {
     { initialValue: (this.route.snapshot.paramMap.get('personId') ?? '').trim() },
   );
 
+  private readonly routeDirectoryView = toSignal(
+    this.route.queryParamMap.pipe(
+      map((params): DirectoryView => (params.get('view') === 'teams' ? 'teams' : 'people')),
+    ),
+    {
+      initialValue:
+        this.route.snapshot.queryParamMap.get('view') === 'teams' ? ('teams' as const) : ('people' as const),
+    },
+  );
+
   constructor() {
     effect(() => {
       const fromRoute = this.routePersonId();
@@ -160,9 +186,16 @@ export class PersonWorkspacePage {
         if (this.pickedPersonId() !== fromRoute) {
           this.pickedPersonId.set(fromRoute);
         }
-        if (this.workspace.personId() !== fromRoute) {
-          this.workspace.setPerson(fromRoute);
-        }
+        // ไม่เขียน Global personId จาก route — กันรั่วไป /cockpit /team /work
+      } else if (this.pickedPersonId()) {
+        this.pickedPersonId.set('');
+      }
+    });
+
+    effect(() => {
+      const view = this.routeDirectoryView();
+      if (this.directoryView() !== view) {
+        this.directoryView.set(view);
       }
     });
 
@@ -174,6 +207,57 @@ export class PersonWorkspacePage {
         this.personBranches.set([]);
       }
     });
+  }
+
+  protected readonly teamCards = computed(() => {
+    const all = listTeamWorkspaceCards(this.scorecard.people(), this.scorecard.teams());
+    const allowed = this.scorecard.effectiveAllowedTeams();
+    const scoped = allowed === null ? all : all.filter((card) => allowed.includes(card.id));
+    const q = this.teamQuery().trim().toLowerCase();
+    if (!q) {
+      return scoped;
+    }
+    return scoped.filter(
+      (card) =>
+        card.name.toLowerCase().includes(q) ||
+        card.trackSummary.toLowerCase().includes(q) ||
+        card.leadName.toLowerCase().includes(q) ||
+        card.id.toLowerCase().includes(q),
+    );
+  });
+
+  protected readonly teamMemberTotal = computed(() =>
+    this.teamCards().reduce((sum, card) => sum + card.memberCount, 0),
+  );
+
+  protected teamMembersPreview(teamId: string): Person[] {
+    return this.scorecard
+      .people()
+      .filter((p) => p.active !== false && resolvePersonTeamId(p) === teamId)
+      .slice(0, 6);
+  }
+
+  protected setDirectoryView(view: DirectoryView): void {
+    this.directoryView.set(view);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view: view === 'teams' ? 'teams' : null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  protected setTeamQuery(value: string): void {
+    this.teamQuery.set(value);
+  }
+
+  protected openTeamCard(teamId: string): void {
+    this.workspace.setTeam(teamId);
+    this.setDirectoryView('people');
+  }
+
+  protected clearTeamFilter(): void {
+    this.workspace.setTeam('');
   }
 
   protected async loadPersonBranches(personId: string): Promise<void> {
@@ -200,16 +284,14 @@ export class PersonWorkspacePage {
     }
   }
 
-  /** รายชื่อในหน้าการ์ดและตัวสลับคน: กรองตามคำค้นหาและสายงาน */
+  /** รายชื่อในหน้าการ์ดและตัวสลับคน: กรองตาม Global scope + คำค้นหา (ไม่ซ้อน track ซ้ำ) */
   protected readonly filteredPeople = computed(() => {
     const q = this.query().trim().toLowerCase();
-    const tf = this.trackFilter();
     const scope = { ...this.workspace.scope(), personId: '' };
     return filterPeopleByWorkspace(this.scorecard.people(), scope, this.workspace.activeCycle())
       .slice()
       .sort((a, b) => a.nickname.localeCompare(b.nickname, 'th'))
       .filter((person) => {
-        if (tf !== 'All' && normalizeTrack(person.track) !== normalizeTrack(tf)) return false;
         if (!q) return true;
         return (
           person.nickname.toLowerCase().includes(q) ||
@@ -295,7 +377,7 @@ export class PersonWorkspacePage {
   }
 
   protected setTrackFilter(value: string): void {
-    this.trackFilter.set(parseWorkspaceTrackFilter(value));
+    this.workspace.setTrack(parseWorkspaceTrackFilter(value));
     this.cardPage.set(1);
   }
 
@@ -346,13 +428,11 @@ export class PersonWorkspacePage {
 
   protected selectPerson(personId: string): void {
     if (!personId) {
-      this.pickedPersonId.set('');
-      this.workspace.setPerson('');
-      void this.workspace.navigateWithFilter(['/workspace/people']);
+      this.clearSelectedPerson();
       return;
     }
     this.pickedPersonId.set(personId);
-    this.workspace.setPerson(personId);
+    // route-only selection — ไม่เขียน Global personId จนกว่าจะเจาะไป /work
     void this.workspace.navigateWithFilter(['/workspace/people', personId]);
   }
 

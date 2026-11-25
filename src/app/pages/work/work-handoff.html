@@ -1,8 +1,8 @@
 <section class="page">
   <app-page-head
     breadcrumb="ฮับบริหารงาน > ตรวจสอบการส่งต่อ &amp; SLA ข้ามทีม (/work/handoff)"
-    title="ติดตามการส่งต่อและคอขวดข้ามทีม"
-    description="วิเคราะห์ระยะเวลาค้างส่งต่องานระหว่าง Dev, Reviewer, QA และ Infra เพื่อแก้ปัญหาคอขวดก่อนหลุดกำหนดส่ง"
+    title="งานค้างส่งต่อ & SLA"
+    description="ดูงานที่ค้างระหว่าง Dev, Reviewer, QA และ Infra เพื่อเคลียร์ก่อนหลุดกำหนดส่ง"
     [metrics]="[
       { label: 'ค้างรอ Code Review', value: kpis().waitingReviewCount, unit: 'ใบ', hint: 'เกิน 24 ชม. ' + kpis().waitingReviewOverdue + ' ใบ', tone: kpis().waitingReviewOverdue > 0 ? 'bad' : 'good' },
       { label: 'ค้างรอเข้า QA', value: kpis().waitingQaCount, unit: 'ใบ', hint: 'เกิน SLA ' + kpis().waitingQaOverdue + ' ใบ' },

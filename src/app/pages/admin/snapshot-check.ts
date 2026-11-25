@@ -61,6 +61,13 @@ export class SnapshotCheckPage {
 
   protected readonly report = this.scorecard.preflightReport;
   protected readonly readinessScore = computed(() => this.report().overallReadinessScore);
+  private static readonly STAGE_SHORT_NAMES: Record<number, string> = {
+    1: 'ซิงก์ OpenProject',
+    2: 'ข้อพิพาท & เลื่อนวัน',
+    3: 'ตรวจสอบวันลา',
+    4: 'สรุปโควตา/คะแนน',
+  };
+
   protected readonly checks = computed(() =>
     this.report().checks.map((item) => {
       const numMatch = item.summary.match(/\d+/);
@@ -70,15 +77,50 @@ export class SnapshotCheckPage {
           : numMatch
             ? `${numMatch[0]} รายการ`
             : 'ต้องตรวจ';
+      const conciseName = SnapshotCheckPage.STAGE_SHORT_NAMES[item.stage] ?? item.name.replace(/\s*\([^)]*\)\s*/g, '').trim();
       return {
         ...item,
-        shortTitle: `ด่านที่ ${item.stage} · ${item.name.replace(/\s*\([^)]*\)\s*/g, '').trim()}`,
+        shortTitle: `ด่านที่ ${item.stage} · ${conciseName}`,
         shortValue,
         fullHint: `${item.summary} — ${item.detail}`,
       };
     }),
   );
   protected readonly previewDiffs = computed(() => this.report().previewDiffs);
+
+  /** เกตเบาๆ: mapping CF / ความครบของ estimate·due — ไม่บล็อก freeze */
+  protected readonly syncHygieneHints = computed(() => {
+    const tickets = this.scorecard.tickets();
+    const hints: string[] = [];
+    if (!tickets.length) {
+      hints.push('ยังไม่มีใบงานในระบบ — ตรวจ sync OpenProject / bootstrap');
+      return hints;
+    }
+    const missingEstimate = tickets.filter((t) => !(t.estimateMd > 0)).length;
+    const missingDue = tickets.filter((t) => !t.dueOn && !t.firstDueOn).length;
+    const missingTrackCfProxy = tickets.filter((t) => {
+      const tr = String(t.track ?? '');
+      return !tr || tr === 'Implement';
+    }).length;
+    const estPct = Math.round((missingEstimate / tickets.length) * 100);
+    const duePct = Math.round((missingDue / tickets.length) * 100);
+    const impPct = Math.round((missingTrackCfProxy / tickets.length) * 100);
+    if (estPct >= 40) {
+      hints.push(`ใบงานไม่มี estimate MD สูง (~${estPct}%) — ตรวจ CF Size / ชั่วโมงใน myProject`);
+    }
+    if (duePct >= 40) {
+      hints.push(`ใบงานไม่มี due/firstDue สูง (~${duePct}%) — ตรวจ Due Date / Auto-SLA / CF วันที่`);
+    }
+    if (impPct >= 85) {
+      hints.push(
+        `ใบงานส่วนใหญ่เป็นสาย Implement (~${impPct}%) — ตรวจ mapping CF track / projectTrack บน /integrations`,
+      );
+    }
+    if (!hints.length) {
+      hints.push('สุขลักษณะ sync พอใช้ได้ (estimate/due/track ไม่ผิดปกติชัด)');
+    }
+    return hints;
+  });
 
   protected onConfirmChange(event: { checked?: boolean }): void {
     this.isConfirmed.set(Boolean(event.checked));

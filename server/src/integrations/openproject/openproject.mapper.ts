@@ -27,6 +27,30 @@ import {
   WorkflowStatus,
 } from '../../../../shared/domain/models';
 
+/** ค่า track ที่รับใน mapping / CF (รวม alias 6 สาย) */
+const ACCEPTED_TRACKS = new Set<string>([
+  'Implement',
+  'RD',
+  'IMP',
+  'RND',
+  'QA',
+  'UXBA',
+  'SUP',
+  'INFRA',
+]);
+
+function isAcceptedTrack(value: string): value is Track {
+  return ACCEPTED_TRACKS.has(value);
+}
+
+/** แปลงค่า track ที่รับได้ให้เป็นรูปที่ใช้เก็บบน Ticket (ไม่ default เดา IMP) */
+export function coerceTrack(value: string | null | undefined): Track | null {
+  if (!value?.trim()) {
+    return null;
+  }
+  return asTrack(value);
+}
+
 /** Admin-editable mapping from an OpenProject instance to the scorecard model. */
 export interface OpenProjectMapping {
   /** Project identifiers to sync. Empty = every project the token can see. */
@@ -242,6 +266,8 @@ export interface MapContext {
   hoursPerMd: number;
   /** OpenProject user id -> person id. */
   personByOpUser: ReadonlyMap<number, string>;
+  /** person id -> track (สำหรับ fallback เมื่อ CF/projectTrack ว่าง) */
+  personTrackById?: ReadonlyMap<string, Track>;
   /** Hours from time entries per work package id. Falls back to spentTime when absent. */
   spentHours: ReadonlyMap<number, number>;
   /** The ticket already stored, to keep local-only fields and the locked first due date. */
@@ -288,6 +314,10 @@ export const OPENPROJECT_OWNED_FIELDS = [
   'planDate',
   'cfDueDate',
   'slaAutoFilled',
+  'baselineDue',
+  'exceptionTag',
+  'rdWorkTrack',
+  'spikeOutcome',
 ] as const;
 
 /** ISO 8601 duration (PT8H, P1DT2H30M, PT0.5H) -> hours. OpenProject uses P1D = 24h. */
@@ -381,8 +411,18 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
 
   const cf = mapping.customFields;
   const size = asSize(customValue(wp, cf.size)) ?? sizeFromEstimate(estimateMd);
+  const assigneeTrack =
+    assigneeId && !assigneeId.startsWith('op:')
+      ? coerceTrack(ctx.personTrackById?.get(assigneeId) ?? null)
+      : null;
+  const projectTrack = coerceTrack(mapping.projectTrack[project] ?? null);
   const track =
-    asTrack(customValue(wp, cf.track)) ?? mapping.projectTrack[project] ?? ctx.existing?.track ?? mapping.defaultTrack;
+    asTrack(customValue(wp, cf.track)) ??
+    projectTrack ??
+    assigneeTrack ??
+    coerceTrack(ctx.existing?.track) ??
+    coerceTrack(mapping.defaultTrack) ??
+    'Implement';
   const type = asType(customValue(wp, cf.type)) ?? inferTicketTypeFromOpName(typeName, mapping);
   const variance = asVariance(customValue(wp, cf.variance));
   const unplanned = asBool(customValue(wp, cf.unplanned));
@@ -398,6 +438,10 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   const bugCause = asBugCauseOrRaw(customValue(wp, cf.bugCause));
   const pocResult = asPocResultOrRaw(customValue(wp, cf.pocResult));
   const weekOffsetCf = asNonNegInt(customValue(wp, cf.weekOffset));
+  const baselineDue = dateOnly(customValue(wp, cf.baselineDue) ?? undefined);
+  const exceptionTag = customValue(wp, cf.exceptionTag)?.trim() || null;
+  const rdWorkTrack = customValue(wp, cf.rdWorkTrack)?.trim() || null;
+  const spikeOutcome = customValue(wp, cf.spikeOutcome)?.trim() || null;
   const category = linkTitle(links['category']);
 
   const rawReceiptDate = dateOnly(customValue(wp, cf.receiptDate) ?? undefined);
@@ -495,6 +539,10 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     mrLink: mrLink ?? undefined,
     bugCause: bugCause ?? undefined,
     pocResult: pocResult ?? undefined,
+    baselineDue: baselineDue ?? undefined,
+    exceptionTag: exceptionTag ?? undefined,
+    rdWorkTrack: rdWorkTrack ?? undefined,
+    spikeOutcome: spikeOutcome ?? undefined,
   };
   if (workflowStatus) {
     base.workflowStatus = workflowStatus;
@@ -547,6 +595,18 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   }
   if (pocResult) {
     merged.pocResult = pocResult;
+  }
+  if (baselineDue) {
+    merged.baselineDue = baselineDue;
+  }
+  if (exceptionTag) {
+    merged.exceptionTag = exceptionTag;
+  }
+  if (rdWorkTrack) {
+    merged.rdWorkTrack = rdWorkTrack;
+  }
+  if (spikeOutcome) {
+    merged.spikeOutcome = spikeOutcome;
   }
   if (weekOffsetCf !== null) {
     merged.weekOffset = weekOffsetCf;
@@ -684,15 +744,33 @@ function asSize(value: string | null): Size | null {
 }
 
 function asTrack(value: string | null): Track | null {
-  const v = value?.trim().toLowerCase();
-  if (!v) {
+  const raw = value?.trim();
+  if (!raw) {
     return null;
   }
-  if (v === 'rd' || v === 'r&d' || v === 'research') {
+  if (isAcceptedTrack(raw)) {
+    if (raw === 'IMP') return 'Implement';
+    if (raw === 'RND') return 'RD';
+    return raw;
+  }
+  const v = raw.toLowerCase();
+  if (v === 'rd' || v === 'r&d' || v === 'rnd' || v === 'research' || v.includes('r&d') || v.includes('research')) {
     return 'RD';
   }
-  if (v === 'implement' || v === 'implementation') {
+  if (v === 'implement' || v === 'implementation' || v === 'imp' || v.includes('implement')) {
     return 'Implement';
+  }
+  if (v === 'qa' || v.includes('quality') || v.includes('tester') || v.includes('ทดสอบ')) {
+    return 'QA';
+  }
+  if (v === 'uxba' || v === 'ba' || v === 'ux' || v.includes('product') || v.includes('business analyst')) {
+    return 'UXBA';
+  }
+  if (v === 'sup' || v.includes('support') || v.includes('helpdesk') || v.includes('บริการ')) {
+    return 'SUP';
+  }
+  if (v === 'infra' || v.includes('devops') || v.includes('infra') || v.includes('security') || v.includes('secops')) {
+    return 'INFRA';
   }
   return null;
 }
@@ -839,13 +917,23 @@ export function validateMapping(input: unknown): { mapping: OpenProjectMapping |
   if (!TYPES.includes(merged.defaultType)) {
     errors.push('defaultType is invalid');
   }
+  const normalizedProjectTrack: Record<string, Track> = {};
   for (const [project, track] of Object.entries(merged.projectTrack ?? {})) {
-    if (track !== 'Implement' && track !== 'RD') {
-      errors.push(`projectTrack["${project}"] must be Implement or RD`);
+    const coerced = coerceTrack(String(track));
+    if (!coerced) {
+      errors.push(
+        `projectTrack["${project}"] must be one of Implement|RD|QA|UXBA|SUP|INFRA (or IMP|RND)`,
+      );
+    } else {
+      normalizedProjectTrack[project] = coerced;
     }
   }
-  if (merged.defaultTrack !== 'Implement' && merged.defaultTrack !== 'RD') {
-    errors.push('defaultTrack must be Implement or RD');
+  merged.projectTrack = normalizedProjectTrack;
+  const coercedDefault = coerceTrack(String(merged.defaultTrack));
+  if (!coercedDefault) {
+    errors.push('defaultTrack must be one of Implement|RD|QA|UXBA|SUP|INFRA (or IMP|RND)');
+  } else {
+    merged.defaultTrack = coercedDefault;
   }
   for (const [key, value] of Object.entries(merged.customFields)) {
     if (typeof value !== 'string' || (value !== '' && !/^customField\d+$/.test(value))) {
@@ -912,6 +1000,81 @@ export function autoMatchCustomFieldsFromSchema(
     (n) => n.includes('rootcause') || n.includes('bug cause') || n === 'bug type',
   ]);
   if (bugCause) out.bugCause = bugCause;
+
+  const size = findField([
+    (n) => n === 'size' || n === 't-shirt' || n.includes('ticket size') || n.includes('ขนาด') || n === 'story size',
+  ]);
+  if (size) out.size = size;
+
+  const track = findField([
+    (n) =>
+      n === 'track' ||
+      n === 'discipline track' ||
+      n.includes('สายงาน') ||
+      n === 'work track' ||
+      (n.includes('track') && !n.includes('rd work')),
+  ]);
+  if (track) out.track = track;
+
+  const unplanned = findField([
+    (n) => n === 'unplanned' || n.includes('unplanned') || n.includes('ไม่ได้วางแผน') || n.includes('นอกแผน'),
+  ]);
+  if (unplanned) out.unplanned = unplanned;
+
+  const storyPoints = findField([
+    (n) => n === 'story points' || n === 'story point' || n.includes('story points') || n === 'sp',
+  ]);
+  if (storyPoints) out.storyPoints = storyPoints;
+
+  const discipline = findField([
+    (n) => n === 'discipline' || n.includes('discipline') || n.includes('ทักษะ') || n === 'skill',
+  ]);
+  if (discipline) out.discipline = discipline;
+
+  const workCategory = findField([
+    (n) => n === 'work category' || n.includes('work category') || n.includes('หมวดงาน') || n === 'category type',
+  ]);
+  if (workCategory) out.workCategory = workCategory;
+
+  const reviewRounds = findField([
+    (n) => n.includes('review round') || n === 'review rounds' || n.includes('รอบรีวิว'),
+  ]);
+  if (reviewRounds) out.reviewRounds = reviewRounds;
+
+  const dodPassed = findField([
+    (n) => n.includes('dod') || n.includes('definition of done') || n.includes('ผ่าน dod'),
+  ]);
+  if (dodPassed) out.dodPassed = dodPassed;
+
+  const pocResult = findField([
+    (n) => n.includes('poc result') || n.includes('spike result') || n.includes('ผล poc') || n === 'outcome',
+  ]);
+  if (pocResult) out.pocResult = pocResult;
+
+  const variance = findField([
+    (n) => n === 'variance' || n.includes('variance') || n.includes('สาเหตุคลาดเคลื่อน'),
+  ]);
+  if (variance) out.variance = variance;
+
+  const baselineDue = findField([
+    (n, t) => t === 'date' && (n.includes('baseline') || n.includes('เส้นฐาน') || n === 'baseline due'),
+  ]);
+  if (baselineDue) out.baselineDue = baselineDue;
+
+  const exceptionTag = findField([
+    (n) => n.includes('exception') || n.includes('ข้อยกเว้น') || n === 'exception tag',
+  ]);
+  if (exceptionTag) out.exceptionTag = exceptionTag;
+
+  const rdWorkTrack = findField([
+    (n) => n.includes('rd work') || n.includes('r&d work') || n === 'rd track' || n.includes('แนวงาน rd'),
+  ]);
+  if (rdWorkTrack) out.rdWorkTrack = rdWorkTrack;
+
+  const spikeOutcome = findField([
+    (n) => n.includes('spike outcome') || n.includes('spike result') || n.includes('ผล spike'),
+  ]);
+  if (spikeOutcome) out.spikeOutcome = spikeOutcome;
 
   return out;
 }

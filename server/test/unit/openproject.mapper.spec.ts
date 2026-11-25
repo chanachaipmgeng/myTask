@@ -216,6 +216,50 @@ describe('mapWorkPackage', () => {
     assert.equal(ticket.weekOffset, 1);
     assert.equal(ticket.actualStartOn, '2026-11-05');
   });
+
+  it('accepts 6-track projectTrack/defaultTrack and maps CF track QA', () => {
+    const { mapping, errors } = validateMapping({
+      ...DEFAULT_OPENPROJECT_MAPPING,
+      defaultTrack: 'QA',
+      projectTrack: { demo: 'INFRA', cs: 'RND' },
+      customFields: {
+        ...DEFAULT_OPENPROJECT_MAPPING.customFields,
+        track: 'customField11',
+      },
+    });
+    assert.equal(errors.length, 0);
+    assert.ok(mapping);
+    assert.equal(mapping!.defaultTrack, 'QA');
+    assert.equal(mapping!.projectTrack['demo'], 'INFRA');
+    assert.equal(mapping!.projectTrack['cs'], 'RD');
+
+    const ticket = mapWorkPackage(sampleWp(), {
+      ...baseCtx(),
+      mapping: mapping!,
+      personTrackById: new Map([['itsara', 'SUP']]),
+    });
+    assert.equal(ticket.track, 'INFRA');
+
+    const withCf: OpWorkPackage = {
+      ...sampleWp(),
+      customField11: 'QA',
+    };
+    const ticketQa = mapWorkPackage(withCf, { ...baseCtx(), mapping: mapping! });
+    assert.equal(ticketQa.track, 'QA');
+  });
+
+  it('falls back to assignee person track when CF and projectTrack are empty', () => {
+    const ticket = mapWorkPackage(sampleWp(), {
+      ...baseCtx(),
+      mapping: {
+        ...DEFAULT_OPENPROJECT_MAPPING,
+        projectTrack: {},
+        defaultTrack: 'Implement',
+      },
+      personTrackById: new Map([['itsara', 'UXBA']]),
+    });
+    assert.equal(ticket.track, 'UXBA');
+  });
 });
 
 describe('countReopens', () => {
@@ -355,6 +399,39 @@ describe('Policy & SLA dates sync + Auto-SLA rules', () => {
     assert.equal(matched.cfDueDate, 'customField46');
     assert.equal(matched.alertDate, 'customField163');
     assert.equal(matched.policyDate, 'customField185');
+  });
+
+  it('auto-matches score custom fields by schema names', () => {
+    const matched = autoMatchCustomFieldsFromSchema([
+      { key: 'customField10', name: 'Size', type: 'String' },
+      { key: 'customField11', name: 'Track', type: 'String' },
+      { key: 'customField12', name: 'Unplanned', type: 'Boolean' },
+      { key: 'customField13', name: 'Story Points', type: 'Integer' },
+      { key: 'customField14', name: 'Discipline', type: 'String' },
+      { key: 'customField15', name: 'Work Category', type: 'String' },
+      { key: 'customField16', name: 'Review Rounds', type: 'Integer' },
+      { key: 'customField17', name: 'DoD Passed', type: 'Boolean' },
+      { key: 'customField18', name: 'PoC Result', type: 'String' },
+      { key: 'customField19', name: 'Variance', type: 'String' },
+      { key: 'customField20', name: 'Baseline Due', type: 'Date' },
+      { key: 'customField21', name: 'Exception Tag', type: 'String' },
+      { key: 'customField22', name: 'RD Work Track', type: 'String' },
+      { key: 'customField23', name: 'Spike Outcome', type: 'String' },
+    ]);
+    assert.equal(matched.size, 'customField10');
+    assert.equal(matched.track, 'customField11');
+    assert.equal(matched.unplanned, 'customField12');
+    assert.equal(matched.storyPoints, 'customField13');
+    assert.equal(matched.discipline, 'customField14');
+    assert.equal(matched.workCategory, 'customField15');
+    assert.equal(matched.reviewRounds, 'customField16');
+    assert.equal(matched.dodPassed, 'customField17');
+    assert.equal(matched.pocResult, 'customField18');
+    assert.equal(matched.variance, 'customField19');
+    assert.equal(matched.baselineDue, 'customField20');
+    assert.equal(matched.exceptionTag, 'customField21');
+    assert.equal(matched.rdWorkTrack, 'customField22');
+    assert.equal(matched.spikeOutcome, 'customField23');
   });
 
   it('preserves raw OpenProject opType, opTypeId, opStatus, custom bugCause, and normalizes /api/v3/users/:id/avatar URLs', async () => {

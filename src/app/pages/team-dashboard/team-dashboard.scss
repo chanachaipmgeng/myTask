@@ -19,3 +19,17 @@
 .team-dashboard .e-rowcell.e-rightalign {
   font-variant-numeric: tabular-nums;
 }
+
+.team-dash-team-card.is-selected {
+  border-color: var(--primary, #2e4fc8);
+  box-shadow: var(--shadow-card-hover, 0 8px 24px rgba(39, 70, 179, 0.12));
+}
+
+.team-dash-team-card:hover {
+  box-shadow: var(--shadow-card-hover, 0 8px 24px rgba(39, 70, 179, 0.12));
+}
+
+.team-dash-team-card:focus-visible {
+  outline: 2px solid var(--primary, #2e4fc8);
+  outline-offset: 2px;
+}

@@ -1,6 +1,10 @@
 import { Controller, Get, Inject, Req } from '@nestjs/common';
 import { normalizeOpenProjectAvatarUrl } from '../../../shared/domain/op-team-staging';
 import { computeEffectiveAllowedTeams } from '../../../shared/domain/team-visibility';
+import {
+  filterPeopleByWorkspace,
+  filterTicketsByWorkspace,
+} from '../../../shared/domain/workspace-scope';
 import { listAllocations, listDisputes, listLeaves, listStageLogs } from '../data/multi-team.repo';
 import { listDepartments, listPeople, listTeams } from '../data/people.repo';
 import { getSettings } from '../data/settings.repo';
@@ -41,16 +45,23 @@ export class BootstrapController {
       ]);
     const staging = this.config.openproject.teamStaging;
     const opBaseUrl = this.config.openproject.url;
-    const people = rawPeople.map((p) => ({
+    const enrichedPeople = rawPeople.map((p) => ({
       ...p,
       avatarUrl: normalizeOpenProjectAvatarUrl(p.avatarUrl, p.openprojectUserId, opBaseUrl),
       allowedTeams: visibility.userOverrides[p.id] ?? [],
     }));
-    const activePeopleIds = new Set(people.map((p) => p.id));
-    // โหมด rd: ใบ RD หรือ assignee ที่ active — โหมด all: ส่งทุกใบใน DB
-    const tickets =
+    const activePeopleIds = new Set(enrichedPeople.map((p) => p.id));
+    // โหมด rd: ใบ RD หรือ assignee ที่ active
+    // โหมด all: ส่งเฉพาะใบที่มีความเคลื่อนไหว (มีผู้รับ, แผนวันที่, ปิดแล้ว, หรือ RD) ไม่ส่งขยะ backlog ไร้ผู้รับ 13,000+ ใบ
+    const trimmedTickets =
       staging === 'all'
-        ? allTickets
+        ? allTickets.filter(
+            (t) =>
+              t.track === 'RD' ||
+              t.closed ||
+              (t.assigneeId && activePeopleIds.has(t.assigneeId)) ||
+              Boolean(t.dueOn || t.firstDueOn || t.actualStartOn),
+          )
         : allTickets.filter(
             (t) => t.track === 'RD' || (t.assigneeId && activePeopleIds.has(t.assigneeId)),
           );
@@ -58,6 +69,17 @@ export class BootstrapController {
     const effectiveAllowedTeams = authUser?.person
       ? computeEffectiveAllowedTeams(authUser.person, visibility)
       : null;
+
+    // บังคับขอบเขตทีมฝั่งเซิร์ฟเวอร์ให้ตรง frontend (admin = null = ไม่จำกัด)
+    const scope = { allowedTeams: effectiveAllowedTeams ?? undefined };
+    const people =
+      effectiveAllowedTeams === null
+        ? enrichedPeople
+        : filterPeopleByWorkspace(enrichedPeople, scope);
+    const tickets =
+      effectiveAllowedTeams === null
+        ? trimmedTickets
+        : filterTicketsByWorkspace(trimmedTickets, enrichedPeople, scope);
 
     return {
       people,

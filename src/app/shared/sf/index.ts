@@ -5,7 +5,12 @@ export {
   type SfGridColumn,
   type SfGridOptions,
   type SfGridAggregate,
+  type SfGridRemoteData,
 } from './sf-grid/sf-grid';
+export {
+  SfPagerComponent,
+  type SfPagerChange,
+} from './sf-pager/sf-pager';
 export {
   SfChartComponent,
   scatterBandSeries,

@@ -24,6 +24,18 @@
   </div>
 
   <app-section-card
+    variant="nested"
+    title="สุขลักษณะ sync / mapping (ไม่บล็อกแช่แข็ง)"
+    subtitle="เตือนเมื่อ CF track/size หรือ due/estimate ดูไม่ครบ — ไปแก้ที่ /integrations หรือ myProject"
+  >
+    <ul class="list-disc pl-5 space-y-1 text-sm">
+      @for (hint of syncHygieneHints(); track hint) {
+        <li>{{ hint }}</li>
+      }
+    </ul>
+  </app-section-card>
+
+  <app-section-card
     title="เปรียบเทียบดัชนีรายบุคคลก่อนแช่แข็ง"
     subtitle="เปรียบเทียบดัชนีพัฒนาการงวดก่อนหน้าเทียบกับงวดปัจจุบันที่จะถูกแช่แข็ง"
   >

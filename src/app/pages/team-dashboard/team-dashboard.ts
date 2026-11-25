@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { canCaptureKpi } from '../../core/admin-settings';
+import { canCaptureKpi, effectiveRole } from '../../core/admin-settings';
 import { ApiClient, KpiSnapshotPeriodDto, KpiSnapshotRowDto } from '../../core/api-client';
 import { mdCompositionTrend, monthlyTrend, personMonthIndexHeatmap, quotaBars } from '../../core/dashboard-charts';
 import { kpiExplanations } from '../../core/kpi-meaning';
@@ -17,6 +17,7 @@ import {
   FormFieldComponent,
   LoadingSkeletonComponent,
   PageHeadComponent,
+  PersonAvatarComponent,
   SectionCardComponent,
   SfChartComponent,
   SfChartOptions,
@@ -35,7 +36,9 @@ import {
   SfTextBoxComponent,
   prismChartPalette,
 } from '../../shared/ui';
-import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
+import { listTeamWorkspaceCards, type WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
+import { resolvePersonTeamId } from '../../../../shared/domain/work-views';
+import type { Person } from '../../core/models';
 
 type TrackFilter = WorkspaceTrackFilter;
 
@@ -47,6 +50,7 @@ const LIVE_MODE = 'live';
   imports: [
     ButtonModule,
     PageHeadComponent,
+    PersonAvatarComponent,
     SectionCardComponent,
     FormFieldComponent,
     LoadingSkeletonComponent,
@@ -82,10 +86,97 @@ export class TeamDashboard {
       this.track.set(track);
     }
   });
-  private readonly scopedPeople = computed(() => this.workspace.applyToPeople(this.scorecard.people()));
-  private readonly scopedTickets = computed(() =>
-    this.workspace.applyToTickets(this.scorecard.tickets(), this.scorecard.people()),
-  );
+  /** คน/ใบสำหรับชาร์ต — member ใช้ทั้งทีมตัวเอง (ไม่ force person=self) */
+  private readonly scopedPeople = computed(() => {
+    if (effectiveRole() === 'member') {
+      return this.memberTeamPeople();
+    }
+    return this.workspace.applyToPeople(this.scorecard.people());
+  });
+  private readonly scopedTickets = computed(() => {
+    if (effectiveRole() === 'member') {
+      const ids = new Set(this.memberTeamPeople().map((p) => p.id));
+      return this.scorecard.tickets().filter((t) => ids.has(t.assigneeId));
+    }
+    return this.workspace.applyToTickets(this.scorecard.tickets(), this.scorecard.people());
+  });
+
+  private readonly memberTeamPeople = computed(() => {
+    const myTeam = this.workspace.selfTeamId();
+    if (!myTeam) return [];
+    return this.scorecard
+      .people()
+      .filter((p) => p.active !== false && resolvePersonTeamId(p) === myTeam);
+  });
+
+  protected readonly managedTeamCards = computed(() => {
+    const all = listTeamWorkspaceCards(this.scorecard.people(), this.scorecard.teams());
+    const role = effectiveRole();
+    if (role === 'member') {
+      const myTeam = this.workspace.selfTeamId();
+      return myTeam ? all.filter((card) => card.id === myTeam) : [];
+    }
+    const allowed = this.scorecard.effectiveAllowedTeams();
+    if (allowed === null) {
+      return all;
+    }
+    return all.filter((card) => allowed.includes(card.id));
+  });
+
+  protected readonly teamMembers = computed(() => {
+    const people = this.scopedPeople();
+    const rows = this.scorecard.personRows();
+    const tickets = this.scopedTickets();
+    const rowMap = new Map(rows.map((r) => [r.id, r]));
+    const selfId = this.workspace.selfPersonId();
+    const role = effectiveRole();
+
+    return people.map((p) => {
+      const row = rowMap.get(p.id);
+      const activeTickets = tickets.filter((t) => t.assigneeId === p.id && !t.closed);
+      const canOpen = role !== 'member' || p.id === selfId;
+      return {
+        id: p.id,
+        nickname: p.nickname,
+        fullName: p.fullName || p.nickname,
+        track: p.track,
+        role: p.jobTitle || p.role || 'Application Developer',
+        index: row?.index ?? 0,
+        quotaMd: row?.quota ?? 3.5,
+        activeTicketsCount: activeTickets.length,
+        avatarUrl: p.avatarUrl,
+        canOpen,
+      };
+    });
+  });
+
+  protected teamMembersPreview(teamId: string): Person[] {
+    return this.scorecard
+      .people()
+      .filter((p) => p.active !== false && resolvePersonTeamId(p) === teamId)
+      .slice(0, 6);
+  }
+
+  protected selectManagedTeam(teamId: string): void {
+    this.workspace.setTeam(teamId);
+  }
+
+  protected clearManagedTeam(): void {
+    this.workspace.setTeam('');
+  }
+
+  protected openMember(personId: string): void {
+    const role = effectiveRole();
+    const selfId = this.workspace.selfPersonId();
+    if (role === 'member') {
+      if (personId === selfId) {
+        void this.router.navigate(['/me']);
+      }
+      return;
+    }
+    this.workspace.setPerson(personId);
+    void this.workspace.navigateWithFilter(['/workspace/people', personId]);
+  }
   protected readonly periodMode = signal(LIVE_MODE);
   protected readonly periods = signal<KpiSnapshotPeriodDto[]>([]);
   protected readonly snapshotRows = signal<KpiSnapshotRowDto[]>([]);
@@ -327,7 +418,7 @@ export class TeamDashboard {
   }
 
   protected drillToPeople(): void {
-    void this.workspace.navigateWithFilter(['/people']);
+    void this.workspace.navigateWithFilter(['/workspace/people']);
   }
 
   protected onSamplePointClick(args: { point?: { x?: unknown } }): void {

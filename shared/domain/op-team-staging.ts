@@ -110,7 +110,17 @@ export function extractOpAvatarUserId(url: string | null | undefined): number | 
   return Number.isFinite(n) ? n : null;
 }
 
-export function teamLabelForId(teamId: string): string {
+/**
+ * ป้ายทีม — ใช้ชื่อจากตาราง teams/departments ก่อน · stub เก่าเฉพาะ offline/seed
+ */
+export function teamLabelForId(
+  teamId: string,
+  teams?: readonly { id: string; name?: string | null }[],
+): string {
+  const fromTeams = teams?.find((t) => t.id === teamId)?.name?.trim();
+  if (fromTeams) {
+    return fromTeams;
+  }
   switch (teamId) {
     case 'rd':
       return 'ทีม R&D';
@@ -127,7 +137,8 @@ export function teamLabelForId(teamId: string): string {
     case 'unassigned':
       return 'ยังไม่ระบุทีม';
     default:
-      return teamId;
+      // slug จาก myProject เช่น rd-research-and-development → อ่านง่ายขึ้นเล็กน้อย
+      return teamId.replace(/-/g, ' ');
   }
 }
 

@@ -26,8 +26,18 @@ async function bootstrap(): Promise<void> {
 
   const db = app.get(Db);
   await migrate(db.pool, (line) => console.log(line));
-  await seedIfEmpty(poolAsQueryable(db.pool), (line) => console.log(line));
-  await seedEnterpriseIfEmpty(poolAsQueryable(db.pool), (line) => console.log(line));
+  const disableAutoSeed =
+    config.production || String(process.env['DISABLE_AUTO_SEED'] ?? '').toLowerCase() === 'true';
+  if (disableAutoSeed) {
+    console.log(
+      config.production
+        ? 'skip auto-seed (production)'
+        : 'skip auto-seed (DISABLE_AUTO_SEED=true)',
+    );
+  } else {
+    await seedIfEmpty(poolAsQueryable(db.pool), (line) => console.log(line));
+    await seedEnterpriseIfEmpty(poolAsQueryable(db.pool), (line) => console.log(line));
+  }
 
   await app.listen(config.port, config.host);
   console.log(`manday server listening on http://${config.host}:${config.port}`);

@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Inject, Param, Post, Put, Query, Req } from '@nestjs/common';
 import { AccessRole, Level, Track } from '../../../shared/domain/models';
 import { ProjectDetail, ProjectGitSummary, ProjectStats } from '../../../shared/domain/project-detail';
-import { TeamVisibilityRule } from '../../../shared/domain/team-visibility';
+import { computeEffectiveAllowedTeams, TeamVisibilityRule } from '../../../shared/domain/team-visibility';
+import { filterPeopleByWorkspace } from '../../../shared/domain/workspace-scope';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
-import { parseListQuery } from '../common/list-query';
+import { compareByField, paginateItems, parseListQuery } from '../common/list-query';
 import { APP_CONFIG, AppConfig } from '../config';
 import { listGitBranches } from '../data/git.repo';
 import { getPerson, listDepartments, listPeople, listTeams, upsertPerson } from '../data/people.repo';
@@ -32,13 +33,21 @@ export class OrgController {
   ) {}
 
   @Get()
-  async org() {
-    const [departments, teams, people] = await Promise.all([
+  async org(@Req() req: AuthedRequest) {
+    const [departments, teams, people, visibility] = await Promise.all([
       listDepartments(this.db),
       listTeams(this.db),
       listPeople(this.db),
+      getVisibilityConfig(this.db),
     ]);
-    return { departments, teams, people };
+    const allowedTeams = req.authUser?.person
+      ? computeEffectiveAllowedTeams(req.authUser.person, visibility)
+      : null;
+    const scopedPeople =
+      allowedTeams === null
+        ? people
+        : filterPeopleByWorkspace(people, { allowedTeams });
+    return { departments, teams, people: scopedPeople };
   }
 
   @Roles('admin')
@@ -69,7 +78,16 @@ export class OrgController {
         ? body.level
         : existing.level;
     const nextTrack: Track =
-      body.track === 'Implement' || body.track === 'RD' ? body.track : existing.track;
+      body.track === 'Implement' ||
+      body.track === 'RD' ||
+      body.track === 'IMP' ||
+      body.track === 'RND' ||
+      body.track === 'QA' ||
+      body.track === 'UXBA' ||
+      body.track === 'SUP' ||
+      body.track === 'INFRA'
+        ? body.track
+        : existing.track;
 
     const saved = await upsertPerson(this.db, {
       ...existing,
@@ -140,6 +158,8 @@ export class OrgController {
   ): Promise<{
     logs: AuditLogDto[];
     items: AuditLogDto[];
+    result: AuditLogDto[];
+    count: number;
     total: number;
     page: number;
     pageSize: number;
@@ -214,6 +234,8 @@ export class OrgController {
     return {
       logs: items,
       items,
+      result: items,
+      count: total,
       total,
       page: safePage,
       pageSize: listQuery.pageSize,
@@ -222,37 +244,189 @@ export class OrgController {
 
   @Roles('admin')
   @Get('projects')
-  async listProjects(): Promise<{ projects: OpenProjectCatalogEntry[] }> {
+  async listProjects(
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('sort') sort?: string,
+    @Query('dir') dir?: string,
+    @Query('teamId') teamId?: string,
+    @Query('active') active?: string,
+  ) {
+    const listQuery = parseListQuery(
+      { q, page, pageSize, sort, dir, teamId, active },
+      { defaultSort: 'name', defaultDir: 'asc', defaultPageSize: 12 },
+    );
     const settings = await getSettings(this.db);
     const catalog = settings.openprojectProjectCatalog ?? [];
 
-    const counts = await this.db.query<{ project_key: string; count: string | number }>(
-      `SELECT 
+    const stats = await this.db.query<{
+      project_key: string;
+      total: string | number;
+      closed: string | number;
+      open_count: string | number;
+      closed_est: string | number;
+      total_est: string | number;
+      next_due: string | null;
+    }>(
+      `SELECT
          COALESCE(NULLIF(data->>'opProject', ''), NULLIF(data->>'project', ''), '') AS project_key,
-         COUNT(id) AS count
+         COUNT(id) AS total,
+         COUNT(id) FILTER (WHERE closed = true) AS closed,
+         COUNT(id) FILTER (WHERE closed = false) AS open_count,
+         COALESCE(SUM(CASE WHEN closed THEN COALESCE((data->>'estimateMd')::numeric, 0) ELSE 0 END), 0) AS closed_est,
+         COALESCE(SUM(COALESCE((data->>'estimateMd')::numeric, 0)), 0) AS total_est,
+         MIN(
+           CASE
+             WHEN closed = false THEN NULLIF(COALESCE(data->>'firstDueOn', data->>'dueOn'), '')
+             ELSE NULL
+           END
+         ) AS next_due
        FROM work_items
-       WHERE closed = false
-       GROUP BY 1`
+       GROUP BY 1`,
     );
 
-    const countMap = new Map<string, number>();
-    for (const row of counts) {
-      if (row.project_key) {
-        countMap.set(row.project_key, Number(row.count) || 0);
-      }
+    type ProjectAgg = {
+      total: number;
+      closed: number;
+      open: number;
+      closedEst: number;
+      totalEst: number;
+      nextDue: string | null;
+    };
+    const statsMap = new Map<string, ProjectAgg>();
+    for (const row of stats) {
+      if (!row.project_key) continue;
+      statsMap.set(row.project_key, {
+        total: Number(row.total) || 0,
+        closed: Number(row.closed) || 0,
+        open: Number(row.open_count) || 0,
+        closedEst: Number(row.closed_est) || 0,
+        totalEst: Number(row.total_est) || 0,
+        nextDue: row.next_due || null,
+      });
     }
 
-    const projectsWithStats: OpenProjectCatalogEntry[] = catalog.map((p) => {
-      const activeTicketsCount =
-        countMap.get(p.identifier) ?? countMap.get(String(p.id)) ?? 0;
+    const assignees = await this.db.query<{
+      project_key: string;
+      assignee_id: string;
+    }>(
+      `SELECT project_key, assignee_id FROM (
+         SELECT
+           COALESCE(NULLIF(data->>'opProject', ''), NULLIF(data->>'project', ''), '') AS project_key,
+           NULLIF(data->>'assigneeId', '') AS assignee_id,
+           ROW_NUMBER() OVER (
+             PARTITION BY COALESCE(NULLIF(data->>'opProject', ''), NULLIF(data->>'project', ''), '')
+             ORDER BY id
+           ) AS rn
+         FROM work_items
+         WHERE closed = false
+           AND NULLIF(data->>'assigneeId', '') IS NOT NULL
+       ) ranked
+       WHERE rn <= 5`,
+    );
+
+    const assigneeMap = new Map<string, string[]>();
+    for (const row of assignees) {
+      if (!row.project_key || !row.assignee_id) continue;
+      const list = assigneeMap.get(row.project_key) ?? [];
+      if (!list.includes(row.assignee_id)) {
+        list.push(row.assignee_id);
+      }
+      assigneeMap.set(row.project_key, list);
+    }
+
+    const resolveAgg = (p: OpenProjectCatalogEntry): ProjectAgg =>
+      statsMap.get(p.identifier) ??
+      statsMap.get(String(p.id)) ?? {
+        total: 0,
+        closed: 0,
+        open: 0,
+        closedEst: 0,
+        totalEst: 0,
+        nextDue: null,
+      };
+
+    let projectsWithStats: OpenProjectCatalogEntry[] = catalog.map((p) => {
+      const agg = resolveAgg(p);
+      const progressPercent =
+        agg.totalEst > 0
+          ? Math.round((agg.closedEst / agg.totalEst) * 100)
+          : agg.total > 0
+            ? Math.round((agg.closed / agg.total) * 100)
+            : 0;
+      const sampleAssigneeIds =
+        assigneeMap.get(p.identifier) ?? assigneeMap.get(String(p.id)) ?? [];
       return {
         ...p,
-        activeTicketsCount,
+        activeTicketsCount: agg.open,
+        totalTickets: agg.total,
+        closedTicketsCount: agg.closed,
+        progressPercent,
+        sampleAssigneeIds,
+        nextDueOn: agg.nextDue,
         assignedTeamIds: Array.isArray(p.assignedTeamIds) ? p.assignedTeamIds : [],
       };
     });
 
-    return { projects: projectsWithStats };
+    if (listQuery.active === 'active') {
+      projectsWithStats = projectsWithStats.filter((p) => p.active !== false);
+    } else if (listQuery.active === 'inactive') {
+      projectsWithStats = projectsWithStats.filter((p) => p.active === false);
+    }
+
+    if (listQuery.teamId) {
+      projectsWithStats = projectsWithStats.filter((p) =>
+        (p.assignedTeamIds ?? []).includes(listQuery.teamId!),
+      );
+    }
+
+    if (listQuery.q) {
+      const needle = listQuery.q.toLowerCase();
+      projectsWithStats = projectsWithStats.filter(
+        (p) =>
+          (p.identifier || '').toLowerCase().includes(needle) ||
+          (p.name || '').toLowerCase().includes(needle),
+      );
+    }
+
+    const sortField = listQuery.sort || 'name';
+    const allowedSort = new Set([
+      'name',
+      'identifier',
+      'active',
+      'activeTicketsCount',
+      'totalTickets',
+      'closedTicketsCount',
+      'progressPercent',
+      'nextDueOn',
+      'id',
+    ]);
+    const safeSort = allowedSort.has(sortField) ? sortField : 'name';
+    projectsWithStats = projectsWithStats
+      .slice()
+      .sort((a, b) => compareByField(a, b, safeSort, listQuery.dir));
+
+    // บังคับแบ่งหน้าเสมอ (ไม่คืนทั้งแคตตาล็อกแม้ client ไม่ส่ง page)
+    const pageResult = paginateItems(projectsWithStats, listQuery);
+    const activeCount = projectsWithStats.filter((p) => p.active !== false).length;
+    const openTickets = projectsWithStats.reduce((sum, p) => sum + (p.activeTicketsCount ?? 0), 0);
+    const unassignedTeams = projectsWithStats.filter(
+      (p) => !p.assignedTeamIds || p.assignedTeamIds.length === 0,
+    ).length;
+
+    return {
+      ...pageResult,
+      projects: pageResult.items,
+      result: pageResult.items,
+      count: pageResult.total,
+      summary: {
+        totalProjects: projectsWithStats.length,
+        activeProjects: activeCount,
+        totalActiveTickets: openTickets,
+        unassignedTeamsCount: unassignedTeams,
+      },
+    };
   }
 
   @Get('projects/:id')

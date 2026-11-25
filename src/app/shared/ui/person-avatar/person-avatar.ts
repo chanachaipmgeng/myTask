@@ -9,7 +9,37 @@ import { Person } from '../../../core/models';
 export type PersonAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 /** Session-level cache of user avatar lookups that returned 404 to prevent repeated requests */
+const SESSION_CACHE_KEY = 'manday_failed_avatars';
 const FAILED_AVATAR_USERS = new Set<string>();
+
+try {
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    const cached = window.sessionStorage.getItem(SESSION_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((k) => {
+          if (typeof k === 'string') FAILED_AVATAR_USERS.add(k);
+        });
+      }
+    }
+  }
+} catch {
+  // ignore
+}
+
+function recordFailedAvatar(keys: string[]): void {
+  for (const k of keys) {
+    if (k) FAILED_AVATAR_USERS.add(k);
+  }
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify([...FAILED_AVATAR_USERS]));
+    }
+  } catch {
+    // ignore
+  }
+}
 
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #2746b3 0%, #4f6ef7 100%)',
@@ -106,8 +136,15 @@ export class PersonAvatarComponent {
   }
 
   protected readonly isKnownFailed = computed(() => {
-    const key = this.lookupKey();
-    return Boolean(key && FAILED_AVATAR_USERS.has(key));
+    const pId = this.personId()?.trim();
+    if (pId && FAILED_AVATAR_USERS.has(pId)) return true;
+    const nm = this.name()?.trim();
+    if (nm && FAILED_AVATAR_USERS.has(nm)) return true;
+    const op = this.resolvedPerson()?.openprojectUserId;
+    if (op != null && (FAILED_AVATAR_USERS.has(String(op)) || FAILED_AVATAR_USERS.has(`op:${op}`))) return true;
+    const rawOp = /^op:(\d+)$/i.exec((pId || nm || '').trim());
+    if (rawOp && (FAILED_AVATAR_USERS.has(rawOp[1]) || FAILED_AVATAR_USERS.has(`op:${rawOp[1]}`))) return true;
+    return false;
   });
 
   protected readonly resolvedUrl = computed(() => {
@@ -133,7 +170,10 @@ export class PersonAvatarComponent {
       raw.includes('ยังไม่ระบุ') ||
       raw.includes('ยังไม่มีผู้รับ') ||
       raw.includes('ยังไม่มอบหมาย') ||
-      raw.toLowerCase() === 'unassigned'
+      raw.includes('ยังไม่กำหนด') ||
+      raw.includes('ไม่ระบุ') ||
+      raw.toLowerCase() === 'unassigned' ||
+      raw.toLowerCase() === 'none'
     );
   });
 
@@ -188,10 +228,22 @@ export class PersonAvatarComponent {
   }
 
   protected onImgError(): void {
-    const key = this.lookupKey();
-    if (key) {
-      FAILED_AVATAR_USERS.add(key);
+    const keys: string[] = [];
+    const pId = this.personId()?.trim();
+    if (pId) keys.push(pId);
+    const nm = this.name()?.trim();
+    if (nm) keys.push(nm);
+    const op = this.resolvedPerson()?.openprojectUserId;
+    if (op != null) {
+      keys.push(String(op));
+      keys.push(`op:${op}`);
     }
+    const rawOp = /^op:(\d+)$/i.exec((pId || nm || '').trim());
+    if (rawOp) {
+      keys.push(rawOp[1]);
+      keys.push(`op:${rawOp[1]}`);
+    }
+    recordFailedAvatar(keys);
     this.imgStage.set(2);
   }
 }

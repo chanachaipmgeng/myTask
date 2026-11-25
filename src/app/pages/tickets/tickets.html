@@ -1,8 +1,8 @@
-<section class="page flex flex-col gap-4">
+﻿<section class="page flex flex-col gap-4">
   <app-page-head
     [title]="(isMine() ? 'ตารางคะแนนและจัดการใบงานของฉัน' : 'ตารางคะแนนใบงานทีม') + (isMine() && activePerson() ? ' · ' + activePerson()!.nickname : '')"
     [description]="isMine()
-      ? 'ตรวจสอบที่มาของคะแนนรายใบงานของตัวเอง (On-time 40 · Accuracy 20 · Review 20 · DoD 20) พร้อมอัปเดตสถานะ เวลาใช้จริง แนบ MR หรือยื่นอุทธรณ์ได้ทันที'
+      ? 'ตรวจสอบที่มาของคะแนนรายใบงานของตัวเอง (ตรงเวลา 40 · ความแม่น 20 · รีวิว 20 · คุณภาพ 20) พร้อมอัปเดตสถานะ เวลาใช้จริง แนบ MR หรือขอทบทวนคะแนนได้ทันที'
       : 'คะแนนเต็ม 100 ตอนปิดใบ: สัปดาห์ 40/20/0, ความแม่น 20/10/0, รีวิว 20/10/0, reopen 20/10/0. REQ, BLK, ENV ให้คะแนนสัปดาห์และความแม่นเต็ม.'"
     [metrics]="isMine() ? [
       { label: 'ใบงานทั้งหมด', value: myTicketStats().total, unit: 'ใบ', hint: 'เปิด ' + myTicketStats().openCount + ' · ปิด ' + myTicketStats().closedCount },
@@ -13,14 +13,14 @@
   >
     <div actions class="flex flex-wrap items-center gap-2">
       @if (isMine()) {
-        <a ejs-button cssClass="e-primary" iconCss="e-icons e-chart" routerLink="/insights/ols">
-          วิเคราะห์ผลงานเชิงลึก (OLS)
+        <a ejs-button cssClass="e-primary" iconCss="e-icons e-chart" routerLink="/quality/ols">
+          วิเคราะห์รายคน
         </a>
         <a ejs-button cssClass="e-outline" iconCss="e-icons e-columns" routerLink="/work/board">
           เปิดบอร์ดงานของฉัน
         </a>
         <a ejs-button cssClass="e-outline" iconCss="e-icons e-edit" routerLink="/quality/disputes">
-          อุทธรณ์คะแนนของฉัน
+          ขอทบทวนคะแนนของฉัน
         </a>
       } @else {
         <a ejs-button cssClass="e-outline" routerLink="/work">เปิดกระดานงาน & แผน (/work)</a>
@@ -109,7 +109,7 @@
           <app-sf-dropdown [items]="yesNoOptions" [value]="closed()" (valueChange)="setChoice('closed', $event)" />
         </label>
         <label class="field">
-          <span>ผ่าน DoD</span>
+          <span>ผ่านเกณฑ์ส่งมอบ</span>
           <app-sf-dropdown [items]="yesNoOptions" [value]="dodPassed()" (valueChange)="setChoice('dodPassed', $event)" />
         </label>
         <label class="field">
@@ -209,7 +209,7 @@
           อัปเดตงาน
         </button>
         <button ejs-button cssClass="e-outline e-small" iconCss="e-icons e-warning" type="button" (click)="goToDispute(data.id)">
-          ยื่นอุทธรณ์
+          ขอทบทวนคะแนน
         </button>
       </div>
     </ng-template>
@@ -387,7 +387,7 @@
             type="button"
             (click)="closeSelfUpdate(); goToDispute(tid)"
           >
-            ยื่นอุทธรณ์ / ขอพักเวลาใบนี้
+            ขอทบทวนคะแนน / ขอพักเวลาใบนี้
           </button>
         }
         <div class="flex gap-2">

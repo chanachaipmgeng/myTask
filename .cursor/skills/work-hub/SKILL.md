@@ -11,11 +11,11 @@ description: >-
 
 ## โครง
 
-- Shell: `src/app/pages/work/work-shell.*` + `WorkHubFilter` (สัปดาห์ + ถังวัน + ค้นหา + `scope` mine|team + `assigneeId`) · **ทีม/โปรเจกต์/สายจาก `WorkspaceFilter`** (P21 ไม่ซ้ำใน shell)
-- Routes: `/work` (ทีม · `admin`/`lead` · `data.scope = 'team'`) และ `/me/work` (ของฉัน · ทุกสิทธิ์ · `data.scope = 'mine'`)
-- Children: `summary` | `timeline` | `backlog` | `board` | `list` | `queue` · แท็บ `queue` (คิวจ่ายงาน) / `handoff` มีเฉพาะฮับทีม (`admin`|`lead`) · `team-time` อยู่ฮับทีม · `/queue` redirect ไป `/work/queue` · ห้ามใส่ «คิวจ่ายงาน» บน Sidebar
-- โดเมน: `shared/domain/work-views.ts` → re-export `src/app/core/work-views.ts` · `filterWorkTickets` เทียบสายด้วย `normalizeTrack`
-- Hub คน: `/workspace/people` (Person Workspace) · การ์ดทีม `/org/teams` (ไม่ซ้ำบน sidebar)
+- Shell: `src/app/pages/work/work-shell.*` + `WorkHubFilter` (สัปดาห์ + ถังวัน + ค้นหา + `scope` mine|team + `assigneeId`) · **ทีม/โปรเจกต์/สายจาก `WorkspaceFilter`** · sync รวม `teamId` ว่าง · **ไม่** persist team/track ใน sessionStorage
+- Routes: `/work` (ทีม · `admin`/`lead` · `data.scope = 'team'`; member บังคับ mine) · Children: `summary` | `timeline` | `backlog` | `board` | `list` | `queue` | `handoff` | `team-time` · `/queue` redirect → `/work/queue`
+- Handoff: ฐานจาก `workspace.applyToTickets` + `computeHandoffSlaSummary` (ไม่ใช้ handoffReport ทั้ง org ดิบ)
+- Hub คน: `/workspace/people` แท็บ พนักงาน|ทีม · `/org/teams` redirect → `?view=teams` · skill เกี่ยว: `.cursor/skills/workspace-filter/SKILL.md`
+- Member Sidebar ป้าย `hub-work` = **งานของฉัน** · `matchNavId('/work/team-time')` = `hub-work`
 
 ## มุมมอง
 

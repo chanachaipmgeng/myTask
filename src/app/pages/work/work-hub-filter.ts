@@ -11,12 +11,9 @@ import { todayInBangkok } from '../../core/workflow';
 
 export type WorkHubScope = 'mine' | 'team';
 
+/** Persist เฉพาะมิติของหน้า hub — ทีม/สาย/โปรเจกต์มาจาก Global Filter */
 type PersistedHubFilter = {
-  track: WorkTrackFilter;
   query: string;
-  teamId: string;
-  opProject: string;
-  opType: string;
   dueBucket: DueBucket;
   weekOffset: number;
 };
@@ -38,6 +35,7 @@ export class WorkHubFilter {
   /** '' = ทุกชนิดใบงาน */
   readonly opType = signal('');
   readonly dueBucket = signal<DueBucket>('all');
+  readonly statusScope = signal<'unclosed' | 'closed' | 'all'>('unclosed');
   /** 0 = สัปดาห์นี้, -1 ย้อน, +1 ถัดไป */
   readonly weekOffset = signal(0);
 
@@ -55,12 +53,14 @@ export class WorkHubFilter {
     const opProject = this.opProject().trim();
     const opType = this.opType().trim();
     const dueBucket = this.dueBucket();
+    const statusScope = this.statusScope();
     return {
       track: this.track(),
       query: this.query(),
       today: todayInBangkok(),
       weekStart: this.weekStartIso(),
       dueBucket,
+      statusScope,
       ...(assigneeId ? { assigneeId } : {}),
       ...(teamId ? { teamId } : {}),
       ...(opProject ? { opProject } : {}),
@@ -76,30 +76,8 @@ export class WorkHubFilter {
         return;
       }
       const data = JSON.parse(raw) as Partial<PersistedHubFilter>;
-      if (
-        data.track === 'All' ||
-        data.track === 'Implement' ||
-        data.track === 'RD' ||
-        data.track === 'IMP' ||
-        data.track === 'RND' ||
-        data.track === 'QA' ||
-        data.track === 'UXBA' ||
-        data.track === 'SUP' ||
-        data.track === 'INFRA'
-      ) {
-        this.track.set(data.track);
-      }
       if (typeof data.query === 'string') {
         this.query.set(data.query);
-      }
-      if (typeof data.teamId === 'string') {
-        this.teamId.set(data.teamId);
-      }
-      if (typeof data.opProject === 'string') {
-        this.opProject.set(data.opProject);
-      }
-      if (typeof data.opType === 'string') {
-        this.opType.set(data.opType);
       }
       if (
         data.dueBucket === 'all' ||
@@ -121,11 +99,7 @@ export class WorkHubFilter {
 
   persist(): void {
     const payload: PersistedHubFilter = {
-      track: this.track(),
       query: this.query(),
-      teamId: this.teamId(),
-      opProject: this.opProject(),
-      opType: this.opType(),
       dueBucket: this.dueBucket(),
       weekOffset: this.weekOffset(),
     };
