@@ -80,6 +80,10 @@ export class IntegrationsController {
       projectCatalog: settings.openprojectProjectCatalog,
       typeCatalog: settings.openprojectTypeCatalog ?? [],
       statusCatalog: settings.openprojectStatusCatalog ?? [],
+      customFieldCatalog: settings.openprojectCustomFieldCatalog ?? [],
+      enumerationCatalog: settings.openprojectEnumerationCatalog ?? [],
+      groupCatalog: settings.openprojectGroupCatalog ?? [],
+      rosterGroupIds: settings.openprojectRosterGroupIds ?? [],
       hoursPerMd: settings.hoursPerMd,
       lastRuns: runs,
       unmappedUsers: unmapped.map((row) => ({
@@ -107,23 +111,36 @@ export class IntegrationsController {
       enabled?: boolean;
       mapping?: unknown;
       hoursPerMd?: number;
+      rosterGroupIds?: number[];
     },
     @Req() req: AuthedRequest,
   ) {
-    if (body.mapping !== undefined) {
-      const checked = validateMapping(body.mapping);
-      if (!checked.mapping) {
-        return { ok: false, errors: checked.errors };
-      }
+    if (
+      body.mapping !== undefined ||
+      typeof body.hoursPerMd === 'number' ||
+      body.rosterGroupIds !== undefined
+    ) {
       const settings = await getSettings(this.db);
-      settings.openprojectMapping = checked.mapping;
+      if (body.mapping !== undefined) {
+        const checked = validateMapping(body.mapping);
+        if (!checked.mapping) {
+          return { ok: false, errors: checked.errors };
+        }
+        settings.openprojectMapping = checked.mapping;
+      }
       if (typeof body.hoursPerMd === 'number') {
         settings.hoursPerMd = body.hoursPerMd;
       }
-      await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
-    } else if (typeof body.hoursPerMd === 'number') {
-      const settings = await getSettings(this.db);
-      settings.hoursPerMd = body.hoursPerMd;
+      if (body.rosterGroupIds !== undefined) {
+        settings.openprojectRosterGroupIds = [
+          ...new Set(
+            (Array.isArray(body.rosterGroupIds) ? body.rosterGroupIds : [])
+              .map((v) => Number(v))
+              .filter((n) => Number.isFinite(n) && n > 0)
+              .map((n) => Math.floor(n)),
+          ),
+        ];
+      }
       await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
     }
 
@@ -840,6 +857,15 @@ export class IntegrationsController {
     try {
       const fields = await client.discoverCustomFieldsFromSchemas(40);
       const suggested = autoMatchCustomFieldsFromSchema(fields);
+      const settings = await getSettings(this.db);
+      settings.openprojectCustomFieldCatalog = fields.map((f) => ({
+        key: f.key,
+        name: f.name,
+        type: f.type,
+        ...(f.sampleWpType ? { sampleWpType: f.sampleWpType } : {}),
+        ...(f.options?.length ? { options: f.options } : {}),
+      }));
+      await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
       await this.db.audit(req.authUser?.person.id ?? null, 'openproject.discover_fields', 'openproject', {
         fieldCount: fields.length,
         suggested,
@@ -940,14 +966,20 @@ export class IntegrationsController {
         projects: [],
         statuses: [],
         types: [],
+        groups: [],
+        enumerations: [],
+        customFields: [],
         message: 'ยังไม่ได้ตั้งค่า OpenProject',
       };
     }
     try {
-      const [projects, statuses, types] = await Promise.all([
+      const [projects, statuses, types, groups, enumerations, customFields] = await Promise.all([
         client.listProjects(),
         client.listStatuses(),
         client.listTypes(),
+        client.listGroups().catch(() => []),
+        client.listEnumerations().catch(() => []),
+        client.discoverCustomFieldsFromSchemas(40).catch(() => []),
       ]);
       const settings = await getSettings(this.db);
       const existingByIdentifier = new Map(
@@ -988,6 +1020,39 @@ export class IntegrationsController {
           isClosed: Boolean(s.isClosed),
           ...(s.color ? { color: s.color } : {}),
         }));
+      settings.openprojectEnumerationCatalog = enumerations
+        .filter((e) => e.name?.trim())
+        .map((e) => ({
+          id: e.id,
+          name: (e.name ?? '').trim(),
+          type: e._type || 'Enumeration',
+          active: e.active !== false,
+          ...(e.color ? { color: e.color } : {}),
+        }));
+      settings.openprojectCustomFieldCatalog = customFields.map((f) => ({
+        key: f.key,
+        name: f.name,
+        type: f.type,
+        ...(f.sampleWpType ? { sampleWpType: f.sampleWpType } : {}),
+        ...(f.options?.length ? { options: f.options } : {}),
+      }));
+
+      const groupCatalog: { id: number; name: string; memberCount?: number }[] = [];
+      for (const g of groups) {
+        let memberCount: number | undefined;
+        try {
+          memberCount = (await client.listGroupMemberUserIds(g.id)).length;
+        } catch {
+          memberCount = undefined;
+        }
+        groupCatalog.push({
+          id: g.id,
+          name: (g.name ?? `Group ${g.id}`).trim(),
+          ...(memberCount != null ? { memberCount } : {}),
+        });
+      }
+      settings.openprojectGroupCatalog = groupCatalog;
+
       await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
       return {
         source: 'live' as const,
@@ -1007,6 +1072,10 @@ export class IntegrationsController {
           name: t.name ?? '',
           isMilestone: t.isMilestone ?? false,
         })),
+        groups: groupCatalog,
+        enumerations: settings.openprojectEnumerationCatalog,
+        customFields: settings.openprojectCustomFieldCatalog,
+        rosterGroupIds: settings.openprojectRosterGroupIds ?? [],
         teamStaging: this.config.openproject.teamStaging,
       };
     } catch (err) {
@@ -1015,9 +1084,181 @@ export class IntegrationsController {
         projects: [],
         statuses: [],
         types: [],
+        groups: [],
+        enumerations: [],
+        customFields: [],
         message: err instanceof Error ? err.message : String(err),
       };
     }
+  }
+
+  /** รายงานเทียบสด: users/groups · types/status · CF · enumerations */
+  @Get('integrations/openproject/sync-audit')
+  @Roles('admin', 'lead')
+  async openProjectSyncAudit() {
+    const client = await this.syncService.getClient();
+    if (!client) {
+      return { source: 'offline' as const, message: 'ยังไม่ได้ตั้งค่า OpenProject' };
+    }
+    const settings = await getSettings(this.db);
+    const people = await listPeople(this.db, false);
+    const rosterGroupIds = settings.openprojectRosterGroupIds ?? [];
+    const mapping = settings.openprojectMapping;
+
+    const opUsers: { id: number; name: string; locked: boolean }[] = [];
+    try {
+      for await (const user of client.paginateUsers()) {
+        opUsers.push({
+          id: user.id,
+          name: user.name || user.login || `User ${user.id}`,
+          locked: user.status === 'locked',
+        });
+      }
+    } catch (err) {
+      return {
+        source: 'error' as const,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
+
+    const groups = await client.listGroups().catch(() => []);
+    const groupMembers: {
+      id: number;
+      name: string;
+      memberIds: number[];
+    }[] = [];
+    const rosterMemberIds = new Set<number>();
+    for (const g of groups) {
+      const memberIds = await client.listGroupMemberUserIds(g.id).catch(() => [] as number[]);
+      groupMembers.push({
+        id: g.id,
+        name: (g.name ?? `Group ${g.id}`).trim(),
+        memberIds,
+      });
+      if (rosterGroupIds.includes(g.id)) {
+        for (const id of memberIds) rosterMemberIds.add(id);
+      }
+    }
+
+    const peopleByOp = new Map(
+      people.filter((p) => p.openprojectUserId != null).map((p) => [p.openprojectUserId!, p]),
+    );
+    const activePeople = people.filter((p) => p.active);
+    const activeNotInRoster =
+      rosterGroupIds.length === 0
+        ? []
+        : activePeople
+            .filter((p) => p.openprojectUserId == null || !rosterMemberIds.has(p.openprojectUserId))
+            .map((p) => ({
+              id: p.id,
+              nickname: p.nickname,
+              openprojectUserId: p.openprojectUserId ?? null,
+            }));
+    const inRosterMissingOrInactive =
+      rosterGroupIds.length === 0
+        ? []
+        : [...rosterMemberIds]
+            .map((opId) => {
+              const person = peopleByOp.get(opId);
+              const opUser = opUsers.find((u) => u.id === opId);
+              if (person?.active) return null;
+              return {
+                opUserId: opId,
+                opName: opUser?.name ?? null,
+                personId: person?.id ?? null,
+                personActive: person?.active ?? false,
+                locked: opUser?.locked ?? false,
+              };
+            })
+            .filter((row): row is NonNullable<typeof row> => row != null);
+
+    const [liveTypes, liveStatuses, liveEnums, liveCfs] = await Promise.all([
+      client.listTypes().catch(() => []),
+      client.listStatuses().catch(() => []),
+      client.listEnumerations().catch(() => []),
+      client.discoverCustomFieldsFromSchemas(40).catch(() => []),
+    ]);
+
+    const statusMapKeys = new Set(
+      Object.keys(mapping.statusMap ?? {}).map((k) => k.trim().toLowerCase()),
+    );
+    const typeMapKeys = new Set(Object.keys(mapping.typeMap ?? {}).map((k) => k.trim().toLowerCase()));
+    const unmappedStatuses = liveStatuses
+      .filter((s) => s.name?.trim() && !statusMapKeys.has(s.name.trim().toLowerCase()))
+      .map((s) => ({ id: s.id, name: s.name ?? '' }));
+    const unmappedTypes = liveTypes
+      .filter((t) => t.name?.trim() && !typeMapKeys.has(t.name.trim().toLowerCase()))
+      .map((t) => ({ id: t.id, name: t.name ?? '' }));
+
+    const mappedCfEntries = Object.entries(mapping.customFields ?? {}).filter(
+      ([, v]) => typeof v === 'string' && v.trim(),
+    ) as [string, string][];
+    const schemaKeys = new Set(liveCfs.map((f) => f.key));
+    const mappedMissingInSchema = mappedCfEntries
+      .filter(([, key]) => !schemaKeys.has(key))
+      .map(([semantic, key]) => ({ semantic, key }));
+    const importantKeys = [
+      'customField43',
+      'customField44',
+      'customField45',
+      'customField46',
+      'customField163',
+      'customField185',
+      'customField219',
+    ];
+    const importantCfStatus = importantKeys.map((key) => ({
+      key,
+      foundInSchema: schemaKeys.has(key),
+      schemaName: liveCfs.find((f) => f.key === key)?.name ?? null,
+    }));
+
+    return {
+      source: 'live' as const,
+      teamStaging: this.config.openproject.teamStaging,
+      rosterGroupIds,
+      users: {
+        opTotal: opUsers.length,
+        opLocked: opUsers.filter((u) => u.locked).length,
+        peopleTotal: people.length,
+        peopleActive: activePeople.length,
+        peopleLinked: peopleByOp.size,
+        activeNotInRoster,
+        inRosterMissingOrInactive,
+      },
+      groups: groupMembers.map((g) => ({
+        id: g.id,
+        name: g.name,
+        memberCount: g.memberIds.length,
+        selected: rosterGroupIds.includes(g.id),
+      })),
+      types: {
+        liveCount: liveTypes.length,
+        catalogCount: settings.openprojectTypeCatalog?.length ?? 0,
+        unmapped: unmappedTypes,
+      },
+      statuses: {
+        liveCount: liveStatuses.length,
+        catalogCount: settings.openprojectStatusCatalog?.length ?? 0,
+        unmapped: unmappedStatuses,
+      },
+      customFields: {
+        discoveredCount: liveCfs.length,
+        mappedCount: mappedCfEntries.length,
+        mappedMissingInSchema,
+        importantCfStatus,
+        fields: liveCfs,
+      },
+      enumerations: {
+        liveCount: liveEnums.length,
+        catalogCount: settings.openprojectEnumerationCatalog?.length ?? 0,
+        items: liveEnums.map((e) => ({
+          id: e.id,
+          name: e.name ?? '',
+          type: e._type || 'Enumeration',
+          active: e.active !== false,
+        })),
+      },
+    };
   }
 
   /** สมาชิกต่อโปรเจกต์จาก OpenProject (เฟส C) — อ่านอย่างเดียว */
@@ -1181,6 +1422,125 @@ export class IntegrationsController {
       hoursPerDayTarget: hoursPerMd,
       writeback: this.config.openproject.writeback,
       rows,
+      errors,
+    };
+  }
+
+  /**
+   * รายการ time entry แบบแถว (คน/ช่วงวัน) — ต่างจาก team-time ที่เป็น matrix
+   * GET /api/time-entries?personId=&from=&to=&page=&pageSize=
+   */
+  @Get('time-entries')
+  @Roles('admin', 'lead', 'member')
+  async listTimeEntries(
+    @Req() req: AuthedRequest,
+    @Query('personId') personIdRaw?: string,
+    @Query('from') fromRaw?: string,
+    @Query('to') toRaw?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    const { from, to } = resolveWeekRange(fromRaw, toRaw);
+    const people = await listPeople(this.db, true);
+    const role = req.authUser?.access ?? 'member';
+    const selfId = req.authUser?.person.id;
+    const personId = (personIdRaw ?? '').trim() || (role === 'member' ? selfId ?? '' : '');
+    if (role === 'member' && personId && personId !== selfId) {
+      return {
+        source: 'offline' as const,
+        from,
+        to,
+        items: [],
+        result: [],
+        count: 0,
+        total: 0,
+        page: 1,
+        pageSize: 25,
+        message: 'สมาชิกดูได้เฉพาะรายการของตัวเอง',
+      };
+    }
+
+    const person = personId ? people.find((p) => p.id === personId) : undefined;
+    const pageNum = Math.max(1, Number(page) || 1);
+    const size = Math.min(100, Math.max(1, Number(pageSize) || 25));
+
+    type TimeEntryRow = {
+      id: number | string;
+      personId: string;
+      nickname: string;
+      spentOn: string;
+      hours: number;
+      ticketId: string | null;
+      opWorkPackageId: number | null;
+      comment: string;
+    };
+
+    const items: TimeEntryRow[] = [];
+    let source: 'live' | 'offline' = 'offline';
+    const errors: string[] = [];
+    const client = await this.syncService.getClient();
+    const opUserId = person?.openprojectUserId ?? null;
+
+    if (client && (opUserId != null || !personId)) {
+      source = 'live';
+      try {
+        const tickets = await listWorkItems(this.db);
+        const byOpId = new Map(
+          tickets
+            .filter((t) => typeof t.opId === 'number')
+            .map((t) => [t.opId as number, t.id]),
+        );
+        for await (const entry of client.paginateTimeEntries({
+          spentFrom: from,
+          spentTo: to,
+          userId: opUserId,
+        })) {
+          const hours = isoDurationToHours(entry.hours) || 0;
+          const wpHref = entry._links?.workPackage?.href ?? '';
+          const wpMatch = /\/work_packages\/(\d+)/.exec(wpHref);
+          const opWpId = wpMatch ? Number(wpMatch[1]) : null;
+          const spentOn = String(entry.spentOn ?? '').slice(0, 10);
+          const userHref = entry._links?.user?.href ?? '';
+          const userMatch = /\/users\/(\d+)/.exec(userHref);
+          const entryUserId = userMatch ? Number(userMatch[1]) : null;
+          const matchedPerson =
+            people.find((p) => p.openprojectUserId === entryUserId) ?? person ?? null;
+          if (personId && matchedPerson && matchedPerson.id !== personId) continue;
+          items.push({
+            id: entry.id ?? `${spentOn}-${items.length}`,
+            personId: matchedPerson?.id ?? personId ?? '',
+            nickname: matchedPerson?.nickname ?? '',
+            spentOn,
+            hours: Math.round(hours * 100) / 100,
+            ticketId: opWpId != null ? byOpId.get(opWpId) ?? null : null,
+            opWorkPackageId: opWpId,
+            comment: timeEntryComment(entry.comment),
+          });
+        }
+      } catch (err) {
+        errors.push(err instanceof Error ? err.message : String(err));
+        source = 'offline';
+      }
+    }
+
+    items.sort((a, b) => b.spentOn.localeCompare(a.spentOn) || b.hours - a.hours);
+    const total = items.length;
+    const pageCount = Math.max(1, Math.ceil(total / size));
+    const safePage = Math.min(pageNum, pageCount);
+    const offset = (safePage - 1) * size;
+    const pageItems = items.slice(offset, offset + size);
+
+    return {
+      source,
+      from,
+      to,
+      personId: personId || null,
+      items: pageItems,
+      result: pageItems,
+      count: total,
+      total,
+      page: safePage,
+      pageSize: size,
       errors,
     };
   }
@@ -1406,6 +1766,16 @@ function normalizeDate(raw: string | Date | null | undefined): string {
   }
   const s = String(raw).trim();
   return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : '';
+}
+
+function timeEntryComment(
+  comment: { raw?: string; html?: string } | string | null | undefined,
+): string {
+  if (!comment) return '';
+  if (typeof comment === 'string') return comment.trim();
+  const raw = comment.raw?.trim();
+  if (raw) return raw;
+  return (comment.html ?? '').replace(/<[^>]+>/g, '').trim();
 }
 
 function resolveWeekRange(fromRaw?: string, toRaw?: string): { from: string; to: string } {

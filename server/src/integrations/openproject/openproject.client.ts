@@ -104,6 +104,32 @@ export interface OpMembership {
   };
 }
 
+export interface OpGroup {
+  id: number;
+  name?: string;
+  _links?: {
+    self?: { href?: string };
+    memberships?: { href?: string | null };
+    members?: { href?: string | null; title?: string }[] | { href?: string | null };
+  };
+  _embedded?: {
+    members?: OpUser[];
+    elements?: OpUser[];
+  };
+}
+
+export interface OpEnumeration {
+  id: number;
+  name?: string;
+  active?: boolean;
+  /** เช่น Priority, TimeEntryActivity, DocumentCategory */
+  _type?: string;
+  color?: string;
+  _links?: {
+    self?: { href?: string };
+  };
+}
+
 export class OpenProjectClient {
   constructor(
     private readonly baseUrl: string,
@@ -356,6 +382,134 @@ export class OpenProjectClient {
     return data._embedded?.elements ?? [];
   }
 
+  async listGroups(params?: { pageSize?: number }): Promise<OpGroup[]> {
+    const groups: OpGroup[] = [];
+    const pageSize = params?.pageSize ?? 100;
+    let offset = 1;
+    for (;;) {
+      const query = new URLSearchParams({ pageSize: String(pageSize), offset: String(offset) });
+      const page = await this.get<OpCollection<OpGroup>>(`/api/v3/groups?${query.toString()}`);
+      const elements = page._embedded?.elements ?? [];
+      groups.push(...elements);
+      if (elements.length < pageSize) break;
+      offset += 1;
+    }
+    return groups;
+  }
+
+  async getGroup(groupId: number): Promise<OpGroup | null> {
+    try {
+      return await this.get<OpGroup>(`/api/v3/groups/${groupId}`);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * ดึง user id สมาชิกในกลุ่ม — จาก _embedded.members, _links.members หรือ memberships ของกลุ่ม
+   */
+  async listGroupMemberUserIds(groupId: number): Promise<number[]> {
+    const ids = new Set<number>();
+
+    const collectFromGroup = (group: OpGroup | null | undefined) => {
+      if (!group) return;
+      for (const member of group._embedded?.members ?? group._embedded?.elements ?? []) {
+        if (typeof member?.id === 'number') ids.add(member.id);
+      }
+      const memberLinks = group._links?.members;
+      if (Array.isArray(memberLinks)) {
+        for (const link of memberLinks) {
+          const id = idFromHref(link?.href);
+          if (id != null) ids.add(id);
+        }
+      }
+    };
+
+    collectFromGroup(await this.getGroup(groupId));
+    if (ids.size === 0) {
+      try {
+        collectFromGroup(
+          await this.get<OpGroup>(`/api/v3/groups/${groupId}?select=id,name,members,_links,_embedded`),
+        );
+      } catch {
+        // ignore select variants
+      }
+    }
+
+    if (ids.size === 0) {
+      try {
+        const page = await this.get<OpCollection<OpMembership>>(
+          `/api/v3/memberships?pageSize=200&offset=1&filters=${encodeURIComponent(
+            JSON.stringify([{ principal: { operator: '=', values: [`/api/v3/groups/${groupId}`] } }]),
+          )}`,
+        );
+        for (const m of page._embedded?.elements ?? []) {
+          // เมื่อ filter ด้วย group เป็น principal — สมาชิกจริงอาจอยู่ใน embedded ของ membership อื่น
+          // บาง instance คืน membership ของกลุ่มในโปรเจกต์; ดึง user จาก roles ไม่ได้ — ข้าม
+          void m;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // OpenProject มาตรฐาน: GET group มี members เป็น array ของ user links
+    if (ids.size === 0) {
+      try {
+        const raw = await this.get<{
+          id?: number;
+          members?: { href?: string; title?: string }[];
+          _links?: OpGroup['_links'];
+          _embedded?: OpGroup['_embedded'];
+        }>(`/api/v3/groups/${groupId}`);
+        if (Array.isArray(raw.members)) {
+          for (const link of raw.members) {
+            const id = idFromHref(link?.href);
+            if (id != null) ids.add(id);
+          }
+        }
+        collectFromGroup(raw as OpGroup);
+      } catch {
+        // ignore
+      }
+    }
+
+    return [...ids];
+  }
+
+  /** รวม Priority + TimeEntryActivity + /enumerations (ถ้ามี) */
+  async listEnumerations(): Promise<OpEnumeration[]> {
+    const out: OpEnumeration[] = [];
+    const seen = new Set<number>();
+
+    const pushAll = (items: OpEnumeration[], fallbackType: string) => {
+      for (const item of items) {
+        if (typeof item?.id !== 'number' || seen.has(item.id)) continue;
+        seen.add(item.id);
+        out.push({
+          ...item,
+          _type: item._type || fallbackType,
+          name: item.name ?? `Enumeration ${item.id}`,
+          active: item.active !== false,
+        });
+      }
+    };
+
+    for (const path of [
+      { href: '/api/v3/enumerations?pageSize=200', type: 'Enumeration' },
+      { href: '/api/v3/priorities?pageSize=200', type: 'Priority' },
+      { href: '/api/v3/time_entries/activities?pageSize=200', type: 'TimeEntryActivity' },
+    ]) {
+      try {
+        const page = await this.get<OpCollection<OpEnumeration>>(path.href);
+        pushAll(page._embedded?.elements ?? [], path.type);
+      } catch {
+        // endpoint may not exist on older OP — skip
+      }
+    }
+    return out;
+  }
+
   /**
    * Scans recent work package schemas on OpenProject API v3 to discover all customField* keys, labels, and data types.
    */
@@ -376,7 +530,21 @@ export class OpenProjectClient {
       if (!href || seenSchemas.has(href)) continue;
       seenSchemas.add(href);
       try {
-        const schemaObj = await this.get<Record<string, { name?: string; type?: string }>>(href);
+        const schemaObj = await this.get<
+          Record<
+            string,
+            {
+              name?: string;
+              type?: string;
+              _links?: {
+                allowedValues?:
+                  | { href?: string | null; title?: string }[]
+                  | { href?: string | null };
+              };
+              allowedValues?: { id?: number; name?: string; value?: string; title?: string }[];
+            }
+          >
+        >(href);
         const typeLink = wp._links?.['type'];
         const sampleWpType = (Array.isArray(typeLink) ? typeLink[0]?.title : typeLink?.title) ?? undefined;
         for (const [key, meta] of Object.entries(schemaObj ?? {})) {
@@ -384,11 +552,35 @@ export class OpenProjectClient {
           const name = String(meta?.name ?? key).trim();
           // Skip visual separator dummy fields like "--------------"
           if (/^[-_=]{3,}$/.test(name)) continue;
+          const options: { id?: number; name: string }[] = [];
+          if (Array.isArray(meta.allowedValues)) {
+            for (const opt of meta.allowedValues) {
+              const label = String(opt?.name ?? opt?.title ?? opt?.value ?? '').trim();
+              if (!label) continue;
+              options.push({
+                ...(typeof opt.id === 'number' ? { id: opt.id } : {}),
+                name: label,
+              });
+            }
+          }
+          const allowedLink = meta._links?.allowedValues;
+          if (Array.isArray(allowedLink) && options.length === 0) {
+            for (const link of allowedLink) {
+              const label = String(link?.title ?? '').trim();
+              const id = idFromHref(link?.href);
+              if (!label && id == null) continue;
+              options.push({
+                ...(id != null ? { id } : {}),
+                name: label || `Option ${id}`,
+              });
+            }
+          }
           discovered.set(key, {
             key,
             name,
             type: String(meta?.type ?? 'String'),
             sampleWpType,
+            ...(options.length ? { options } : {}),
           });
         }
       } catch {

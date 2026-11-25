@@ -48,6 +48,10 @@ export function defaultSettings(): AppSettings {
     openprojectProjectCatalog: [],
     openprojectTypeCatalog: [],
     openprojectStatusCatalog: [],
+    openprojectCustomFieldCatalog: [],
+    openprojectEnumerationCatalog: [],
+    openprojectGroupCatalog: [],
+    openprojectRosterGroupIds: [],
     scorecardCycles: defaultCycleSettings(),
   };
 }
@@ -164,6 +168,94 @@ export function mergeSettings(raw: Partial<AppSettings> | null | undefined): App
           })
           .filter((r) => r.name.length > 0)
       : base.openprojectStatusCatalog,
+    openprojectCustomFieldCatalog: Array.isArray(raw.openprojectCustomFieldCatalog)
+      ? raw.openprojectCustomFieldCatalog
+          .filter(
+            (row) =>
+              row &&
+              typeof row === 'object' &&
+              typeof (row as { key?: unknown }).key === 'string',
+          )
+          .map((row) => {
+            const r = row as {
+              key: string;
+              name?: string;
+              type?: string;
+              sampleWpType?: string;
+              options?: { id?: number; name: string }[];
+            };
+            return {
+              key: r.key.trim(),
+              name: (r.name ?? r.key).trim(),
+              type: String(r.type ?? 'String'),
+              ...(r.sampleWpType ? { sampleWpType: String(r.sampleWpType) } : {}),
+              ...(Array.isArray(r.options)
+                ? {
+                    options: r.options
+                      .filter((o) => o && typeof o.name === 'string' && o.name.trim())
+                      .map((o) => ({
+                        ...(typeof o.id === 'number' ? { id: o.id } : {}),
+                        name: o.name.trim(),
+                      })),
+                  }
+                : {}),
+            };
+          })
+          .filter((r) => /^customField\d+$/.test(r.key))
+      : base.openprojectCustomFieldCatalog,
+    openprojectEnumerationCatalog: Array.isArray(raw.openprojectEnumerationCatalog)
+      ? raw.openprojectEnumerationCatalog
+          .filter(
+            (row) =>
+              row &&
+              typeof row === 'object' &&
+              typeof (row as { name?: unknown }).name === 'string',
+          )
+          .map((row) => {
+            const r = row as {
+              id?: number;
+              name: string;
+              type?: string;
+              active?: boolean;
+              color?: string;
+            };
+            return {
+              id: typeof r.id === 'number' ? r.id : 0,
+              name: r.name.trim(),
+              type: String(r.type ?? 'Enumeration'),
+              active: r.active !== false,
+              ...(r.color ? { color: String(r.color) } : {}),
+            };
+          })
+          .filter((r) => r.name.length > 0)
+      : base.openprojectEnumerationCatalog,
+    openprojectGroupCatalog: Array.isArray(raw.openprojectGroupCatalog)
+      ? raw.openprojectGroupCatalog
+          .filter(
+            (row) =>
+              row &&
+              typeof row === 'object' &&
+              typeof (row as { id?: unknown }).id === 'number',
+          )
+          .map((row) => {
+            const r = row as { id: number; name?: string; memberCount?: number };
+            return {
+              id: r.id,
+              name: String(r.name ?? `Group ${r.id}`).trim(),
+              ...(typeof r.memberCount === 'number' ? { memberCount: r.memberCount } : {}),
+            };
+          })
+      : base.openprojectGroupCatalog,
+    openprojectRosterGroupIds: Array.isArray(raw.openprojectRosterGroupIds)
+      ? [
+          ...new Set(
+            raw.openprojectRosterGroupIds
+              .map((v) => Number(v))
+              .filter((n) => Number.isFinite(n) && n > 0)
+              .map((n) => Math.floor(n)),
+          ),
+        ]
+      : base.openprojectRosterGroupIds,
     scorecardCycles: (() => {
       const normalized = normalizeCycleSettings(
         (raw as { scorecardCycles?: Parameters<typeof normalizeCycleSettings>[0] }).scorecardCycles,

@@ -4,7 +4,9 @@ import {
   ApiClient,
   DiscoveredOpCustomFieldDto,
   GitLabIntegration,
+  OpenProjectGroupCatalogEntry,
   OpenProjectIntegration,
+  OpenProjectSyncAudit,
   TeamsIntegration,
 } from '../../core/api-client';
 import { canEditAdmin } from '../../core/admin-settings';
@@ -29,6 +31,7 @@ import {
   SfGridOptions,
   listGridOptions,
   SfMessageComponent,
+  SfMultiSelectComponent,
   SfNumberComponent,
   SfTabItem,
   SfTabsComponent,
@@ -111,6 +114,7 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
     SfDropdownComponent,
     SfGridComponent,
     SfMessageComponent,
+    SfMultiSelectComponent,
     SfNumberComponent,
     SfTabsComponent,
     SfTextBoxComponent,
@@ -146,6 +150,10 @@ export class IntegrationsPage {
   protected readonly projectCatalog = signal<
     { id: number; identifier: string; name: string; active: boolean }[]
   >([]);
+  protected readonly groupCatalog = signal<OpenProjectGroupCatalogEntry[]>([]);
+  protected readonly rosterGroupIds = signal<number[]>([]);
+  protected readonly syncAudit = signal<OpenProjectSyncAudit | null>(null);
+  protected readonly auditLoading = signal(false);
   protected readonly statusMapText = signal('');
   protected readonly typeMapText = signal('');
   protected readonly newStatusKey = signal('');
@@ -153,6 +161,17 @@ export class IntegrationsPage {
   protected readonly customFields = signal<Record<CustomFieldKey, string>>(emptyCustomFields());
   protected readonly discoveredFields = signal<DiscoveredOpCustomFieldDto[]>([]);
   protected readonly useManualFieldInput = signal(false);
+
+  protected readonly groupSelectOptions = computed(() =>
+    this.groupCatalog().map((g) => ({
+      text: `${g.name} (#${g.id}${g.memberCount != null ? ` · ${g.memberCount} คน` : ''})`,
+      value: String(g.id),
+    })),
+  );
+
+  protected readonly rosterGroupIdStrings = computed(() =>
+    this.rosterGroupIds().map((id) => String(id)),
+  );
 
   protected readonly slaCustomFieldRows: { key: CustomFieldKey; label: string; hint: string }[] = [
     { key: 'receiptDate', label: 'Receipt Date (วันรับเรื่อง)', hint: 'เช่น customField43' },
@@ -318,6 +337,11 @@ export class IntegrationsPage {
       this.hoursPerMd.set(info.hoursPerMd);
       this.teamStaging.set(info.teamStaging ?? 'all');
       this.projectCatalog.set(info.projectCatalog ?? []);
+      this.groupCatalog.set(info.groupCatalog ?? []);
+      this.rosterGroupIds.set(info.rosterGroupIds ?? []);
+      if (info.customFieldCatalog?.length) {
+        this.discoveredFields.set(info.customFieldCatalog);
+      }
       const mappedProjects = Array.isArray(info.mapping['projects'])
         ? (info.mapping['projects'] as string[])
         : [];
@@ -481,6 +505,7 @@ export class IntegrationsPage {
         token: this.token().trim() || undefined,
         enabled: this.enabled(),
         hoursPerMd: this.hoursPerMd(),
+        rosterGroupIds: this.rosterGroupIds(),
         mapping,
       });
       if (result.errors?.length) {
@@ -526,7 +551,11 @@ export class IntegrationsPage {
       const result = await this.api.syncOpenProjectUsers();
       await this.scorecard.reloadFromApi();
       await this.reload();
-      const text = `ซิงค์พนักงาน MyProject สำเร็จ · ทั้งหมด ${result.total} คน · เพิ่มใหม่ ${result.created} คน · อัปเดต/เชื่อมโยง ${result.linked + result.updated} คน`;
+      const rosterNote =
+        result.rosterGroupIds && result.rosterGroupIds.length
+          ? ` · ในกลุ่ม roster ${result.inGroup ?? 0} คน · เปิด ${result.activated ?? 0} · ปิด ${result.deactivated ?? 0}`
+          : '';
+      const text = `ซิงค์พนักงาน MyProject สำเร็จ · ทั้งหมด ${result.total} คน · เพิ่มใหม่ ${result.created} คน · อัปเดต/เชื่อมโยง ${result.linked + result.updated} คน${rosterNote}`;
       this.message.set(text);
       this.notice.success(text);
       if (result.errors && result.errors.length) {
@@ -692,11 +721,15 @@ export class IntegrationsPage {
           active: p.active,
         })),
       );
+      if (res.groups?.length) this.groupCatalog.set(res.groups);
+      if (res.rosterGroupIds) this.rosterGroupIds.set(res.rosterGroupIds);
+      if (res.customFields?.length) this.discoveredFields.set(res.customFields);
       const statusHints = res.statuses.slice(0, 12).map((s) => s.name).join(', ');
       this.discoveryHint.set(
         `พบโปรเจกต์ ${res.projects.length} · สถานะ ${res.statuses.length} · ประเภท ${res.types.length}` +
+          ` · กลุ่ม ${res.groups?.length ?? 0} · Enum ${res.enumerations?.length ?? 0} · CF ${res.customFields?.length ?? 0}` +
           (statusHints ? ` · ตัวอย่างสถานะ: ${statusHints}` : '') +
-          ' · catalog ถูกบันทึกแล้ว — เลือก identifier ด้านล่างแล้วกดบันทึก',
+          ' · catalog ถูกบันทึกแล้ว — เลือก identifier / Groups ด้านล่างแล้วกดบันทึก',
       );
       this.notice.success(this.discoveryHint(), 'ดึงรายการ myProject แล้ว');
     } catch (err) {
@@ -715,6 +748,42 @@ export class IntegrationsPage {
 
   protected clearSyncProjects(): void {
     this.projectsText.set('');
+  }
+
+  protected onRosterGroupsChange(value: unknown): void {
+    const raw = Array.isArray(value) ? value : [];
+    this.rosterGroupIds.set(
+      raw.map((v) => Number(v)).filter((n) => Number.isFinite(n) && n > 0),
+    );
+  }
+
+  protected async runSyncAudit(): Promise<void> {
+    this.auditLoading.set(true);
+    try {
+      const audit = await this.api.getOpenProjectSyncAudit();
+      this.syncAudit.set(audit);
+      if (audit.source !== 'live') {
+        this.notice.warning(audit.message || 'ตรวจซิงก์ไม่สำเร็จ');
+        return;
+      }
+      if (audit.groups?.length) {
+        this.groupCatalog.set(
+          audit.groups.map((g) => ({
+            id: g.id,
+            name: g.name,
+            memberCount: g.memberCount,
+          })),
+        );
+      }
+      this.notice.success(
+        `Users OP ${audit.users?.opTotal ?? 0} · Active คนในระบบ ${audit.users?.peopleActive ?? 0} · Types unmapped ${audit.types?.unmapped.length ?? 0} · Status unmapped ${audit.statuses?.unmapped.length ?? 0}`,
+        'รายงานเทียบซิงก์ myProject',
+      );
+    } catch (err) {
+      this.notice.error(err instanceof Error ? err.message : String(err), 'ตรวจซิงก์ไม่สำเร็จ');
+    } finally {
+      this.auditLoading.set(false);
+    }
   }
 
   protected async discoverGitLabProjects(): Promise<void> {

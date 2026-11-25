@@ -45,6 +45,28 @@ export interface OpenProjectStatusCatalogEntry {
   color?: string;
 }
 
+export interface OpenProjectCustomFieldCatalogEntry {
+  key: string;
+  name: string;
+  type: string;
+  sampleWpType?: string;
+  options?: { id?: number; name: string }[];
+}
+
+export interface OpenProjectEnumerationCatalogEntry {
+  id: number;
+  name: string;
+  type: string;
+  active: boolean;
+  color?: string;
+}
+
+export interface OpenProjectGroupCatalogEntry {
+  id: number;
+  name: string;
+  memberCount?: number;
+}
+
 export interface AppSettings {
   weeklyQuotas: Record<Level, number>;
   trackWeights: TrackWeights;
@@ -58,6 +80,17 @@ export interface AppSettings {
   openprojectTypeCatalog?: OpenProjectTypeCatalogEntry[];
   /** Snapshot สถานะจริงจาก OpenProject (`/api/v3/statuses`) */
   openprojectStatusCatalog?: OpenProjectStatusCatalogEntry[];
+  /** Snapshot Custom Fields จาก schema discovery */
+  openprojectCustomFieldCatalog?: OpenProjectCustomFieldCatalogEntry[];
+  /** Snapshot Enumerations / Priorities / Activities */
+  openprojectEnumerationCatalog?: OpenProjectEnumerationCatalogEntry[];
+  /** Snapshot Groups จาก `/api/v3/groups` */
+  openprojectGroupCatalog?: OpenProjectGroupCatalogEntry[];
+  /**
+   * กลุ่ม OpenProject ที่ถือเป็น roster — เมื่อไม่ว่าง sync-users จะตั้ง
+   * people.active ตามสมาชิกในกลุ่มเหล่านี้ (และไม่ locked)
+   */
+  openprojectRosterGroupIds?: number[];
   /** รอบประเมินปี/ช่วงวัน + ขอบเขตทีม */
   scorecardCycles: ScorecardCycleSettings;
 }

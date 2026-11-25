@@ -4,9 +4,9 @@ import { CronJob } from 'cron';
 import { AccessRole, Level, Person } from '../../../../shared/domain/models';
 import { WEEKLY_QUOTA } from '../../../../shared/domain/scoring';
 import {
-  isPersonActiveForStaging,
   mapDepartmentToTeam,
   normalizeOpenProjectAvatarUrl,
+  resolveSyncUserActive,
   teamLabelForId,
 } from '../../../../shared/domain/op-team-staging';
 import { todayInBangkok } from '../../../../shared/domain/workflow';
@@ -141,9 +141,13 @@ export class OpenProjectSyncService implements OnModuleInit {
       const settings = await getSettings(this.db);
       const mapping = settings.openprojectMapping;
       const client = new OpenProjectClient(creds.url, creds.token);
-      // Refresh OpenProject Type & Status catalogs dynamically during sync (best-effort)
+      // Refresh OpenProject Type / Status / Enumeration catalogs during sync (best-effort)
       try {
-        const [opTypes, opStatuses] = await Promise.all([client.listTypes(), client.listStatuses()]);
+        const [opTypes, opStatuses, opEnums] = await Promise.all([
+          client.listTypes(),
+          client.listStatuses(),
+          client.listEnumerations(),
+        ]);
         settings.openprojectTypeCatalog = opTypes
           .filter((t) => t.name?.trim())
           .map((t) => ({
@@ -159,6 +163,15 @@ export class OpenProjectSyncService implements OnModuleInit {
             name: (s.name ?? '').trim(),
             isClosed: Boolean(s.isClosed),
             ...(s.color ? { color: s.color } : {}),
+          }));
+        settings.openprojectEnumerationCatalog = opEnums
+          .filter((e) => e.name?.trim())
+          .map((e) => ({
+            id: e.id,
+            name: (e.name ?? '').trim(),
+            type: e._type || 'Enumeration',
+            active: e.active !== false,
+            ...(e.color ? { color: e.color } : {}),
           }));
         await saveSettings(this.db, settings, startedBy);
       } catch (catErr) {
@@ -386,6 +399,10 @@ export class OpenProjectSyncService implements OnModuleInit {
     created: number;
     updated: number;
     linked: number;
+    inGroup: number;
+    activated: number;
+    deactivated: number;
+    rosterGroupIds: number[];
     errors: string[];
   }> {
     const creds = await this.resolveCredentials();
@@ -395,12 +412,18 @@ export class OpenProjectSyncService implements OnModuleInit {
     const client = new OpenProjectClient(creds.url, creds.token);
     const settings = await getSettings(this.db);
     const weeklyQuotas = settings.weeklyQuotas;
+    const rosterGroupIds = [...(settings.openprojectRosterGroupIds ?? [])];
+    const rosterMemberIds = await this.resolveRosterMemberIds(client, rosterGroupIds);
+    const useRosterGroups = rosterGroupIds.length > 0;
 
     const errors: string[] = [];
     let total = 0;
     let created = 0;
     let updated = 0;
     let linked = 0;
+    let activated = 0;
+    let deactivated = 0;
+    const seenOpIds = new Set<number>();
 
     const people = await listPeople(this.db, false);
     const personByOp = new Map<number, Person>();
@@ -433,6 +456,7 @@ export class OpenProjectSyncService implements OnModuleInit {
 
         await upsertOpUserSeen(this.db, { opUserId, name, login, email });
 
+        seenOpIds.add(opUserId);
         const deptTitle = user._links?.customField1?.title ?? null;
         const unitTitle = user._links?.customField2?.title ?? null;
         const roleTitle = user._links?.customField3?.title ?? null;
@@ -440,7 +464,13 @@ export class OpenProjectSyncService implements OnModuleInit {
         const teamMap = mapDepartmentToTeam(deptTitle, unitTitle, roleTitle);
         const staging = this.config.openproject.teamStaging;
         const locked = user.status === 'locked';
-        const active = isPersonActiveForStaging(staging, { isRd: teamMap.isRd, locked });
+        const active = resolveSyncUserActive({
+          locked,
+          useRosterGroups,
+          inRoster: rosterMemberIds.has(opUserId),
+          staging,
+          isRd: teamMap.isRd,
+        });
 
         let existing: Person | null = personByOp.get(opUserId) ?? null;
         if (!existing && email) {
@@ -501,6 +531,8 @@ export class OpenProjectSyncService implements OnModuleInit {
             }
           }
           if (patch.active !== active) {
+            if (active && !patch.active) activated += 1;
+            if (!active && patch.active) deactivated += 1;
             patch.active = active;
             changed = true;
           }
@@ -568,17 +600,48 @@ export class OpenProjectSyncService implements OnModuleInit {
           if (email) personByEmail.set(email.toLowerCase(), newPerson);
           personById.set(candidateId, newPerson);
           created += 1;
+          if (active) activated += 1;
         }
       }
 
-      // โหมด POC (rd): ปิดคนที่ไม่อยู่ในขอบเขต R&D — โหมด all ไม่บังคับปิด
-      if (this.config.openproject.teamStaging === 'rd') {
+      // โหมด roster groups: ปิดคนที่ยัง active แต่ไม่อยู่ในกลุ่ม (หรือหายจาก OP)
+      if (useRosterGroups) {
+        const afterSync = await listPeople(this.db, false);
+        for (const person of afterSync) {
+          const opId = person.openprojectUserId;
+          if (opId == null || !person.active) continue;
+          if (rosterMemberIds.has(opId) && seenOpIds.has(opId)) continue;
+          await upsertPerson(this.db, { ...person, active: false });
+          deactivated += 1;
+        }
+      } else if (this.config.openproject.teamStaging === 'rd') {
+        // โหมด POC (rd): ปิดคนที่ไม่อยู่ในขอบเขต R&D — โหมด all ไม่บังคับปิด
         await this.db.query(
           `UPDATE people SET active = false
            WHERE active = true
              AND track != 'RD'
              AND (department IS NULL OR department NOT LIKE 'RD-%')
              AND COALESCE(team_id, '') != 'rd'`,
+        );
+      }
+
+      // รีเฟรช group catalog (best-effort)
+      try {
+        const groups = await client.listGroups();
+        settings.openprojectGroupCatalog = await Promise.all(
+          groups.map(async (g) => {
+            const memberIds = await client.listGroupMemberUserIds(g.id);
+            return {
+              id: g.id,
+              name: (g.name ?? `Group ${g.id}`).trim(),
+              memberCount: memberIds.length,
+            };
+          }),
+        );
+        await saveSettings(this.db, settings, startedBy);
+      } catch (groupErr) {
+        this.log.warn(
+          `Skipped OP group catalog refresh: ${groupErr instanceof Error ? groupErr.message : groupErr}`,
         );
       }
     } catch (error) {
@@ -592,10 +655,42 @@ export class OpenProjectSyncService implements OnModuleInit {
       created,
       updated,
       linked,
+      inGroup: rosterMemberIds.size,
+      activated,
+      deactivated,
+      rosterGroupIds,
       errors,
     });
 
-    return { total, created, updated, linked, errors };
+    return {
+      total,
+      created,
+      updated,
+      linked,
+      inGroup: rosterMemberIds.size,
+      activated,
+      deactivated,
+      rosterGroupIds,
+      errors,
+    };
+  }
+
+  private async resolveRosterMemberIds(
+    client: OpenProjectClient,
+    rosterGroupIds: number[],
+  ): Promise<Set<number>> {
+    const ids = new Set<number>();
+    for (const groupId of rosterGroupIds) {
+      try {
+        const members = await client.listGroupMemberUserIds(groupId);
+        for (const id of members) ids.add(id);
+      } catch (err) {
+        this.log.warn(
+          `Failed to load members for group ${groupId}: ${err instanceof Error ? err.message : err}`,
+        );
+      }
+    }
+    return ids;
   }
 
   /** Returns a live OpenProject client when URL+token are configured; otherwise null. */

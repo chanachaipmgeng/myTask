@@ -252,4 +252,102 @@ describe('OpenProjectClient.patchAssignee', () => {
     assert.ok(calledUrl.includes('/api/v3/memberships'));
     assert.ok(decodeURIComponent(calledUrl).includes('"project"'));
   });
+
+  it('listGroups paginates with offset += 1', async () => {
+    const offsets: string[] = [];
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      const m = /offset=(\d+)/.exec(url);
+      if (m) offsets.push(m[1]!);
+      if (url.includes('/api/v3/groups') && url.includes('offset=1')) {
+        return new Response(
+          JSON.stringify({
+            _embedded: {
+              elements: [
+                { id: 1, name: 'R&D' },
+                { id: 2, name: 'Implement' },
+              ],
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.includes('/api/v3/groups') && url.includes('offset=2')) {
+        return new Response(
+          JSON.stringify({
+            _embedded: { elements: [{ id: 3, name: 'QA' }] },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    };
+    const client = new OpenProjectClient('https://op.example', 'token', fetchImpl);
+    const groups = await client.listGroups({ pageSize: 2 });
+    assert.deepEqual(
+      groups.map((g) => g.id),
+      [1, 2, 3],
+    );
+    assert.deepEqual(offsets, ['1', '2']);
+  });
+
+  it('listGroupMemberUserIds reads _links.members hrefs', async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('/api/v3/groups/9')) {
+        return new Response(
+          JSON.stringify({
+            id: 9,
+            name: 'Scorecard Roster',
+            _links: {
+              members: [
+                { href: '/api/v3/users/101', title: 'Alice' },
+                { href: '/api/v3/users/202', title: 'Bob' },
+              ],
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    };
+    const client = new OpenProjectClient('https://op.example', 'token', fetchImpl);
+    const ids = await client.listGroupMemberUserIds(9);
+    assert.deepEqual(ids.sort((a, b) => a - b), [101, 202]);
+  });
+
+  it('listEnumerations merges priorities and time entry activities', async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes('/api/v3/enumerations')) {
+        return new Response('gone', { status: 404 });
+      }
+      if (url.includes('/api/v3/priorities')) {
+        return new Response(
+          JSON.stringify({
+            _embedded: {
+              elements: [{ id: 1, name: 'Normal', _type: 'Priority', active: true }],
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.includes('/api/v3/time_entries/activities')) {
+        return new Response(
+          JSON.stringify({
+            _embedded: {
+              elements: [{ id: 8, name: 'Development', active: true }],
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('not found', { status: 404 });
+    };
+    const client = new OpenProjectClient('https://op.example', 'token', fetchImpl);
+    const items = await client.listEnumerations();
+    assert.equal(items.length, 2);
+    assert.equal(items.find((e) => e.id === 1)?._type, 'Priority');
+    assert.equal(items.find((e) => e.id === 8)?._type, 'TimeEntryActivity');
+  });
 });

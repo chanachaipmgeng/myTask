@@ -155,3 +155,21 @@ export function isPersonActiveForStaging(
   }
   return opts.isRd;
 }
+
+/**
+ * กติกา active ตอน sync-users:
+ * - เมื่อตั้ง roster groups → สมาชิกในกลุ่มและไม่ locked
+ * - ว่าง → ใช้ staging (non-locked + RD filter ถ้า `rd`)
+ */
+export function resolveSyncUserActive(opts: {
+  locked: boolean;
+  useRosterGroups: boolean;
+  inRoster: boolean;
+  staging: OpenProjectTeamStaging;
+  isRd: boolean;
+}): boolean {
+  if (opts.useRosterGroups) {
+    return !opts.locked && opts.inRoster;
+  }
+  return isPersonActiveForStaging(opts.staging, { isRd: opts.isRd, locked: opts.locked });
+}

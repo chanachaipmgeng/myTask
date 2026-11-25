@@ -38,6 +38,12 @@ export interface ListQueryParams {
   track?: string;
   /** โปรเจกต์/เอนทิตี active flag */
   active?: 'all' | 'active' | 'inactive';
+  /** Syncfusion Excel filter predicates → JSON บนเซิร์ฟเวอร์ */
+  filters?: { field: string; operator: string; value: string | number | boolean | null }[];
+  from?: string;
+  to?: string;
+  personId?: string;
+  format?: 'csv' | 'xlsx';
 }
 
 export interface ListPageResult<T> {
@@ -88,6 +94,11 @@ function toListQueryString(params?: ListQueryParams): string {
   if (params.opType?.trim()) query.set('opType', params.opType.trim());
   if (params.track?.trim()) query.set('track', params.track.trim());
   if (params.active && params.active !== 'all') query.set('active', params.active);
+  if (params.filters?.length) query.set('filters', JSON.stringify(params.filters));
+  if (params.from?.trim()) query.set('from', params.from.trim());
+  if (params.to?.trim()) query.set('to', params.to.trim());
+  if (params.personId?.trim()) query.set('personId', params.personId.trim());
+  if (params.format) query.set('format', params.format);
   const text = query.toString();
   return text ? `?${text}` : '';
 }
@@ -131,6 +142,7 @@ export interface DiscoveredOpCustomFieldDto {
   name: string;
   type: string;
   sampleWpType?: string;
+  options?: { id?: number; name: string }[];
 }
 
 export interface OpenProjectTypeCatalogDto {
@@ -185,6 +197,20 @@ export interface BootstrapResponse {
   };
 }
 
+export interface OpenProjectGroupCatalogEntry {
+  id: number;
+  name: string;
+  memberCount?: number;
+}
+
+export interface OpenProjectEnumerationCatalogEntry {
+  id: number;
+  name: string;
+  type: string;
+  active: boolean;
+  color?: string;
+}
+
 export interface OpenProjectIntegration {
   configured: boolean;
   enabled: boolean;
@@ -194,6 +220,12 @@ export interface OpenProjectIntegration {
   hasToken: boolean;
   mapping: Record<string, unknown>;
   projectCatalog: OpenProjectCatalogEntry[];
+  typeCatalog?: { id: number; name: string; color?: string; isMilestone?: boolean }[];
+  statusCatalog?: { id: number; name: string; isClosed: boolean; color?: string }[];
+  customFieldCatalog?: DiscoveredOpCustomFieldDto[];
+  enumerationCatalog?: OpenProjectEnumerationCatalogEntry[];
+  groupCatalog?: OpenProjectGroupCatalogEntry[];
+  rosterGroupIds?: number[];
   hoursPerMd: number;
   lastRuns: {
     id: string;
@@ -212,6 +244,42 @@ export interface OpenProjectIntegration {
     email: string | null;
   }[];
   people: { id: string; nickname: string; openprojectUserId: number | null }[];
+}
+
+export interface OpenProjectSyncAudit {
+  source: 'live' | 'offline' | 'error';
+  message?: string;
+  teamStaging?: 'rd' | 'all';
+  rosterGroupIds?: number[];
+  users?: {
+    opTotal: number;
+    opLocked: number;
+    peopleTotal: number;
+    peopleActive: number;
+    peopleLinked: number;
+    activeNotInRoster: { id: string; nickname: string; openprojectUserId: number | null }[];
+    inRosterMissingOrInactive: {
+      opUserId: number;
+      opName: string | null;
+      personId: string | null;
+      personActive: boolean;
+      locked: boolean;
+    }[];
+  };
+  groups?: { id: number; name: string; memberCount: number; selected: boolean }[];
+  types?: { liveCount: number; catalogCount: number; unmapped: { id: number; name: string }[] };
+  statuses?: { liveCount: number; catalogCount: number; unmapped: { id: number; name: string }[] };
+  customFields?: {
+    discoveredCount: number;
+    mappedCount: number;
+    mappedMissingInSchema: { semantic: string; key: string }[];
+    importantCfStatus: { key: string; foundInSchema: boolean; schemaName: string | null }[];
+  };
+  enumerations?: {
+    liveCount: number;
+    catalogCount: number;
+    items: { id: number; name: string; type: string; active: boolean }[];
+  };
 }
 
 export interface SyncRunDto {
@@ -384,9 +452,17 @@ export class ApiClient {
     created: number;
     updated: number;
     linked: number;
+    inGroup?: number;
+    activated?: number;
+    deactivated?: number;
+    rosterGroupIds?: number[];
     errors?: string[];
   }> {
     return api('/api/integrations/openproject/sync-users', { method: 'POST', body: '{}' });
+  }
+
+  getOpenProjectSyncAudit(): Promise<OpenProjectSyncAudit> {
+    return api('/api/integrations/openproject/sync-audit');
   }
 
   mapOpenProjectUser(personId: string, opUserId: number | null): Promise<OpenProjectIntegration> {
@@ -633,6 +709,39 @@ export class ApiClient {
     return api(`/api/work-items${toListQueryString(params)}`);
   }
 
+  /** ดาวน์โหลด CSV จากเซิร์ฟเวอร์ (ฟิลเตอร์เดียวกับ list) */
+  async exportWorkItems(params?: ListQueryParams): Promise<Blob> {
+    const res = await fetch(`/api/work-items/export${toListQueryString(params)}`, {
+      credentials: 'include',
+      headers: { Accept: 'text/csv' },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || `ส่งออกใบงานไม่สำเร็จ (${res.status})`);
+    }
+    return res.blob();
+  }
+
+  listPeople(params?: ListQueryParams): Promise<
+    ListPageResult<Person> & { people: Person[]; result?: Person[]; count?: number }
+  > {
+    return api(`/api/org/people${toListQueryString(params)}`);
+  }
+
+  listTimeEntries(params?: ListQueryParams): Promise<
+    ListPageResult<{
+      id: number | string;
+      personId: string;
+      nickname: string;
+      spentOn: string;
+      hours: number;
+      ticketId: string | null;
+      comment: string;
+    }> & { source?: string; from?: string; to?: string }
+  > {
+    return api(`/api/time-entries${toListQueryString(params)}`);
+  }
+
   getAnalyticsReport(): Promise<AnalyticsReport> {
     return api('/api/analytics/report');
   }
@@ -827,6 +936,10 @@ export class ApiClient {
     projects: { id: string; name: string; identifier: string; active: boolean }[];
     statuses: { id: number; name: string; isClosed: boolean }[];
     types: { id: number; name: string; isMilestone: boolean }[];
+    groups?: OpenProjectGroupCatalogEntry[];
+    enumerations?: OpenProjectEnumerationCatalogEntry[];
+    customFields?: DiscoveredOpCustomFieldDto[];
+    rosterGroupIds?: number[];
     message?: string;
   }> {
     return api('/api/integrations/openproject/discovery');

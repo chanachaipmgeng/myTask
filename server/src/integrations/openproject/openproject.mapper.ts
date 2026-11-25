@@ -107,6 +107,8 @@ export interface DiscoveredOpCustomField {
   name: string;
   type: string;
   sampleWpType?: string;
+  /** ค่า allowedValues / CustomOption จาก schema (ถ้ามี) */
+  options?: { id?: number; name: string }[];
 }
 
 export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {

@@ -121,7 +121,163 @@
                 </button>
               }
             </div>
+            <label class="field md:col-span-2">
+              <span>กลุ่ม OpenProject ที่นับเป็น roster (people.active)</span>
+              <app-sf-multiselect
+                [items]="groupSelectOptions()"
+                [value]="rosterGroupIdStrings()"
+                (valueChange)="onRosterGroupsChange($event)"
+                [disabled]="!canEdit() || !groupSelectOptions().length"
+                [options]="{ placeholder: 'ว่าง = ใช้กติกาเดิม (non-locked + staging)', showSelectAll: true, mode: 'CheckBox' }"
+              />
+              <span class="text-xs opacity-70 mt-1 block">
+                ว่าง = พฤติกรรมเดิม · เมื่อเลือกกลุ่มแล้ว sync-users จะเปิด active เฉพาะสมาชิกในกลุ่มที่ยังไม่ถูก lock · กด「ดึงโปรเจกต์/สถานะ」หรือ「ตรวจซิงก์」เพื่อโหลดรายการกลุ่ม
+              </span>
+            </label>
           </div>
+        </app-section-card>
+
+        <app-section-card
+          variant="nested"
+          title="รายงานเทียบซิงก์ (sync-audit)"
+          subtitle="อ่านอย่างเดียว — เทียบ Users / Groups / Types / Status / Custom Fields / Enumerations กับ API จริง"
+        >
+          <div actions class="flex flex-wrap gap-2">
+            <button
+              ejs-button
+              cssClass="e-outline e-info e-small"
+              type="button"
+              iconCss="e-icons e-search"
+              [disabled]="loading() || saving() || auditLoading()"
+              (click)="runSyncAudit()"
+            >
+              {{ auditLoading() ? 'กำลังตรวจ…' : 'ตรวจซิงก์สด' }}
+            </button>
+          </div>
+          @if (syncAudit(); as audit) {
+            <div class="flex flex-col gap-3 text-sm">
+              <div class="flex flex-wrap gap-2 items-center">
+                <span class="e-badge e-badge-pill" [class.e-badge-success]="audit.source === 'live'" [class.e-badge-warning]="audit.source !== 'live'">
+                  {{ audit.source }}
+                </span>
+                @if (audit.message) {
+                  <span class="opacity-80">{{ audit.message }}</span>
+                }
+              </div>
+              @if (audit.users) {
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                  <div>OP users: <strong>{{ audit.users.opTotal }}</strong></div>
+                  <div>OP locked: <strong>{{ audit.users.opLocked }}</strong></div>
+                  <div>people: <strong>{{ audit.users.peopleTotal }}</strong></div>
+                  <div>active: <strong>{{ audit.users.peopleActive }}</strong></div>
+                  <div>linked: <strong>{{ audit.users.peopleLinked }}</strong></div>
+                </div>
+                @if (audit.users.activeNotInRoster.length) {
+                  <div>
+                    <div class="font-medium mb-1">Active ใน Scorecard แต่ไม่อยู่ใน roster ({{ audit.users.activeNotInRoster.length }})</div>
+                    <div class="flex flex-wrap gap-1">
+                      @for (p of audit.users.activeNotInRoster.slice(0, 24); track p.id) {
+                        <span class="e-badge e-badge-warning e-badge-pill">{{ p.nickname }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+                @if (audit.users.inRosterMissingOrInactive.length) {
+                  <div>
+                    <div class="font-medium mb-1">ในกลุ่ม roster แต่ยังไม่มี / inactive ({{ audit.users.inRosterMissingOrInactive.length }})</div>
+                    <div class="flex flex-wrap gap-1">
+                      @for (p of audit.users.inRosterMissingOrInactive.slice(0, 24); track p.opUserId) {
+                        <span class="e-badge e-badge-info e-badge-pill">{{ p.opName || ('#' + p.opUserId) }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              }
+              @if (audit.types || audit.statuses) {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <div class="font-medium">Types — live {{ audit.types?.liveCount ?? 0 }} · catalog {{ audit.types?.catalogCount ?? 0 }}</div>
+                    @if (audit.types?.unmapped?.length) {
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        @for (t of audit.types!.unmapped; track t.id) {
+                          <span class="e-badge e-badge-danger e-badge-pill">{{ t.name }}</span>
+                        }
+                      </div>
+                    } @else {
+                      <div class="opacity-70 text-xs mt-1">typeMap ครอบคลุมครบ</div>
+                    }
+                  </div>
+                  <div>
+                    <div class="font-medium">Statuses — live {{ audit.statuses?.liveCount ?? 0 }} · catalog {{ audit.statuses?.catalogCount ?? 0 }}</div>
+                    @if (audit.statuses?.unmapped?.length) {
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        @for (s of audit.statuses!.unmapped; track s.id) {
+                          <span class="e-badge e-badge-danger e-badge-pill">{{ s.name }}</span>
+                        }
+                      </div>
+                    } @else {
+                      <div class="opacity-70 text-xs mt-1">statusMap ครอบคลุมครบ</div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (audit.customFields) {
+                <div>
+                  <div class="font-medium mb-1">
+                    Custom fields — discovered {{ audit.customFields.discoveredCount }} · mapped {{ audit.customFields.mappedCount }}
+                  </div>
+                  @if (audit.customFields.mappedMissingInSchema.length) {
+                    <div class="flex flex-wrap gap-1 mb-1">
+                      @for (m of audit.customFields.mappedMissingInSchema; track m.semantic) {
+                        <span class="e-badge e-badge-warning e-badge-pill">{{ m.semantic }} → {{ m.key }}</span>
+                      }
+                    </div>
+                  }
+                  <div class="flex flex-wrap gap-1">
+                    @for (cf of audit.customFields.importantCfStatus; track cf.key) {
+                      <span
+                        class="e-badge e-badge-pill"
+                        [class.e-badge-success]="cf.foundInSchema"
+                        [class.e-badge-danger]="!cf.foundInSchema"
+                      >
+                        {{ cf.key }}{{ cf.foundInSchema ? '' : ' ✗' }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+              @if (audit.enumerations) {
+                <div>
+                  <div class="font-medium mb-1">
+                    Enumerations — live {{ audit.enumerations.liveCount }} · catalog {{ audit.enumerations.catalogCount }}
+                  </div>
+                  <div class="flex flex-wrap gap-1">
+                    @for (e of audit.enumerations.items.slice(0, 20); track e.id) {
+                      <span class="e-badge e-badge-secondary e-badge-pill">{{ e.type }}: {{ e.name }}</span>
+                    }
+                  </div>
+                </div>
+              }
+              @if (audit.groups?.length) {
+                <div>
+                  <div class="font-medium mb-1">Groups ({{ audit.groups.length }})</div>
+                  <div class="flex flex-wrap gap-1">
+                    @for (g of audit.groups; track g.id) {
+                      <span
+                        class="e-badge e-badge-pill"
+                        [class.e-badge-primary]="g.selected"
+                        [class.e-badge-secondary]="!g.selected"
+                      >
+                        {{ g.name }} · {{ g.memberCount }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="text-sm opacity-70 m-0">ยังไม่ได้รันรายงาน — กด「ตรวจซิงก์สด」เพื่อเทียบกับ myProject</p>
+          }
         </app-section-card>
 
         <div class="card-grid-2">
