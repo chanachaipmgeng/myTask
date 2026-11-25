@@ -52,7 +52,7 @@ export class AuthController {
     }
     const profile = await this.auth.exchangeGitlabCode(code);
     await this.auth.loginWithGitlabProfile(profile, res);
-    res.redirect('/');
+    res.redirect(`${this.config.appUrl}/me`);
   }
 
   @Public()

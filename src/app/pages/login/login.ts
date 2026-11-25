@@ -160,12 +160,11 @@ export class LoginPage {
     const initialMode: AccessRole =
       access === 'admin' ? 'admin' : access === 'member' ? 'member' : 'lead';
     setWorkspaceMode(initialMode);
-    const targetRoute = access === 'member' ? '/me' : access === 'admin' ? '/admin' : '/team';
     const text = `เข้าสู่ระบบเป็น ${person.nickname} (${access}) เรียบร้อยแล้ว`;
     this.message.set(text);
     this.notice.success(text);
     this.busy.set(false);
-    void this.router.navigate([targetRoute]);
+    void this.router.navigate(['/me'], { replaceUrl: true });
   }
 
   protected startGitLabSso(): void {
