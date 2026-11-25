@@ -6,10 +6,13 @@
       } @else {
         <a ejs-button cssClass="e-outline" routerLink="/me">ผลงานของฉัน (/me)</a>
       }
-      <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearContext()">ล้างกรองสัปดาห์</button>
+      @if (activePath() !== 'queue') {
+        <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearContext()">ล้างกรองสัปดาห์</button>
+      }
     </div>
   </app-page-head>
 
+  @if (activePath() !== 'queue') {
   <div class="work-context-bar flex flex-wrap items-center justify-between gap-3" aria-label="บริบทสัปดาห์และค้นหาใบ">
     <div class="flex flex-wrap items-center gap-3">
       <app-form-field label="ค้นหา" variant="filter">
@@ -33,6 +36,7 @@
     </div>
     <p class="work-context-bar__line m-0 text-xs text-muted">{{ contextLine() }}</p>
   </div>
+  }
 
   <nav class="hub-underline-tabs" role="tablist" [attr.aria-label]="heading()">
     @for (tab of tabs(); track tab.path) {

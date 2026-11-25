@@ -165,8 +165,11 @@ export class SfDonutChartComponent implements AfterViewInit, OnDestroy {
     const text = this.options().centerLabel;
     if (!text) return {};
     const sub = this.options().centerSubLabel;
+    // Syncfusion splits center text on the literal token `<br>` only.
+    const line = syncfusionCenterBreak(text);
+    const subLine = sub ? syncfusionCenterBreak(sub) : '';
     return {
-      text: sub ? `${text}<br/>${sub}` : text,
+      text: subLine ? `${line}<br>${subLine}` : line,
       textStyle: {
         fontWeight: '700',
         size: '15px',
@@ -217,4 +220,9 @@ export class SfDonutChartComponent implements AfterViewInit, OnDestroy {
   instance(): AccumulationChartComponent | undefined {
     return this.donutRef;
   }
+}
+
+/** Accumulation centerLabel only breaks lines on `<br>`, not `<br/>`. */
+function syncfusionCenterBreak(value: string): string {
+  return value.replace(/<br\s*\/?>/gi, '<br>');
 }

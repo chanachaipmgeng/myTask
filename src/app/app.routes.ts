@@ -24,6 +24,11 @@ const workChildren = [
     path: 'list',
     loadComponent: () => import('./pages/work/work-list').then((m) => m.WorkList),
   },
+  {
+    path: 'queue',
+    canActivate: [requireRoles('admin', 'lead')],
+    loadComponent: () => import('./pages/queue/queue').then((m) => m.QueuePage),
+  },
 ];
 
 export const routes: Routes = [
@@ -242,11 +247,7 @@ export const routes: Routes = [
     canActivate: [requireRoles('admin', 'lead', 'member')],
     loadComponent: () => import('./pages/schedule/schedule').then((m) => m.SchedulePage),
   },
-  {
-    path: 'queue',
-    canActivate: [requireRoles('admin', 'lead')],
-    loadComponent: () => import('./pages/queue/queue').then((m) => m.QueuePage),
-  },
+  { path: 'queue', pathMatch: 'full', redirectTo: 'work/queue' },
   {
     path: 'teams',
     canActivate: [requireRoles('admin')],

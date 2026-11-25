@@ -11,7 +11,7 @@
   @if (isMine()) {
     <a actions ejs-button cssClass="e-outline e-small" [routerLink]="boardLink()">เปิดบอร์ดของฉัน</a>
   } @else {
-    <a actions ejs-button cssClass="e-outline e-small" routerLink="/queue">เปิดคิวงานใหม่</a>
+    <a actions ejs-button cssClass="e-outline e-small" routerLink="/work/queue">เปิดคิวงานใหม่</a>
   }
 
   @if (rows().length === 0) {

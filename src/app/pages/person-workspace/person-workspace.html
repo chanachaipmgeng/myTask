@@ -263,7 +263,7 @@
             <div class="flex flex-wrap gap-2">
               <button ejs-button cssClass="e-primary" type="button" (click)="openWorkList()">ไปรายการงาน</button>
               <a ejs-button cssClass="e-outline" routerLink="/work/board" queryParamsHandling="preserve">บอร์ดทีม</a>
-              <a ejs-button cssClass="e-outline" routerLink="/queue" queryParamsHandling="preserve">คิวจ่ายงาน</a>
+              <a ejs-button cssClass="e-outline" routerLink="/work/queue" queryParamsHandling="preserve">คิวจ่ายงาน</a>
             </div>
             @if (openWorkRows().length === 0) {
               <p class="person-ws__empty m-0 mt-3">ไม่มีใบเปิด</p>

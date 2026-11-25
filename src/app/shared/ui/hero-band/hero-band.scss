@@ -80,7 +80,8 @@
   border-radius: var(--radius-panel);
   background: var(--hb-banner-bg);
   border: 1px solid var(--hb-banner-border);
-  overflow: hidden;
+  /* visible so Thai tone marks are not clipped by the banner box */
+  overflow: visible;
   /* Soft opacity only — title/subtitle own the drop cascade */
   animation: heroBandTopSoft var(--dur-fast) var(--ease-crisp) both;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
@@ -113,8 +114,8 @@
   margin: 0;
   font-size: 22px;
   font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.2;
+  letter-spacing: 0;
+  line-height: 1.55;
   color: var(--hb-title);
   animation: titleDrop var(--dur-base) var(--ease-crisp) both;
 }
@@ -122,7 +123,7 @@
 .hero-band__subtitle {
   margin: 4px 0 0;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.65;
   color: var(--hb-subtitle);
   max-width: 72ch;
   animation: subtitleRise var(--dur-fast) var(--ease-crisp) 80ms both;
@@ -297,25 +298,22 @@
 }
 
 /* Local copies so scoped styles can resolve names reliably */
+/* Opacity only. A leftover translateY(0) makes Chrome clip Thai tone marks to the line box. */
 @keyframes titleDrop {
   from {
     opacity: 0;
-    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
 @keyframes subtitleRise {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

@@ -34,7 +34,7 @@ alwaysApply: true
 
 ## Navigation / Global Filter (P20–P21)
 
-- Sidebar lead = hub แบน: ของฉัน · ทีม (`/workspace/people`) · งานทีม · คิว · คุณภาพ · วิเคราะห์ — อย่าใส่ «ทีมการ์ด» ซ้ำบน rail (ค้นหาเมนู/`/org/teams` หรือปุ่มใน Person WS)
+- Sidebar lead = hub แบน: ของฉัน · ทีม (`/workspace/people`) · งานทีม · คุณภาพ · วิเคราะห์ · คิวจ่ายงานเป็นแท็บ `/work/queue` — อย่าใส่ «ทีมการ์ด» ซ้ำบน rail (ค้นหาเมนู/`/org/teams` หรือปุ่มใน Person WS)
 - Global Filter: ชิปสาย 6 รหัสผ่าน `listWorkspaceTrackChipOptions` / `normalizeTrack` · กรองคน/ใบด้วย `filterPeopleByWorkspace` / `filterTicketsByWorkspace` · chip คนเมื่อมี `personId`
 - `/work` shell: กรองสัปดาห์/ถังวัน/ค้นหาเท่านั้น — ทีม·สาย·โปรเจกต์อ่านจาก `WorkspaceFilter` · `clearContext` ห้ามเรียก `workspace.clear()` ทั้งก้อน
 - `/me` MineShell แท็บสั้น 6 ชุด (วันนี้ · ค็อกพิท · งาน · ปฏิทิน · คุณภาพ · ข้อมูล)

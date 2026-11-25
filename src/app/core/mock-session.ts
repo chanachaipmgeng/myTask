@@ -75,7 +75,7 @@ export class MockSession {
     return {
       ok: true,
       message: this.lastMessage(),
-      links: [{ label: 'คิวงานใหม่', route: '/queue' }],
+      links: [{ label: 'คิวงานใหม่', route: '/work/queue' }],
     };
   }
 
@@ -131,7 +131,7 @@ export class MockSession {
       links: [
         { label: 'แดชบอร์ดทีม', route: '/team' },
         { label: 'กระดานรายคน', route: '/people' },
-        { label: 'คิวงานใหม่', route: '/queue' },
+        { label: 'คิวงานใหม่', route: '/work/queue' },
         { label: 'ปฏิทินทีม', route: '/schedule' },
         { label: 'สถานะงาน', route: '/pipeline' },
       ],
@@ -209,7 +209,7 @@ export class MockSession {
     return {
       ok: true,
       message: `เปิดรอบแล้ว ล็อกวันส่ง ${MOCK_SPRINT.endOn} และเพิ่ม MOCK-UNPLANNED เป็นงานนอกแผน`,
-      links: [{ label: 'คิวงานใหม่', route: '/queue' }],
+      links: [{ label: 'คิวงานใหม่', route: '/work/queue' }],
     };
   }
 
@@ -221,7 +221,7 @@ export class MockSession {
       ok: true,
       message: `แจกงานแล้ว ${result.assigned.length} ใบ · ค้างคิว ${result.skipped.join(', ') || 'ไม่มี'}`,
       links: [
-        { label: 'คิวงานใหม่', route: '/queue' },
+        { label: 'คิวงานใหม่', route: '/work/queue' },
         { label: 'สถานะงาน', route: '/pipeline' },
       ],
     };
@@ -234,7 +234,7 @@ export class MockSession {
       ok: true,
       message: `แผน manpower: คนว่าง ${free.length > 0 ? free.join(', ') : 'ไม่มี'} · ดูปฏิทินทีมได้`,
       links: [
-        { label: 'คิวงานใหม่', route: '/queue' },
+        { label: 'คิวงานใหม่', route: '/work/queue' },
         { label: 'ปฏิทินทีม', route: '/schedule' },
       ],
     };
@@ -277,7 +277,7 @@ export class MockSession {
       links: [
         { label: 'แดชบอร์ดทีม', route: '/team' },
         { label: 'กระดานรายคน', route: '/people' },
-        { label: 'คิวงานใหม่', route: '/queue' },
+        { label: 'คิวงานใหม่', route: '/work/queue' },
         { label: 'ปฏิทินทีม', route: '/schedule' },
         { label: 'สถานะงาน', route: '/pipeline' },
       ],

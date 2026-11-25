@@ -856,7 +856,6 @@ const MANAGER_SIDEBAR_SECTION: SidebarSection = {
   label: 'บริหารทีม',
   items: [
     { id: 'hub-people', text: 'ทีม & พนักงาน', iconCss: 'e-icons e-people', route: '/workspace/people' },
-    { id: 'hub-queue', text: 'คิวจ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/queue' },
   ],
 };
 
@@ -879,6 +878,7 @@ function isManagerOrAdminOnlyPath(path: string): boolean {
     path === '/team' ||
     path === '/people' ||
     path.startsWith('/queue') ||
+    path.startsWith('/work/queue') ||
     path.startsWith('/work/handoff') ||
     path.startsWith('/quality/audit') ||
     path.startsWith('/insights/report') ||
@@ -892,7 +892,7 @@ function isManagerOrAdminOnlyPath(path: string): boolean {
 
 function memberFallbackPathFor(path: string): string | null {
   if (path === '/team') return '/cockpit';
-  if (path.startsWith('/work/handoff')) return '/work/board';
+  if (path.startsWith('/work/handoff') || path.startsWith('/work/queue')) return '/work/board';
   if (path.startsWith('/quality/audit')) return '/quality/tickets';
   if (path.startsWith('/insights/report') || path.startsWith('/insights/mockup')) return '/insights/ols';
   if (isManagerOrAdminOnlyPath(path)) return '/cockpit';
@@ -978,7 +978,7 @@ const allNavGroups: NavGroup[] = [
       { id: 'people', text: 'ตารางดัชนีพนักงาน', iconCss: 'e-icons e-table', route: '/people', exact: true },
       { id: 'org-teams', text: 'การ์ดทีมในองค์กร', iconCss: 'e-icons e-grid-view', route: '/org/teams', exact: true },
       { id: 'team-dash', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
-      { id: 'hub-queue', text: 'คิวจ่ายงานใหม่', iconCss: 'e-icons e-list-unordered', route: '/queue' },
+      { id: 'hub-queue', text: 'คิวจ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/work/queue' },
       { id: 'work-handoff', text: 'ส่งต่อ & คอขวด SLA', iconCss: 'e-icons e-clock', route: '/work/handoff' },
       { id: 'quality-audit', text: 'ตรวจรับคุณภาพ QA (DoD Gate)', iconCss: 'e-icons e-check-box', route: '/quality/audit' },
       { id: 'insights-report', text: 'ศูนย์วิเคราะห์ทีม & Coaching (Python)', iconCss: 'e-icons e-chart', route: '/insights/report' },
@@ -1048,7 +1048,7 @@ function matchNavId(url: string, role: AccessRole = 'member'): string {
   ) {
     return 'hub-people';
   }
-  if (role !== 'member' && (path === '/queue' || path.startsWith('/queue/'))) return 'hub-queue';
+  if (path === '/queue' || path.startsWith('/queue/')) return 'hub-work';
 
   if (role === 'admin') {
     if (path === '/admin') return 'hub-admin';
@@ -1095,6 +1095,7 @@ function screenTitle(url: string, role: AccessRole = 'member'): string {
   if (url.startsWith('/admin/snapshot-check')) return 'ตรวจก่อนแช่แข็ง';
   if (url.startsWith('/work/team-time')) return isMember ? 'ลงเวลางานของฉัน' : 'เวลาทีมรายวัน';
   if (url.startsWith('/work/handoff')) return 'ส่งต่อ & SLA';
+  if (url.startsWith('/work/queue') || url.startsWith('/queue')) return 'คิวจ่ายงาน';
   if (url.startsWith('/work/board')) return isMember ? 'บอร์ดงานของฉัน' : 'บอร์ดงาน Kanban';
   if (url.startsWith('/work/timeline')) return isMember ? 'ไทม์ไลน์ของฉัน' : 'ไทม์ไลน์งาน';
   if (url.startsWith('/work')) return isMember ? 'กระดานงานของฉัน' : 'กระดานงาน & แผน';
@@ -1104,7 +1105,6 @@ function screenTitle(url: string, role: AccessRole = 'member'): string {
   if (url.startsWith('/analytics')) return 'ศูนย์วิเคราะห์';
   if (url.startsWith('/people/')) return 'โปรไฟล์พนักงาน';
   if (url.startsWith('/people')) return 'ดัชนีพนักงาน';
-  if (url.startsWith('/queue')) return 'คิวจ่ายงาน';
   if (url.startsWith('/teams')) return 'แจ้งเตือน Teams';
   if (url.startsWith('/integrations')) return 'เชื่อมต่อระบบ';
   if (url.startsWith('/admin')) return 'หลังบ้าน & สิทธิ์';

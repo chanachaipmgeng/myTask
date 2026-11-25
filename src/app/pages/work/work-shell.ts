@@ -26,8 +26,8 @@ const TEAM_TABS = [
   { text: 'แบ็กล็อก', path: 'backlog', icon: 'e-icons e-list-unordered' },
   { text: 'บอร์ด', path: 'board', icon: 'e-icons e-columns' },
   { text: 'รายการ', path: 'list', icon: 'e-icons e-table' },
+  { text: 'คิวจ่ายงาน', path: 'queue', icon: 'e-icons e-people' },
   { text: 'ส่งต่อ & SLA', path: 'handoff', icon: 'e-icons e-clock' },
-  { text: 'เวลาทีม', path: 'team-time', icon: 'e-icons e-day' },
 ] as const;
 
 const MINE_TABS = [
@@ -36,7 +36,6 @@ const MINE_TABS = [
   { text: 'แบ็กล็อก', path: 'backlog', icon: 'e-icons e-list-unordered' },
   { text: 'บอร์ด', path: 'board', icon: 'e-icons e-columns' },
   { text: 'รายการ', path: 'list', icon: 'e-icons e-table' },
-  { text: 'ลงเวลา', path: 'team-time', icon: 'e-icons e-day' },
 ] as const;
 
 @Component({
@@ -82,10 +81,14 @@ export class WorkShell {
     const initialScope: WorkHubScope = initialMine ? 'mine' : 'team';
     this.filter.scope.set(initialScope);
     this.filter.restoreFromStorage(initialScope);
-    this.filter.teamId.set(this.workspace.teamId());
+    const initialTeam = this.workspace.teamId();
+    if (initialTeam) {
+      this.filter.teamId.set(initialTeam);
+    }
     this.filter.opProject.set(this.workspace.opProject());
     this.filter.opType.set(this.workspace.opType());
     this.filter.track.set(this.workspace.track());
+    this.filter.statusScope.set(this.workspace.statusScope());
 
     effect(() => {
       const role = effectiveRole();
@@ -99,18 +102,25 @@ export class WorkShell {
       if (this.filter.assigneeId() !== targetAssignee) {
         this.filter.assigneeId.set(targetAssignee);
       }
-      const teamId = nextScope === 'mine' ? '' : this.workspace.teamId();
+      const nextTeam = nextScope === 'mine' ? '' : this.workspace.teamId();
+      if (nextTeam) {
+        if (this.filter.teamId() !== nextTeam) this.filter.teamId.set(nextTeam);
+      } else if (nextScope === 'mine') {
+        if (this.filter.teamId() !== '') this.filter.teamId.set('');
+      }
       const opProject = this.workspace.opProject();
       const opType = this.workspace.opType();
       const track = nextScope === 'mine' ? 'All' : this.workspace.track();
-      if (this.filter.teamId() !== teamId) this.filter.teamId.set(teamId);
+      const statusScope = this.workspace.statusScope();
       if (this.filter.opProject() !== opProject) this.filter.opProject.set(opProject);
       if (this.filter.opType() !== opType) this.filter.opType.set(opType);
       if (this.filter.track() !== track) this.filter.track.set(track);
+      if (this.filter.statusScope() !== statusScope) this.filter.statusScope.set(statusScope);
 
       const path = this.url().split('?')[0] ?? '';
-      if (nextScope === 'mine' && path.endsWith('/handoff')) {
-        void this.router.navigate(['/work/board'], { queryParamsHandling: 'preserve', replaceUrl: true });
+      if (nextScope === 'mine' && (path.endsWith('/handoff') || path.endsWith('/queue'))) {
+        const board = path.endsWith('/queue') ? path.replace(/\/queue$/, '/board') : '/work/board';
+        void this.router.navigate([board], { queryParamsHandling: 'preserve', replaceUrl: true });
       }
     });
     effect(() => {

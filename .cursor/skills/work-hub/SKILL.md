@@ -13,7 +13,7 @@ description: >-
 
 - Shell: `src/app/pages/work/work-shell.*` + `WorkHubFilter` (สัปดาห์ + ถังวัน + ค้นหา + `scope` mine|team + `assigneeId`) · **ทีม/โปรเจกต์/สายจาก `WorkspaceFilter`** (P21 ไม่ซ้ำใน shell)
 - Routes: `/work` (ทีม · `admin`/`lead` · `data.scope = 'team'`) และ `/me/work` (ของฉัน · ทุกสิทธิ์ · `data.scope = 'mine'`)
-- Children: `summary` | `timeline` | `backlog` | `board` | `list` · แท็บ `handoff` / `team-time` มีเฉพาะฮับทีม
+- Children: `summary` | `timeline` | `backlog` | `board` | `list` | `queue` · แท็บ `queue` (คิวจ่ายงาน) / `handoff` มีเฉพาะฮับทีม (`admin`|`lead`) · `team-time` อยู่ฮับทีม · `/queue` redirect ไป `/work/queue` · ห้ามใส่ «คิวจ่ายงาน» บน Sidebar
 - โดเมน: `shared/domain/work-views.ts` → re-export `src/app/core/work-views.ts` · `filterWorkTickets` เทียบสายด้วย `normalizeTrack`
 - Hub คน: `/workspace/people` (Person Workspace) · การ์ดทีม `/org/teams` (ไม่ซ้ำบน sidebar)
 
@@ -26,6 +26,7 @@ description: >-
 | Backlog | Grid ใน `section-card` · ทีม = Backlog หรือยังไม่มีผู้รับ · ของฉัน = Backlog ที่ assign ให้ฉัน · grid id คนละชุด | `workBacklogRows` |
 | Board | Kanban + Swimlane (ของฉันไม่มี swimlane ตามคน) + Dialog + Delivery Timeline | `workflow` + filter ตาม `assigneeId` |
 | List | Grid งาน · grid id คนละชุดระหว่างทีม/ของฉัน · ปุ่ม `ดูสรุป` → `TicketDetailService.open` | `workListRows` |
+| คิวจ่ายงาน | เฉพาะ `/work/queue` (และฮับทีมใน org) · หน้า `QueuePage` เดิม · member ถูกส่งกลับบอร์ด | `planNewWork` + assign |
 | Handoff | เฉพาะ `/work/handoff` · คลิกรหัสใบเปิด drawer | `multi-team` / Scorecard handoff report |
 | Board block | `app-confirm-dialog` · edit dialog `#editDialog` · ปุ่ม 360° → drawer | workflow guards |
 
