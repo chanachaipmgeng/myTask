@@ -14,6 +14,8 @@ import { ApiClient, OpenProjectCatalogEntry } from '../../../core/api-client';
 import { ScorecardService } from '../../../core/scorecard.service';
 import { ShellNotice } from '../../../core/shell-notice';
 import {
+  FilterChipOption,
+  FilterChipsComponent,
   KpiStatCardComponent,
   PageHeadComponent,
   SectionCardComponent,
@@ -35,6 +37,7 @@ import {
   imports: [
     RouterLink,
     ButtonModule,
+    FilterChipsComponent,
     PageHeadComponent,
     SectionCardComponent,
     StatusBadgeComponent,
@@ -79,11 +82,17 @@ export class AdminProjectsComponent implements OnInit {
     ...this.teamSelectOptions(),
   ]);
 
-  protected readonly statusFilterChips = [
+  protected readonly statusFilterChips: FilterChipOption[] = [
     { id: 'all', label: 'ทั้งหมด' },
     { id: 'active', label: 'เฉพาะที่เปิดใช้งาน' },
     { id: 'inactive', label: 'ปิดใช้งาน / ซ่อน' },
   ];
+
+  protected onStatusFilter(id: string): void {
+    if (id === 'all' || id === 'active' || id === 'inactive') {
+      this.filterStatus.set(id);
+    }
+  }
 
   // KPI Metrics
   protected readonly totalProjects = computed(() => this.projects().length);
@@ -107,24 +116,24 @@ export class AdminProjectsComponent implements OnInit {
   // DataGrid Columns & Options
   protected readonly gridColumns: SfGridColumn[] = [
     { field: 'identifier', headerText: 'รหัสโปรเจกต์', width: 120 },
-    { field: 'name', headerText: 'ชื่อโปรเจกต์', width: 180, minWidth: 140 },
+    { field: 'name', headerText: 'ชื่อโปรเจกต์', width: 170, minWidth: 130 },
     {
       field: 'activeTicketsCount',
       headerText: 'ใบงานคงค้าง',
-      width: 110,
+      width: 100,
       textAlign: 'Right',
     },
-    { field: 'assignedTeamIds', headerText: 'ทีมที่รับผิดชอบ', width: 220, minWidth: 160 },
+    { field: 'assignedTeamIds', headerText: 'ทีมที่รับผิดชอบ', width: 180, minWidth: 150 },
     {
       field: 'active',
       headerText: 'สถานะใช้งาน',
-      width: 130,
+      width: 110,
       textAlign: 'Center',
     },
     {
       field: 'actions',
       headerText: 'จัดการ',
-      width: 180,
+      width: 200,
       textAlign: 'Center',
       allowFiltering: false,
       allowSorting: false,

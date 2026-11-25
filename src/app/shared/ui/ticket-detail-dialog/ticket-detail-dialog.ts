@@ -13,6 +13,7 @@ import { ApiClient, TicketDetailResponse } from '../../../core/api-client';
 import { ScorecardService } from '../../../core/scorecard.service';
 import { ShellNotice } from '../../../core/shell-notice';
 import { TicketDetailService } from '../../../core/ticket-detail.service';
+import { ViewportService } from '../../../core/viewport.service';
 import { scoreTicket } from '../../../../../shared/domain/scoring';
 import { evaluatePolicySla, PolicySlaEvaluation } from '../../../../../shared/domain/policy-sla';
 import { todayInBangkok, workflowStatusOf } from '../../../../../shared/domain/workflow';
@@ -48,6 +49,7 @@ export class TicketDetailDialogComponent {
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
   private readonly detail = inject(TicketDetailService);
+  private readonly viewport = inject(ViewportService);
 
   protected readonly detailTabs: SfTabItem[] = [
     { id: 'info', header: 'รายละเอียด' },
@@ -69,10 +71,13 @@ export class TicketDetailDialogComponent {
     const t = this.data()?.ticket;
     return t ? evaluatePolicySla(t, todayInBangkok()) : null;
   });
-  protected readonly drawerWidth =
-    typeof window !== 'undefined' && window.innerWidth <= 640
-      ? `${Math.max(280, window.innerWidth - 16)}px`
-      : '560px';
+  protected readonly drawerWidth = computed(() =>
+    this.viewport.isMobile()
+      ? typeof window !== 'undefined'
+        ? `${Math.max(280, window.innerWidth)}px`
+        : '100vw'
+      : '560px',
+  );
 
   constructor() {
     effect(() => {

@@ -12,6 +12,8 @@ import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import {
   BadgeTone,
+  FilterChipOption,
+  FilterChipsComponent,
   PageHeadComponent,
   SectionCardComponent,
   SfCheckboxComponent,
@@ -30,6 +32,7 @@ import {
   imports: [
     RouterLink,
     ButtonModule,
+    FilterChipsComponent,
     PageHeadComponent,
     SectionCardComponent,
     StatusBadgeComponent,
@@ -54,6 +57,28 @@ export class MyGitPage {
   protected readonly isMine = computed(
     () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
   );
+  protected readonly inboxTab = signal<'all' | 'mrs' | 'unmatched' | 'tickets' | 'sync'>('all');
+  protected readonly inboxChipOptions = computed((): FilterChipOption[] => {
+    const options: FilterChipOption[] = [
+      { id: 'all', label: 'ทั้งหมด' },
+      { id: 'mrs', label: 'คิวรอรีวิว MR', count: this.openMrs().length || null },
+      {
+        id: 'unmatched',
+        label: 'Branch ยังไม่ผูกใบงาน',
+        count: this.unmatchedBranches().length || null,
+      },
+    ];
+    if (this.isMine()) {
+      options.push({ id: 'tickets', label: 'ใบงานที่ผูก MR ของฉัน' });
+    }
+    options.push({ id: 'sync', label: 'ซิงก์ GitLab & ประวัติ' });
+    return options;
+  });
+  protected onInboxTab(id: string): void {
+    if (id === 'all' || id === 'mrs' || id === 'unmatched' || id === 'tickets' || id === 'sync') {
+      this.inboxTab.set(id);
+    }
+  }
   protected readonly activePersonId = computed(
     () => currentSession()?.person.id ?? currentViewer().id,
   );

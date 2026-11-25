@@ -154,33 +154,6 @@
             <span class="e-icons e-menu"></span>
           </button>
 
-          <div class="navbar-brand-crumb">
-            <h1 class="navbar-page-title" [title]="title()">{{ title() }}</h1>
-            <span
-              class="navbar-crumb-scope"
-              [class.is-borrowed]="viewingBorrowedMode()"
-              [attr.data-role]="role()"
-            >{{ roleDisplayName() }}</span>
-            @if (viewingBorrowedMode()) {
-              <button
-                type="button"
-                class="navbar-mode-restore"
-                title="ออกจากมุมมองพรีวิว Member"
-                (click)="restoreTrueWorkspaceMode()"
-              >
-                กลับโหมดจริง
-              </button>
-            } @else if (canPreviewMember()) {
-              <button
-                type="button"
-                class="navbar-mode-preview"
-                title="พรีวิวหน้าจอในมุมมองพนักงานทั่วไป (Member)"
-                (click)="togglePersonaPreview()"
-              >
-                ดูในมุม Member
-              </button>
-            }
-          </div>
         </div>
 
         <!-- 2. Right: Clean Omnisearch + Status + Alerts + Theme + Profile -->
@@ -355,33 +328,7 @@
               }
             </button>
 
-            <button
-              type="button"
-              class="navbar-icon-btn"
-              title="สลับบัญชีผู้ใช้ (/login)"
-              aria-label="สลับบัญชีผู้ใช้"
-              (click)="openLogin()"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <polyline points="17 11 19 13 23 9"></polyline>
-              </svg>
-            </button>
           </div>
-
-          <button
-            type="button"
-            class="navbar-avatar-btn"
-            (click)="openMyWorkspace()"
-            [title]="userFullName() + ' (' + role() + ')'"
-          >
-            @if (userAvatarUrl() && !avatarError()) {
-              <img [src]="userAvatarUrl()" [alt]="userFullName()" class="avatar-img" (error)="onAvatarError()" />
-            } @else {
-              <span>{{ userAvatarInitials() }}</span>
-            }
-          </button>
         </div>
       </ejs-appbar>
 
@@ -395,48 +342,60 @@
               </span>
             }
 
-            <label class="workspace-filter-field workspace-filter-field--inline">
-              <span>รอบ</span>
-              <app-sf-dropdown
-                [items]="workspaceFilter.cycleOptions()"
-                [value]="workspaceFilter.cycleId()"
-                [options]="{ placeholder: 'รอบระบบ', width: '168px', cssClass: 'e-outline' }"
-                (valueChange)="onWorkspaceCycle($event)"
-              />
-            </label>
-
-            @if (role() !== 'member') {
+            <div class="workspace-filter-bar__desktop">
               <label class="workspace-filter-field workspace-filter-field--inline">
-                <span>ทีม</span>
+                <span>สถานะ</span>
                 <app-sf-dropdown
-                  [items]="workspaceFilter.teamOptions()"
-                  [value]="workspaceFilter.teamId()"
-                  [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาทีมจาก myProject...', placeholder: 'ทุกทีม', width: '185px', cssClass: 'e-outline' }"
-                  (valueChange)="onWorkspaceTeam($event)"
+                  [items]="statusScopeOptions"
+                  [value]="workspaceFilter.statusScope()"
+                  [options]="{ placeholder: 'สถานะงาน', width: '190px', cssClass: 'e-outline' }"
+                  (valueChange)="onWorkspaceStatusScope($event)"
                 />
               </label>
 
               <label class="workspace-filter-field workspace-filter-field--inline">
-                <span>พนักงาน</span>
+                <span>รอบ</span>
                 <app-sf-dropdown
-                  [items]="workspaceFilter.personOptions()"
-                  [value]="workspaceFilter.personId()"
-                  [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชื่อพนักงาน...', placeholder: 'ทุกพนักงาน', width: '205px', cssClass: 'e-outline' }"
-                  (valueChange)="onWorkspacePerson($event)"
+                  [items]="workspaceFilter.cycleOptions()"
+                  [value]="workspaceFilter.cycleId()"
+                  [options]="{ placeholder: 'รอบระบบ', width: '168px', cssClass: 'e-outline' }"
+                  (valueChange)="onWorkspaceCycle($event)"
                 />
               </label>
 
-              <button
-                type="button"
-                class="filter-mine-btn"
-                [class.is-active]="workspaceFilter.isFilteringSelf()"
-                title="สลับกรองเฉพาะงานของฉันในหน้านี้ทันที"
-                (click)="toggleMineFilter()"
-              >
-                <span class="e-icons e-user" aria-hidden="true"></span>
-                <span>เฉพาะฉัน</span>
-              </button>
-            }
+              @if (role() !== 'member') {
+                <label class="workspace-filter-field workspace-filter-field--inline">
+                  <span>ทีม</span>
+                  <app-sf-dropdown
+                    [items]="workspaceFilter.teamOptions()"
+                    [value]="workspaceFilter.teamId()"
+                    [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาทีมจาก myProject...', placeholder: 'ทุกทีม', width: '185px', cssClass: 'e-outline' }"
+                    (valueChange)="onWorkspaceTeam($event)"
+                  />
+                </label>
+
+                <label class="workspace-filter-field workspace-filter-field--inline">
+                  <span>พนักงาน</span>
+                  <app-sf-dropdown
+                    [items]="workspaceFilter.personOptions()"
+                    [value]="workspaceFilter.personId()"
+                    [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชื่อพนักงาน...', placeholder: 'ทุกพนักงาน', width: '205px', cssClass: 'e-outline' }"
+                    (valueChange)="onWorkspacePerson($event)"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  class="filter-mine-btn"
+                  [class.is-active]="workspaceFilter.isFilteringSelf()"
+                  title="สลับกรองเฉพาะงานของฉันในหน้านี้ทันที"
+                  (click)="toggleMineFilter()"
+                >
+                  <span class="e-icons e-user" aria-hidden="true"></span>
+                  <span>เฉพาะฉัน</span>
+                </button>
+              }
+            </div>
 
             <div class="filter-popover-anchor">
               <button
@@ -447,14 +406,65 @@
                 (click)="toggleFilterPopover($event)"
               >
                 <span class="e-icons e-filter" aria-hidden="true"></span>
-                <span>ตัวกรองเพิ่ม</span>
+                <span class="filter-more-btn__label-full">ตัวกรองเพิ่ม</span>
+                <span class="filter-more-btn__label-compact">ตัวกรอง</span>
                 @if (extraFilterCount() > 0) {
                   <span class="filter-more-btn__badge">{{ extraFilterCount() }}</span>
                 }
               </button>
 
               @if (filterPopoverOpen()) {
-                <div class="filter-popover" role="dialog" aria-label="ตัวกรองเพิ่มเติม">
+                <div class="filter-popover" role="dialog" aria-label="ตัวกรอง">
+                  <div class="filter-popover__primary">
+                    <label class="workspace-filter-field">
+                      <span>สถานะ</span>
+                      <app-sf-dropdown
+                        [items]="statusScopeOptions"
+                        [value]="workspaceFilter.statusScope()"
+                        [options]="{ placeholder: 'สถานะงาน', width: '100%', cssClass: 'e-outline' }"
+                        (valueChange)="onWorkspaceStatusScope($event)"
+                      />
+                    </label>
+                    <label class="workspace-filter-field">
+                      <span>รอบ</span>
+                      <app-sf-dropdown
+                        [items]="workspaceFilter.cycleOptions()"
+                        [value]="workspaceFilter.cycleId()"
+                        [options]="{ placeholder: 'รอบระบบ', width: '100%', cssClass: 'e-outline' }"
+                        (valueChange)="onWorkspaceCycle($event)"
+                      />
+                    </label>
+                    @if (role() !== 'member') {
+                      <label class="workspace-filter-field">
+                        <span>ทีม</span>
+                        <app-sf-dropdown
+                          [items]="workspaceFilter.teamOptions()"
+                          [value]="workspaceFilter.teamId()"
+                          [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาทีมจาก myProject...', placeholder: 'ทุกทีม', width: '100%', cssClass: 'e-outline' }"
+                          (valueChange)="onWorkspaceTeam($event)"
+                        />
+                      </label>
+                      <label class="workspace-filter-field">
+                        <span>พนักงาน</span>
+                        <app-sf-dropdown
+                          [items]="workspaceFilter.personOptions()"
+                          [value]="workspaceFilter.personId()"
+                          [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชื่อพนักงาน...', placeholder: 'ทุกพนักงาน', width: '100%', cssClass: 'e-outline' }"
+                          (valueChange)="onWorkspacePerson($event)"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        class="filter-mine-btn filter-mine-btn--block"
+                        [class.is-active]="workspaceFilter.isFilteringSelf()"
+                        title="สลับกรองเฉพาะงานของฉันในหน้านี้ทันที"
+                        (click)="toggleMineFilter()"
+                      >
+                        <span class="e-icons e-user" aria-hidden="true"></span>
+                        <span>เฉพาะฉัน</span>
+                      </button>
+                    }
+                  </div>
                   <div class="filter-popover__grid">
                     <label class="workspace-filter-field">
                       <span>ปี</span>

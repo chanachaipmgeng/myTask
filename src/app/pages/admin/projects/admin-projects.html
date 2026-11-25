@@ -87,24 +87,11 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-[color:var(--text-muted)] font-medium">สถานะ:</span>
-        <div class="inline-flex rounded-lg border border-[color:var(--line)] p-0.5 bg-[color:var(--surface-sunken)]">
-          @for (chip of statusFilterChips; track chip.id) {
-            <button
-              type="button"
-              class="px-2.5 py-1 text-xs font-medium rounded-md transition-colors"
-              [class.bg-[color:var(--surface)]]="filterStatus() === chip.id"
-              [class.text-[color:var(--text-high)]]="filterStatus() === chip.id"
-              [class.shadow-sm]="filterStatus() === chip.id"
-              [class.text-[color:var(--text-muted)]]="filterStatus() !== chip.id"
-              (click)="filterStatus.set($any(chip.id))"
-            >
-              {{ chip.label }}
-            </button>
-          }
-        </div>
-      </div>
+      <app-filter-chips
+        [options]="statusFilterChips"
+        [value]="filterStatus()"
+        (valueChange)="onStatusFilter($event)"
+      />
     </div>
 
     <!-- Column Templates -->

@@ -416,6 +416,28 @@ body.e-light-mode {
   min-width: 185px;
 }
 
+@media (max-width: 640px) {
+  .e-kanban.pipeline-board {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .e-kanban.pipeline-board .e-kanban-table {
+    min-width: 980px !important;
+  }
+
+  .e-kanban.pipeline-board .e-header-cells,
+  .e-kanban.pipeline-board .e-content-cells {
+    width: 148px;
+    min-width: 148px;
+  }
+
+  .e-kanban.pipeline-board .e-kanban-content {
+    max-height: none;
+  }
+}
+
 .e-kanban.pipeline-board .e-card {
   cursor: grab;
 }
@@ -435,6 +457,22 @@ body.e-light-mode .e-kanban.pipeline-board {
 .e-gantt.e-control,
 .e-schedule.team-schedule {
   border: 1px solid var(--line);
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .e-gantt.e-control,
+  .e-schedule.team-schedule {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .team-schedule .e-timeline-view .e-resource-left-td,
+  .team-schedule .e-timeline-month-view .e-resource-left-td {
+    width: 112px !important;
+    min-width: 100px !important;
+    max-width: 120px !important;
+  }
 }
 
 .team-schedule .e-appointment.ticket-slipped {

@@ -51,7 +51,14 @@ description: >-
 
 ## Shared UI (`src/app/shared/ui/`)
 
-ใช้ซ้ำข้ามหน้า: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips`, `app-confirm-dialog` (Fade) · KPI: `app-kpi-stat` (layout/trend/progress/sparkline/skeleton) · tone: `badge.ts` · แถวสถิติทุกหน้าต้องเรียก `app-kpi-stat` ห้ามห่อ `kpi-value` ดิบ · Toast ผ่าน `ShellNotice` (typed) · AppBar แจ้งเตือน = ปุ่มไอคอน `e-warning` + `e-badge-notification e-badge-overlap`
+ใช้ซ้ำข้ามหน้า: `app-page-head`, `app-section-card`, `app-status-badge`, `app-form-field`, `app-flash-messages`, `app-filter-chips` (สวิตช์สถานะ/แท็บอินบ็อกซ์มาตรฐาน — ห้าม segmented ปุ่มดิบ), `app-confirm-dialog` (Fade) · KPI: `app-kpi-stat` (layout/trend/progress/sparkline/skeleton) · tone: `badge.ts` · แถวสถิติทุกหน้าต้องเรียก `app-kpi-stat` ห้ามห่อ `kpi-value` ดิบ · Toast ผ่าน `ShellNotice` (typed) · AppBar แจ้งเตือน = ปุ่มไอคอน `e-warning` + `e-badge-notification e-badge-overlap` · โปรไฟล์/ออกจากระบบอยู่ท้าย Sidebar · หลังล็อกอินทุกสิทธิ์ไป `/me`
+
+### มือถือ (≤640px)
+
+- Global Filter: ซ่อนช่องเดสก์ท็อป · เปิดป็อปโอเวอร์「ตัวกรอง」
+- `TicketDetailService` drawer กว้างเต็มจอ (`ViewportService.isMobile`)
+- Kanban `.pipeline-board` / Gantt / Schedule เลื่อนในกรอบ ไม่ดันทั้งหน้า
+- `.hub-underline-tab` สูงแตะ ≥40px · รายการยาวเว้น `pb` กันปุ่มลอย
 
 ## Syncfusion style layers
 

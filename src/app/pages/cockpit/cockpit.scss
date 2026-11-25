@@ -82,6 +82,39 @@
   --bento-pace-fill: #5f7ce3;
 }
 
+.pill-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap !important;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--bento-chip-border);
+  background: transparent;
+  color: var(--bento-chip-color);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-instant) ease,
+    color var(--dur-instant) ease,
+    border-color var(--dur-instant) ease,
+    box-shadow var(--dur-fast) ease;
+
+  &:hover {
+    background: var(--bento-chip-hover);
+    color: var(--fg);
+  }
+
+  &.is-active {
+    background: var(--primary);
+    border-color: var(--primary-bright);
+    color: #ffffff;
+    box-shadow: var(--shadow-pill);
+  }
+}
+
 /* ===================================================
    Brisko Overview Grid — main + side rail
    =================================================== */
@@ -235,14 +268,66 @@
 }
 
 @container (max-width: 640px) {
+  .bento-band {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+  }
+
   .bento-band__metrics {
+    grid-column: 1;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     row-gap: 12px;
+  }
+
+  .band-metric {
+    padding-left: 10px;
+  }
+
+  .band-metric__value {
+    font-size: 24px;
   }
 
   .bento-band__actions {
     flex-direction: row;
     flex-wrap: wrap;
+    width: 100%;
+
+    .e-btn {
+      flex: 1 1 calc(50% - 4px);
+      min-height: 36px;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .bento-cockpit {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding-bottom: 72px;
+  }
+
+  .ov-grid,
+  .ov-main,
+  .ov-side {
+    overflow: visible !important;
+  }
+
+  .ov-side {
+    min-width: 0;
+  }
+
+  /* Radar / wide charts: scroll inside card, never stretch the page */
+  .bento-cockpit ::ng-deep .e-chart,
+  .bento-cockpit ::ng-deep ejs-chart {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .bento-cockpit ::ng-deep .e-accumulationchart,
+  .bento-cockpit ::ng-deep ejs-accumulationchart {
+    max-width: 100% !important;
   }
 }
 
@@ -576,6 +661,7 @@
     padding: 3px 10px;
     font-size: 11px;
     font-weight: 600;
+    white-space: nowrap;
     border-radius: var(--radius-pill);
     border: 1px solid var(--bento-chip-border);
     background: transparent;

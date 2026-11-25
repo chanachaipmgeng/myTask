@@ -34,11 +34,15 @@ alwaysApply: true
 
 ## Navigation / Global Filter (P20–P21)
 
+- **หลังล็อกอินทุกสิทธิ์ → `/me`** (`login.ts` + GitLab callback `${appUrl}/me`) · สิทธิ์แอดมินยังอยู่ · เปิดโซนแอดมินจาก Sidebar เอง
 - Sidebar lead = hub แบน: ของฉัน · ทีม (`/workspace/people`) · งานทีม · คุณภาพ · วิเคราะห์ · คิวจ่ายงานเป็นแท็บ `/work/queue` — อย่าใส่ «ทีมการ์ด» ซ้ำบน rail (ค้นหาเมนู/`/org/teams` หรือปุ่มใน Person WS)
-- Global Filter: ชิปสาย 6 รหัสผ่าน `listWorkspaceTrackChipOptions` / `normalizeTrack` · กรองคน/ใบด้วย `filterPeopleByWorkspace` / `filterTicketsByWorkspace` · chip คนเมื่อมี `personId`
+- AppBar: ค้นหา · สถานะ API · แจ้งเตือน · สลับธีม — **ไม่**ใส่ชื่อหน้าซ้ำหัวหน้าเนื้อหา · **ไม่**ปุ่ม「ดูในมุม Member」· **ไม่**อวาตาร์/สลับบัญชี (โปรไฟล์+ออกจากระบบท้าย Sidebar)
+- Global Filter: ชิปสาย 6 รหัสผ่าน `listWorkspaceTrackChipOptions` / `normalizeTrack` · กรองคน/ใบด้วย `filterPeopleByWorkspace` / `filterTicketsByWorkspace` · chip คนเมื่อมี `personId` · ที่ ≤640px ซ่อนช่องเดสก์ท็อป เปิดผ่านป็อปโอเวอร์「ตัวกรอง」
+- สวิตช์สถานะ/แท็บอินบ็อกซ์ที่ใช้กรองในหน้า (เช่น `/mygit`, `/admin/projects`) ต้องใช้ `app-filter-chips` — ห้ามวาด segmented ปุ่มดิบ
 - `/work` shell: กรองสัปดาห์/ถังวัน/ค้นหาเท่านั้น — ทีม·สาย·โปรเจกต์อ่านจาก `WorkspaceFilter` · `clearContext` ห้ามเรียก `workspace.clear()` ทั้งก้อน
 - `/me` MineShell แท็บสั้น 6 ชุด (วันนี้ · ค็อกพิท · งาน · ปฏิทิน · คุณภาพ · ข้อมูล)
 - Person Workspace: รายชื่อซ้าย scope โดยไม่ใส่ `personId` · แท็บงานตั้ง person แล้วไป `/work/list`
+- มือถือ ≤640px: ลิ้นชักใบงานเต็มจอ · `.hub-underline-tab` สูงแตะ ≥40px · Kanban/Gantt/Schedule เลื่อนในกรอบ · คอนเทนเนอร์รายการยาวเว้น `pb` กันปุ่มลอย
 
 ## สิทธิ์แจกงาน / Board / Gantt / writeback / KPI snapshot
 
@@ -56,5 +60,5 @@ alwaysApply: true
 - ไม่เปิด OpenProject writeback โดยค่าเริ่ม (`OPENPROJECT_WRITEBACK=false`)
 - ไม่เปลี่ยนสูตร Implement/R&D เว้นแต่ผู้ใช้ขอชัดเจนและอัปเดต verify
 - แจ้งเตือนบน AppBar ใช้ปุ่มไอคอน `e-warning` + `e-badge-notification e-badge-overlap` เปิด `ejs-dialog` (`#alertDialog`) ไม่วางแถบแจ้งเตือนยาวทุกหน้า (อย่าใช้ `e-Bell` — ไม่มี glyph ในธีม) · แถวที่มี `ticketId` ต้องมีปุ่มเปิดรายละเอียดใบงาน
-- **รายละเอียดใบงานกลาง**: `TicketDetailService.open(id)` → `<app-ticket-detail-dialog>` ใน `app.html` เป็น `ejs-sidebar` ตำแหน่ง `Right` · `type="Over"` · กว้าง ~560px (คนละชั้นกับแผงรายวันของ `/schedule` หรือ splitter ของ disputes — ห้ามแทนคอลัมน์ขวาในหน้าด้วย Over drawer) · เรียกจาก List/Backlog/Queue/Tickets/ค้นหาโกลบอล/แจ้งเตือน/Person WS/My Workspace/Gantt/Schedule/Handoff ฯลฯ · Board คลิกการ์ดยังเป็น edit dialog; ปุ่ม「ดูรายละเอียด 360°」เปิด drawer ชุดเดียวกัน
+- **รายละเอียดใบงานกลาง**: `TicketDetailService.open(id)` → `<app-ticket-detail-dialog>` ใน `app.html` เป็น `ejs-sidebar` ตำแหน่ง `Right` · `type="Over"` · กว้าง ~560px (มือถือเต็มจอผ่าน `ViewportService.isMobile`) (คนละชั้นกับแผงรายวันของ `/schedule` หรือ splitter ของ disputes — ห้ามแทนคอลัมน์ขวาในหน้าด้วย Over drawer) · เรียกจาก List/Backlog/Queue/Tickets/ค้นหาโกลบอล/แจ้งเตือน/Person WS/My Workspace/Gantt/Schedule/Handoff ฯลฯ · Board คลิกการ์ดยังเป็น edit dialog; ปุ่ม「ดูรายละเอียด 360°」เปิด drawer ชุดเดียวกัน
 - GitLab MR sync (`shared/domain/gitlab-mr.ts`) และ Teams Webhook (`POST /api/integrations/teams/send`) รองรับทั้งโหมดจำลอง (ออฟไลน์/dry-run) และโหมดยิงจริงผ่าน API

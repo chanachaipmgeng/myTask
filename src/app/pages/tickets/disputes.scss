@@ -20,6 +20,22 @@
   background: transparent;
 }
 
+@media (max-width: 640px) {
+  :host ::ng-deep .disputes-splitter.e-splitter {
+    height: auto !important;
+  }
+
+  :host ::ng-deep .disputes-splitter > .e-pane {
+    overflow: visible;
+    min-height: 280px;
+  }
+
+  .disputes-pane {
+    height: auto;
+    max-height: none;
+  }
+}
+
 :host ::ng-deep .disputes-splitter > .e-pane {
   overflow: hidden;
   background: transparent;

@@ -396,10 +396,27 @@
 }
 
 @container (max-width: 640px) {
+  .hero-band__top {
+    padding: 14px 14px 14px 18px;
+    gap: 12px;
+  }
+
+  .hero-band__identity {
+    flex: 1 1 100%;
+  }
+
+  .hero-band__title {
+    font-size: 20px;
+  }
+
   .hero-band__kpi-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     row-gap: 14px;
     padding: 12px 4px;
+  }
+
+  .hero-band__metric {
+    padding: 6px 12px;
   }
 
   .hero-band__metric:nth-child(odd) {
@@ -408,7 +425,21 @@
 
   .hero-band__actions {
     width: 100%;
-    justify-content: flex-start;
+    flex: 1 1 100%;
+    justify-content: stretch;
+    gap: 8px;
+
+    :is(button, a, .e-btn) {
+      flex: 1 1 calc(50% - 4px);
+      min-height: 36px;
+      justify-content: center;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-band__actions :is(button, a, .e-btn) {
+    min-height: 36px;
   }
 }
 

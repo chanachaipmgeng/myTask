@@ -209,14 +209,19 @@ export class DisputesPage implements OnInit {
       return;
     }
     const mq = window.matchMedia('(max-width: 800px)');
+    const phone = window.matchMedia('(max-width: 640px)');
     const apply = (): void => {
       const narrow = mq.matches;
       this.splitterOrientation.set(narrow ? 'Vertical' : 'Horizontal');
-      this.splitterHeight.set(narrow ? '920px' : '560px');
+      this.splitterHeight.set(phone.matches ? 'auto' : narrow ? '920px' : '560px');
     };
     apply();
     mq.addEventListener('change', apply);
-    this.destroyRef.onDestroy(() => mq.removeEventListener('change', apply));
+    phone.addEventListener('change', apply);
+    this.destroyRef.onDestroy(() => {
+      mq.removeEventListener('change', apply);
+      phone.removeEventListener('change', apply);
+    });
   }
 
   protected setStatus(status: string): void {

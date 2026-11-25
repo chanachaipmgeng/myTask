@@ -252,6 +252,19 @@
 }
 
 @media (max-width: 640px) {
+  :host ::ng-deep #ticket-detail-drawer.e-sidebar {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  .ticket-drawer__head {
+    padding: 0.85rem 0.85rem 0.65rem;
+  }
+
+  .ticket-drawer__body {
+    padding: 0.75rem 0.85rem 1.5rem;
+  }
+
   .log-grid {
     grid-template-columns: 1fr;
   }

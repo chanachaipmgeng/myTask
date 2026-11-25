@@ -18,6 +18,23 @@
   }
 }
 
+@media (max-width: 800px) {
+  :host {
+    height: auto;
+  }
+
+  .schedule-page.page {
+    height: auto;
+    overflow: visible;
+    padding-bottom: 72px;
+  }
+
+  .schedule-layout {
+    min-height: 0;
+    grid-template-rows: minmax(360px, auto) auto;
+  }
+}
+
 .schedule-page > app-page-head {
   flex: 0 0 auto;
 }
