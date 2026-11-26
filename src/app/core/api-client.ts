@@ -8,6 +8,7 @@ import {
   PersonGitSummary,
   TeamGitMapping,
 } from '../../../shared/domain/git-branch';
+import { GitActivityRow } from '../../../shared/domain/gitlab-activity';
 import { ProjectDetail, ProjectGitSummary } from '../../../shared/domain/project-detail';
 import { KpiPeriodType } from './kpi-snapshot';
 import { PersonScore, TrackWeights } from './scoring';
@@ -705,8 +706,22 @@ export class ApiClient {
     });
   }
 
-  getPersonGitSummary(personId: string): Promise<{ summary: PersonGitSummary }> {
-    return api(`/api/integrations/gitlab/person/${encodeURIComponent(personId)}`);
+  getPersonGitSummary(
+    personId: string,
+    params?: { ticketId?: string; days?: number },
+  ): Promise<{
+    summary: PersonGitSummary;
+    events: GitActivityRow[];
+    source: 'live' | 'offline';
+    message?: string;
+  }> {
+    const query = new URLSearchParams();
+    if (params?.ticketId) query.set('ticketId', params.ticketId);
+    if (params?.days != null) query.set('days', String(params.days));
+    const qs = query.toString();
+    return api(
+      `/api/integrations/gitlab/person/${encodeURIComponent(personId)}${qs ? `?${qs}` : ''}`,
+    );
   }
 
   getTeamGitMappings(): Promise<{ mappings: TeamGitMapping[] }> {

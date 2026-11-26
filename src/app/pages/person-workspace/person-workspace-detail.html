@@ -128,6 +128,9 @@
           <div class="flex flex-wrap gap-2">
             <a ejs-button cssClass="e-primary" routerLink="/quality/tickets" queryParamsHandling="preserve">เปิดตารางใบงาน</a>
             <button ejs-button cssClass="e-outline" type="button" (click)="openFullProfile()">แดชบอร์ดคะแนนเต็ม</button>
+            <button ejs-button cssClass="e-info e-outline" type="button" (click)="jumpToGitForScore()">
+              ดูกิจกรรม Git ในช่วงคะแนน
+            </button>
           </div>
         </app-section-card>
       }
@@ -147,21 +150,140 @@
       }
 
       @if (activeTab() === 'git') {
+        <div class="person-ws__kpi-grid" appStagger [staggerStep]="45">
+          <app-kpi-stat
+            title="Branch ใช้งาน"
+            [value]="gitSummary()?.activeBranchesCount ?? personBranches().length"
+            accent="info"
+            layout="stack"
+          ></app-kpi-stat>
+          <app-kpi-stat
+            title="ยังไม่ผูกใบ"
+            [value]="gitSummary()?.unmatchedBranchesCount ?? 0"
+            [accent]="(gitSummary()?.unmatchedBranchesCount ?? 0) > 0 ? 'warning' : 'success'"
+            layout="stack"
+          ></app-kpi-stat>
+          <app-kpi-stat
+            title="MR เปิด"
+            [value]="gitSummary()?.openMrsCount ?? 0"
+            accent="violet"
+            layout="stack"
+          ></app-kpi-stat>
+          <app-kpi-stat
+            title="กิจกรรม (12 เดือน)"
+            [value]="gitEvents().length"
+            accent="teal"
+            layout="stack"
+          ></app-kpi-stat>
+        </div>
+
         <app-section-card
-          title="กิจกรรม Git ล่าสุด (mygitplus)"
-          subtitle="ตรวจพบ Branch และประวัติการคอมมิตล่าสุดของพนักงานรายนี้"
+          title="Contribution (12 เดือน)"
+          subtitle="ความหนาแน่นกิจกรรม Git จาก mygitplus — ใช้ประกอบการวิเคราะห์คะแนน ไม่คิดสูตรโดยตรง"
+        >
+          @if (loadingGitActivity()) {
+            <div class="py-4 text-center text-xs text-[color:var(--text-muted)]">กำลังโหลด heatmap…</div>
+          } @else if (contributionCells().length === 0) {
+            <p class="person-ws__empty m-0">ยังไม่มีข้อมูลกิจกรรม</p>
+          } @else {
+            <div class="git-contrib" role="img" aria-label="Contribution heatmap">
+              @for (cell of contributionCells(); track cell.date) {
+                <span
+                  class="git-contrib__cell"
+                  [attr.data-level]="cell.level"
+                  [attr.title]="cell.title"
+                ></span>
+              }
+            </div>
+            <div class="git-contrib__legend">
+              <span>น้อย</span>
+              <span class="git-contrib__cell" data-level="0"></span>
+              <span class="git-contrib__cell" data-level="1"></span>
+              <span class="git-contrib__cell" data-level="2"></span>
+              <span class="git-contrib__cell" data-level="3"></span>
+              <span class="git-contrib__cell" data-level="4"></span>
+              <span>มาก</span>
+            </div>
+          }
+        </app-section-card>
+
+        <app-section-card
+          title="ฟีดกิจกรรม Git"
+          subtitle="Push · MR · แท็ก จาก mygitplus — กดป้ายใบงานเพื่อเปิดรายละเอียด 360°"
+          [badge]="recentGitEvents().length + ' รายการ'"
+          badgeTone="info"
+        >
+          @if (gitActivityMessage()) {
+            <p class="person-ws__hint m-0 mb-3">{{ gitActivityMessage() }}</p>
+          }
+          @if (loadingGitActivity()) {
+            <div class="py-6 text-center text-xs text-[color:var(--text-muted)]">
+              <span class="e-icons e-spinner e-spin text-lg block mb-1"></span>
+              กำลังโหลดกิจกรรม…
+            </div>
+          } @else if (recentGitEvents().length === 0) {
+            <div class="py-6 text-center text-xs text-[color:var(--text-muted)]">
+              ยังไม่พบกิจกรรมในช่วง 12 เดือน หรือยังไม่ได้ผูก GitLab username
+            </div>
+          } @else {
+            <ul class="git-feed">
+              @for (ev of recentGitEvents(); track ev.id) {
+                <li class="git-feed__row" [class.is-highlight]="isHighlightedEvent(ev)">
+                  <span [class]="activityIcon(ev.kind) + ' git-feed__icon'" aria-hidden="true"></span>
+                  <div class="git-feed__body min-w-0">
+                    <div class="git-feed__head">
+                      <strong>{{ activityKindLabel(ev.kind) }}</strong>
+                      <code class="git-feed__target">{{ ev.targetLabel }}</code>
+                      @if (ev.commitCount > 1) {
+                        <span class="git-feed__meta">และอีก {{ ev.commitCount - 1 }} commits</span>
+                      }
+                    </div>
+                    <div class="git-feed__meta">
+                      {{ ev.projectPath || ev.projectName }}
+                      @if (ev.detail) {
+                        <span>· {{ ev.detail }}</span>
+                      }
+                      · {{ formatActivityTime(ev.createdAt) }}
+                    </div>
+                  </div>
+                  <div class="git-feed__actions">
+                    @if (ev.ticketId) {
+                      <button
+                        ejs-button
+                        cssClass="e-success e-outline e-small"
+                        type="button"
+                        (click)="openTicket(ev.ticketId, $event)"
+                      >
+                        {{ ev.ticketId }}
+                      </button>
+                    }
+                    @if (ev.webUrl) {
+                      <a [href]="ev.webUrl" target="_blank" rel="noopener" ejs-button cssClass="e-outline e-small">
+                        เปิดใน Git
+                      </a>
+                    }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </app-section-card>
+
+        <app-section-card
+          title="Branch ที่จับคู่คนนี้"
+          subtitle="จากฐานข้อมูล sync / webhook — สร้างใบงานได้เมื่อยังไม่ผูก"
           [badge]="personBranches().length + ' Branch'"
           badgeTone="info"
         >
           @if (loadingPersonBranches()) {
             <div class="py-6 text-center text-xs text-[color:var(--text-muted)]">
               <span class="e-icons e-spinner e-spin text-lg block mb-1"></span>
-              กำลังโหลดข้อมูล Git...
+              กำลังโหลดข้อมูล Branch...
             </div>
           } @else if (personBranches().length === 0) {
             <div class="py-6 text-center text-xs text-[color:var(--text-muted)]">
               <span class="e-icons e-circle-info text-blue-500 text-lg block mb-1"></span>
-              ยังไม่พบข้อมูล Branch หรือ Commits ใน mygitplus ที่จับคู่กับพนักงานท่านนี้
+              ยังไม่พบข้อมูล Branch ใน mygitplus ที่จับคู่กับพนักงานท่านนี้
             </div>
           } @else {
             <div class="flex flex-col gap-3">
@@ -172,9 +294,13 @@
                       <span class="e-icons e-timeline-work-week text-blue-500"></span>
                       <span class="font-mono text-xs font-bold text-[color:var(--text-high)] break-all">{{ b.branchName }}</span>
                       @if (b.ticketId) {
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
-                          ผูกกับ #{{ b.ticketId }}
-                        </span>
+                        <button
+                          type="button"
+                          class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-200"
+                          (click)="openTicket(b.ticketId, $event)"
+                        >
+                          ผูกกับ {{ b.ticketId }}
+                        </button>
                       } @else {
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                           ยังไม่มีใบงาน

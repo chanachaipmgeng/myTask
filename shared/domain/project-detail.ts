@@ -46,6 +46,17 @@ export interface ProjectDetail {
   stats: ProjectStats;
 }
 
+export interface ProjectGitReleaseItem {
+  repoId: string;
+  repoName: string;
+  name: string;
+  tagName: string;
+  description: string;
+  releasedAt: string;
+  webUrl: string;
+  source: 'release' | 'tag';
+}
+
 export interface ProjectGitSummary {
   projectId: number;
   projectIdentifier: string;
@@ -55,6 +66,8 @@ export interface ProjectGitSummary {
     path: string;
     webUrl: string;
   }[];
+  /** Release จาก GitLab Releases API หรือ fallback เป็น repository tags */
+  releases: ProjectGitReleaseItem[];
   latestPipelines: {
     repoId: string;
     repoName: string;

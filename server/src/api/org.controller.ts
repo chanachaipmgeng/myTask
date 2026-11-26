@@ -1,6 +1,11 @@
 import { Body, Controller, Get, Inject, Param, Post, Put, Query, Req } from '@nestjs/common';
 import { AccessRole, Level, Track } from '../../../shared/domain/models';
-import { ProjectDetail, ProjectGitSummary, ProjectStats } from '../../../shared/domain/project-detail';
+import {
+  ProjectDetail,
+  ProjectGitReleaseItem,
+  ProjectGitSummary,
+  ProjectStats,
+} from '../../../shared/domain/project-detail';
 import { computeEffectiveAllowedTeams, TeamVisibilityRule } from '../../../shared/domain/team-visibility';
 import { filterPeopleByWorkspace } from '../../../shared/domain/workspace-scope';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
@@ -12,6 +17,7 @@ import { getConnection, connectionToken, getSettings, saveSettings } from '../da
 import { OpenProjectCatalogEntry } from '../data/types';
 import { getVisibilityConfig, setTeamVisibilityMatrix, setUserAllowedTeams } from '../data/visibility.repo';
 import { Db } from '../db/db.service';
+import { GitLabClient } from '../integrations/gitlab/gitlab.client';
 import { OpenProjectSyncService } from '../integrations/openproject/openproject.sync';
 
 export interface AuditLogDto {
@@ -676,33 +682,103 @@ export class OrgController {
       return { ok: false, message: 'ไม่พบโปรเจกต์ที่ระบุ' };
     }
 
-    const repoIds = (project.gitRepoIds ?? []).map(Number).filter((n) => !isNaN(n));
+    const repoIdStrs = (project.gitRepoIds ?? []).map(String).filter(Boolean);
+    const repoNames = project.gitRepoNames ?? [];
+    const repoIds = repoIdStrs.map(Number).filter((n) => !Number.isNaN(n));
     const branches = await listGitBranches(this.db, {
       projectId: repoIds.length > 0 ? repoIds : undefined,
     });
 
-    const connection = await getConnection(this.db, 'gitlab');
-    const baseUrl = this.config.gitlab.url || connection?.base_url || '';
+    const gitlab = await this.resolveGitLabClient();
+    const baseUrl = (gitlab?.baseUrl || this.config.gitlab.url || '').replace(/\/+$/, '');
 
-    const mappedRepos: ProjectGitSummary['mappedRepos'] = (project.gitRepoNames ?? []).map(
-      (name, idx) => ({
-        id: String(project.gitRepoIds?.[idx] ?? idx + 1),
-        name,
-        path: name,
-        webUrl: baseUrl ? `${baseUrl}/${name}` : '',
-      }),
-    );
+    const mappedRepos: ProjectGitSummary['mappedRepos'] = repoIdStrs.map((repoId, idx) => {
+      const fallbackName = repoNames[idx]?.trim() || repoId;
+      return {
+        id: repoId,
+        name: fallbackName,
+        path: fallbackName,
+        webUrl: baseUrl && fallbackName.includes('/') ? `${baseUrl}/${fallbackName}` : '',
+      };
+    });
+
+    const releases: ProjectGitReleaseItem[] = [];
+
+    if (gitlab && repoIdStrs.length > 0) {
+      await Promise.all(
+        repoIdStrs.map(async (repoId, idx) => {
+          const fallbackName = repoNames[idx]?.trim() || repoId;
+          try {
+            const glProject = await gitlab.client.getProject(repoId);
+            const name = (glProject.name ?? fallbackName).trim() || fallbackName;
+            const path = (glProject.path_with_namespace ?? name).trim() || name;
+            const webUrl = (glProject.web_url ?? '').trim();
+            mappedRepos[idx] = {
+              id: repoId,
+              name,
+              path,
+              webUrl,
+            };
+
+            let releaseRows = await gitlab.client.listReleases(repoId, { perPage: 8 });
+            if (releaseRows.length > 0) {
+              for (const rel of releaseRows) {
+                const tagName = (rel.tag_name ?? '').trim();
+                if (!tagName) continue;
+                const releasedAt = (rel.released_at || rel.created_at || '').trim();
+                releases.push({
+                  repoId,
+                  repoName: name,
+                  name: (rel.name ?? tagName).trim() || tagName,
+                  tagName,
+                  description: stripReleaseDescription(rel.description),
+                  releasedAt,
+                  webUrl: webUrl
+                    ? `${webUrl.replace(/\/+$/, '')}/-/releases/${encodeURIComponent(tagName)}`
+                    : '',
+                  source: 'release',
+                });
+              }
+            } else {
+              const tags = await gitlab.client.listTags(repoId, { perPage: 8 });
+              for (const tag of tags) {
+                const tagName = (tag.name ?? '').trim();
+                if (!tagName) continue;
+                const releasedAt = (tag.commit?.created_at ?? '').trim();
+                releases.push({
+                  repoId,
+                  repoName: name,
+                  name: tagName,
+                  tagName,
+                  description: stripReleaseDescription(tag.message || tag.release?.description),
+                  releasedAt,
+                  webUrl: webUrl
+                    ? `${webUrl.replace(/\/+$/, '')}/-/tags/${encodeURIComponent(tagName)}`
+                    : '',
+                  source: 'tag',
+                });
+              }
+            }
+          } catch {
+            // keep catalog fallback for this repo
+          }
+        }),
+      );
+    }
+
+    releases.sort((a, b) => (b.releasedAt || '').localeCompare(a.releasedAt || ''));
 
     const summary: ProjectGitSummary = {
       projectId: project.id,
       projectIdentifier: project.identifier,
       mappedRepos,
+      releases,
       latestPipelines: mappedRepos.map((r) => ({
         repoId: r.id,
         repoName: r.name,
         branch: 'main',
         status: 'success' as const,
-        webUrl: r.webUrl ? `${r.webUrl}/pipelines` : '',
+        webUrl: r.webUrl ? `${r.webUrl}/-/pipelines` : '',
         updatedAt: new Date().toISOString(),
       })),
       openMrs: [],
@@ -794,6 +870,8 @@ export class OrgController {
           name: p.name ?? p.identifier ?? '',
           active: existing !== undefined ? existing.active : (p.active ?? true),
           assignedTeamIds: existing?.assignedTeamIds ?? [],
+          gitRepoIds: existing?.gitRepoIds ?? [],
+          gitRepoNames: existing?.gitRepoNames ?? [],
         };
       });
 
@@ -812,4 +890,27 @@ export class OrgController {
 
     return { ok: true, total: merged.length, projects: merged };
   }
+
+  private async resolveGitLabClient(): Promise<{
+    client: GitLabClient;
+    baseUrl: string;
+  } | null> {
+    const connection = await getConnection(this.db, 'gitlab');
+    const storedBase = (connection?.base_url ?? '').split('#')[0]?.trim() ?? '';
+    const baseUrl = (this.config.gitlab.url || storedBase).replace(/\/+$/, '');
+    const token = this.config.gitlab.apiToken || connectionToken(connection, this.config.tokenEncKey);
+    if (!baseUrl || !token) {
+      return null;
+    }
+    return { client: new GitLabClient(baseUrl, token), baseUrl };
+  }
+}
+
+function stripReleaseDescription(raw: string | null | undefined): string {
+  if (!raw) return '';
+  return raw
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 160);
 }

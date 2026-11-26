@@ -16,6 +16,11 @@ import { ShellNotice } from '../../../core/shell-notice';
 import { TicketDetailService } from '../../../core/ticket-detail.service';
 import { ViewportService } from '../../../core/viewport.service';
 import { suggestBranchNameFromTicket } from '../../../../../shared/domain/git-branch';
+import {
+  GitActivityKind,
+  GitActivityRow,
+  gitActivityKindLabel,
+} from '../../../../../shared/domain/gitlab-activity';
 import { scoreTicket } from '../../../../../shared/domain/scoring';
 import { evaluatePolicySla, PolicySlaEvaluation } from '../../../../../shared/domain/policy-sla';
 import { todayInBangkok, workflowStatusOf } from '../../../../../shared/domain/workflow';
@@ -79,6 +84,8 @@ export class TicketDetailDialogComponent {
   protected readonly branchRef = signal('main');
   protected readonly creatingBranch = signal(false);
   protected readonly createdBranchUrl = signal<string | null>(null);
+  protected readonly ticketGitEvents = signal<GitActivityRow[]>([]);
+  protected readonly loadingTicketGit = signal(false);
 
   protected readonly canCreateBranch = computed(() => {
     const ticket = this.data()?.ticket;
@@ -112,6 +119,7 @@ export class TicketDetailDialogComponent {
   protected onClose(): void {
     this.detail.close();
     this.data.set(null);
+    this.ticketGitEvents.set([]);
   }
 
   protected onDrawerClose(): void {
@@ -271,6 +279,22 @@ export class TicketDetailDialogComponent {
     }
   }
 
+  protected activityKindLabel(kind: GitActivityKind): string {
+    return gitActivityKindLabel(kind);
+  }
+
+  protected formatActivityTime(raw: string): string {
+    if (!raw) return '';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return raw.slice(0, 16).replace('T', ' ');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+  }
+
   protected priorityTone(label: string): BadgeTone {
     return toneForPriority(label);
   }
@@ -278,6 +302,7 @@ export class TicketDetailDialogComponent {
   private async load(id: string): Promise<void> {
     this.loading.set(true);
     this.createdBranchUrl.set(null);
+    this.ticketGitEvents.set([]);
     try {
       if (this.scorecard.usingApi()) {
         const res = await this.api.getWorkItemDetail(id);
@@ -305,6 +330,7 @@ export class TicketDetailDialogComponent {
       if (this.data()?.ticket?.opId) {
         void this.loadGitlabProjects(this.data()?.ticket?.opProject);
       }
+      void this.loadTicketGitActivity(this.data()?.ticket ?? null);
     } catch {
       const local = this.offlineDetail(id);
       this.data.set(
@@ -316,8 +342,30 @@ export class TicketDetailDialogComponent {
         },
       );
       this.prepareBranchForm(this.data()?.ticket ?? null);
+      this.ticketGitEvents.set([]);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadTicketGitActivity(
+    ticket: TicketDetailResponse['ticket'] | null | undefined,
+  ): Promise<void> {
+    if (!ticket?.assigneeId || !this.scorecard.usingApi()) {
+      this.ticketGitEvents.set([]);
+      return;
+    }
+    this.loadingTicketGit.set(true);
+    try {
+      const res = await this.api.getPersonGitSummary(ticket.assigneeId, {
+        ticketId: ticket.id,
+        days: 90,
+      });
+      this.ticketGitEvents.set((res.events ?? []).slice(0, 20));
+    } catch {
+      this.ticketGitEvents.set([]);
+    } finally {
+      this.loadingTicketGit.set(false);
     }
   }
 

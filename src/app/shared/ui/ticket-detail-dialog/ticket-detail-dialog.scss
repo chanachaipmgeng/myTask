@@ -463,6 +463,43 @@
   }
 }
 
+.ticket-git-activity {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, #94a3b8 28%, transparent);
+}
+
+.ticket-git-feed {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.ticket-git-feed__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-nested, 12px);
+  border: 1px solid color-mix(in srgb, #94a3b8 28%, transparent);
+  background: color-mix(in srgb, var(--color-surface, #fff) 92%, #e2e8f0);
+}
+
+.ticket-git-feed__target {
+  margin-left: 0.35rem;
+  font-size: 0.72rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--primary, #2746b3) 10%, transparent);
+}
+
 @media (max-width: 640px) {
   :host ::ng-deep #ticket-detail-drawer.e-sidebar {
     width: 100vw !important;

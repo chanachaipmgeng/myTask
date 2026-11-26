@@ -34,3 +34,43 @@
     transform: translateY(0);
   }
 }
+
+.project-git-repo-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-nested, 12px);
+  border: 1px solid color-mix(in srgb, var(--primary, #2746b3) 14%, transparent);
+  background: var(--surface, transparent);
+}
+
+.project-git-release-group__title {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink, inherit);
+}
+
+.project-git-release-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.project-git-release-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-nested, 12px);
+  border: 1px solid color-mix(in srgb, #94a3b8 28%, transparent);
+  background: color-mix(in srgb, var(--surface, #fff) 92%, #e2e8f0);
+}

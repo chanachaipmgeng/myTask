@@ -9,6 +9,10 @@ import {
   mapGitLabMergeRequests,
 } from '../../../shared/domain/gitlab-mr';
 import {
+  filterGitActivityForTicket,
+  mapGitLabActivityEvents,
+} from '../../../shared/domain/gitlab-activity';
+import {
   cleanBranchToTicketTitle,
   parseTicketIdFromBranch,
   suggestBranchNameFromTicket,
@@ -984,9 +988,74 @@ export class IntegrationsController {
   }
 
   @Get('integrations/gitlab/person/:personId')
-  async personGitSummary(@Param('personId') personId: string) {
+  async personGitSummary(
+    @Param('personId') personId: string,
+    @Query('ticketId') ticketId?: string,
+    @Query('days') daysRaw?: string,
+  ) {
     const summary = await getPersonGitSummary(this.db, personId);
-    return { summary };
+    const person = await getPerson(this.db, personId);
+    const days = Math.min(365, Math.max(7, Number(daysRaw) || 90));
+    const empty = {
+      summary,
+      events: [] as ReturnType<typeof mapGitLabActivityEvents>,
+      source: 'offline' as const,
+      message: undefined as string | undefined,
+    };
+
+    const gitlabUsername = person?.gitlabUsername?.trim();
+    if (!gitlabUsername) {
+      return { ...empty, message: 'ยังไม่ได้ผูก GitLab username ของพนักงานคนนี้' };
+    }
+
+    const resolved = await this.resolveGitLab();
+    if (!resolved) {
+      return { ...empty, message: 'ยังไม่ได้ตั้งค่า GitLab' };
+    }
+
+    const today = new Date();
+    const after = new Date(today);
+    after.setUTCDate(after.getUTCDate() - days);
+    const afterIso = after.toISOString().slice(0, 10);
+    const beforeIso = today.toISOString().slice(0, 10);
+
+    try {
+      const openMrs = await resolved.client.listOpenMergeRequests({
+        authorUsername: gitlabUsername,
+        perPage: 50,
+      });
+      summary.openMrsCount = openMrs.length;
+
+      const rawEvents = await resolved.client.getUserEvents(gitlabUsername, {
+        after: afterIso,
+        before: beforeIso,
+        perPage: 100,
+      });
+      let events = mapGitLabActivityEvents(rawEvents);
+      const filterTicket = (ticketId ?? '').trim();
+      if (filterTicket) {
+        let opId: number | null = null;
+        const byId = await getWorkItem(this.db, filterTicket);
+        if (byId?.opId != null) {
+          opId = byId.opId;
+        } else {
+          const numeric = Number(filterTicket.replace(/^OP-/i, ''));
+          if (Number.isFinite(numeric) && numeric > 0) {
+            const byOp = await getWorkItemByOpId(this.db, numeric);
+            opId = byOp?.opId ?? numeric;
+          }
+        }
+        events = filterGitActivityForTicket(events, filterTicket, opId);
+      }
+
+      return { summary, events, source: 'live' as const };
+    } catch (err) {
+      return {
+        ...empty,
+        summary,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
   }
 
   @Get('org/teams/git-mappings')

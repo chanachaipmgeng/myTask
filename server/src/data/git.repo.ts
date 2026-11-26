@@ -175,7 +175,7 @@ export async function getPersonGitSummary(
     personId,
     activeBranchesCount: active.length,
     unmatchedBranchesCount: unmatched.length,
-    openMrsCount: 0, // Will be supplemented by GitLab MR sync
+    openMrsCount: 0, // Supplemented by integrations.controller personGitSummary
     recentBranches: branches.slice(0, 10),
   };
 }

@@ -63,6 +63,13 @@ import {
   listTeamWorkspaceCards,
 } from '../shared/domain/workspace-scope';
 import { extractTicketIdFromText, mapGitLabMergeRequests } from '../src/app/core/gitlab-mr';
+import {
+  buildContributionDays,
+  contributionLevel,
+  filterGitActivityForTicket,
+  mapGitLabActivityEvents,
+  resolveTicketIdFromGitText,
+} from '../shared/domain/gitlab-activity';
 import { parseClosedTicketCsv, parseClosedTicketJson } from '../src/app/core/ticket-file';
 import { Person, Ticket, TicketType } from '../src/app/core/models';
 import {
@@ -595,6 +602,36 @@ assert.equal(canEditBoardPlanning('member'), false);
 assert.equal(canEditBoardPlanning('admin'), true);
 
 assert.equal(extractTicketIdFromText('feat(IMP-100): fix bug'), 'IMP-100');
+
+assert.equal(resolveTicketIdFromGitText('feat/OP-72417-ess'), 'OP-72417');
+assert.equal(resolveTicketIdFromGitText('Merge DEV into UAT'), '');
+const activityMapped = mapGitLabActivityEvents([
+  {
+    id: 1,
+    action_name: 'pushed to',
+    created_at: '2026-11-26T10:00:00Z',
+    push_data: { ref: 'feature/OP-100-tax', commit_title: 'fix tax', commit_count: 2, ref_type: 'branch' },
+    project: { name: 'myhrplus-api', path_with_namespace: 'rd/myhrplus-api', web_url: 'https://git.example/rd/api' },
+  },
+  {
+    id: 2,
+    action_name: 'accepted',
+    target_type: 'MergeRequest',
+    target_title: 'feat(OP-100): tax',
+    target_iid: 67,
+    created_at: '2026-11-26T11:00:00Z',
+    project: { name: 'myhrplus-api', path_with_namespace: 'rd/myhrplus-api', web_url: 'https://git.example/rd/api' },
+  },
+]);
+assert.equal(activityMapped.length, 2);
+assert.equal(activityMapped[0]?.kind, 'accepted_mr');
+assert.equal(activityMapped[1]?.kind, 'pushed');
+assert.equal(activityMapped[1]?.ticketId, 'OP-100');
+assert.equal(filterGitActivityForTicket(activityMapped, 'OP-100').length, 2);
+assert.equal(contributionLevel(0), 0);
+assert.equal(contributionLevel(8), 4);
+assert.equal(buildContributionDays(activityMapped, 7, '2026-11-26').at(-1)?.count, 2);
+
 const glMapped = mapGitLabMergeRequests([
   {
     iid: 12,

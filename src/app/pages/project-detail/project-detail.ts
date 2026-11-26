@@ -13,6 +13,7 @@ import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { GitBranchItem } from '../../../../shared/domain/git-branch';
 import {
   ProjectDetail,
+  ProjectGitReleaseItem,
   ProjectGitSummary,
 } from '../../../../shared/domain/project-detail';
 import { currentViewer } from '../../core/admin-settings';
@@ -30,6 +31,7 @@ import {
   SfGridComponent,
   SfGridOptions,
   SfMultiSelectComponent,
+  StatusBadgeComponent,
   TicketCreateDialogComponent,
   listGridOptions,
   trackHexColor,
@@ -65,6 +67,7 @@ const TABS: TabItem[] = [
     SfGridComponent,
     SfMultiSelectComponent,
     PersonAvatarComponent,
+    StatusBadgeComponent,
     TicketCreateDialogComponent,
   ],
   templateUrl: './project-detail.html',
@@ -163,6 +166,37 @@ export class ProjectDetailPage {
     if (!summary) return [];
     return summary.activeBranches.filter((b) => !b.ticketId);
   });
+
+  /** Release/Tag จัดกลุ่มตาม repo (รองรับหลาย git เช่น R&D) */
+  readonly releasesByRepo = computed<
+    { repoId: string; repoName: string; items: ProjectGitReleaseItem[] }[]
+  >(() => {
+    const summary = this.gitSummary();
+    if (!summary?.releases?.length) return [];
+    const order: string[] = [];
+    const map = new Map<string, { repoId: string; repoName: string; items: ProjectGitReleaseItem[] }>();
+    for (const rel of summary.releases) {
+      const key = rel.repoId || rel.repoName;
+      let bucket = map.get(key);
+      if (!bucket) {
+        bucket = { repoId: rel.repoId, repoName: rel.repoName, items: [] };
+        map.set(key, bucket);
+        order.push(key);
+      }
+      bucket.items.push(rel);
+    }
+    return order.map((k) => map.get(k)!);
+  });
+
+  protected formatReleaseAt(raw: string): string {
+    if (!raw) return '—';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return raw.slice(0, 16).replace('T', ' ');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
 
   // Unique Members working on this project
   readonly projectMembers = computed<{ personId: string; name: string; ticketCount: number; totalMd: number }[]>(() => {

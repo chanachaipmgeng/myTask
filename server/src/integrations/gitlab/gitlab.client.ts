@@ -64,9 +64,43 @@ export interface GitLabUserEvent {
   id?: number;
   action_name?: string;
   target_type?: string | null;
+  target_title?: string | null;
+  target_iid?: number | null;
   created_at?: string;
-  push_data?: { commit_count?: number; ref?: string; commit_from?: string; commit_to?: string };
+  push_data?: {
+    commit_count?: number;
+    action?: string;
+    ref_type?: string;
+    ref?: string;
+    commit_title?: string;
+    commit_from?: string;
+    commit_to?: string;
+  };
+  project?: {
+    id?: number;
+    name?: string;
+    path_with_namespace?: string;
+    web_url?: string;
+  } | null;
   author?: { id?: number; username?: string; name?: string };
+  note?: { body?: string } | null;
+}
+
+export interface GitLabRelease {
+  name?: string;
+  tag_name?: string;
+  description?: string | null;
+  created_at?: string;
+  released_at?: string | null;
+  _links?: { self?: string; edit_url?: string };
+}
+
+export interface GitLabTag {
+  name?: string;
+  message?: string | null;
+  target?: string;
+  commit?: { id?: string; short_id?: string; title?: string; created_at?: string };
+  release?: { tag_name?: string; description?: string } | null;
 }
 
 export interface GitLabApprovals {
@@ -153,6 +187,34 @@ export class GitLabClient {
   async getProject(projectId: string | number): Promise<GitLabProject & { default_branch?: string }> {
     const encoded = encodeURIComponent(String(projectId));
     return this.get<GitLabProject & { default_branch?: string }>(`/api/v4/projects/${encoded}`);
+  }
+
+  /** First page only — keep project git-summary snappy. */
+  async listReleases(
+    projectId: string | number,
+    params?: { perPage?: number },
+  ): Promise<GitLabRelease[]> {
+    const perPage = Math.min(20, Math.max(1, params?.perPage ?? 8));
+    const encoded = encodeURIComponent(String(projectId));
+    const query = new URLSearchParams({ per_page: String(perPage) });
+    const rows = await this.get<GitLabRelease[]>(
+      `/api/v4/projects/${encoded}/releases?${query.toString()}`,
+    );
+    return Array.isArray(rows) ? rows : [];
+  }
+
+  /** First page only — fallback when a repo has no GitLab Releases. */
+  async listTags(
+    projectId: string | number,
+    params?: { perPage?: number },
+  ): Promise<GitLabTag[]> {
+    const perPage = Math.min(20, Math.max(1, params?.perPage ?? 8));
+    const encoded = encodeURIComponent(String(projectId));
+    const query = new URLSearchParams({ per_page: String(perPage) });
+    const rows = await this.get<GitLabTag[]>(
+      `/api/v4/projects/${encoded}/repository/tags?${query.toString()}`,
+    );
+    return Array.isArray(rows) ? rows : [];
   }
 
   /** Group-level open MRs across all projects the token can see. */

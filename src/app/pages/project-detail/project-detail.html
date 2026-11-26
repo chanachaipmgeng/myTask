@@ -297,8 +297,105 @@
           </div>
         </app-section-card>
 
-        <!-- CI/CD Pipeline Health Status -->
         @if (gitSummary(); as git) {
+          <app-section-card
+            title="Repos ที่ใช้ในโปรเจกต์นี้"
+            subtitle="รองรับหลาย Git (เช่น R&D) ตามที่ผูกไว้ด้านบน — เปิดลิงก์ไป mygitplus ได้"
+            [badge]="git.mappedRepos.length + ' repo'"
+            badgeTone="info"
+          >
+            @if (git.mappedRepos.length === 0) {
+              <div class="text-xs text-[color:var(--text-muted)] text-center py-6">
+                ยังไม่ได้ผูก Git Repository — เลือกจากรายการด้านบนแล้วกดบันทึก
+              </div>
+            } @else {
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
+                @for (repo of git.mappedRepos; track repo.id) {
+                  <div class="project-git-repo-card">
+                    <div class="min-w-0 flex-1">
+                      <div class="font-bold text-sm text-[color:var(--text-high)] truncate">{{ repo.name }}</div>
+                      <div class="text-xs text-[color:var(--text-muted)] mt-0.5 font-mono truncate">
+                        {{ repo.path || repo.id }}
+                      </div>
+                    </div>
+                    @if (repo.webUrl) {
+                      <a
+                        [href]="repo.webUrl"
+                        target="_blank"
+                        rel="noopener"
+                        ejs-button
+                        cssClass="e-outline e-small"
+                      >
+                        เปิดใน Git
+                      </a>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </app-section-card>
+
+          <app-section-card
+            title="Release / Tag ล่าสุด"
+            subtitle="ดึงจาก GitLab Releases ต่อ repo — ถ้าไม่มี Release จะใช้ repository tags แทน"
+            [badge]="(git.releases?.length ?? 0) + ' รายการ'"
+            badgeTone="teal"
+          >
+            @if (!git.releases?.length) {
+              <div class="text-xs text-[color:var(--text-muted)] text-center py-6">
+                @if (git.mappedRepos.length === 0) {
+                  ผูก repo ก่อนจึงจะดึง Release/Tag ได้
+                } @else {
+                  ยังไม่พบ Release หรือ Tag ใน repo ที่ผูก (หรือยังเชื่อม GitLab ไม่ได้)
+                }
+              </div>
+            } @else {
+              <div class="flex flex-col gap-4 pt-1">
+                @for (group of releasesByRepo(); track group.repoId) {
+                  <div class="project-git-release-group">
+                    <h4 class="project-git-release-group__title">{{ group.repoName }}</h4>
+                    <ul class="project-git-release-list">
+                      @for (rel of group.items; track rel.repoId + rel.tagName + rel.source) {
+                        <li class="project-git-release-row">
+                          <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <strong class="text-sm">{{ rel.name }}</strong>
+                              <app-status-badge
+                                [label]="rel.source === 'release' ? 'Release' : 'Tag'"
+                                [tone]="rel.source === 'release' ? 'success' : 'info'"
+                              ></app-status-badge>
+                              @if (rel.tagName && rel.tagName !== rel.name) {
+                                <code class="text-[10px] opacity-70">{{ rel.tagName }}</code>
+                              }
+                            </div>
+                            <div class="text-xs text-[color:var(--text-muted)] mt-0.5">
+                              {{ formatReleaseAt(rel.releasedAt) }}
+                              @if (rel.description) {
+                                · {{ rel.description }}
+                              }
+                            </div>
+                          </div>
+                          @if (rel.webUrl) {
+                            <a
+                              [href]="rel.webUrl"
+                              target="_blank"
+                              rel="noopener"
+                              ejs-button
+                              cssClass="e-outline e-small"
+                            >
+                              เปิด
+                            </a>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+            }
+          </app-section-card>
+
+          <!-- CI/CD Pipeline Health Status -->
           <app-section-card
             title="สถานะ CI/CD Pipeline ล่าสุด"
             subtitle="ตรวจจับผลลัพธ์การ Build และ Test บนกิ่งหลักของแต่ละ Repository"

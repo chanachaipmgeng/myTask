@@ -4,7 +4,15 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { map } from 'rxjs';
-import { GitBranchItem } from '../../../../shared/domain/git-branch';
+import { GitBranchItem, PersonGitSummary } from '../../../../shared/domain/git-branch';
+import {
+  ContributionDay,
+  GitActivityKind,
+  GitActivityRow,
+  buildContributionDays,
+  contributionLevel,
+  gitActivityKindLabel,
+} from '../../../../shared/domain/gitlab-activity';
 import { filterPeopleByWorkspace } from '../../../../shared/domain/workspace-scope';
 import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -71,6 +79,11 @@ export class PersonWorkspaceDetailPage {
 
   protected readonly personBranches = signal<GitBranchItem[]>([]);
   protected readonly loadingPersonBranches = signal(false);
+  protected readonly gitSummary = signal<PersonGitSummary | null>(null);
+  protected readonly gitEvents = signal<GitActivityRow[]>([]);
+  protected readonly loadingGitActivity = signal(false);
+  protected readonly gitActivityMessage = signal('');
+  protected readonly gitHighlightFrom = signal('');
   protected readonly tabs = TABS;
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
   protected readonly activeTab = signal<PersonWsTab>('overview');
@@ -85,11 +98,30 @@ export class PersonWorkspaceDetailPage {
       const pid = this.selectedPersonId();
       if (pid && this.api && this.scorecard.usingApi()) {
         void this.loadPersonBranches(pid);
+        void this.loadPersonGitActivity(pid);
       } else {
         this.personBranches.set([]);
+        this.gitSummary.set(null);
+        this.gitEvents.set([]);
+        this.gitActivityMessage.set('');
       }
     });
   }
+
+  protected readonly contributionDays = computed<ContributionDay[]>(() =>
+    buildContributionDays(this.gitEvents(), 365),
+  );
+
+  protected readonly contributionCells = computed(() =>
+    this.contributionDays().map((d) => ({
+      date: d.date,
+      count: d.count,
+      level: contributionLevel(d.count),
+      title: `${d.date}: ${d.count} กิจกรรม`,
+    })),
+  );
+
+  protected readonly recentGitEvents = computed(() => this.gitEvents().slice(0, 40));
 
   /** คนในขอบเขต workspace (team/track) — ใช้กับตัวสลับคน ไม่รั่วทั้งองค์กร */
   protected readonly scopedPeople = computed(() => {
@@ -189,6 +221,60 @@ export class PersonWorkspaceDetailPage {
 
   protected setTab(tab: PersonWsTab): void {
     this.activeTab.set(tab);
+    if (tab !== 'git') {
+      this.gitHighlightFrom.set('');
+    }
+  }
+
+  /** จากแท็บคะแนน → แท็บ Git พร้อมไฮไลต์ช่วง ~30 วัน */
+  protected jumpToGitForScore(): void {
+    const from = new Date();
+    from.setUTCDate(from.getUTCDate() - 30);
+    this.gitHighlightFrom.set(from.toISOString().slice(0, 10));
+    this.activeTab.set('git');
+  }
+
+  protected activityKindLabel(kind: GitActivityKind): string {
+    return gitActivityKindLabel(kind);
+  }
+
+  protected activityIcon(kind: GitActivityKind): string {
+    switch (kind) {
+      case 'pushed':
+        return 'e-icons e-upload-1';
+      case 'pushed_tag':
+        return 'e-icons e-bookmark';
+      case 'deleted_branch':
+        return 'e-icons e-delete-1';
+      case 'opened_mr':
+        return 'e-icons e-plus';
+      case 'accepted_mr':
+        return 'e-icons e-check';
+      case 'closed_mr':
+        return 'e-icons e-close';
+      case 'commented':
+        return 'e-icons e-comment-show';
+      default:
+        return 'e-icons e-circle-info';
+    }
+  }
+
+  protected formatActivityTime(raw: string): string {
+    if (!raw) return '';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return raw.slice(0, 16).replace('T', ' ');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+  }
+
+  protected isHighlightedEvent(row: GitActivityRow): boolean {
+    const from = this.gitHighlightFrom();
+    if (!from) return false;
+    return (row.createdAt ?? '').slice(0, 10) >= from;
   }
 
   protected openWorkList(): void {
@@ -232,6 +318,24 @@ export class PersonWorkspaceDetailPage {
     }
   }
 
+  protected async loadPersonGitActivity(personId: string): Promise<void> {
+    if (!this.api) return;
+    this.loadingGitActivity.set(true);
+    this.gitActivityMessage.set('');
+    try {
+      const res = await this.api.getPersonGitSummary(personId, { days: 365 });
+      this.gitSummary.set(res.summary ?? null);
+      this.gitEvents.set(res.events ?? []);
+      if (res.message) this.gitActivityMessage.set(res.message);
+    } catch {
+      this.gitSummary.set(null);
+      this.gitEvents.set([]);
+      this.gitActivityMessage.set('โหลดกิจกรรม Git ไม่สำเร็จ');
+    } finally {
+      this.loadingGitActivity.set(false);
+    }
+  }
+
   protected onCreateTicketFromBranch(branch: GitBranchItem): void {
     this.createTicketDialog?.open(branch);
   }
@@ -240,6 +344,7 @@ export class PersonWorkspaceDetailPage {
     const pid = this.selectedPersonId();
     if (pid) {
       await this.loadPersonBranches(pid);
+      await this.loadPersonGitActivity(pid);
     }
   }
 }

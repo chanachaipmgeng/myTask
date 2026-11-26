@@ -546,6 +546,41 @@
             } @empty {
               <p class="muted">ยังไม่พบ MR ที่จับคู่ใบงานนี้</p>
             }
+
+            <div class="ticket-git-activity">
+              <h4 class="people-subhead">กิจกรรมที่เกี่ยวกับใบนี้</h4>
+              <p class="muted">
+                Push / MR ของผู้รับผิดชอบที่อ้างถึงรหัสใบงาน — ใช้เป็นหลักฐานประกอบคะแนนรีวิว ไม่แก้สูตรโดยตรง
+              </p>
+              @if (loadingTicketGit()) {
+                <p class="muted">กำลังโหลดกิจกรรม Git…</p>
+              } @else if (ticketGitEvents().length === 0) {
+                <p class="muted">ยังไม่พบกิจกรรม Git ที่จับคู่ใบนี้ในช่วง 90 วัน</p>
+              } @else {
+                <ul class="ticket-git-feed">
+                  @for (ev of ticketGitEvents(); track ev.id) {
+                    <li class="ticket-git-feed__row">
+                      <div class="min-w-0 flex-1">
+                        <strong>{{ activityKindLabel(ev.kind) }}</strong>
+                        <code class="ticket-git-feed__target">{{ ev.targetLabel }}</code>
+                        <div class="muted">
+                          {{ ev.projectPath || ev.projectName }}
+                          @if (ev.detail) {
+                            · {{ ev.detail }}
+                          }
+                          · {{ formatActivityTime(ev.createdAt) }}
+                        </div>
+                      </div>
+                      @if (ev.webUrl) {
+                        <a [href]="ev.webUrl" target="_blank" rel="noopener" ejs-button cssClass="e-outline e-small">
+                          เปิดใน Git
+                        </a>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
           </div>
         </ng-template>
 

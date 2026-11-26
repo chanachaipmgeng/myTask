@@ -331,3 +331,109 @@
   font-size: 0.75rem;
   opacity: 0.55;
 }
+
+.git-contrib {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 10px);
+  grid-auto-columns: 10px;
+  gap: 3px;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  max-width: 100%;
+}
+
+.git-contrib__cell {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--primary, #2746b3) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary, #2746b3) 12%, transparent);
+}
+
+.git-contrib__cell[data-level='1'] {
+  background: color-mix(in srgb, var(--primary, #2746b3) 28%, transparent);
+}
+.git-contrib__cell[data-level='2'] {
+  background: color-mix(in srgb, var(--primary, #2746b3) 48%, transparent);
+}
+.git-contrib__cell[data-level='3'] {
+  background: color-mix(in srgb, var(--primary, #2746b3) 72%, transparent);
+}
+.git-contrib__cell[data-level='4'] {
+  background: var(--primary, #2746b3);
+}
+
+.git-contrib__legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--muted, #64748b);
+}
+
+.git-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.git-feed__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-nested, 12px);
+  border: 1px solid var(--line, rgba(39, 70, 179, 0.12));
+  background: var(--surface, transparent);
+}
+
+.git-feed__row.is-highlight {
+  border-color: color-mix(in srgb, var(--primary, #2746b3) 45%, transparent);
+  box-shadow: inset 3px 0 0 var(--primary, #2746b3);
+}
+
+.git-feed__icon {
+  color: var(--primary, #2746b3);
+  margin-top: 0.15rem;
+}
+
+.git-feed__body {
+  flex: 1 1 220px;
+}
+
+.git-feed__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.git-feed__target {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--primary, #2746b3) 8%, transparent);
+}
+
+.git-feed__meta {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: var(--muted, #64748b);
+}
+
+.git-feed__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
