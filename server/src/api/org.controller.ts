@@ -17,6 +17,7 @@ import { getConnection, connectionToken, getSettings, saveSettings } from '../da
 import { OpenProjectCatalogEntry } from '../data/types';
 import { getVisibilityConfig, setTeamVisibilityMatrix, setUserAllowedTeams } from '../data/visibility.repo';
 import { Db } from '../db/db.service';
+import { mapPool } from '../common/ttl-cache';
 import { GitLabClient } from '../integrations/gitlab/gitlab.client';
 import { OpenProjectSyncService } from '../integrations/openproject/openproject.sync';
 
@@ -685,9 +686,10 @@ export class OrgController {
     const repoIdStrs = (project.gitRepoIds ?? []).map(String).filter(Boolean);
     const repoNames = project.gitRepoNames ?? [];
     const repoIds = repoIdStrs.map(Number).filter((n) => !Number.isNaN(n));
-    const branches = await listGitBranches(this.db, {
+    const allBranches = await listGitBranches(this.db, {
       projectId: repoIds.length > 0 ? repoIds : undefined,
     });
+    const branches = allBranches.slice(0, 200);
 
     const gitlab = await this.resolveGitLabClient();
     const baseUrl = (gitlab?.baseUrl || this.config.gitlab.url || '').replace(/\/+$/, '');
@@ -705,65 +707,64 @@ export class OrgController {
     const releases: ProjectGitReleaseItem[] = [];
 
     if (gitlab && repoIdStrs.length > 0) {
-      await Promise.all(
-        repoIdStrs.map(async (repoId, idx) => {
-          const fallbackName = repoNames[idx]?.trim() || repoId;
-          try {
+      await mapPool(repoIdStrs, 3, async (repoId, idx) => {
+        const fallbackName = repoNames[idx]?.trim() || repoId;
+        const catalogLooksComplete = fallbackName.includes('/') && Boolean(mappedRepos[idx]?.webUrl);
+        try {
+          let name = fallbackName;
+          let path = fallbackName;
+          let webUrl = mappedRepos[idx]?.webUrl ?? '';
+          if (!catalogLooksComplete) {
             const glProject = await gitlab.client.getProject(repoId);
-            const name = (glProject.name ?? fallbackName).trim() || fallbackName;
-            const path = (glProject.path_with_namespace ?? name).trim() || name;
-            const webUrl = (glProject.web_url ?? '').trim();
-            mappedRepos[idx] = {
-              id: repoId,
-              name,
-              path,
-              webUrl,
-            };
-
-            let releaseRows = await gitlab.client.listReleases(repoId, { perPage: 8 });
-            if (releaseRows.length > 0) {
-              for (const rel of releaseRows) {
-                const tagName = (rel.tag_name ?? '').trim();
-                if (!tagName) continue;
-                const releasedAt = (rel.released_at || rel.created_at || '').trim();
-                releases.push({
-                  repoId,
-                  repoName: name,
-                  name: (rel.name ?? tagName).trim() || tagName,
-                  tagName,
-                  description: stripReleaseDescription(rel.description),
-                  releasedAt,
-                  webUrl: webUrl
-                    ? `${webUrl.replace(/\/+$/, '')}/-/releases/${encodeURIComponent(tagName)}`
-                    : '',
-                  source: 'release',
-                });
-              }
-            } else {
-              const tags = await gitlab.client.listTags(repoId, { perPage: 8 });
-              for (const tag of tags) {
-                const tagName = (tag.name ?? '').trim();
-                if (!tagName) continue;
-                const releasedAt = (tag.commit?.created_at ?? '').trim();
-                releases.push({
-                  repoId,
-                  repoName: name,
-                  name: tagName,
-                  tagName,
-                  description: stripReleaseDescription(tag.message || tag.release?.description),
-                  releasedAt,
-                  webUrl: webUrl
-                    ? `${webUrl.replace(/\/+$/, '')}/-/tags/${encodeURIComponent(tagName)}`
-                    : '',
-                  source: 'tag',
-                });
-              }
-            }
-          } catch {
-            // keep catalog fallback for this repo
+            name = (glProject.name ?? fallbackName).trim() || fallbackName;
+            path = (glProject.path_with_namespace ?? name).trim() || name;
+            webUrl = (glProject.web_url ?? '').trim();
           }
-        }),
-      );
+          mappedRepos[idx] = { id: repoId, name, path, webUrl };
+
+          const releaseRows = await gitlab.client.listReleases(repoId, { perPage: 8 });
+          if (releaseRows.length > 0) {
+            for (const rel of releaseRows) {
+              const tagName = (rel.tag_name ?? '').trim();
+              if (!tagName) continue;
+              const releasedAt = (rel.released_at || rel.created_at || '').trim();
+              releases.push({
+                repoId,
+                repoName: name,
+                name: (rel.name ?? tagName).trim() || tagName,
+                tagName,
+                description: stripReleaseDescription(rel.description),
+                releasedAt,
+                webUrl: webUrl
+                  ? `${webUrl.replace(/\/+$/, '')}/-/releases/${encodeURIComponent(tagName)}`
+                  : '',
+                source: 'release',
+              });
+            }
+          } else {
+            const tags = await gitlab.client.listTags(repoId, { perPage: 8 });
+            for (const tag of tags) {
+              const tagName = (tag.name ?? '').trim();
+              if (!tagName) continue;
+              const releasedAt = (tag.commit?.created_at ?? '').trim();
+              releases.push({
+                repoId,
+                repoName: name,
+                name: tagName,
+                tagName,
+                description: stripReleaseDescription(tag.message || tag.release?.description),
+                releasedAt,
+                webUrl: webUrl
+                  ? `${webUrl.replace(/\/+$/, '')}/-/tags/${encodeURIComponent(tagName)}`
+                  : '',
+                source: 'tag',
+              });
+            }
+          }
+        } catch {
+          // keep catalog fallback for this repo
+        }
+      });
     }
 
     releases.sort((a, b) => (b.releasedAt || '').localeCompare(a.releasedAt || ''));

@@ -86,6 +86,8 @@ export class TicketDetailDialogComponent {
   protected readonly createdBranchUrl = signal<string | null>(null);
   protected readonly ticketGitEvents = signal<GitActivityRow[]>([]);
   protected readonly loadingTicketGit = signal(false);
+  private ticketGitLoadedFor = '';
+  private static gitlabProjectsCache: { text: string; value: string }[] | null = null;
 
   protected readonly canCreateBranch = computed(() => {
     const ticket = this.data()?.ticket;
@@ -327,10 +329,8 @@ export class TicketDetailDialogComponent {
         );
       }
       this.prepareBranchForm(this.data()?.ticket ?? null);
-      if (this.data()?.ticket?.opId) {
-        void this.loadGitlabProjects(this.data()?.ticket?.opProject);
-      }
-      void this.loadTicketGitActivity(this.data()?.ticket ?? null);
+      this.ticketGitLoadedFor = '';
+      // Git projects + activity โหลดเมื่อเข้าแท็บ「โค้ด & MR」เท่านั้น
     } catch {
       const local = this.offlineDetail(id);
       this.data.set(
@@ -343,9 +343,27 @@ export class TicketDetailDialogComponent {
       );
       this.prepareBranchForm(this.data()?.ticket ?? null);
       this.ticketGitEvents.set([]);
+      this.ticketGitLoadedFor = '';
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected onDetailTabSelected(event: { selectedIndex?: number }): void {
+    const idx = event.selectedIndex ?? -1;
+    const tab = this.detailTabs[idx];
+    if (tab?.id === 'mr') {
+      void this.ensureMrTabLoaded();
+    }
+  }
+
+  private async ensureMrTabLoaded(): Promise<void> {
+    const ticket = this.data()?.ticket;
+    if (!ticket) return;
+    if (ticket.opId) {
+      void this.loadGitlabProjects(ticket.opProject);
+    }
+    await this.loadTicketGitActivity(ticket);
   }
 
   private async loadTicketGitActivity(
@@ -355,6 +373,7 @@ export class TicketDetailDialogComponent {
       this.ticketGitEvents.set([]);
       return;
     }
+    if (this.ticketGitLoadedFor === ticket.id) return;
     this.loadingTicketGit.set(true);
     try {
       const res = await this.api.getPersonGitSummary(ticket.assigneeId, {
@@ -362,6 +381,7 @@ export class TicketDetailDialogComponent {
         days: 90,
       });
       this.ticketGitEvents.set((res.events ?? []).slice(0, 20));
+      this.ticketGitLoadedFor = ticket.id;
     } catch {
       this.ticketGitEvents.set([]);
     } finally {
@@ -394,11 +414,15 @@ export class TicketDetailDialogComponent {
 
   private async loadGitlabProjects(opProject?: string | null): Promise<void> {
     try {
-      const res = await this.api.listGitLabProjects();
-      const all = (res.projects ?? []).map((p) => ({
-        text: p.path || p.name || p.id,
-        value: String(p.id),
-      }));
+      let all = TicketDetailDialogComponent.gitlabProjectsCache;
+      if (!all) {
+        const res = await this.api.listGitLabProjects();
+        all = (res.projects ?? []).map((p) => ({
+          text: p.path || p.name || p.id,
+          value: String(p.id),
+        }));
+        TicketDetailDialogComponent.gitlabProjectsCache = all;
+      }
       const preferredIds = this.preferredGitRepoIds(opProject);
       const preferred = preferredIds.length
         ? all.filter((p) => preferredIds.includes(p.value))

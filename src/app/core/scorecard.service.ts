@@ -195,6 +195,8 @@ export class ScorecardService {
   private readonly readyState = signal(false);
   private readonly mockModeState = signal(false);
   private snapshot: LocalSnapshot | null = null;
+  /** Memo scoreTicket ต่อใบ — ลดงาน computed ระดับรากเมื่อ tickets ไม่เปลี่ยนฟิลด์คะแนน */
+  private readonly ticketScoreCache = new Map<string, ReturnType<typeof scoreTicket>>();
 
   private readonly allocationsState = signal<TicketAllocation[]>([...SEED_ALLOCATIONS]);
   private readonly stageLogsState = signal<TicketStageLog[]>([...SEED_STAGE_LOGS]);
@@ -297,7 +299,6 @@ export class ScorecardService {
         return false;
       }
       this.peopleState.set(data.people.map((person) => ({ ...person })));
-      this.ticketsState.set(data.tickets.map((ticket) => ({ ...ticket })));
       this.departmentsState.set((data.departments ?? []).map((item) => ({ ...item })));
       this.teamsState.set((data.teams ?? []).map((item) => ({ ...item })));
       this.disputesState.set((data.disputes ?? []).map((item) => ({ ...item })));
@@ -326,7 +327,25 @@ export class ScorecardService {
         setSessionUser(null, null);
       }
       this.apiOnline.set(true);
-      this.readyState.set(true);
+
+      // ใบงานแยกโหลด — ไม่บล็อก shell ด้วย SELECT * ทั้งฐาน
+      if (data.ticketsDeferred || !data.tickets?.length) {
+        this.ticketsState.set([]);
+        this.readyState.set(true);
+        try {
+          const ticketPayload = await this.api.bootstrapTickets();
+          if (!this.mockModeState()) {
+            this.ticketsState.set((ticketPayload.tickets ?? []).map((ticket) => ({ ...ticket })));
+            this.ticketScoreCache.clear();
+          }
+        } catch {
+          // hubs จะว่างชั่วคราว — remote grids ยังใช้ /api/work-items ได้
+        }
+      } else {
+        this.ticketsState.set(data.tickets.map((ticket) => ({ ...ticket })));
+        this.ticketScoreCache.clear();
+        this.readyState.set(true);
+      }
       return true;
     } catch {
       this.apiOnline.set(false);
@@ -628,6 +647,30 @@ export class ScorecardService {
     return this.toTicketRows(tickets, alertRules());
   }
 
+  private scoreTicketCached(ticket: Ticket): ReturnType<typeof scoreTicket> {
+    const key = [
+      ticket.id,
+      ticket.closed ? 1 : 0,
+      ticket.size,
+      ticket.estimateMd,
+      ticket.actualMd,
+      ticket.reviewRounds,
+      ticket.reopenCount,
+      ticket.weekOffset,
+      ticket.firstDueOn ?? '',
+      ticket.readyForQaAt ?? '',
+      ticket.devDeliveredOn ?? '',
+      ticket.blocker ? 1 : 0,
+      ticket.pausedDays ?? 0,
+    ].join('|');
+    const hit = this.ticketScoreCache.get(key);
+    if (hit) return hit;
+    const score = scoreTicket(ticket);
+    if (this.ticketScoreCache.size > 20_000) this.ticketScoreCache.clear();
+    this.ticketScoreCache.set(key, score);
+    return score;
+  }
+
   private toTicketRows(
     tickets: readonly Ticket[],
     rules: { deadline: boolean; overrun: boolean; overrunLimit: number },
@@ -635,7 +678,7 @@ export class ScorecardService {
     const people = personById(this.peopleState());
     const today = todayInBangkok();
     return tickets.map((ticket) => {
-      const score = scoreTicket(ticket);
+      const score = this.scoreTicketCached(ticket);
       const person = ticket.assigneeId ? people.get(ticket.assigneeId) : undefined;
       const scored = score.total !== null;
       const alerts = collectAlerts([ticket], rules.overrunLimit).filter((alert) =>

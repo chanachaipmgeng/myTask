@@ -206,7 +206,17 @@ export class OpenProjectSyncService implements OnModuleInit {
 
           await this.rememberAssignee(client, wp, personByOp);
           const existing = await getWorkItemByOpId(this.db, wp.id);
-          const activities = mapping.countReopens ? await client.getActivities(wp.id) : undefined;
+          // Activities (reopen) เฉพาะเมื่อใบใหม่หรือ WP อัปเดตหลัง sync ล่าสุด — ลด N+1
+          let activities: Awaited<ReturnType<typeof client.getActivities>> | undefined;
+          if (mapping.countReopens) {
+            const wpUpdated = (wp.updatedAt ?? '').trim();
+            const localUpdated = (existing as { updatedAt?: string } | null)?.updatedAt?.trim?.() ?? '';
+            const needsActivities =
+              !existing || !wpUpdated || !localUpdated || wpUpdated > localUpdated;
+            if (needsActivities) {
+              activities = await client.getActivities(wp.id);
+            }
+          }
 
           // Check if there is an approved due shift for this ticket
           let approvedDueShift: string | null = null;

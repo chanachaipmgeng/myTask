@@ -170,7 +170,7 @@
             layout="stack"
           ></app-kpi-stat>
           <app-kpi-stat
-            title="กิจกรรม (12 เดือน)"
+            title="กิจกรรม ({{ gitActivityDays() }} วัน)"
             [value]="gitEvents().length"
             accent="teal"
             layout="stack"
@@ -178,9 +178,16 @@
         </div>
 
         <app-section-card
-          title="Contribution (12 เดือน)"
-          subtitle="ความหนาแน่นกิจกรรม Git จาก mygitplus — ใช้ประกอบการวิเคราะห์คะแนน ไม่คิดสูตรโดยตรง"
+          title="Contribution"
+          [subtitle]="'ความหนาแน่นกิจกรรม Git ' + gitActivityDays() + ' วัน — ใช้ประกอบคะแนน ไม่คิดสูตรโดยตรง'"
         >
+          @if (gitActivityDays() < 365) {
+            <div class="mb-3">
+              <button ejs-button cssClass="e-info e-outline e-small" type="button" (click)="loadFullYearGitActivity()">
+                โหลดทั้งปี (365 วัน)
+              </button>
+            </div>
+          }
           @if (loadingGitActivity()) {
             <div class="py-4 text-center text-xs text-[color:var(--text-muted)]">กำลังโหลด heatmap…</div>
           } @else if (contributionCells().length === 0) {
@@ -223,7 +230,7 @@
             </div>
           } @else if (recentGitEvents().length === 0) {
             <div class="py-6 text-center text-xs text-[color:var(--text-muted)]">
-              ยังไม่พบกิจกรรมในช่วง 12 เดือน หรือยังไม่ได้ผูก GitLab username
+              ยังไม่พบกิจกรรมในช่วงนี้ หรือยังไม่ได้ผูก GitLab username
             </div>
           } @else {
             <ul class="git-feed">

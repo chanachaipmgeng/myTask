@@ -21,18 +21,11 @@ import {
   applyGanttDateEdit,
   detectActiveWipTickets,
   resolvePersonTeamId,
-  resolveProjectKey,
 } from '../../../shared/domain/work-views';
-import { filterTicketsByWorkspace } from '../../../shared/domain/workspace-scope';
+import { filterPeopleByWorkspace } from '../../../shared/domain/workspace-scope';
 import { todayInBangkok, workflowStatusOf } from '../../../shared/domain/workflow';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
-import {
-  applyFilterPredicates,
-  compareByField,
-  ListQuery,
-  parseListQuery,
-  toListPageResult,
-} from '../common/list-query';
+import { ListQuery, parseListQuery, toListPageResult } from '../common/list-query';
 import { APP_CONFIG, AppConfig } from '../config';
 import { closeOpenStageLog, insertDueShift, insertStageLog } from '../data/multi-team.repo';
 import { getPerson, listPeople } from '../data/people.repo';
@@ -43,6 +36,8 @@ import {
   insertWorkItems,
   listWorkItems,
   nextLocalTicketId,
+  queryWorkItemsPage,
+  searchWorkItemsLocal,
   upsertWorkItem,
 } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
@@ -78,10 +73,15 @@ export class WorkItemsController {
       { q, page, pageSize, sort, dir, teamId, assigneeId, statusScope, project, opType, track, filters },
       { defaultSort: 'id', defaultDir: 'asc' },
     );
-    const { tickets, rawTickets } = await this.queryTickets(req, listQuery);
-    const pageResult = toListPageResult(tickets, listQuery);
-    const unclosedCount = rawTickets.filter((t) => !t.closed).length;
-    const closedCount = rawTickets.filter((t) => t.closed).length;
+    const { tickets, total, unclosedCount, closedCount } = await this.queryTickets(req, listQuery);
+    const pageResult = listQuery.pagingRequested
+      ? {
+          items: tickets,
+          total,
+          page: listQuery.page,
+          pageSize: listQuery.pageSize,
+        }
+      : toListPageResult(tickets, { ...listQuery, pagingRequested: true, page: 1, pageSize: tickets.length || 1, offset: 0 });
 
     return {
       ...pageResult,
@@ -117,7 +117,14 @@ export class WorkItemsController {
       { q, sort, dir, teamId, assigneeId, statusScope, project, opType, track, filters },
       { defaultSort: 'id', defaultDir: 'asc' },
     );
-    const { tickets } = await this.queryTickets(req, listQuery);
+    const exportQuery = {
+      ...listQuery,
+      pagingRequested: false,
+      page: 1,
+      pageSize: 10_000,
+      offset: 0,
+    };
+    const { tickets } = await this.queryTickets(req, exportQuery);
     const fmt = (format ?? 'csv').toLowerCase();
     const stamp = todayInBangkok().replace(/-/g, '');
     if (fmt === 'xlsx' || fmt === 'xls') {
@@ -138,81 +145,50 @@ export class WorkItemsController {
   private async queryTickets(
     req: AuthedRequest,
     listQuery: ListQuery,
-  ): Promise<{ tickets: Ticket[]; rawTickets: Ticket[] }> {
-    const [rawTickets, people, visibility] = await Promise.all([
-      listWorkItems(this.db),
+  ): Promise<{
+    tickets: Ticket[];
+    total: number;
+    unclosedCount: number;
+    closedCount: number;
+  }> {
+    const [people, visibility] = await Promise.all([
       listPeople(this.db),
       getVisibilityConfig(this.db),
     ]);
-    const peopleMap = new Map(people.map((p) => [p.id, p]));
     const allowedTeams = req.authUser?.person
       ? computeEffectiveAllowedTeams(req.authUser.person, visibility)
       : null;
 
-    let tickets =
-      allowedTeams === null
-        ? [...rawTickets]
-        : filterTicketsByWorkspace(rawTickets, people, { allowedTeams });
-
-    if (listQuery.statusScope === 'unclosed') {
-      tickets = tickets.filter((ticket) => !ticket.closed);
-    } else if (listQuery.statusScope === 'closed') {
-      tickets = tickets.filter((ticket) => ticket.closed);
-    }
-
-    if (listQuery.assigneeId) {
-      tickets = tickets.filter((ticket) => ticket.assigneeId === listQuery.assigneeId);
-    }
-
+    let assigneeIds: string[] | null = null;
     if (listQuery.teamId) {
-      tickets = tickets.filter((ticket) => {
-        const person = ticket.assigneeId ? peopleMap.get(ticket.assigneeId) : undefined;
-        return resolvePersonTeamId(person, ticket.track) === listQuery.teamId;
-      });
+      assigneeIds = people
+        .filter((p) => resolvePersonTeamId(p, p.track) === listQuery.teamId)
+        .map((p) => p.id);
+    } else if (allowedTeams !== null) {
+      assigneeIds = filterPeopleByWorkspace(people, { allowedTeams }).map((p) => p.id);
     }
 
-    if (listQuery.project) {
-      tickets = tickets.filter((ticket) => {
-        const key = resolveProjectKey(ticket);
-        return key === listQuery.project || ticket.opProject === listQuery.project;
-      });
-    }
+    const page = await queryWorkItemsPage(this.db, {
+      q: listQuery.q || undefined,
+      statusScope: listQuery.statusScope,
+      assigneeId: listQuery.assigneeId,
+      assigneeIds: listQuery.assigneeId ? null : assigneeIds,
+      project: listQuery.project,
+      opType: listQuery.opType,
+      track: listQuery.track,
+      sort: listQuery.sort || 'id',
+      dir: listQuery.dir,
+      limit: listQuery.pagingRequested ? listQuery.pageSize : 10_000,
+      offset: listQuery.pagingRequested ? listQuery.offset : 0,
+      filters: listQuery.filters,
+    });
 
-    if (listQuery.opType) {
-      tickets = tickets.filter(
-        (ticket) => ticket.opType === listQuery.opType || ticket.type === listQuery.opType,
-      );
-    }
-
-    if (listQuery.track && listQuery.track !== 'All') {
-      tickets = tickets.filter((ticket) => ticket.track === listQuery.track);
-    }
-
-    if (listQuery.q) {
-      const needle = listQuery.q.toLowerCase();
-      tickets = tickets.filter(
-        (ticket) =>
-          ticket.id.toLowerCase().includes(needle) ||
-          (ticket.title ?? '').toLowerCase().includes(needle) ||
-          (ticket.module ?? '').toLowerCase().includes(needle) ||
-          (ticket.assigneeId ?? '').toLowerCase().includes(needle),
-      );
-    }
-
-    if (listQuery.filters.length) {
-      tickets = applyFilterPredicates(tickets, listQuery.filters, (row, key) => {
-        if (key === 'workflowStatus') return workflowStatusOf(row);
-        if (key === 'project' || key === 'opProject') return resolveProjectKey(row);
-        return (row as unknown as Record<string, unknown>)[key];
-      });
-    }
-
-    const sortField = listQuery.sort || 'id';
-    tickets = tickets
-      .slice()
-      .sort((a, b) => compareByField(a, b, sortField, listQuery.dir));
-
-    return { tickets, rawTickets };
+    return {
+      tickets: page.items,
+      total: page.total,
+      unclosedCount: page.unclosedCount,
+      closedCount: page.closedCount,
+    };
   }
 
   @Get('live-search')
@@ -222,24 +198,15 @@ export class WorkItemsController {
     if (!q) {
       return { source: 'offline' as const, local: [], live: [], writeback: this.config.openproject.writeback };
     }
-    const needle = q.toLowerCase();
-    const all = await listWorkItems(this.db);
-    const local = all
-      .filter(
-        (t) =>
-          t.id.toLowerCase().includes(needle) ||
-          (t.title ?? '').toLowerCase().includes(needle) ||
-          (t.module ?? '').toLowerCase().includes(needle),
-      )
-      .slice(0, 20)
-      .map((t) => ({
-        id: t.id,
-        title: t.title ?? t.id,
-        status: workflowStatusOf(t),
-        assigneeId: t.assigneeId,
-        opId: t.opId ?? null,
-        source: t.source,
-      }));
+    const foundLocal = await searchWorkItemsLocal(this.db, q, 20);
+    const local = foundLocal.map((t) => ({
+      id: t.id,
+      title: t.title ?? t.id,
+      status: workflowStatusOf(t),
+      assigneeId: t.assigneeId,
+      opId: t.opId ?? null,
+      source: t.source,
+    }));
 
     const client = await this.openProject.getClient();
     if (!client) {

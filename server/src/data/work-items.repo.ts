@@ -1,9 +1,288 @@
 import { Ticket } from '../../../shared/domain/models';
+import { ListFilterPredicate, ListSortDir } from '../common/list-query';
 import { Queryable } from '../db/db.service';
 import { SyncRunRow, WorkItemRow, ticketFromRow } from './types';
 
 export async function listWorkItems(db: Queryable): Promise<Ticket[]> {
   const rows = await db.query<WorkItemRow>('SELECT * FROM work_items ORDER BY id');
+  return rows.map(ticketFromRow);
+}
+
+export type WorkspaceTicketMode = 'all' | 'rd';
+
+/**
+ * Bootstrap / hub slice — ไม่ SELECT * ทั้งตาราง
+ * - closed = false หรือปิดไม่เกิน closedWithinDays
+ * - หรือ assignee อยู่ใน activePeopleIds
+ * - โหมด rd: จำกัด RD หรือ assignee ที่ active
+ */
+export async function listWorkItemsForWorkspace(
+  db: Queryable,
+  opts: {
+    mode: WorkspaceTicketMode;
+    activePeopleIds: readonly string[];
+    allowedAssigneeIds?: readonly string[] | null;
+    closedWithinDays?: number;
+  },
+): Promise<Ticket[]> {
+  const days = Math.max(30, opts.closedWithinDays ?? 120);
+  const params: unknown[] = [days];
+  const where: string[] = [];
+
+  if (opts.mode === 'rd') {
+    params.push(opts.activePeopleIds);
+    where.push(
+      `(data->>'track' = 'RD' OR (assignee_id <> '' AND assignee_id = ANY($${params.length}::text[])))`,
+    );
+  } else {
+    params.push(opts.activePeopleIds);
+    where.push(
+      `(closed = false
+        OR closed_on >= (CURRENT_DATE - ($1::int * INTERVAL '1 day'))
+        OR data->>'track' = 'RD'
+        OR (assignee_id <> '' AND assignee_id = ANY($${params.length}::text[]))
+        OR COALESCE(data->>'dueOn','') <> ''
+        OR COALESCE(data->>'firstDueOn','') <> ''
+        OR COALESCE(data->>'actualStartOn','') <> '')`,
+    );
+  }
+
+  if (opts.allowedAssigneeIds != null) {
+    if (opts.allowedAssigneeIds.length === 0) {
+      return [];
+    }
+    params.push(opts.allowedAssigneeIds);
+    where.push(
+      `(assignee_id = '' OR assignee_id = ANY($${params.length}::text[]) OR data->>'track' = 'RD')`,
+    );
+  }
+
+  const sql = `SELECT * FROM work_items WHERE ${where.join(' AND ')} ORDER BY id`;
+  const rows = await db.query<WorkItemRow>(sql, params);
+  return rows.map(ticketFromRow);
+}
+
+const SORT_SQL: Record<string, string> = {
+  id: 'id',
+  assigneeId: 'assignee_id',
+  closed: 'closed',
+  closedOn: 'closed_on',
+  updatedAt: 'updated_at',
+  track: `data->>'track'`,
+  title: `data->>'title'`,
+  module: `data->>'module'`,
+  estimateMd: `(NULLIF(data->>'estimateMd',''))::float8`,
+  actualMd: `(NULLIF(data->>'actualMd',''))::float8`,
+  dueOn: `data->>'dueOn'`,
+  firstDueOn: `data->>'firstDueOn'`,
+  workflowStatus: `COALESCE(data->>'workflowStatus', CASE WHEN closed THEN 'Done' ELSE 'In Progress' END)`,
+  opProject: `data->>'opProject'`,
+  opType: `COALESCE(data->>'opType', data->>'type')`,
+  project: `COALESCE(data->>'opProject', data->>'module')`,
+};
+
+export interface WorkItemPageQuery {
+  q?: string;
+  statusScope?: 'unclosed' | 'closed' | 'all';
+  assigneeId?: string;
+  /** When set, restrict to these assignees (team / workspace scope). null = no scope. */
+  assigneeIds?: readonly string[] | null;
+  project?: string;
+  opType?: string;
+  track?: string;
+  sort?: string;
+  dir?: ListSortDir;
+  limit: number;
+  offset: number;
+  filters?: readonly ListFilterPredicate[];
+}
+
+function pushFilterSql(
+  pred: ListFilterPredicate,
+  params: unknown[],
+  clauses: string[],
+): void {
+  const expr =
+    pred.field === 'workflowStatus'
+      ? `COALESCE(data->>'workflowStatus', CASE WHEN closed THEN 'Done' ELSE 'In Progress' END)`
+      : pred.field === 'project' || pred.field === 'opProject'
+        ? `COALESCE(data->>'opProject', data->>'module')`
+        : pred.field === 'assigneeId'
+          ? 'assignee_id'
+          : pred.field === 'id'
+            ? 'id'
+            : pred.field === 'track'
+              ? `data->>'track'`
+              : pred.field === 'title'
+                ? `data->>'title'`
+                : pred.field === 'module'
+                  ? `data->>'module'`
+                  : pred.field === 'opType' || pred.field === 'type'
+                    ? `COALESCE(data->>'opType', data->>'type')`
+                    : null;
+  if (!expr) return;
+  const p = params.length + 1;
+  switch (pred.operator) {
+    case 'equal':
+      if (pred.value === null) {
+        clauses.push(`(${expr} IS NULL OR ${expr} = '')`);
+      } else {
+        params.push(String(pred.value));
+        clauses.push(`LOWER(COALESCE(${expr},'')) = LOWER($${p})`);
+      }
+      break;
+    case 'notequal':
+      if (pred.value === null) {
+        clauses.push(`(${expr} IS NOT NULL AND ${expr} <> '')`);
+      } else {
+        params.push(String(pred.value));
+        clauses.push(`LOWER(COALESCE(${expr},'')) <> LOWER($${p})`);
+      }
+      break;
+    case 'contains':
+      params.push(`%${String(pred.value ?? '')}%`);
+      clauses.push(`COALESCE(${expr},'') ILIKE $${p}`);
+      break;
+    case 'startswith':
+      params.push(`${String(pred.value ?? '')}%`);
+      clauses.push(`COALESCE(${expr},'') ILIKE $${p}`);
+      break;
+    case 'endswith':
+      params.push(`%${String(pred.value ?? '')}`);
+      clauses.push(`COALESCE(${expr},'') ILIKE $${p}`);
+      break;
+    case 'greaterthan':
+      params.push(pred.value);
+      clauses.push(`${expr} > $${p}::text`);
+      break;
+    case 'greaterthanorequal':
+      params.push(pred.value);
+      clauses.push(`${expr} >= $${p}::text`);
+      break;
+    case 'lessthan':
+      params.push(pred.value);
+      clauses.push(`${expr} < $${p}::text`);
+      break;
+    case 'lessthanorequal':
+      params.push(pred.value);
+      clauses.push(`${expr} <= $${p}::text`);
+      break;
+    default:
+      break;
+  }
+}
+
+function buildWorkItemWhere(query: WorkItemPageQuery): { whereSql: string; params: unknown[] } {
+  const params: unknown[] = [];
+  const clauses: string[] = [];
+
+  if (query.statusScope === 'unclosed') {
+    clauses.push('closed = false');
+  } else if (query.statusScope === 'closed') {
+    clauses.push('closed = true');
+  }
+
+  if (query.assigneeId) {
+    params.push(query.assigneeId);
+    clauses.push(`assignee_id = $${params.length}`);
+  } else if (query.assigneeIds != null) {
+    if (query.assigneeIds.length === 0) {
+      clauses.push('FALSE');
+    } else {
+      params.push(query.assigneeIds);
+      clauses.push(`assignee_id = ANY($${params.length}::text[])`);
+    }
+  }
+
+  if (query.project) {
+    params.push(query.project);
+    clauses.push(
+      `(data->>'opProject' = $${params.length} OR data->>'module' = $${params.length} OR id = $${params.length})`,
+    );
+  }
+
+  if (query.opType) {
+    params.push(query.opType);
+    clauses.push(`(data->>'opType' = $${params.length} OR data->>'type' = $${params.length})`);
+  }
+
+  if (query.track && query.track !== 'All') {
+    params.push(query.track);
+    clauses.push(`data->>'track' = $${params.length}`);
+  }
+
+  if (query.q) {
+    params.push(`%${query.q}%`);
+    const p = params.length;
+    clauses.push(
+      `(id ILIKE $${p} OR COALESCE(data->>'title','') ILIKE $${p} OR COALESCE(data->>'module','') ILIKE $${p} OR assignee_id ILIKE $${p})`,
+    );
+  }
+
+  for (const pred of query.filters ?? []) {
+    pushFilterSql(pred, params, clauses);
+  }
+
+  return {
+    whereSql: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '',
+    params,
+  };
+}
+
+export async function queryWorkItemsPage(
+  db: Queryable,
+  query: WorkItemPageQuery,
+): Promise<{ items: Ticket[]; total: number; unclosedCount: number; closedCount: number }> {
+  const { whereSql, params } = buildWorkItemWhere(query);
+  const sortExpr = SORT_SQL[query.sort || ''] ?? 'id';
+  const dir = query.dir === 'desc' ? 'DESC' : 'ASC';
+  const limit = Math.max(1, Math.min(100, query.limit || 25));
+  const offset = Math.max(0, query.offset || 0);
+
+  const countParams = [...params];
+  const countSql = `SELECT
+      COUNT(*)::int AS total,
+      COUNT(*) FILTER (WHERE closed = false)::int AS unclosed,
+      COUNT(*) FILTER (WHERE closed = true)::int AS closed
+    FROM work_items ${whereSql}`;
+  const counts = await db.query<{ total: number; unclosed: number; closed: number }>(
+    countSql,
+    countParams,
+  );
+  const total = Number(counts[0]?.total ?? 0);
+  const unclosedCount = Number(counts[0]?.unclosed ?? 0);
+  const closedCount = Number(counts[0]?.closed ?? 0);
+
+  const pageParams = [...params, limit, offset];
+  const pageSql = `SELECT * FROM work_items ${whereSql}
+    ORDER BY ${sortExpr} ${dir} NULLS LAST, id ASC
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+  const rows = await db.query<WorkItemRow>(pageSql, pageParams);
+  return {
+    items: rows.map(ticketFromRow),
+    total,
+    unclosedCount,
+    closedCount,
+  };
+}
+
+/** Lightweight local search — capped, SQL ILIKE (ไม่โหลดทั้งตาราง) */
+export async function searchWorkItemsLocal(
+  db: Queryable,
+  q: string,
+  limit = 20,
+): Promise<Ticket[]> {
+  const needle = `%${q.trim()}%`;
+  if (!q.trim()) return [];
+  const rows = await db.query<WorkItemRow>(
+    `SELECT * FROM work_items
+     WHERE id ILIKE $1
+        OR COALESCE(data->>'title','') ILIKE $1
+        OR COALESCE(data->>'module','') ILIKE $1
+     ORDER BY closed ASC, updated_at DESC NULLS LAST
+     LIMIT $2`,
+    [needle, limit],
+  );
   return rows.map(ticketFromRow);
 }
 

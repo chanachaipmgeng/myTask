@@ -84,6 +84,7 @@ export class PersonWorkspaceDetailPage {
   protected readonly loadingGitActivity = signal(false);
   protected readonly gitActivityMessage = signal('');
   protected readonly gitHighlightFrom = signal('');
+  protected readonly gitActivityDays = signal(90);
   protected readonly tabs = TABS;
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
   protected readonly activeTab = signal<PersonWsTab>('overview');
@@ -109,7 +110,7 @@ export class PersonWorkspaceDetailPage {
   }
 
   protected readonly contributionDays = computed<ContributionDay[]>(() =>
-    buildContributionDays(this.gitEvents(), 365),
+    buildContributionDays(this.gitEvents(), this.gitActivityDays()),
   );
 
   protected readonly contributionCells = computed(() =>
@@ -318,12 +319,13 @@ export class PersonWorkspaceDetailPage {
     }
   }
 
-  protected async loadPersonGitActivity(personId: string): Promise<void> {
+  protected async loadPersonGitActivity(personId: string, days = this.gitActivityDays()): Promise<void> {
     if (!this.api) return;
     this.loadingGitActivity.set(true);
     this.gitActivityMessage.set('');
+    this.gitActivityDays.set(days);
     try {
-      const res = await this.api.getPersonGitSummary(personId, { days: 365 });
+      const res = await this.api.getPersonGitSummary(personId, { days });
       this.gitSummary.set(res.summary ?? null);
       this.gitEvents.set(res.events ?? []);
       if (res.message) this.gitActivityMessage.set(res.message);
@@ -334,6 +336,11 @@ export class PersonWorkspaceDetailPage {
     } finally {
       this.loadingGitActivity.set(false);
     }
+  }
+
+  protected async loadFullYearGitActivity(): Promise<void> {
+    const pid = this.selectedPersonId();
+    if (pid) await this.loadPersonGitActivity(pid, 365);
   }
 
   protected onCreateTicketFromBranch(branch: GitBranchItem): void {

@@ -46,8 +46,12 @@ import {
   startSyncRun,
   upsertWorkItem,
 } from '../data/work-items.repo';
+import { mapPool, TtlCache } from '../common/ttl-cache';
 import { Db } from '../db/db.service';
-import { CiStatus, GitLabClient } from '../integrations/gitlab/gitlab.client';
+import { CiStatus, GitLabClient, GitLabUserEvent } from '../integrations/gitlab/gitlab.client';
+
+const gitlabEventsCache = new TtlCache<GitLabUserEvent[]>(60_000);
+const gitlabPipelineCache = new TtlCache<CiStatus>(45_000);
 import {
   autoMatchCustomFieldsFromSchema,
   isoDurationToHours,
@@ -304,18 +308,23 @@ export class IntegrationsController {
     for (const projectId of projectIds) {
       try {
         const items = await client.listMergeRequests(projectId, { state: 'merged' });
-        for (const mr of items) {
-          if (mr.iid) {
-            try {
-              const approvals = await client.getMrApprovals(projectId, mr.iid);
-              if (Array.isArray(approvals.approved_by)) {
-                mr.approved_by = approvals.approved_by;
-              }
-            } catch {
-              // Ignore approval fetch error per MR
+        // Approvals เฉพาะ MR ที่จับ ticketId ได้ — ลด N+1
+        await mapPool(items, 4, async (mr) => {
+          if (!mr.iid) return;
+          const ticketHint =
+            extractTicketIdFromText(mr.title) ||
+            extractTicketIdFromText(mr.source_branch) ||
+            extractTicketIdFromText(mr.description);
+          if (!ticketHint) return;
+          try {
+            const approvals = await client.getMrApprovals(projectId, mr.iid);
+            if (Array.isArray(approvals.approved_by)) {
+              mr.approved_by = approvals.approved_by;
             }
+          } catch {
+            // Ignore approval fetch error per MR
           }
-        }
+        });
         rawMrs.push(...items);
       } catch (err) {
         errors.push(`Project ${projectId}: ${err instanceof Error ? err.message : String(err)}`);
@@ -409,6 +418,7 @@ export class IntegrationsController {
   @Roles('admin', 'lead', 'member')
   async openMrs(
     @Query('assignedToMe') assignedToMe: string | undefined,
+    @Query('includeCi') includeCiRaw: string | undefined,
     @Req() req: AuthedRequest,
   ) {
     const resolved = await this.resolveGitLab();
@@ -418,6 +428,7 @@ export class IntegrationsController {
     const { client, projectIds } = resolved;
     const me = req.authUser?.person.gitlabUsername?.trim().toLowerCase() ?? '';
     const onlyMine = assignedToMe === '1' || assignedToMe === 'true';
+    const includeCi = includeCiRaw === '1' || includeCiRaw === 'true';
 
     type OpenMrRow = {
       projectId: string;
@@ -438,6 +449,7 @@ export class IntegrationsController {
     const now = Date.now();
 
     const collect = async (projectId: string, mrs: GitLabMergeRequestRaw[]) => {
+      const rows: OpenMrRow[] = [];
       for (const mr of mrs) {
         if (!mr.iid) continue;
         const reviewers = (mr.reviewers ?? [])
@@ -446,17 +458,10 @@ export class IntegrationsController {
         if (onlyMine && me && !reviewers.includes(me)) {
           continue;
         }
-        let ciStatus: CiStatus = 'unknown';
-        try {
-          const pipelines = await client.getMrPipelines(projectId, mr.iid);
-          ciStatus = GitLabClient.latestCiStatus(pipelines);
-        } catch {
-          // keep unknown
-        }
         const createdAt = String((mr as { created_at?: string }).created_at ?? mr.merged_at ?? '');
         const updatedAt = String((mr as { updated_at?: string }).updated_at ?? createdAt);
         const ageMs = createdAt ? Math.max(0, now - new Date(createdAt).getTime()) : 0;
-        items.push({
+        rows.push({
           projectId: String(projectId),
           iid: mr.iid,
           title: (mr.title ?? '').trim() || `!${mr.iid}`,
@@ -468,11 +473,25 @@ export class IntegrationsController {
             extractTicketIdFromText(mr.source_branch) ||
             extractTicketIdFromText(mr.description),
           ageHours: Math.round((ageMs / 3_600_000) * 10) / 10,
-          ciStatus,
+          ciStatus: 'unknown',
           createdAt,
           updatedAt,
         });
       }
+      if (includeCi && rows.length > 0) {
+        await mapPool(rows.slice(0, 40), 4, async (row) => {
+          const cacheKey = `pipe:${row.projectId}:${row.iid}`;
+          row.ciStatus = await gitlabPipelineCache.getOrSet(cacheKey, async () => {
+            try {
+              const pipelines = await client.getMrPipelines(row.projectId, row.iid);
+              return GitLabClient.latestCiStatus(pipelines);
+            } catch {
+              return 'unknown';
+            }
+          });
+        });
+      }
+      items.push(...rows);
     };
 
     try {
@@ -1002,6 +1021,7 @@ export class IntegrationsController {
       source: 'offline' as const,
       message: undefined as string | undefined,
     };
+    const eventsCacheKey = (username: string) => `person-events:${username}:${days}`;
 
     const gitlabUsername = person?.gitlabUsername?.trim();
     if (!gitlabUsername) {
@@ -1026,12 +1046,17 @@ export class IntegrationsController {
       });
       summary.openMrsCount = openMrs.length;
 
-      const rawEvents = await resolved.client.getUserEvents(gitlabUsername, {
-        after: afterIso,
-        before: beforeIso,
-        perPage: 100,
-      });
-      let events = mapGitLabActivityEvents(rawEvents);
+      const rawEvents = await gitlabEventsCache.getOrSet(
+        eventsCacheKey(gitlabUsername),
+        () =>
+          resolved.client.getUserEvents(gitlabUsername, {
+            after: afterIso,
+            before: beforeIso,
+            perPage: 50,
+          }),
+        60_000,
+      );
+      let events = mapGitLabActivityEvents(rawEvents).slice(0, 80);
       const filterTicket = (ticketId ?? '').trim();
       if (filterTicket) {
         let opId: number | null = null;
@@ -1626,27 +1651,26 @@ export class IntegrationsController {
       }
     }
 
-    // Optional GitLab activity dots (best-effort, skip silently on failure)
+    // Optional GitLab activity dots — parallel + TTL cache (ไม่ยิงทีละคนแบบ serial)
     const gitlab = await this.resolveGitLab();
     if (gitlab) {
-      for (const row of rows) {
-        if (!row.gitlabUsername) continue;
+      const withGit = rows.filter((r) => r.gitlabUsername);
+      await mapPool(withGit, 4, async (row) => {
+        const username = row.gitlabUsername!;
+        const cacheKey = `events:${username}:${from}:${to}`;
         try {
-          const events = await gitlab.client.getUserEvents(row.gitlabUsername, {
-            after: from,
-            before: to,
-          });
+          const events = await gitlabEventsCache.getOrSet(cacheKey, () =>
+            gitlab.client.getUserEvents(username, { after: from, before: to, perPage: 50 }),
+          );
           for (const event of events) {
             const day = (event.created_at ?? '').slice(0, 10);
             const cell = row.days.find((d) => d.date === day);
-            if (cell) {
-              cell.hasGitlabActivity = true;
-            }
+            if (cell) cell.hasGitlabActivity = true;
           }
         } catch {
           // ignore per-user event errors
         }
-      }
+      });
     }
 
     for (const row of rows) {

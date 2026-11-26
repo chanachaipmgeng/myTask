@@ -179,6 +179,8 @@ export interface BootstrapSettings {
 export interface BootstrapResponse {
   people: Person[];
   tickets: Ticket[];
+  /** true เมื่อใบงานต้องโหลดต่อที่ /api/bootstrap/tickets */
+  ticketsDeferred?: boolean;
   settings: BootstrapSettings;
   departments: Department[];
   teams: Team[];
@@ -333,6 +335,10 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 export class ApiClient {
   bootstrap(): Promise<BootstrapResponse> {
     return api<BootstrapResponse>('/api/bootstrap');
+  }
+
+  bootstrapTickets(): Promise<{ tickets: Ticket[]; source: string; count: number }> {
+    return api('/api/bootstrap/tickets');
   }
 
   createWorkItem(ticket: Omit<Ticket, 'id'> & { id?: string }): Promise<{ ok: boolean; ticket?: Ticket }> {
