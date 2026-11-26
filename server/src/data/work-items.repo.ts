@@ -344,12 +344,26 @@ export async function insertWorkItems(db: Queryable, tickets: readonly Ticket[])
 }
 
 export async function nextLocalTicketId(db: Queryable): Promise<string> {
-  const rows = await db.query<{ id: string }>(
-    `SELECT id FROM work_items WHERE id ~ '^T-[0-9]+$' ORDER BY id DESC LIMIT 1`,
-  );
-  const last = rows[0]?.id;
-  const next = last ? Number(last.slice(2)) + 1 : 1;
+  const rows = await db.query<{ n: string }>(`SELECT nextval('local_ticket_seq')::text AS n`);
+  const next = Number(rows[0]?.n ?? 1);
   return `T-${String(next).padStart(3, '0')}`;
+}
+
+export async function markStaleSyncRunsFailed(
+  db: Queryable,
+  olderThanMinutes = 30,
+): Promise<number> {
+  const rows = await db.query<{ id: string }>(
+    `UPDATE sync_runs
+     SET status = 'failed',
+         finished_at = now(),
+         errors = COALESCE(errors, '[]'::jsonb) || '["aborted: server restarted before sync finished"]'::jsonb
+     WHERE status = 'running'
+       AND started_at < now() - ($1::integer * interval '1 minute')
+     RETURNING id::text`,
+    [Math.max(1, Math.floor(olderThanMinutes))],
+  );
+  return rows.length;
 }
 
 export async function startSyncRun(

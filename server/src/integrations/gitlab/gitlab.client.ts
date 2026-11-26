@@ -1,4 +1,23 @@
 import { GitLabMergeRequestRaw } from '../../../../shared/domain/gitlab-mr';
+import {
+  backoffWithJitterMs,
+  CircuitBreaker,
+  parseRetryAfterMs,
+} from '../../common/http-resilience';
+
+const gitlabCircuitBreakers = new Map<string, CircuitBreaker>();
+function breakerFor(baseUrl: string): CircuitBreaker {
+  const key = baseUrl.replace(/\/+$/, '').toLowerCase();
+  let cb = gitlabCircuitBreakers.get(key);
+  if (!cb) {
+    cb = new CircuitBreaker(5, 30_000);
+    gitlabCircuitBreakers.set(key, cb);
+  }
+  return cb;
+}
+export function resetGitLabCircuitBreakers(): void {
+  gitlabCircuitBreakers.clear();
+}
 
 export interface GitLabProject {
   id: number;
@@ -369,24 +388,32 @@ export class GitLabClient {
     return data;
   }
 
-  private async post<T>(path: string, attempt = 0): Promise<T> {
+  private async post<T>(path: string): Promise<T> {
+    const breaker = breakerFor(this.baseUrl);
+    breaker.assertClosed('GitLab');
     const url = `${this.baseUrl.replace(/\/+$/, '')}${path}`;
-    const response = await this.fetchImpl(url, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'PRIVATE-TOKEN': this.token,
-      },
-    });
-    if ((response.status === 429 || response.status >= 500) && attempt < 4) {
-      const wait = Math.min(8_000, 500 * 2 ** attempt);
-      await sleep(wait);
-      return this.post<T>(path, attempt + 1);
+    let response: Response;
+    try {
+      response = await this.fetchImpl(url, {
+        method: 'POST',
+        signal: AbortSignal.timeout(15_000),
+        headers: {
+          Accept: 'application/json',
+          'PRIVATE-TOKEN': this.token,
+        },
+      });
+    } catch (err) {
+      breaker.recordFailure();
+      throw err;
+    }
+    if (response.status >= 500) {
+      breaker.recordFailure();
     }
     if (!response.ok) {
       const body = await response.text();
       throw new Error(`GitLab ${response.status} ${path}: ${body.slice(0, 300)}`);
     }
+    breaker.recordSuccess();
     return (await response.json()) as T;
   }
 
@@ -394,19 +421,40 @@ export class GitLabClient {
     path: string,
     attempt = 0,
   ): Promise<{ data: T; next: string | null }> {
+    const breaker = breakerFor(this.baseUrl);
+    breaker.assertClosed('GitLab');
     const url = `${this.baseUrl.replace(/\/+$/, '')}${path}`;
-    const response = await this.fetchImpl(url, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'PRIVATE-TOKEN': this.token,
-      },
-    });
-    if ((response.status === 429 || response.status >= 500) && attempt < 4) {
-      const wait = Math.min(8_000, 500 * 2 ** attempt);
-      await sleep(wait);
-      return this.getPage<T>(path, attempt + 1);
+    let response: Response;
+    try {
+      response = await this.fetchImpl(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(15_000),
+        headers: {
+          Accept: 'application/json',
+          'PRIVATE-TOKEN': this.token,
+        },
+      });
+    } catch (err) {
+      if (attempt < 3) {
+        await sleep(backoffWithJitterMs(attempt));
+        return this.getPage<T>(path, attempt + 1);
+      }
+      breaker.recordFailure();
+      throw err;
     }
+    if (response.status === 429 || response.status >= 500) {
+      if (attempt < 3) {
+        const retryAfter = parseRetryAfterMs(response.headers.get('retry-after'));
+        await sleep(backoffWithJitterMs(attempt, retryAfter));
+        return this.getPage<T>(path, attempt + 1);
+      }
+      if (response.status >= 500) {
+        breaker.recordFailure();
+      }
+      const body = await response.text().catch(() => '');
+      throw new Error(`GitLab ${response.status} ${path}: ${body.slice(0, 300)}`);
+    }
+    breaker.recordSuccess();
     if (!response.ok) {
       const body = await response.text();
       throw new Error(`GitLab ${response.status} ${path}: ${body.slice(0, 300)}`);

@@ -25,6 +25,7 @@ import {
   finishSyncRun,
   getWorkItemByOpId,
   lastSuccessfulSync,
+  markStaleSyncRunsFailed,
   startSyncRun,
   upsertWorkItem,
 } from '../../data/work-items.repo';
@@ -82,7 +83,15 @@ export class OpenProjectSyncService implements OnModuleInit {
     private readonly schedulerRegistry: SchedulerRegistry,
   ) {}
 
-  onModuleInit(): void {
+  async onModuleInit(): Promise<void> {
+    try {
+      const recovered = await markStaleSyncRunsFailed(this.db, 30);
+      if (recovered > 0) {
+        this.log.warn(`Recovered ${recovered} stale OpenProject sync_runs stuck in 'running' state`);
+      }
+    } catch (err) {
+      this.log.warn(`Skipped stale sync_runs recovery: ${err instanceof Error ? err.message : err}`);
+    }
     const expr = this.config.openproject.cron.trim();
     if (!expr) {
       this.log.log('OpenProject scheduled sync disabled (OPENPROJECT_SYNC_CRON empty)');
@@ -117,197 +126,213 @@ export class OpenProjectSyncService implements OnModuleInit {
     if (this.running) {
       throw new Error('OpenProject sync already running');
     }
-    const creds = await this.resolveCredentials();
-    if (!creds) {
-      throw new Error('OpenProject URL/token is not configured');
-    }
+    const lock = await this.db.withAdvisoryLock(727101, async (): Promise<SyncResult> => {
+      const creds = await this.resolveCredentials();
+      if (!creds) {
+        throw new Error('OpenProject URL/token is not configured');
+      }
 
-    const last = await lastSuccessfulSync(this.db, 'openproject');
-    const since = last?.finished_at ? new Date(last.finished_at) : null;
-    const runId = await startSyncRun(this.db, {
-      connection: 'openproject',
-      trigger,
-      startedBy,
-      since,
-    });
+      const last = await lastSuccessfulSync(this.db, 'openproject');
+      const since = last?.finished_at ? new Date(last.finished_at) : null;
+      const runId = await startSyncRun(this.db, {
+        connection: 'openproject',
+        trigger,
+        startedBy,
+        since,
+      });
 
-    this.running = true;
-    const errors: string[] = [];
-    let added = 0;
-    let updated = 0;
-    let unchanged = 0;
+      this.running = true;
+      const errors: string[] = [];
+      let added = 0;
+      let updated = 0;
+      let unchanged = 0;
 
-    try {
-      const settings = await getSettings(this.db);
-      const mapping = settings.openprojectMapping;
-      const client = new OpenProjectClient(creds.url, creds.token);
-      // Refresh OpenProject Type / Status / Enumeration catalogs during sync (best-effort)
       try {
-        const [opTypes, opStatuses, opEnums] = await Promise.all([
-          client.listTypes(),
-          client.listStatuses(),
-          client.listEnumerations(),
-        ]);
-        settings.openprojectTypeCatalog = opTypes
-          .filter((t) => t.name?.trim())
-          .map((t) => ({
-            id: t.id,
-            name: (t.name ?? '').trim(),
-            ...(t.color ? { color: t.color } : {}),
-            isMilestone: Boolean(t.isMilestone),
-          }));
-        settings.openprojectStatusCatalog = opStatuses
-          .filter((s) => s.name?.trim())
-          .map((s) => ({
-            id: s.id,
-            name: (s.name ?? '').trim(),
-            isClosed: Boolean(s.isClosed),
-            ...(s.color ? { color: s.color } : {}),
-          }));
-        settings.openprojectEnumerationCatalog = opEnums
-          .filter((e) => e.name?.trim())
-          .map((e) => ({
-            id: e.id,
-            name: (e.name ?? '').trim(),
-            type: e._type || 'Enumeration',
-            active: e.active !== false,
-            ...(e.color ? { color: e.color } : {}),
-          }));
-        await saveSettings(this.db, settings, startedBy);
-      } catch (catErr) {
-        this.log.warn(`Skipped OP type/status catalog refresh: ${catErr instanceof Error ? catErr.message : catErr}`);
-      }
-      const spentHours = await this.loadSpentHours(client, since);
-      const staging = this.config.openproject.teamStaging;
-      const personByOp = await this.refreshUserMap(client, staging === 'rd');
-      const peopleForTrack = await listPeople(this.db, staging === 'rd');
-      const personTrackById = new Map(
-        peopleForTrack.filter((p) => p.track).map((p) => [p.id, p.track] as const),
-      );
-
-      if (!mapping.projects?.length) {
-        this.log.warn(
-          'OpenProject sync: mapping.projects is empty — syncing every project the token can see. Set project identifiers on /integrations to narrow scope.',
-        );
-      }
-
-      const updatedSince = since ? since.toISOString() : null;
-      for await (const wp of client.paginateWorkPackages({
-        updatedSince,
-        projects: mapping.projects,
-      })) {
+        const settings = await getSettings(this.db);
+        const mapping = settings.openprojectMapping;
+        const client = new OpenProjectClient(creds.url, creds.token);
+        // Refresh OpenProject Type / Status / Enumeration catalogs during sync (best-effort)
         try {
-          const assigneeUser = idFromHref(singleLink(wp._links?.['assignee'])?.href);
-          // โหมด rd (POC): ข้ามใบที่ assignee ยังไม่อยู่ในคน active
-          // โหมด all: ซิงก์ทุกใบในโปรเจกต์ที่เลือก แม้ยังไม่แมปคน (จำ op_users_seen แทน)
-          if (staging === 'rd' && assigneeUser !== null && !personByOp.has(assigneeUser)) {
-            continue;
-          }
-
-          await this.rememberAssignee(client, wp, personByOp);
-          const existing = await getWorkItemByOpId(this.db, wp.id);
-          // Activities (reopen) เฉพาะเมื่อใบใหม่หรือ WP อัปเดตหลัง sync ล่าสุด — ลด N+1
-          let activities: Awaited<ReturnType<typeof client.getActivities>> | undefined;
-          if (mapping.countReopens) {
-            const wpUpdated = (wp.updatedAt ?? '').trim();
-            const localUpdated = (existing as { updatedAt?: string } | null)?.updatedAt?.trim?.() ?? '';
-            const needsActivities =
-              !existing || !wpUpdated || !localUpdated || wpUpdated > localUpdated;
-            if (needsActivities) {
-              activities = await client.getActivities(wp.id);
-            }
-          }
-
-          // Check if there is an approved due shift for this ticket
-          let approvedDueShift: string | null = null;
-          if (existing) {
-            try {
-              const shiftRows = await this.db.query<{ new_first_due_on: string }>(
-                `SELECT new_first_due_on::text FROM ticket_due_shifts WHERE ticket_id = $1 AND status = 'APPROVED' ORDER BY approved_at DESC LIMIT 1`,
-                [existing.id],
-              );
-              if (shiftRows.length > 0 && shiftRows[0]?.new_first_due_on) {
-                approvedDueShift = shiftRows[0].new_first_due_on.slice(0, 10);
-              }
-            } catch {
-              // If table not yet queried or migrated
-            }
-          }
-
-          const mapped = mapWorkPackage(wp, {
-            mapping,
-            hoursPerMd: settings.hoursPerMd,
-            personByOpUser: personByOp,
-            personTrackById,
-            spentHours,
-            existing: existing ?? undefined,
-            activities,
-            today: todayInBangkok(),
-            approvedDueShift,
-          });
-          if (existing && stableTicketJson(existing) === stableTicketJson(mapped)) {
-            unchanged += 1;
-            continue;
-          }
-          await upsertWorkItem(this.db, mapped, new Date());
-          if (existing) {
-            updated += 1;
-          } else {
-            added += 1;
-          }
-        } catch (error) {
-          errors.push(`WP ${wp.id}: ${error instanceof Error ? error.message : String(error)}`);
+          const [opTypes, opStatuses, opEnums] = await Promise.all([
+            client.listTypes(),
+            client.listStatuses(),
+            client.listEnumerations(),
+          ]);
+          settings.openprojectTypeCatalog = opTypes
+            .filter((t) => t.name?.trim())
+            .map((t) => ({
+              id: t.id,
+              name: (t.name ?? '').trim(),
+              ...(t.color ? { color: t.color } : {}),
+              isMilestone: Boolean(t.isMilestone),
+            }));
+          settings.openprojectStatusCatalog = opStatuses
+            .filter((s) => s.name?.trim())
+            .map((s) => ({
+              id: s.id,
+              name: (s.name ?? '').trim(),
+              isClosed: Boolean(s.isClosed),
+              ...(s.color ? { color: s.color } : {}),
+            }));
+          settings.openprojectEnumerationCatalog = opEnums
+            .filter((e) => e.name?.trim())
+            .map((e) => ({
+              id: e.id,
+              name: (e.name ?? '').trim(),
+              type: e._type || 'Enumeration',
+              active: e.active !== false,
+              ...(e.color ? { color: e.color } : {}),
+            }));
+          await saveSettings(this.db, settings, startedBy);
+        } catch (catErr) {
+          this.log.warn(`Skipped OP type/status catalog refresh: ${catErr instanceof Error ? catErr.message : catErr}`);
         }
-      }
+        const spentHours = await this.loadSpentHours(client, since);
+        const staging = this.config.openproject.teamStaging;
+        const personByOp = await this.refreshUserMap(client, staging === 'rd');
+        const allPeople = await listPeople(this.db, false);
+        const peopleForTrack =
+          staging === 'rd' ? allPeople.filter((p) => p.active !== false) : allPeople;
+        const personTrackById = new Map(
+          peopleForTrack.filter((p) => p.track).map((p) => [p.id, p.track] as const),
+        );
+        const seenUnmappedOpUsers = new Set<number>();
 
-      const status = errors.length > 0 && added + updated === 0 ? 'failed' : 'success';
-      await finishSyncRun(this.db, runId, { status, added, updated, unchanged, errors });
-      await this.db.audit(startedBy, 'openproject.sync', 'openproject', {
-        runId,
-        status,
-        added,
-        updated,
-        unchanged,
-      });
-      return { runId, status, added, updated, unchanged, errors };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      errors.push(message);
-      await finishSyncRun(this.db, runId, {
-        status: 'failed',
-        added,
-        updated,
-        unchanged,
-        errors,
-      });
-      throw error;
-    } finally {
-      this.running = false;
+        // Preload latest APPROVED due shifts once instead of querying per work package (eliminates N+1 DB query).
+        const approvedShiftsMap = new Map<string, string>();
+        try {
+          const shiftRows = await this.db.query<{ ticket_id: string; shifted: string }>(
+            `SELECT DISTINCT ON (ticket_id) ticket_id, new_first_due_on::text AS shifted
+             FROM ticket_due_shifts
+             WHERE status = 'APPROVED'
+             ORDER BY ticket_id, approved_at DESC`,
+          );
+          for (const row of shiftRows) {
+            if (row.shifted) {
+              approvedShiftsMap.set(row.ticket_id, row.shifted.slice(0, 10));
+            }
+          }
+        } catch {
+          // Safe if table not populated or absent in minimal setups
+        }
+
+        if (!mapping.projects?.length) {
+          this.log.warn(
+            'OpenProject sync: mapping.projects is empty — syncing every project the token can see. Set project identifiers on /integrations to narrow scope.',
+          );
+        }
+
+        const updatedSince = since ? since.toISOString() : null;
+        for await (const wp of client.paginateWorkPackages({
+          updatedSince,
+          projects: mapping.projects,
+        })) {
+          try {
+            const assigneeUser = idFromHref(singleLink(wp._links?.['assignee'])?.href);
+            // โหมด rd (POC): ข้ามใบที่ assignee ยังไม่อยู่ในคน active
+            // โหมด all: ซิงก์ทุกใบในโปรเจกต์ที่เลือก แม้ยังไม่แมปคน (จำ op_users_seen แทน)
+            if (staging === 'rd' && assigneeUser !== null && !personByOp.has(assigneeUser)) {
+              continue;
+            }
+
+            await this.rememberAssignee(client, wp, personByOp, allPeople, seenUnmappedOpUsers);
+            const existing = await getWorkItemByOpId(this.db, wp.id);
+            // Activities (reopen) เฉพาะเมื่อใบใหม่หรือ WP อัปเดตหลัง opUpdatedAt ล่าสุด — ลด N+1
+            let activities: Awaited<ReturnType<typeof client.getActivities>> | undefined;
+            if (mapping.countReopens) {
+              const wpUpdated = (wp.updatedAt ?? '').trim();
+              const localUpdated = (existing?.opUpdatedAt ?? '').trim();
+              const needsActivities =
+                !existing || !wpUpdated || !localUpdated || wpUpdated > localUpdated;
+              if (needsActivities) {
+                activities = await client.getActivities(wp.id);
+              }
+            }
+
+            const approvedDueShift = existing ? (approvedShiftsMap.get(existing.id) ?? null) : null;
+
+            const mapped = mapWorkPackage(wp, {
+              mapping,
+              hoursPerMd: settings.hoursPerMd,
+              personByOpUser: personByOp,
+              personTrackById,
+              spentHours,
+              existing: existing ?? undefined,
+              activities,
+              today: todayInBangkok(),
+              approvedDueShift,
+            });
+            if (existing && stableTicketJson(existing) === stableTicketJson(mapped)) {
+              unchanged += 1;
+              continue;
+            }
+            await upsertWorkItem(this.db, mapped, new Date());
+            if (existing) {
+              updated += 1;
+            } else {
+              added += 1;
+            }
+          } catch (error) {
+            errors.push(`WP ${wp.id}: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
+
+        const status = errors.length > 0 && added + updated === 0 ? 'failed' : 'success';
+        await finishSyncRun(this.db, runId, { status, added, updated, unchanged, errors });
+        await this.db.audit(startedBy, 'openproject.sync', 'openproject', {
+          runId,
+          status,
+          added,
+          updated,
+          unchanged,
+        });
+        return { runId, status, added, updated, unchanged, errors };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push(message);
+        await finishSyncRun(this.db, runId, {
+          status: 'failed',
+          added,
+          updated,
+          unchanged,
+          errors,
+        });
+        throw error;
+      } finally {
+        this.running = false;
+      }
+    });
+    if (!lock.acquired) {
+      throw new Error('OpenProject sync already running');
     }
+    return lock.result;
   }
 
   private async rememberAssignee(
     client: OpenProjectClient,
     wp: OpWorkPackage,
     personByOp: Map<number, string>,
+    allPeople: Person[],
+    seenUnmappedOpUsers: Set<number>,
   ): Promise<void> {
     const link = singleLink(wp._links?.['assignee']);
     const opUserId = idFromHref(link?.href);
-    if (opUserId === null || personByOp.has(opUserId)) {
+    if (opUserId === null || personByOp.has(opUserId) || seenUnmappedOpUsers.has(opUserId)) {
       return;
     }
+    seenUnmappedOpUsers.add(opUserId);
     const user = await client.getUser(opUserId);
     const name = user?.name || link?.title || `User ${opUserId}`;
     const login = user?.login ?? null;
     const email = user?.email ?? null;
     await upsertOpUserSeen(this.db, { opUserId, name, login, email });
 
-    const people = await listPeople(this.db, false);
     const match =
-      people.find((person) => email && person.email?.toLowerCase() === email.toLowerCase()) ??
-      people.find((person) => login && person.gitlabUsername?.toLowerCase() === login.toLowerCase()) ??
+      allPeople.find((person) => email && person.email?.toLowerCase() === email.toLowerCase()) ??
+      allPeople.find((person) => login && person.gitlabUsername?.toLowerCase() === login.toLowerCase()) ??
       null;
     if (match && match.openprojectUserId == null) {
+      match.openprojectUserId = opUserId;
       await upsertPerson(this.db, { ...match, openprojectUserId: opUserId });
       personByOp.set(opUserId, match.id);
     }

@@ -23,7 +23,11 @@ import { currentSession, setSessionUser } from './core/session';
 import { ThemeService } from './core/theme.service';
 import { WorkspaceFilter } from './core/workspace-filter';
 import { FilterChipsComponent } from './shared/ui/filter-chips/filter-chips';
-import { PersonAvatarComponent } from './shared/ui/person-avatar/person-avatar';
+import {
+  isFailedAvatarKey,
+  PersonAvatarComponent,
+  recordFailedAvatar,
+} from './shared/ui/person-avatar/person-avatar';
 import { SectionCardComponent } from './shared/ui/section-card/section-card';
 import { TicketDetailDialogComponent } from './shared/ui/ticket-detail-dialog/ticket-detail-dialog';
 import { SfDatePickerComponent } from './shared/sf/sf-datepicker/sf-datepicker';
@@ -99,7 +103,7 @@ export class App implements AfterViewInit {
   private readonly notice = inject(ShellNotice);
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
-  private readonly ticketDetail = inject(TicketDetailService);
+  protected readonly ticketDetail = inject(TicketDetailService);
   protected readonly theme = inject(ThemeService);
   protected readonly workspaceFilter = inject(WorkspaceFilter);
   protected readonly teamStaging = teamStagingMode;
@@ -488,44 +492,42 @@ export class App implements AfterViewInit {
     const person = this.currentPerson();
     return person?.fullName || person?.nickname || currentViewer().nickname;
   });
-  protected readonly userAvatarDirectUrl = computed(() => {
-    const p = this.currentPerson();
-    if (!p) return null;
-    const raw = (p.avatarUrl ?? '').trim();
-    if (raw) {
-      const m = /^(https?:\/\/[^/]+)\/users\/(\d+)\/avatar\/?$/i.exec(raw);
-      return m ? `${m[1]}/api/v3/users/${m[2]}/avatar` : raw;
-    }
-    return null;
-  });
   protected readonly userAvatarProxyUrl = computed(() => {
     const p = this.currentPerson();
     if (!p || !this.scorecard.usingApi()) return null;
-    const m = /\/(?:api\/v3\/)?users\/(\d+)\/avatar/i.exec(this.userAvatarDirectUrl() ?? '');
+    const raw = (p.avatarUrl ?? '').trim();
+    const m = /\/(?:api\/v3\/)?users\/(\d+)\/avatar/i.exec(raw);
     const opId = p.openprojectUserId ?? (m ? Number(m[1]) : null);
-    return opId ? `/api/integrations/openproject/users/${opId}/avatar` : null;
+    if (!opId) return null;
+    if (isFailedAvatarKey(p.id) || isFailedAvatarKey(String(opId)) || isFailedAvatarKey(`op:${opId}`)) {
+      return null;
+    }
+    return `/api/integrations/openproject/users/${opId}/avatar`;
   });
-  /** 0 = direct /api/v3/users/:id/avatar, 1 = authenticated backend proxy, 2 = initials fallback */
-  protected readonly avatarStage = signal<0 | 1 | 2>(0);
+  protected readonly avatarFailed = signal(false);
   protected readonly userAvatarUrl = computed(() => {
-    const stage = this.avatarStage();
-    if (stage === 0) return this.userAvatarDirectUrl() ?? this.userAvatarProxyUrl();
-    if (stage === 1) return this.userAvatarProxyUrl();
-    return null;
+    if (this.avatarFailed()) return null;
+    const proxy = this.userAvatarProxyUrl();
+    if (proxy) return proxy;
+    const raw = (this.currentPerson()?.avatarUrl ?? '').trim();
+    if (!raw || /(?:\/(?:api\/v3\/)?users\/\d+\/avatar|gravatar\.com\/avatar\/)/i.test(raw)) return null;
+    return raw;
   });
-  protected readonly avatarError = computed(() => this.avatarStage() >= 2 || !this.userAvatarUrl());
+  protected readonly avatarError = computed(() => this.avatarFailed() || !this.userAvatarUrl());
   private readonly resetUserAvatarOnChange = effect(() => {
     this.currentPerson()?.id;
-    this.userAvatarDirectUrl();
-    this.avatarStage.set(0);
+    this.avatarFailed.set(false);
   });
   protected onAvatarError(): void {
-    const cur = this.avatarStage();
-    if (cur === 0 && this.userAvatarDirectUrl() && this.userAvatarProxyUrl()) {
-      this.avatarStage.set(1);
-    } else {
-      this.avatarStage.set(2);
+    const p = this.currentPerson();
+    if (p) {
+      const keys: string[] = [p.id];
+      if (p.openprojectUserId != null) {
+        keys.push(String(p.openprojectUserId), `op:${p.openprojectUserId}`);
+      }
+      recordFailedAvatar(keys);
     }
+    this.avatarFailed.set(true);
   }
   protected readonly userTrackLevel = computed(() => {
     const person = this.currentPerson();

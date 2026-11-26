@@ -6,11 +6,14 @@ import { AnalyticsReport, buildAnalyticsReport } from '../../../shared/domain/an
 import { Person, Ticket } from '../../../shared/domain/models';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { VisibilityScopeService } from '../auth/visibility-scope.service';
+import { TtlCache } from '../common/ttl-cache';
 import { listWorkItems } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
 
 @Controller('api/analytics')
 export class AnalyticsController {
+  private readonly reportCache = new TtlCache<AnalyticsReport>(60_000, 50);
+
   constructor(
     private readonly db: Db,
     private readonly scope: VisibilityScopeService,
@@ -20,18 +23,23 @@ export class AnalyticsController {
   @Get('report')
   async getReport(@Req() req: AuthedRequest): Promise<AnalyticsReport> {
     const ctx = await this.scope.resolve(req.authUser);
-    const allTickets = await listWorkItems(this.db);
-    const scopedTickets = ctx.isAdmin ? allTickets : allTickets.filter((t) => ctx.canAccessTicket(t));
-    return runPythonAnalyticsOrFallback(ctx.visiblePeople, scopedTickets);
+    const cacheKey = ctx.isAdmin ? 'admin' : [...(ctx.allowedTeams ?? [])].sort().join(',');
+    return this.reportCache.getOrSet(cacheKey, async () => {
+      const allTickets = await listWorkItems(this.db);
+      const scopedTickets = ctx.isAdmin ? allTickets : allTickets.filter((t) => ctx.canAccessTicket(t));
+      return runPythonAnalyticsOrFallback(ctx.visiblePeople, scopedTickets);
+    });
   }
 
   @Roles('admin', 'lead')
   @Post('run')
   async runNow(@Req() req: AuthedRequest): Promise<AnalyticsReport> {
     const ctx = await this.scope.resolve(req.authUser);
+    const cacheKey = ctx.isAdmin ? 'admin' : [...(ctx.allowedTeams ?? [])].sort().join(',');
     const allTickets = await listWorkItems(this.db);
     const scopedTickets = ctx.isAdmin ? allTickets : allTickets.filter((t) => ctx.canAccessTicket(t));
     const report = await runPythonAnalyticsOrFallback(ctx.visiblePeople, scopedTickets);
+    this.reportCache.set(cacheKey, report);
     await this.db.audit(req.authUser?.person.id ?? null, 'analytics.run', 'python_engine', {
       engine: report.engine,
       readinessScore: report.syncHygiene.readinessScore,

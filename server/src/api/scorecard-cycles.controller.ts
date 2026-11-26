@@ -6,7 +6,7 @@ import {
   normalizeCycleSettings,
 } from '../../../shared/domain/scorecard-cycle';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
-import { getSettings, saveSettings } from '../data/settings.repo';
+import { getSettings, updateSettingsTransactional } from '../data/settings.repo';
 import { Db } from '../db/db.service';
 
 @Controller('api/scorecard-cycles')
@@ -39,7 +39,6 @@ export class ScorecardCyclesController {
     },
     @Req() req: AuthedRequest,
   ) {
-    const settings = await getSettings(this.db);
     const draft = createYearCycle({
       yearCe: body.yearCe,
       yearBe: body.yearBe,
@@ -48,25 +47,34 @@ export class ScorecardCyclesController {
       status: body.status ?? 'open',
       note: body.note,
     });
-    const cycle = normalizeCycle({
+    const baseCycle = normalizeCycle({
       ...draft,
       startOn: body.startOn ?? draft.startOn,
       endOn: body.endOn ?? draft.endOn,
     });
-    if (!cycle) {
+    if (!baseCycle) {
       return { ok: false, message: 'ข้อมูลรอบไม่ถูกต้อง' };
     }
-    if (settings.scorecardCycles.cycles.some((row) => row.id === cycle.id)) {
-      cycle.id = `${cycle.id}-${Date.now().toString(36)}`;
-    }
-    const cycles = [...settings.scorecardCycles.cycles, cycle];
-    const activeCycleId = body.activate === false ? settings.scorecardCycles.activeCycleId : cycle.id;
-    settings.scorecardCycles = normalizeCycleSettings({ cycles, activeCycleId });
-    await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
-    await this.db.audit(req.authUser?.person.id ?? null, 'scorecard-cycle.create', cycle.id, {
-      label: cycle.label,
+    const actorId = req.authUser?.person.id ?? null;
+    let createdCycle: ScorecardCycle = baseCycle;
+    const saved = await updateSettingsTransactional(
+      this.db,
+      (settings) => {
+        const cycle = settings.scorecardCycles.cycles.some((row) => row.id === baseCycle.id)
+          ? { ...baseCycle, id: `${baseCycle.id}-${Date.now().toString(36)}` }
+          : baseCycle;
+        createdCycle = cycle;
+        const cycles = [...settings.scorecardCycles.cycles, cycle];
+        const activeCycleId = body.activate === false ? settings.scorecardCycles.activeCycleId : cycle.id;
+        settings.scorecardCycles = normalizeCycleSettings({ cycles, activeCycleId });
+        return settings;
+      },
+      actorId,
+    );
+    await this.db.audit(actorId, 'scorecard-cycle.create', createdCycle.id, {
+      label: createdCycle.label,
     });
-    return { ok: true, cycle, ...settings.scorecardCycles };
+    return { ok: true, cycle: createdCycle, ...saved.scorecardCycles };
   }
 
   @Put(':id')
@@ -76,64 +84,98 @@ export class ScorecardCyclesController {
     @Body() body: Partial<ScorecardCycle> & { activate?: boolean },
     @Req() req: AuthedRequest,
   ) {
-    const settings = await getSettings(this.db);
-    const index = settings.scorecardCycles.cycles.findIndex((row) => row.id === id);
-    if (index < 0) {
-      return { ok: false, message: `ไม่พบรอบ ${id}` };
+    const actorId = req.authUser?.person.id ?? null;
+    let errMessage: string | null = null;
+    let updatedCycle: ScorecardCycle | null = null;
+    const saved = await updateSettingsTransactional(
+      this.db,
+      (settings) => {
+        const index = settings.scorecardCycles.cycles.findIndex((row) => row.id === id);
+        if (index < 0) {
+          errMessage = `ไม่พบรอบ ${id}`;
+          return settings;
+        }
+        const merged = normalizeCycle({
+          ...settings.scorecardCycles.cycles[index],
+          ...body,
+          id,
+        });
+        if (!merged) {
+          errMessage = 'ข้อมูลรอบไม่ถูกต้อง';
+          return settings;
+        }
+        const cycles = settings.scorecardCycles.cycles.map((row, i) => (i === index ? merged : row));
+        const activeCycleId = body.activate === true ? merged.id : settings.scorecardCycles.activeCycleId;
+        settings.scorecardCycles = normalizeCycleSettings({ cycles, activeCycleId });
+        updatedCycle = merged;
+        return settings;
+      },
+      actorId,
+    );
+    if (!updatedCycle) {
+      return { ok: false, message: errMessage ?? 'อัปเดตรอบไม่สำเร็จ' };
     }
-    const merged = normalizeCycle({
-      ...settings.scorecardCycles.cycles[index],
-      ...body,
-      id,
+    const resolvedCycle: ScorecardCycle = updatedCycle;
+    await this.db.audit(actorId, 'scorecard-cycle.update', id, {
+      label: resolvedCycle.label,
+      status: resolvedCycle.status,
     });
-    if (!merged) {
-      return { ok: false, message: 'ข้อมูลรอบไม่ถูกต้อง' };
-    }
-    const cycles = settings.scorecardCycles.cycles.map((row, i) => (i === index ? merged : row));
-    let activeCycleId = settings.scorecardCycles.activeCycleId;
-    if (body.activate === true) {
-      activeCycleId = merged.id;
-    }
-    settings.scorecardCycles = normalizeCycleSettings({ cycles, activeCycleId });
-    await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
-    await this.db.audit(req.authUser?.person.id ?? null, 'scorecard-cycle.update', id, {
-      label: merged.label,
-      status: merged.status,
-    });
-    return { ok: true, cycle: merged, ...settings.scorecardCycles };
+    return { ok: true, cycle: resolvedCycle, ...saved.scorecardCycles };
   }
 
   @Post(':id/activate')
   @Roles('admin', 'lead')
   async activate(@Param('id') id: string, @Req() req: AuthedRequest) {
-    const settings = await getSettings(this.db);
-    if (!settings.scorecardCycles.cycles.some((row) => row.id === id)) {
+    const actorId = req.authUser?.person.id ?? null;
+    let found = false;
+    const saved = await updateSettingsTransactional(
+      this.db,
+      (settings) => {
+        if (!settings.scorecardCycles.cycles.some((row) => row.id === id)) {
+          return settings;
+        }
+        found = true;
+        settings.scorecardCycles = normalizeCycleSettings({
+          cycles: settings.scorecardCycles.cycles,
+          activeCycleId: id,
+        });
+        return settings;
+      },
+      actorId,
+    );
+    if (!found) {
       return { ok: false, message: `ไม่พบรอบ ${id}` };
     }
-    settings.scorecardCycles = normalizeCycleSettings({
-      cycles: settings.scorecardCycles.cycles,
-      activeCycleId: id,
-    });
-    await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
-    await this.db.audit(req.authUser?.person.id ?? null, 'scorecard-cycle.activate', id, {});
-    return { ok: true, ...settings.scorecardCycles };
+    await this.db.audit(actorId, 'scorecard-cycle.activate', id, {});
+    return { ok: true, ...saved.scorecardCycles };
   }
 
   @Delete(':id')
   @Roles('admin')
   async remove(@Param('id') id: string, @Req() req: AuthedRequest) {
-    const settings = await getSettings(this.db);
-    const cycles = settings.scorecardCycles.cycles.filter((row) => row.id !== id);
-    if (cycles.length === settings.scorecardCycles.cycles.length) {
+    const actorId = req.authUser?.person.id ?? null;
+    let removed = false;
+    const saved = await updateSettingsTransactional(
+      this.db,
+      (settings) => {
+        const cycles = settings.scorecardCycles.cycles.filter((row) => row.id !== id);
+        if (cycles.length === settings.scorecardCycles.cycles.length) {
+          return settings;
+        }
+        removed = true;
+        const activeCycleId =
+          settings.scorecardCycles.activeCycleId === id
+            ? cycles.find((c) => c.status === 'open')?.id ?? cycles[0]?.id ?? null
+            : settings.scorecardCycles.activeCycleId;
+        settings.scorecardCycles = normalizeCycleSettings({ cycles, activeCycleId });
+        return settings;
+      },
+      actorId,
+    );
+    if (!removed) {
       return { ok: false, message: `ไม่พบรอบ ${id}` };
     }
-    const activeCycleId =
-      settings.scorecardCycles.activeCycleId === id
-        ? cycles.find((c) => c.status === 'open')?.id ?? cycles[0]?.id ?? null
-        : settings.scorecardCycles.activeCycleId;
-    settings.scorecardCycles = normalizeCycleSettings({ cycles, activeCycleId });
-    await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
-    await this.db.audit(req.authUser?.person.id ?? null, 'scorecard-cycle.delete', id, {});
-    return { ok: true, ...settings.scorecardCycles };
+    await this.db.audit(actorId, 'scorecard-cycle.delete', id, {});
+    return { ok: true, ...saved.scorecardCycles };
   }
 }

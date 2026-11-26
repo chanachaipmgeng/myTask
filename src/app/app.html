@@ -705,4 +705,6 @@
   width="320px"
 ></ejs-toast>
 
-<app-ticket-detail-dialog></app-ticket-detail-dialog>
+@defer (when ticketDetail.ticketId(); prefetch on idle) {
+  <app-ticket-detail-dialog></app-ticket-detail-dialog>
+}

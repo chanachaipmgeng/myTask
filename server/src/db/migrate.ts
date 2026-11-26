@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { Pool } from 'pg';
@@ -22,6 +23,7 @@ export async function migrate(pool: Pool, log: (line: string) => void = () => un
     await client.query(
       'CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())',
     );
+    await client.query('ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS checksum text');
     const done = new Set(
       (await client.query<{ name: string }>('SELECT name FROM schema_migrations')).rows.map((row) => row.name),
     );
@@ -30,10 +32,15 @@ export async function migrate(pool: Pool, log: (line: string) => void = () => un
         continue;
       }
       const sql = readFileSync(join(dir, file), 'utf8');
+      const checksum = createHash('sha256').update(sql).digest('hex');
       await client.query('BEGIN');
       try {
+        await client.query("SET LOCAL lock_timeout = '10s'");
         await client.query(sql);
-        await client.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
+        await client.query('INSERT INTO schema_migrations (name, checksum) VALUES ($1, $2)', [
+          file,
+          checksum,
+        ]);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');

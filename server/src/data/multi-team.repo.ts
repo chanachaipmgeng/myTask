@@ -142,30 +142,26 @@ export async function replaceAllocations(
   return listAllocations(db, ticketId);
 }
 
-export async function listDisputes(db: Queryable, requesterId?: string): Promise<TicketDispute[]> {
-  const sql = requesterId
-    ? 'SELECT * FROM ticket_disputes WHERE requester_id = $1 ORDER BY created_at DESC'
-    : 'SELECT * FROM ticket_disputes ORDER BY created_at DESC';
-  const params = requesterId ? [requesterId] : [];
-  const rows = await db.query<{
-    id: string;
-    dispute_code: string;
-    ticket_id: string;
-    requester_id: string;
-    requested_flag: string;
-    requested_reopen_override: number | null;
-    reason: string;
-    evidence_url: string | null;
-    score_before: string | number;
-    score_projected: string | number;
-    status: string;
-    reviewer_id: string | null;
-    reviewer_comment: string | null;
-    resolved_at: Date | string | null;
-    created_at: Date | string;
-  }>(sql, params);
+type DisputeRow = {
+  id: string;
+  dispute_code: string;
+  ticket_id: string;
+  requester_id: string;
+  requested_flag: string;
+  requested_reopen_override: number | null;
+  reason: string;
+  evidence_url: string | null;
+  score_before: string | number;
+  score_projected: string | number;
+  status: string;
+  reviewer_id: string | null;
+  reviewer_comment: string | null;
+  resolved_at: Date | string | null;
+  created_at: Date | string;
+};
 
-  return rows.map((r) => ({
+function mapDisputeRow(r: DisputeRow): TicketDispute {
+  return {
     id: r.id,
     disputeCode: r.dispute_code,
     ticketId: r.ticket_id,
@@ -185,12 +181,27 @@ export async function listDisputes(db: Queryable, requesterId?: string): Promise
         : String(r.resolved_at)
       : null,
     createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
-  }));
+  };
+}
+
+export async function nextDisputeCode(db: Queryable): Promise<string> {
+  const rows = await db.query<{ n: string }>(`SELECT nextval('dispute_code_seq')::text AS n`);
+  const next = Number(rows[0]?.n ?? 1);
+  return `DSP-${new Date().getFullYear()}-${String(next).padStart(4, '0')}`;
+}
+
+export async function listDisputes(db: Queryable, requesterId?: string): Promise<TicketDispute[]> {
+  const sql = requesterId
+    ? 'SELECT * FROM ticket_disputes WHERE requester_id = $1 ORDER BY created_at DESC'
+    : 'SELECT * FROM ticket_disputes ORDER BY created_at DESC';
+  const params = requesterId ? [requesterId] : [];
+  const rows = await db.query<DisputeRow>(sql, params);
+  return rows.map(mapDisputeRow);
 }
 
 export async function getDispute(db: Queryable, id: string): Promise<TicketDispute | null> {
-  const rows = await listDisputes(db);
-  return rows.find((d) => d.id === id) ?? null;
+  const rows = await db.query<DisputeRow>('SELECT * FROM ticket_disputes WHERE id = $1', [id]);
+  return rows[0] ? mapDisputeRow(rows[0]) : null;
 }
 
 export async function insertDispute(db: Queryable, dispute: TicketDispute): Promise<TicketDispute> {
@@ -231,20 +242,17 @@ export async function resolveDisputeRow(
   comment?: string,
 ): Promise<TicketDispute | null> {
   const resolvedAt = new Date().toISOString();
-  const rows = await db.query<{ id: string }>(
+  const rows = await db.query<DisputeRow>(
     `UPDATE ticket_disputes
      SET status = $2,
          reviewer_id = $3,
          reviewer_comment = $4,
          resolved_at = $5::timestamptz
-     WHERE id = $1
-     RETURNING id`,
+     WHERE id = $1 AND status = 'PENDING'
+     RETURNING *`,
     [id, status, reviewerId, comment ?? null, resolvedAt],
   );
-  if (rows.length === 0) {
-    return null;
-  }
-  return getDispute(db, id);
+  return rows[0] ? mapDisputeRow(rows[0]) : null;
 }
 
 export async function listStageLogs(db: Queryable, ticketId?: string): Promise<TicketStageLog[]> {

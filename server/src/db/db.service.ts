@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Pool, PoolClient, QueryResultRow } from 'pg';
 import { APP_CONFIG, AppConfig } from '../config';
 
@@ -17,10 +17,46 @@ function asQueryable(client: Pick<PoolClient, 'query'>): Queryable {
 
 @Injectable()
 export class Db implements OnModuleDestroy, Queryable {
+  private readonly log = new Logger(Db.name);
   readonly pool: Pool;
 
   constructor(@Inject(APP_CONFIG) config: AppConfig) {
-    this.pool = new Pool({ connectionString: config.databaseUrl, max: 10 });
+    this.pool = new Pool({
+      connectionString: config.databaseUrl,
+      max: config.dbPoolMax,
+      connectionTimeoutMillis: 5_000,
+      idleTimeoutMillis: 30_000,
+      statement_timeout: 30_000,
+      ...(config.dbSsl ? { ssl: { rejectUnauthorized: false } } : {}),
+    });
+    this.pool.on('error', (err) => {
+      this.log.error(`Unexpected idle PostgreSQL client error: ${err.message}`);
+    });
+  }
+
+  async withAdvisoryLock<T>(
+    lockKey: number,
+    work: () => Promise<T>,
+  ): Promise<{ acquired: true; result: T } | { acquired: false }> {
+    const client = await this.pool.connect();
+    let locked = false;
+    try {
+      const res = await client.query<{ locked: boolean }>(
+        'SELECT pg_try_advisory_lock($1) AS locked',
+        [lockKey],
+      );
+      locked = Boolean(res.rows[0]?.locked);
+      if (!locked) {
+        return { acquired: false };
+      }
+      const result = await work();
+      return { acquired: true, result };
+    } finally {
+      if (locked) {
+        await client.query('SELECT pg_advisory_unlock($1)', [lockKey]).catch(() => undefined);
+      }
+      client.release();
+    }
   }
 
   async query<T extends QueryResultRow = QueryResultRow>(sql: string, params: unknown[] = []): Promise<T[]> {

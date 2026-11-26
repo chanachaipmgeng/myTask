@@ -13,7 +13,7 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { extractTicketIdFromText } from '../../../shared/domain/gitlab-mr';
+import { extractTicketIdFromText, GitLabMergeRequestRaw } from '../../../shared/domain/gitlab-mr';
 import { Ticket, TicketDueShift, TicketStageLog } from '../../../shared/domain/models';
 import { scoreTicket } from '../../../shared/domain/scoring';
 import {
@@ -25,6 +25,7 @@ import { canMoveWorkflowByRole, todayInBangkok, workflowStatusOf } from '../../.
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { VisibilityScopeService } from '../auth/visibility-scope.service';
 import { ListQuery, parseListQuery, toListPageResult } from '../common/list-query';
+import { TtlCache } from '../common/ttl-cache';
 import { APP_CONFIG, AppConfig } from '../config';
 import { closeOpenStageLog, insertDueShift, insertStageLog } from '../data/multi-team.repo';
 import { getPerson } from '../data/people.repo';
@@ -45,6 +46,8 @@ import { OpenProjectSyncService } from '../integrations/openproject/openproject.
 
 @Controller('api/work-items')
 export class WorkItemsController {
+  private readonly mrListCache = new TtlCache<GitLabMergeRequestRaw[]>(60_000, 100);
+
   constructor(
     private readonly db: Db,
     private readonly openProject: OpenProjectSyncService,
@@ -535,8 +538,12 @@ export class WorkItemsController {
     for (const projectId of projectIds) {
       try {
         const [opened, merged] = await Promise.all([
-          client.listMergeRequests(projectId, { state: 'opened' }),
-          client.listMergeRequests(projectId, { state: 'merged' }),
+          this.mrListCache.getOrSet(`${projectId}:opened`, () =>
+            client.listMergeRequests(projectId, { state: 'opened' }),
+          ),
+          this.mrListCache.getOrSet(`${projectId}:merged`, () =>
+            client.listMergeRequests(projectId, { state: 'merged' }),
+          ),
         ]);
         for (const mr of [...opened, ...merged]) {
           if (!mr.iid) continue;
@@ -699,25 +706,33 @@ export class WorkItemsController {
       };
     }
 
-    const saved = await upsertWorkItem(this.db, nextTicket);
+    const saved = await this.db.tx(async (tx) => {
+      const upserted = await upsertWorkItem(tx, nextTicket);
+      const finalStatus = workflowStatusOf(upserted);
+      if (fromStatus !== finalStatus) {
+        const nowIso = new Date().toISOString();
+        await closeOpenStageLog(tx, id, nowIso);
+        const stageLog: TicketStageLog = {
+          id: `slog-${id}-${Date.now()}`,
+          ticketId: id,
+          fromStatus,
+          toStatus: finalStatus,
+          changedBy: ctx.selfId,
+          blockingTeam:
+            upserted.blocker || upserted.varianceCode === 'BLK' || upserted.varianceCode === 'ENV'
+              ? 'INFRA'
+              : null,
+          blockerFlag:
+            upserted.varianceCode !== 'NONE' ? upserted.varianceCode : upserted.blocker ? 'BLK' : 'NONE',
+          enteredAt: nowIso,
+          exitedAt: null,
+          durationHours: null,
+        };
+        await insertStageLog(tx, stageLog);
+      }
+      return upserted;
+    });
     const finalStatus = workflowStatusOf(saved);
-    if (fromStatus !== finalStatus) {
-      const nowIso = new Date().toISOString();
-      await closeOpenStageLog(this.db, id, nowIso);
-      const stageLog: TicketStageLog = {
-        id: `slog-${id}-${Date.now()}`,
-        ticketId: id,
-        fromStatus,
-        toStatus: finalStatus,
-        changedBy: ctx.selfId,
-        blockingTeam: saved.blocker || saved.varianceCode === 'BLK' || saved.varianceCode === 'ENV' ? 'INFRA' : null,
-        blockerFlag: saved.varianceCode !== 'NONE' ? saved.varianceCode : saved.blocker ? 'BLK' : 'NONE',
-        enteredAt: nowIso,
-        exitedAt: null,
-        durationHours: null,
-      };
-      await insertStageLog(this.db, stageLog);
-    }
     await this.db.audit(ctx.selfId, 'work_item.replace', id, {
       fromStatus,
       toStatus: finalStatus,
@@ -851,48 +866,60 @@ export class WorkItemsController {
 
     const shiftDays = body.shiftDays > 0 ? body.shiftDays : Math.max(1, Math.ceil(mdTicket.estimateMd || 1));
     const nowIso = new Date().toISOString();
-    const updatedTickets: Ticket[] = [];
+    const shiftedItems = await this.db.tx(async (tx) => {
+      const items: {
+        ticket: Ticket;
+        saved: Ticket;
+        originalFirstDueOn: string | null;
+        newFirstDueOn: string | null;
+        newDueOn: string | null;
+      }[] = [];
 
-    for (const targetId of body.targetTicketIds) {
-      const ticket = await getWorkItem(this.db, targetId);
-      if (!ticket) continue;
-      ctx.assertCanAccessTicket(ticket);
+      for (const targetId of body.targetTicketIds) {
+        const ticket = await getWorkItem(tx, targetId);
+        if (!ticket) continue;
+        ctx.assertCanAccessTicket(ticket);
 
-      const originalFirstDueOn = ticket.originalFirstDueOn || ticket.firstDueOn || null;
-      const newFirstDueOn = addWorkingDays(ticket.firstDueOn || originalFirstDueOn, shiftDays);
-      const newDueOn = addWorkingDays(ticket.dueOn || ticket.firstDueOn, shiftDays);
+        const originalFirstDueOn = ticket.originalFirstDueOn || ticket.firstDueOn || null;
+        const newFirstDueOn = addWorkingDays(ticket.firstDueOn || originalFirstDueOn, shiftDays);
+        const newDueOn = addWorkingDays(ticket.dueOn || ticket.firstDueOn, shiftDays);
 
-      const pausedTicket: Ticket = {
-        ...ticket,
-        isPaused: true,
-        pausedReason: 'Paused (By MD Mandate)',
-        originalFirstDueOn,
-        firstDueOn: newFirstDueOn,
-        dueOn: newDueOn,
-        pausedAt: nowIso,
-        pausedDays: (ticket.pausedDays || 0) + shiftDays,
-        pausedByTicketId: mdTicket.id,
-      };
-
-      const saved = await upsertWorkItem(this.db, pausedTicket);
-      updatedTickets.push(saved);
-
-      if (ticket.firstDueOn && newFirstDueOn) {
-        const dueShift: TicketDueShift = {
-          id: `shift-${targetId}-${Date.now()}`,
-          ticketId: targetId,
-          previousFirstDueOn: ticket.firstDueOn,
-          newFirstDueOn,
-          shiftDays,
-          reason: `MD Mandate pause from ${mdTicket.id}`,
-          status: 'APPROVED',
-          approvedBy: ctx.selfId,
-          approvedAt: nowIso,
-          createdAt: nowIso,
+        const pausedTicket: Ticket = {
+          ...ticket,
+          isPaused: true,
+          pausedReason: 'Paused (By MD Mandate)',
+          originalFirstDueOn,
+          firstDueOn: newFirstDueOn,
+          dueOn: newDueOn,
+          pausedAt: nowIso,
+          pausedDays: (ticket.pausedDays || 0) + shiftDays,
+          pausedByTicketId: mdTicket.id,
         };
-        await insertDueShift(this.db, dueShift);
-      }
 
+        const saved = await upsertWorkItem(tx, pausedTicket);
+        if (ticket.firstDueOn && newFirstDueOn) {
+          const dueShift: TicketDueShift = {
+            id: `shift-${targetId}-${Date.now()}`,
+            ticketId: targetId,
+            previousFirstDueOn: ticket.firstDueOn,
+            newFirstDueOn,
+            shiftDays,
+            reason: `MD Mandate pause from ${mdTicket.id}`,
+            status: 'APPROVED',
+            approvedBy: ctx.selfId,
+            approvedAt: nowIso,
+            createdAt: nowIso,
+          };
+          await insertDueShift(tx, dueShift);
+        }
+        items.push({ ticket, saved, originalFirstDueOn, newFirstDueOn, newDueOn });
+      }
+      return items;
+    });
+
+    const updatedTickets = shiftedItems.map((x) => x.saved);
+    for (const item of shiftedItems) {
+      const { ticket, originalFirstDueOn, newFirstDueOn, newDueOn } = item;
       if (ticket.opId && this.config.openproject.writeback) {
         await this.openProject.writebackDates(ticket.opId, { dueDate: newDueOn });
         const approverName = req.authUser?.person.nickname || 'Admin/Lead';
@@ -905,7 +932,7 @@ export class WorkItemsController {
         await this.openProject.postActivity(ticket.opId, commentMarkdown);
       }
 
-      await this.db.audit(ctx.selfId, 'work_item.md_mandate_shift', targetId, {
+      await this.db.audit(ctx.selfId, 'work_item.md_mandate_shift', ticket.id, {
         mdTicketId: mdTicket.id,
         shiftDays,
         originalFirstDueOn,

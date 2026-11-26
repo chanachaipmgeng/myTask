@@ -1167,7 +1167,7 @@ export class IntegrationsController {
     if (!body.teamId || !Array.isArray(body.projects)) {
       return { ok: false, message: 'ข้อมูลไม่ถูกต้อง' };
     }
-    await setTeamGitMappings(this.db, body.teamId, body.projects);
+    await this.db.tx((tx) => setTeamGitMappings(tx, body.teamId, body.projects));
     await this.db.audit(req.authUser?.person.id ?? null, 'teams.update_git_mappings', body.teamId, {
       projectCount: body.projects.length,
     });
@@ -1265,7 +1265,7 @@ export class IntegrationsController {
     if (cached && cached.expiresAt > now) {
       if (!cached.ok || !cached.bytes) {
         res.setHeader('Cache-Control', 'private, max-age=7200');
-        res.status(404).end();
+        res.status(204).end();
         return;
       }
       res.setHeader('Content-Type', cached.contentType);
@@ -1283,7 +1283,7 @@ export class IntegrationsController {
         expiresAt: now + 30 * 60_000,
       });
       res.setHeader('Cache-Control', 'private, max-age=1800');
-      res.status(404).end();
+      res.status(204).end();
       return;
     }
     try {
@@ -1300,7 +1300,7 @@ export class IntegrationsController {
       });
       if (!isOk) {
         res.setHeader('Cache-Control', 'private, max-age=1800');
-        res.status(404).end();
+        res.status(204).end();
         return;
       }
       res.setHeader('Content-Type', ctype);
@@ -1314,7 +1314,7 @@ export class IntegrationsController {
         expiresAt: now + 30 * 60_000,
       });
       res.setHeader('Cache-Control', 'private, max-age=1800');
-      res.status(404).end();
+      res.status(204).end();
     }
   }
 

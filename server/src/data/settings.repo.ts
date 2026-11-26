@@ -14,7 +14,7 @@ import {
   OpenProjectMapping,
   validateMapping,
 } from '../integrations/openproject/openproject.mapper';
-import { Queryable } from '../db/db.service';
+import type { Db, Queryable } from '../db/db.service';
 import { AlertRulesSetting, AppSettings, ConnectionRow } from './types';
 import { decryptSecret, encryptSecret } from '../common/crypto';
 
@@ -76,6 +76,28 @@ export async function saveSettings(db: Queryable, settings: AppSettings, updated
     [SETTINGS_KEY, JSON.stringify(merged), updatedBy],
   );
   return merged;
+}
+
+export async function updateSettingsTransactional(
+  db: Db,
+  mutator: (current: AppSettings) => AppSettings | Promise<AppSettings>,
+  updatedBy: string | null,
+): Promise<AppSettings> {
+  return db.tx(async (tx) => {
+    const rows = await tx.query<{ value: AppSettings | string }>(
+      'SELECT value FROM settings WHERE key = $1 FOR UPDATE',
+      [SETTINGS_KEY],
+    );
+    const current = rows[0]
+      ? mergeSettings(
+          typeof rows[0].value === 'string'
+            ? (JSON.parse(rows[0].value) as Partial<AppSettings>)
+            : rows[0].value,
+        )
+      : defaultSettings();
+    const next = await mutator(current);
+    return saveSettings(tx, next, updatedBy);
+  });
 }
 
 export function mergeSettings(raw: Partial<AppSettings> | null | undefined): AppSettings {

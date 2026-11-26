@@ -50,6 +50,7 @@ Thumbs.db
 .env.*
 !.env.example
 src/app/core/syncfusion-license.generated.ts
+public/assets/themes/
 
 # Local Syncfusion MCP config. The API key stays on this machine.
 .cursor/mcp.json

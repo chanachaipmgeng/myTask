@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   Delete,
   ForbiddenException,
@@ -26,11 +27,13 @@ import { sanitizeEvidenceUrl } from '../common/security';
 import { APP_CONFIG, AppConfig } from '../config';
 import {
   deleteLeave,
+  getDispute,
   insertDispute,
   listAllocations,
   listDisputes,
   listLeaves,
   listStageLogs,
+  nextDisputeCode,
   replaceAllocations,
   resolveDisputeRow,
   upsertLeave,
@@ -153,11 +156,14 @@ export class V2EnterpriseController {
       ticketId: id,
       id: a.id || `alloc-${id}-${a.userId}-${a.subRole ?? 'main'}`,
     }));
-    const saved = await replaceAllocations(this.db, id, allocations);
-    await upsertWorkItem(this.db, {
-      ...ticket,
-      isSplitEffort: saved.length > 0,
-      allocations: saved,
+    const saved = await this.db.tx(async (tx) => {
+      const nextAllocs = await replaceAllocations(tx, id, allocations);
+      await upsertWorkItem(tx, {
+        ...ticket,
+        isSplitEffort: nextAllocs.length > 0,
+        allocations: nextAllocs,
+      });
+      return nextAllocs;
     });
     await this.db.audit(req.authUser?.person.id ?? null, 'ticket.allocations.update', id, {
       count: saved.length,
@@ -270,9 +276,10 @@ export class V2EnterpriseController {
     const tickets = await listWorkItems(this.db);
     const personTickets = tickets.filter((t) => t.assigneeId === person.id);
     const sim = simulateDisputeImpact(ticket, person, personTickets, body.requestedFlag);
+    const disputeCode = await nextDisputeCode(this.db);
     const dispute: TicketDispute = {
-      id: `dsp-${Date.now()}`,
-      disputeCode: `DSP-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
+      id: `dsp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      disputeCode,
       ticketId: body.ticketId,
       requesterId: person.id,
       requestedFlag: body.requestedFlag,
@@ -301,7 +308,7 @@ export class V2EnterpriseController {
     @Req() req: AuthedRequest,
   ) {
     const ctx = await this.scope.resolve(req.authUser);
-    const existing = (await listDisputes(this.db)).find((d) => d.id === id);
+    const existing = await getDispute(this.db, id);
     if (!existing) {
       return { ok: false, message: 'ไม่พบคำขอทบทวนคะแนน' };
     }
@@ -314,31 +321,34 @@ export class V2EnterpriseController {
       return { ok: false, message: 'คำขอนี้ได้รับการพิจารณาแล้ว', dispute: existing };
     }
 
-    const dispute = await resolveDisputeRow(
-      this.db,
-      id,
-      body.status,
-      ctx.selfId,
-      body.comment,
-    );
-    if (!dispute) {
-      return { ok: false, message: 'อัปเดตคำขอไม่สำเร็จ' };
-    }
-
-    let ticket = null;
-    if (body.status === 'APPROVED') {
-      const current = await getWorkItem(this.db, dispute.ticketId);
-      if (current) {
-        ticket = await upsertWorkItem(this.db, {
-          ...current,
-          varianceCode: dispute.requestedFlag,
-          reopenCount:
-            dispute.requestedReopenOverride ??
-            (dispute.requestedFlag === 'REQ' || dispute.requestedFlag === 'BLK' ? 0 : current.reopenCount),
-          blocker: dispute.requestedFlag === 'BLK' ? false : current.blocker,
-        });
+    const result = await this.db.tx(async (tx) => {
+      const dispute = await resolveDisputeRow(tx, id, body.status, ctx.selfId, body.comment);
+      if (!dispute) {
+        return null;
       }
+      let ticket = null;
+      if (body.status === 'APPROVED') {
+        const current = await getWorkItem(tx, dispute.ticketId);
+        if (current) {
+          ticket = await upsertWorkItem(tx, {
+            ...current,
+            varianceCode: dispute.requestedFlag,
+            reopenCount:
+              dispute.requestedReopenOverride ??
+              (dispute.requestedFlag === 'REQ' || dispute.requestedFlag === 'BLK'
+                ? 0
+                : current.reopenCount),
+            blocker: dispute.requestedFlag === 'BLK' ? false : current.blocker,
+          });
+        }
+      }
+      return { dispute, ticket };
+    });
+
+    if (!result) {
+      throw new ConflictException('คำขอนี้ได้รับการพิจารณาไปแล้ว');
     }
+    const { dispute, ticket } = result;
 
     await this.db.audit(ctx.selfId, 'dispute.resolve', id, {
       status: body.status,

@@ -58,6 +58,8 @@ export interface AppConfig {
   /** Bind address. Use 0.0.0.0 inside Docker so other containers can reach the API. */
   host: string;
   databaseUrl: string;
+  dbPoolMax: number;
+  dbSsl: boolean;
   /** Public URL of the web app, used for OAuth redirects. */
   appUrl: string;
   oauthCallbackUrl: string;
@@ -110,6 +112,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     port: Number(env['PORT'] ?? 3000),
     host: (env['HOST'] ?? '127.0.0.1').trim() || '127.0.0.1',
     databaseUrl: env['DATABASE_URL'] ?? 'postgres://manday:manday@localhost:5433/manday',
+    dbPoolMax: Math.min(100, Math.max(2, Number(env['DB_POOL_MAX'] ?? 15) || 15)),
+    dbSsl: bool(env['DATABASE_SSL'], false),
     appUrl: trimSlash(env['APP_URL'] ?? 'http://127.0.0.1:4200'),
     oauthCallbackUrl: trimSlash(env['OAUTH_CALLBACK_URL'] ?? ''),
     corsOrigins: list(env['CORS_ORIGINS']).map(trimSlash),

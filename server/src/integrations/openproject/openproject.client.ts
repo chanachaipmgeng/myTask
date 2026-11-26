@@ -1,4 +1,24 @@
 import { DiscoveredOpCustomField, idFromHref, OpActivity, OpWorkPackage } from './openproject.mapper';
+import {
+  backoffWithJitterMs,
+  CircuitBreaker,
+  isIdempotentMethod,
+  parseRetryAfterMs,
+} from '../../common/http-resilience';
+
+const opCircuitBreakers = new Map<string, CircuitBreaker>();
+function breakerFor(baseUrl: string): CircuitBreaker {
+  const key = baseUrl.replace(/\/+$/, '').toLowerCase();
+  let cb = opCircuitBreakers.get(key);
+  if (!cb) {
+    cb = new CircuitBreaker(5, 30_000);
+    opCircuitBreakers.set(key, cb);
+  }
+  return cb;
+}
+export function resetOpenProjectCircuitBreakers(): void {
+  opCircuitBreakers.clear();
+}
 
 export interface OpCollection<T> {
   _embedded?: { elements?: T[] };
@@ -787,6 +807,7 @@ export class OpenProjectClient {
         Accept: 'image/*,*/*;q=0.8',
         Authorization: `Basic ${auth}`,
       },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
       return { ok: false, status: response.status, contentType: '', bytes: null };
@@ -806,21 +827,48 @@ export class OpenProjectClient {
   }
 
   private async request<T>(path: string, init: RequestInit, attempt = 0): Promise<T> {
+    const breaker = breakerFor(this.baseUrl);
+    breaker.assertClosed('OpenProject');
+
+    const method = (init.method ?? 'GET').toUpperCase();
+    const retryable = isIdempotentMethod(method);
     const url = `${this.baseUrl.replace(/\/+$/, '')}${path}`;
     const auth = Buffer.from(`apikey:${this.token}`).toString('base64');
-    const response = await this.fetchImpl(url, {
-      ...init,
-      headers: {
-        Accept: 'application/hal+json, application/json',
-        Authorization: `Basic ${auth}`,
-        ...(init.headers ?? {}),
-      },
-    });
-    if ((response.status === 429 || response.status >= 500) && attempt < 4) {
-      const wait = Math.min(8_000, 500 * 2 ** attempt);
-      await sleep(wait);
-      return this.request<T>(path, init, attempt + 1);
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(url, {
+        ...init,
+        signal: init.signal ?? AbortSignal.timeout(15_000),
+        headers: {
+          Accept: 'application/hal+json, application/json',
+          Authorization: `Basic ${auth}`,
+          ...(init.headers ?? {}),
+        },
+      });
+    } catch (err) {
+      if (retryable && attempt < 3) {
+        await sleep(backoffWithJitterMs(attempt));
+        return this.request<T>(path, init, attempt + 1);
+      }
+      breaker.recordFailure();
+      throw err;
     }
+
+    if (response.status === 429 || response.status >= 500) {
+      if (retryable && attempt < 3) {
+        const retryAfter = parseRetryAfterMs(response.headers.get('retry-after'));
+        await sleep(backoffWithJitterMs(attempt, retryAfter));
+        return this.request<T>(path, init, attempt + 1);
+      }
+      if (response.status >= 500) {
+        breaker.recordFailure();
+      }
+      const body = await response.text().catch(() => '');
+      throw new Error(`OpenProject ${response.status} ${path}: ${body.slice(0, 300)}`);
+    }
+
+    breaker.recordSuccess();
     if (!response.ok) {
       const body = await response.text();
       throw new Error(`OpenProject ${response.status} ${path}: ${body.slice(0, 300)}`);

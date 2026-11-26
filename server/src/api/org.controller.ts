@@ -15,7 +15,13 @@ import { APP_CONFIG, AppConfig } from '../config';
 import { listGitBranches } from '../data/git.repo';
 import { getPerson, listDepartments, listPeople, listTeams, upsertPerson } from '../data/people.repo';
 import { deleteSessionsByPerson } from '../data/sessions.repo';
-import { getConnection, connectionToken, getSettings, saveSettings } from '../data/settings.repo';
+import {
+  connectionToken,
+  getConnection,
+  getSettings,
+  saveSettings,
+  updateSettingsTransactional,
+} from '../data/settings.repo';
 import { OpenProjectCatalogEntry } from '../data/types';
 import { getVisibilityConfig, setTeamVisibilityMatrix, setUserAllowedTeams } from '../data/visibility.repo';
 import { Db } from '../db/db.service';
@@ -169,22 +175,25 @@ export class OrgController {
         ? body.track
         : existing.track;
 
-    const saved = await upsertPerson(this.db, {
-      ...existing,
-      access: nextAccess,
-      level: nextLevel,
-      track: nextTrack,
-      gitlabUsername:
-        body.gitlabUsername !== undefined ? body.gitlabUsername?.trim() || null : existing.gitlabUsername,
-      openprojectUserId:
-        body.openprojectUserId !== undefined ? body.openprojectUserId : existing.openprojectUserId,
+    const saved = await this.db.tx(async (tx) => {
+      const person = await upsertPerson(tx, {
+        ...existing,
+        access: nextAccess,
+        level: nextLevel,
+        track: nextTrack,
+        gitlabUsername:
+          body.gitlabUsername !== undefined ? body.gitlabUsername?.trim() || null : existing.gitlabUsername,
+        openprojectUserId:
+          body.openprojectUserId !== undefined ? body.openprojectUserId : existing.openprojectUserId,
+      });
+      if (Array.isArray(body.allowedTeams)) {
+        await setUserAllowedTeams(tx, id, body.allowedTeams);
+      }
+      if (nextAccess !== (existing.access ?? 'member')) {
+        await deleteSessionsByPerson(tx, id);
+      }
+      return person;
     });
-    if (Array.isArray(body.allowedTeams)) {
-      await setUserAllowedTeams(this.db, id, body.allowedTeams);
-    }
-    if (nextAccess !== (existing.access ?? 'member')) {
-      await deleteSessionsByPerson(this.db, id);
-    }
     await this.db.audit(req.authUser?.person.id ?? null, 'person.update_access', id, {
       access: nextAccess,
       level: nextLevel,
@@ -208,7 +217,7 @@ export class OrgController {
     @Req() req: AuthedRequest,
   ) {
     const matrix = Array.isArray(body.matrix) ? body.matrix : [];
-    const saved = await setTeamVisibilityMatrix(this.db, matrix);
+    const saved = await this.db.tx((tx) => setTeamVisibilityMatrix(tx, matrix));
     await this.db.audit(req.authUser?.person.id ?? null, 'visibility.update_matrix', null, {
       rulesCount: saved.length,
     });
@@ -223,7 +232,7 @@ export class OrgController {
     @Req() req: AuthedRequest,
   ) {
     const teams = Array.isArray(body.allowedTeams) ? body.allowedTeams : [];
-    const saved = await setUserAllowedTeams(this.db, id, teams);
+    const saved = await this.db.tx((tx) => setUserAllowedTeams(tx, id, teams));
     await this.db.audit(req.authUser?.person.id ?? null, 'visibility.update_user', id, {
       allowedTeams: saved,
     });
@@ -829,46 +838,57 @@ export class OrgController {
     },
     @Req() req: AuthedRequest,
   ) {
-    const settings = await getSettings(this.db);
-    const catalog = settings.openprojectProjectCatalog ?? [];
-    const index = catalog.findIndex((p) => String(p.id) === id || p.identifier === id);
+    const actorId = req.authUser?.person.id ?? null;
+    let updated: OpenProjectCatalogEntry | null = null;
+    await updateSettingsTransactional(
+      this.db,
+      (settings) => {
+        const catalog = settings.openprojectProjectCatalog ?? [];
+        const index = catalog.findIndex((p) => String(p.id) === id || p.identifier === id);
+        if (index === -1) {
+          return settings;
+        }
+        const current = catalog[index]!;
+        const nextActive = typeof body.active === 'boolean' ? body.active : current.active;
+        const nextTeams = Array.isArray(body.assignedTeamIds)
+          ? body.assignedTeamIds.map(String)
+          : (current.assignedTeamIds ?? []);
+        const nextGitRepoIds = Array.isArray(body.gitRepoIds)
+          ? body.gitRepoIds.map(String)
+          : (current.gitRepoIds ?? []);
+        const nextGitRepoNames = Array.isArray(body.gitRepoNames)
+          ? body.gitRepoNames.map(String)
+          : (current.gitRepoNames ?? []);
 
-    if (index === -1) {
+        const nextEntry: OpenProjectCatalogEntry = {
+          ...current,
+          active: nextActive,
+          assignedTeamIds: nextTeams,
+          gitRepoIds: nextGitRepoIds,
+          gitRepoNames: nextGitRepoNames,
+        };
+        const nextCatalog = [...catalog];
+        nextCatalog[index] = nextEntry;
+        settings.openprojectProjectCatalog = nextCatalog;
+        updated = nextEntry;
+        return settings;
+      },
+      actorId,
+    );
+
+    if (!updated) {
       return { ok: false, message: 'ไม่พบโปรเจกต์ที่ระบุ' };
     }
-
-    const current = catalog[index]!;
-    const nextActive = typeof body.active === 'boolean' ? body.active : current.active;
-    const nextTeams = Array.isArray(body.assignedTeamIds)
-      ? body.assignedTeamIds.map(String)
-      : (current.assignedTeamIds ?? []);
-    const nextGitRepoIds = Array.isArray(body.gitRepoIds)
-      ? body.gitRepoIds.map(String)
-      : (current.gitRepoIds ?? []);
-    const nextGitRepoNames = Array.isArray(body.gitRepoNames)
-      ? body.gitRepoNames.map(String)
-      : (current.gitRepoNames ?? []);
-
-    const updated: OpenProjectCatalogEntry = {
-      ...current,
-      active: nextActive,
-      assignedTeamIds: nextTeams,
-      gitRepoIds: nextGitRepoIds,
-      gitRepoNames: nextGitRepoNames,
-    };
-    catalog[index] = updated;
-    settings.openprojectProjectCatalog = catalog;
-
-    await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
-    await this.db.audit(req.authUser?.person.id ?? null, 'project.update_config', current.identifier, {
-      projectId: current.id,
-      identifier: current.identifier,
-      active: nextActive,
-      assignedTeamIds: nextTeams,
-      gitRepoIds: nextGitRepoIds,
+    const savedProject: OpenProjectCatalogEntry = updated;
+    await this.db.audit(actorId, 'project.update_config', savedProject.identifier, {
+      projectId: savedProject.id,
+      identifier: savedProject.identifier,
+      active: savedProject.active,
+      assignedTeamIds: savedProject.assignedTeamIds,
+      gitRepoIds: savedProject.gitRepoIds,
     });
 
-    return { ok: true, project: updated };
+    return { ok: true, project: savedProject };
   }
 
   @Roles('admin')
@@ -880,39 +900,47 @@ export class OrgController {
     }
 
     const liveProjects = await client.listProjects();
-    const settings = await getSettings(this.db);
-    const existingByIdentifier = new Map(
-      (settings.openprojectProjectCatalog ?? []).map((p) => [p.identifier, p])
+    const actorId = req.authUser?.person.id ?? null;
+    let merged: OpenProjectCatalogEntry[] = [];
+    await updateSettingsTransactional(
+      this.db,
+      (settings) => {
+        const existingByIdentifier = new Map(
+          (settings.openprojectProjectCatalog ?? []).map((p) => [p.identifier, p]),
+        );
+        const existingById = new Map(
+          (settings.openprojectProjectCatalog ?? []).map((p) => [p.id, p]),
+        );
+
+        const nextCatalog: OpenProjectCatalogEntry[] = liveProjects
+          .filter((p) => p.identifier)
+          .map((p) => {
+            const existing = existingByIdentifier.get(p.identifier ?? '') ?? existingById.get(p.id);
+            return {
+              id: p.id,
+              identifier: p.identifier ?? '',
+              name: p.name ?? p.identifier ?? '',
+              active: existing !== undefined ? existing.active : (p.active ?? true),
+              assignedTeamIds: existing?.assignedTeamIds ?? [],
+              gitRepoIds: existing?.gitRepoIds ?? [],
+              gitRepoNames: existing?.gitRepoNames ?? [],
+            };
+          });
+
+        const liveIds = new Set(liveProjects.map((p) => p.id));
+        for (const p of settings.openprojectProjectCatalog ?? []) {
+          if (!liveIds.has(p.id) && p.identifier) {
+            nextCatalog.push(p);
+          }
+        }
+
+        settings.openprojectProjectCatalog = nextCatalog;
+        merged = nextCatalog;
+        return settings;
+      },
+      actorId,
     );
-    const existingById = new Map(
-      (settings.openprojectProjectCatalog ?? []).map((p) => [p.id, p])
-    );
-
-    const merged: OpenProjectCatalogEntry[] = liveProjects
-      .filter((p) => p.identifier)
-      .map((p) => {
-        const existing = existingByIdentifier.get(p.identifier ?? '') ?? existingById.get(p.id);
-        return {
-          id: p.id,
-          identifier: p.identifier ?? '',
-          name: p.name ?? p.identifier ?? '',
-          active: existing !== undefined ? existing.active : (p.active ?? true),
-          assignedTeamIds: existing?.assignedTeamIds ?? [],
-          gitRepoIds: existing?.gitRepoIds ?? [],
-          gitRepoNames: existing?.gitRepoNames ?? [],
-        };
-      });
-
-    const liveIds = new Set(liveProjects.map((p) => p.id));
-    for (const p of settings.openprojectProjectCatalog ?? []) {
-      if (!liveIds.has(p.id) && p.identifier) {
-        merged.push(p);
-      }
-    }
-
-    settings.openprojectProjectCatalog = merged;
-    await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
-    await this.db.audit(req.authUser?.person.id ?? null, 'project.sync_catalog', null, {
+    await this.db.audit(actorId, 'project.sync_catalog', null, {
       totalSynced: merged.length,
     });
 

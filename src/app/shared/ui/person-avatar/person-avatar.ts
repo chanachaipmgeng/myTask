@@ -28,10 +28,20 @@ try {
   // ignore
 }
 
-function recordFailedAvatar(keys: string[]): void {
+export function isFailedAvatarKey(key: string | null | undefined): boolean {
+  const k = key?.trim();
+  return Boolean(k && FAILED_AVATAR_USERS.has(k));
+}
+
+export function recordFailedAvatar(keys: string[]): void {
+  let changed = false;
   for (const k of keys) {
-    if (k) FAILED_AVATAR_USERS.add(k);
+    if (k && !FAILED_AVATAR_USERS.has(k)) {
+      FAILED_AVATAR_USERS.add(k);
+      changed = true;
+    }
   }
+  if (!changed) return;
   try {
     if (typeof window !== 'undefined' && window.sessionStorage) {
       window.sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify([...FAILED_AVATAR_USERS]));
@@ -149,10 +159,14 @@ export class PersonAvatarComponent {
 
   protected readonly resolvedUrl = computed(() => {
     if (this.isKnownFailed()) return null;
-    const stage = this.imgStage();
-    if (stage === 0) return this.proxyUrl() ?? this.directUrl();
-    if (stage === 1) return this.directUrl();
-    return null;
+    if (this.imgStage() > 0) return null;
+    const proxy = this.proxyUrl();
+    if (proxy) return proxy;
+    const direct = this.directUrl();
+    if (!direct) return null;
+    // Never send cross-origin requests directly to OpenProject or Gravatar endpoints from the browser.
+    if (/(?:\/(?:api\/v3\/)?users\/\d+\/avatar|gravatar\.com\/avatar\/)/i.test(direct)) return null;
+    return direct;
   });
 
   protected readonly displayName = computed(() => {

@@ -6,49 +6,23 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link id="sf-theme-link" rel="stylesheet" href="assets/themes/tailwind3.css" data-beasties-skip>
   <script>
     (function() {
       try {
         var params = new URLSearchParams(window.location.search);
         var qTheme = params.get('theme');
-        var theme = (qTheme === 'light' || qTheme === 'dark') ? qTheme : localStorage.getItem('md-theme');
-        // ค่าเริ่มต้น: โหมดสว่าง (เมื่อยังไม่มี md-theme ใน localStorage)
-        if (theme !== 'dark') {
-          var link = document.getElementById('sf-theme-link');
-          if (link) link.href = 'assets/themes/tailwind3.css';
-          document.documentElement.classList.add('e-light-mode');
-          document.documentElement.classList.remove('e-dark-mode');
-        } else {
-          var darkLink = document.getElementById('sf-theme-link');
-          if (darkLink) darkLink.href = 'assets/themes/tailwind3-dark.css';
-          document.documentElement.classList.add('e-dark-mode');
-          document.documentElement.classList.remove('e-light-mode');
-        }
+        var isDark = (qTheme === 'light' || qTheme === 'dark' ? qTheme : localStorage.getItem('md-theme')) === 'dark';
+        var link = document.getElementById('sf-theme-link');
+        if (link) link.href = isDark ? 'assets/themes/tailwind3-dark.css' : 'assets/themes/tailwind3.css';
+        document.documentElement.classList.toggle('e-dark-mode', isDark);
+        document.documentElement.classList.toggle('e-light-mode', !isDark);
       } catch (e) {}
     })();
   </script>
 </head>
 <body class="e-light-mode">
-  <script>
-    (function() {
-      try {
-        var params = new URLSearchParams(window.location.search);
-        var qTheme = params.get('theme');
-        var theme = (qTheme === 'light' || qTheme === 'dark') ? qTheme : localStorage.getItem('md-theme');
-        if (theme !== 'dark') {
-          document.body.classList.remove('e-dark-mode');
-          document.body.classList.add('e-light-mode');
-        } else {
-          document.body.classList.add('e-dark-mode');
-          document.body.classList.remove('e-light-mode');
-        }
-      } catch (e) {}
-    })();
-  </script>
+  <script>if(document.documentElement.classList.contains('e-dark-mode')){document.body.classList.replace('e-light-mode','e-dark-mode');}</script>
   <app-root></app-root>
 </body>
 </html>

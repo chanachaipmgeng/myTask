@@ -535,6 +535,7 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     source: 'openproject',
     opId: wp.id,
     opProject: project,
+    opUpdatedAt: (wp.updatedAt ?? '').trim() || ctx.existing?.opUpdatedAt || null,
     opType: typeName || undefined,
     opTypeId,
     opStatus: statusName || undefined,
@@ -592,6 +593,7 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     delete merged.workflowStatus;
   }
   merged.firstDueOn = firstDueOn;
+  merged.opUpdatedAt = base.opUpdatedAt ?? null;
   if (!merged.devDeliveredOn && rawReplyDate) {
     merged.devDeliveredOn = rawReplyDate;
   }

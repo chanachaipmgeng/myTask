@@ -11,6 +11,7 @@ import {
 import { todayInBangkok } from '../../../shared/domain/workflow';
 import { listPeople } from '../data/people.repo';
 import { upsertKpiSnapshots } from '../data/kpi-snapshots.repo';
+import { deleteExpiredSessions } from '../data/sessions.repo';
 import { getSettings } from '../data/settings.repo';
 import { listWorkItems } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
@@ -18,9 +19,18 @@ import { Db } from '../db/db.service';
 @Injectable()
 export class KpiSnapshotService {
   private readonly log = new Logger(KpiSnapshotService.name);
-  private running = false;
 
   constructor(private readonly db: Db) {}
+
+  /** Daily 03:00 — purge expired sessions so sessions table stays bounded. */
+  @Cron('0 3 * * *')
+  async cleanupExpiredSessions(): Promise<void> {
+    try {
+      await deleteExpiredSessions(this.db);
+    } catch (error) {
+      this.log.warn(`expired session cleanup failed: ${error instanceof Error ? error.message : error}`);
+    }
+  }
 
   /** 1st of each month at 02:00 — capture previous month (and quarter when due). */
   @Cron('0 2 1 * *')
@@ -42,11 +52,7 @@ export class KpiSnapshotService {
     capturedBy: string | null,
   ): Promise<{ ok: true; count: number; periodType: KpiPeriodType; periodKey: string }> {
     parsePeriodKey(periodType, periodKey);
-    if (this.running) {
-      throw new Error('KPI snapshot capture already running');
-    }
-    this.running = true;
-    try {
+    const outcome = await this.db.withAdvisoryLock(727102, async () => {
       const [people, tickets, settings] = await Promise.all([
         listPeople(this.db, true),
         listWorkItems(this.db),
@@ -55,9 +61,11 @@ export class KpiSnapshotService {
       const rows = buildPeriodSnapshots(people, tickets, periodType, periodKey, settings.trackWeights);
       const count = await upsertKpiSnapshots(this.db, rows, capturedBy);
       this.log.log(`captured ${count} KPI rows for ${periodType} ${periodKey}`);
-      return { ok: true, count, periodType, periodKey };
-    } finally {
-      this.running = false;
+      return { ok: true as const, count, periodType, periodKey };
+    });
+    if (!outcome.acquired) {
+      throw new Error('KPI snapshot capture already running');
     }
+    return outcome.result;
   }
 }

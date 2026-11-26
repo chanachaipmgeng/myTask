@@ -137,6 +137,8 @@ export interface Ticket {
   /** OpenProject work package id when source is openproject. */
   opId?: number | null;
   opProject?: string;
+  /** Timestamp (ISO) of the last OpenProject WP update seen during sync (prevents N+1 activity fetch). */
+  opUpdatedAt?: string | null;
   /** Raw OpenProject Type name (e.g. 'DEV-Bugs Fix', 'CS-Service Request', 'PM-Implement') & id */
   opType?: string;
   opTypeId?: number | null;

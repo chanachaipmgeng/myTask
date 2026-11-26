@@ -361,8 +361,11 @@ def analyze(payload: Dict[str, Any]) -> Dict[str, Any]:
         ontime_pct = round1((ontime / denom) * 100.0)
         fp_pct = round1((first_pass / denom) * 100.0)
 
+        recent_months = sorted(
+            {str(t.get("closedOn") or "")[:7] for t in closed if len(str(t.get("closedOn") or "")) >= 7}
+        )[-3:]
         month_avgs: List[float] = []
-        for m in ("2025-08", "2025-09", "2025-10"):
+        for m in recent_months:
             m_tickets = [t for t in closed if str(t.get("closedOn") or "").startswith(m)]
             if m_tickets:
                 month_avgs.append(sum(score_ticket_total(t) for t in m_tickets) / len(m_tickets))
