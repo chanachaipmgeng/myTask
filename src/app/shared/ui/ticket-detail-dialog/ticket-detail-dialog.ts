@@ -52,10 +52,13 @@ export class TicketDetailDialogComponent {
   private readonly viewport = inject(ViewportService);
 
   protected readonly detailTabs: SfTabItem[] = [
-    { id: 'info', header: 'รายละเอียด' },
-    { id: 'time', header: 'เวลาที่ลง' },
+    { id: 'overview', header: 'ภาพรวม' },
+    { id: 'activity', header: 'ความเคลื่อนไหว' },
+    { id: 'files', header: 'ไฟล์' },
+    { id: 'relations', header: 'ความสัมพันธ์' },
+    { id: 'people', header: 'คนเกี่ยวข้อง' },
+    { id: 'time', header: 'เวลา' },
     { id: 'mr', header: 'โค้ด & MR' },
-    { id: 'activity', header: 'ประวัติ & คอมเมนต์' },
   ];
 
   protected readonly loading = signal(false);
@@ -76,7 +79,7 @@ export class TicketDetailDialogComponent {
       ? typeof window !== 'undefined'
         ? `${Math.max(280, window.innerWidth)}px`
         : '100vw'
-      : '560px',
+      : '640px',
   );
 
   constructor() {
@@ -106,6 +109,46 @@ export class TicketDetailDialogComponent {
     if (id) {
       await this.load(id);
     }
+  }
+
+  protected formatStamp(raw: string | null | undefined): string {
+    if (!raw) return '';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) {
+      return String(raw).slice(0, 16).replace('T', ' ');
+    }
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+  }
+
+  protected formatFileSize(bytes: number | null | undefined): string {
+    const n = typeof bytes === 'number' && Number.isFinite(bytes) ? bytes : 0;
+    if (n <= 0) return '—';
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  protected relatedTicketId(rel: {
+    fromId: number | null;
+    toId: number | null;
+  }): string | null {
+    const currentOp = this.data()?.ticket?.opId ?? null;
+    const other =
+      currentOp != null && rel.fromId === currentOp
+        ? rel.toId
+        : currentOp != null && rel.toId === currentOp
+          ? rel.fromId
+          : (rel.toId ?? rel.fromId);
+    return other != null ? `OP-${other}` : null;
+  }
+
+  protected openRelated(ticketId: string): void {
+    this.detail.open(ticketId);
   }
 
   protected async submitTime(): Promise<void> {
@@ -225,8 +268,13 @@ export class TicketDetailDialogComponent {
         total: scores.total,
       },
       description: '',
+      authorName: null,
+      createdAt: null,
+      updatedAt: null,
+      projectTitle: ticket.opProject ?? null,
       relations: [],
       attachments: [],
+      watchers: [],
       timeEntries: ticket.actualMd
         ? [
             {

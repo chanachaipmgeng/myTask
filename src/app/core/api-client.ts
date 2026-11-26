@@ -977,6 +977,10 @@ export interface TicketDetailResponse {
     total: number | null;
   };
   description?: string;
+  authorName?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  projectTitle?: string | null;
   relations?: {
     id: number;
     type: string;
@@ -992,6 +996,7 @@ export interface TicketDetailResponse {
     contentType: string;
     downloadUrl: string;
   }[];
+  watchers?: { id: number; name: string }[];
   timeEntries?: {
     id: number;
     spentOn: string;
@@ -999,7 +1004,7 @@ export interface TicketDetailResponse {
     userTitle: string;
     comment: string;
   }[];
-  activities?: { createdAt: string; text: string }[];
+  activities?: { createdAt: string; text: string; userTitle?: string }[];
   mrs?: {
     iid: number;
     projectId: string;

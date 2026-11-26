@@ -1,4 +1,17 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import { extractTicketIdFromText } from '../../../shared/domain/gitlab-mr';
 import { Ticket, TicketDueShift, TicketStageLog } from '../../../shared/domain/models';
 import { scoreTicket } from '../../../shared/domain/scoring';
@@ -13,7 +26,13 @@ import {
 import { filterTicketsByWorkspace } from '../../../shared/domain/workspace-scope';
 import { todayInBangkok, workflowStatusOf } from '../../../shared/domain/workflow';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
-import { compareByField, parseListQuery, toListPageResult } from '../common/list-query';
+import {
+  applyFilterPredicates,
+  compareByField,
+  ListQuery,
+  parseListQuery,
+  toListPageResult,
+} from '../common/list-query';
 import { APP_CONFIG, AppConfig } from '../config';
 import { closeOpenStageLog, insertDueShift, insertStageLog } from '../data/multi-team.repo';
 import { getPerson, listPeople } from '../data/people.repo';
@@ -53,83 +72,13 @@ export class WorkItemsController {
     @Query('project') project?: string,
     @Query('opType') opType?: string,
     @Query('track') track?: string,
+    @Query('filters') filters?: string,
   ) {
     const listQuery = parseListQuery(
-      { q, page, pageSize, sort, dir, teamId, assigneeId, statusScope, project, opType, track },
+      { q, page, pageSize, sort, dir, teamId, assigneeId, statusScope, project, opType, track, filters },
       { defaultSort: 'id', defaultDir: 'asc' },
     );
-    const [rawTickets, people, visibility] = await Promise.all([
-      listWorkItems(this.db),
-      listPeople(this.db),
-      getVisibilityConfig(this.db),
-    ]);
-    const peopleMap = new Map(people.map((p) => [p.id, p]));
-    const allowedTeams = req.authUser?.person
-      ? computeEffectiveAllowedTeams(req.authUser.person, visibility)
-      : null;
-
-    let tickets =
-      allowedTeams === null
-        ? rawTickets
-        : filterTicketsByWorkspace(rawTickets, people, { allowedTeams });
-
-    // Filter by statusScope (unclosed by default if requested)
-    if (listQuery.statusScope === 'unclosed') {
-      tickets = tickets.filter((ticket) => !ticket.closed);
-    } else if (listQuery.statusScope === 'closed') {
-      tickets = tickets.filter((ticket) => ticket.closed);
-    }
-
-    // Filter by Assignee
-    if (listQuery.assigneeId) {
-      tickets = tickets.filter((ticket) => ticket.assigneeId === listQuery.assigneeId);
-    }
-
-    // Filter by Team
-    if (listQuery.teamId) {
-      tickets = tickets.filter((ticket) => {
-        const person = ticket.assigneeId ? peopleMap.get(ticket.assigneeId) : undefined;
-        return resolvePersonTeamId(person, ticket.track) === listQuery.teamId;
-      });
-    }
-
-    // Filter by Project
-    if (listQuery.project) {
-      tickets = tickets.filter((ticket) => {
-        const key = resolveProjectKey(ticket);
-        return key === listQuery.project || ticket.opProject === listQuery.project;
-      });
-    }
-
-    // Filter by Type
-    if (listQuery.opType) {
-      tickets = tickets.filter(
-        (ticket) => ticket.opType === listQuery.opType || ticket.type === listQuery.opType,
-      );
-    }
-
-    // Filter by Track
-    if (listQuery.track && listQuery.track !== 'All') {
-      tickets = tickets.filter((ticket) => ticket.track === listQuery.track);
-    }
-
-    // Search query
-    if (listQuery.q) {
-      const needle = listQuery.q.toLowerCase();
-      tickets = tickets.filter(
-        (ticket) =>
-          ticket.id.toLowerCase().includes(needle) ||
-          (ticket.title ?? '').toLowerCase().includes(needle) ||
-          (ticket.module ?? '').toLowerCase().includes(needle) ||
-          (ticket.assigneeId ?? '').toLowerCase().includes(needle),
-      );
-    }
-
-    const sortField = listQuery.sort || 'id';
-    tickets = tickets
-      .slice()
-      .sort((a, b) => compareByField(a, b, sortField, listQuery.dir));
-
+    const { tickets, rawTickets } = await this.queryTickets(req, listQuery);
     const pageResult = toListPageResult(tickets, listQuery);
     const unclosedCount = rawTickets.filter((t) => !t.closed).length;
     const closedCount = rawTickets.filter((t) => t.closed).length;
@@ -143,6 +92,127 @@ export class WorkItemsController {
       result: pageResult.items,
       count: pageResult.total,
     };
+  }
+
+  /** ส่งออก CSV ด้วยฟิลเตอร์เดียวกับ list (ไม่จำกัดหน้า) */
+  @Get('export')
+  @Roles('admin', 'lead', 'member')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  async exportCsv(
+    @Req() req: AuthedRequest,
+    @Res() res: Response,
+    @Query('q') q?: string,
+    @Query('sort') sort?: string,
+    @Query('dir') dir?: string,
+    @Query('teamId') teamId?: string,
+    @Query('assigneeId') assigneeId?: string,
+    @Query('statusScope') statusScope?: string,
+    @Query('project') project?: string,
+    @Query('opType') opType?: string,
+    @Query('track') track?: string,
+    @Query('filters') filters?: string,
+    @Query('format') format?: string,
+  ) {
+    const listQuery = parseListQuery(
+      { q, sort, dir, teamId, assigneeId, statusScope, project, opType, track, filters },
+      { defaultSort: 'id', defaultDir: 'asc' },
+    );
+    const { tickets } = await this.queryTickets(req, listQuery);
+    const fmt = (format ?? 'csv').toLowerCase();
+    const stamp = todayInBangkok().replace(/-/g, '');
+    if (fmt === 'xlsx' || fmt === 'xls') {
+      // ยังไม่มีไลบรารี XLSX — ส่ง CSV ที่เปิดใน Excel ได้ (BOM)
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="work-items-${stamp}.csv"`,
+      );
+    } else {
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="work-items-${stamp}.csv"`,
+      );
+    }
+    res.send(ticketsToCsv(tickets));
+  }
+
+  private async queryTickets(
+    req: AuthedRequest,
+    listQuery: ListQuery,
+  ): Promise<{ tickets: Ticket[]; rawTickets: Ticket[] }> {
+    const [rawTickets, people, visibility] = await Promise.all([
+      listWorkItems(this.db),
+      listPeople(this.db),
+      getVisibilityConfig(this.db),
+    ]);
+    const peopleMap = new Map(people.map((p) => [p.id, p]));
+    const allowedTeams = req.authUser?.person
+      ? computeEffectiveAllowedTeams(req.authUser.person, visibility)
+      : null;
+
+    let tickets =
+      allowedTeams === null
+        ? [...rawTickets]
+        : filterTicketsByWorkspace(rawTickets, people, { allowedTeams });
+
+    if (listQuery.statusScope === 'unclosed') {
+      tickets = tickets.filter((ticket) => !ticket.closed);
+    } else if (listQuery.statusScope === 'closed') {
+      tickets = tickets.filter((ticket) => ticket.closed);
+    }
+
+    if (listQuery.assigneeId) {
+      tickets = tickets.filter((ticket) => ticket.assigneeId === listQuery.assigneeId);
+    }
+
+    if (listQuery.teamId) {
+      tickets = tickets.filter((ticket) => {
+        const person = ticket.assigneeId ? peopleMap.get(ticket.assigneeId) : undefined;
+        return resolvePersonTeamId(person, ticket.track) === listQuery.teamId;
+      });
+    }
+
+    if (listQuery.project) {
+      tickets = tickets.filter((ticket) => {
+        const key = resolveProjectKey(ticket);
+        return key === listQuery.project || ticket.opProject === listQuery.project;
+      });
+    }
+
+    if (listQuery.opType) {
+      tickets = tickets.filter(
+        (ticket) => ticket.opType === listQuery.opType || ticket.type === listQuery.opType,
+      );
+    }
+
+    if (listQuery.track && listQuery.track !== 'All') {
+      tickets = tickets.filter((ticket) => ticket.track === listQuery.track);
+    }
+
+    if (listQuery.q) {
+      const needle = listQuery.q.toLowerCase();
+      tickets = tickets.filter(
+        (ticket) =>
+          ticket.id.toLowerCase().includes(needle) ||
+          (ticket.title ?? '').toLowerCase().includes(needle) ||
+          (ticket.module ?? '').toLowerCase().includes(needle) ||
+          (ticket.assigneeId ?? '').toLowerCase().includes(needle),
+      );
+    }
+
+    if (listQuery.filters.length) {
+      tickets = applyFilterPredicates(tickets, listQuery.filters, (row, key) => {
+        if (key === 'workflowStatus') return workflowStatusOf(row);
+        if (key === 'project' || key === 'opProject') return resolveProjectKey(row);
+        return (row as unknown as Record<string, unknown>)[key];
+      });
+    }
+
+    const sortField = listQuery.sort || 'id';
+    tickets = tickets
+      .slice()
+      .sort((a, b) => compareByField(a, b, sortField, listQuery.dir));
+
+    return { tickets, rawTickets };
   }
 
   @Get('live-search')
@@ -209,6 +279,10 @@ export class WorkItemsController {
     const opId = typeof ticket.opId === 'number' ? ticket.opId : null;
 
     let description = '';
+    let authorName: string | null = null;
+    let createdAt: string | null = null;
+    let updatedAt: string | null = null;
+    let projectTitle: string | null = ticket.opProject ?? null;
     let relations: {
       id: number;
       type: string;
@@ -224,6 +298,7 @@ export class WorkItemsController {
       contentType: string;
       downloadUrl: string;
     }[] = [];
+    let watchers: { id: number; name: string }[] = [];
     let timeEntries: {
       id: number;
       spentOn: string;
@@ -231,21 +306,47 @@ export class WorkItemsController {
       userTitle: string;
       comment: string;
     }[] = [];
-    let activities: { createdAt: string; text: string }[] = [];
+    let activities: { createdAt: string; text: string; userTitle?: string }[] = [];
     let source: 'live' | 'offline' = 'offline';
     const errors: string[] = [];
 
     if (client && opId != null) {
       source = 'live';
       try {
-        const [wp, rels, atts, entries, acts] = await Promise.all([
+        const creds = await this.openProject.resolveCredentials();
+        const opBase = (creds?.url ?? '').replace(/\/+$/, '');
+        const absUrl = (href: string | null | undefined): string => {
+          const raw = (href ?? '').trim();
+          if (!raw) return '';
+          if (/^https?:\/\//i.test(raw)) return raw;
+          if (raw.startsWith('/') && opBase) return `${opBase}${raw}`;
+          return raw;
+        };
+        const [wp, rels, atts, entries, acts, watcherRows] = await Promise.all([
           client.getWorkPackage(opId),
           client.getWorkPackageRelations(opId),
           client.getWorkPackageAttachments(opId),
           client.listWorkPackageTimeEntries(opId),
           client.getActivities(opId),
+          client.listWorkPackageWatchers(opId).catch(() => []),
         ]);
         description = String((wp as { description?: { raw?: string } }).description?.raw ?? '');
+        createdAt = wp.createdAt ?? null;
+        updatedAt = wp.updatedAt ?? null;
+        const authorLink = wp._links?.['author'];
+        const author =
+          authorLink && !Array.isArray(authorLink) ? authorLink : Array.isArray(authorLink) ? authorLink[0] : null;
+        authorName = author?.title?.trim() || null;
+        const projectLink = wp._links?.['project'];
+        const project =
+          projectLink && !Array.isArray(projectLink)
+            ? projectLink
+            : Array.isArray(projectLink)
+              ? projectLink[0]
+              : null;
+        if (project?.title?.trim()) {
+          projectTitle = project.title.trim();
+        }
         relations = rels.map((r) => ({
           id: r.id,
           type: r.type ?? r.reverseType ?? 'relates',
@@ -259,9 +360,11 @@ export class WorkItemsController {
           fileName: a.fileName ?? `file-${a.id}`,
           fileSize: a.fileSize ?? 0,
           contentType: a.contentType ?? '',
-          downloadUrl:
+          downloadUrl: absUrl(
             a._links?.downloadLocation?.href || a._links?.staticDownloadLocation?.href || '',
+          ),
         }));
+        watchers = watcherRows.map((w) => ({ id: w.id, name: w.name }));
         timeEntries = entries.map((e) => ({
           id: e.id,
           spentOn: e.spentOn ?? '',
@@ -285,6 +388,7 @@ export class WorkItemsController {
           return {
             createdAt: a.createdAt ?? '',
             text: commentText || detailText || 'อัปเดต',
+            userTitle: a._links?.user?.title ?? '',
           };
         });
       } catch (err) {
@@ -325,8 +429,13 @@ export class WorkItemsController {
         total: scores.total,
       },
       description,
+      authorName,
+      createdAt,
+      updatedAt,
+      projectTitle,
       relations,
       attachments,
+      watchers,
       timeEntries,
       activities,
       mrs,
@@ -827,4 +936,63 @@ function hoursToIsoDuration(hours: number): string {
   if (m === 0) return `PT${h}H`;
   if (h === 0) return `PT${m}M`;
   return `PT${h}H${m}M`;
+}
+
+function csvEscape(value: unknown): string {
+  const text = value == null ? '' : String(value);
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function ticketsToCsv(tickets: readonly Ticket[]): string {
+  const headers = [
+    'id',
+    'title',
+    'track',
+    'type',
+    'opType',
+    'module',
+    'size',
+    'assigneeId',
+    'workflowStatus',
+    'estimateMd',
+    'actualMd',
+    'closed',
+    'dueOn',
+    'firstDueOn',
+    'closedOn',
+    'opProject',
+    'reviewRounds',
+    'reopenCount',
+  ];
+  const lines = [headers.join(',')];
+  for (const t of tickets) {
+    lines.push(
+      [
+        t.id,
+        t.title ?? '',
+        t.track,
+        t.type,
+        t.opType ?? '',
+        t.module ?? '',
+        t.size,
+        t.assigneeId ?? '',
+        workflowStatusOf(t),
+        t.estimateMd,
+        t.actualMd,
+        t.closed ? '1' : '0',
+        t.dueOn ?? '',
+        t.firstDueOn ?? '',
+        t.closedOn ?? '',
+        t.opProject ?? '',
+        t.reviewRounds,
+        t.reopenCount,
+      ]
+        .map(csvEscape)
+        .join(','),
+    );
+  }
+  return `\uFEFF${lines.join('\r\n')}\r\n`;
 }

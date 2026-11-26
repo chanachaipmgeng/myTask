@@ -4,7 +4,7 @@
  *
  *   node scripts/capture_all_screens.mjs
  *   node scripts/capture_all_screens.mjs --from=22-admin.png
- *   node scripts/capture_all_screens.mjs --person=paweena
+ *   node scripts/capture_all_screens.mjs --person=chanachai
  *
  * ต้องมี playwright (ติดตั้งชั่วคราวได้: npm i -D --no-save playwright)
  *
@@ -20,7 +20,7 @@ const require = createRequire(import.meta.url);
 const BASE = process.env.CAPTURE_BASE || 'http://127.0.0.1:4200';
 const API = process.env.CAPTURE_API || 'http://127.0.0.1:3000';
 const CAPTURE_THEME = 'light';
-const PERSON = (process.argv.find((a) => a.startsWith('--person=')) || '--person=paweena').slice(
+const PERSON = (process.argv.find((a) => a.startsWith('--person=')) || '--person=chanachai').slice(
   '--person='.length,
 );
 
@@ -45,7 +45,7 @@ function withTheme(url) {
   return u.toString();
 }
 
-/** route มาตรฐานปัจจุบัน — ชื่อไฟล์แนวคู่มือ */
+/** route มาตรฐานปัจจุบัน — ชื่อไฟล์แนวคู่มือ (มุม admin · ชนะชัย) */
 const screens = [
   { name: '01-login.png', url: `${BASE}/login`, wait: 1500, skipAuth: true },
   { name: '02-me.png', url: `${BASE}/me`, wait: 3500 },
@@ -59,8 +59,18 @@ const screens = [
   { name: '09b-work-backlog.png', url: `${BASE}/work/backlog`, wait: 3500 },
   { name: '10-work-board.png', url: `${BASE}/work/board`, wait: 4500 },
   { name: '11-work-timeline.png', url: `${BASE}/work/timeline`, wait: 4500 },
-  { name: '11-person-detail.png', url: `${BASE}/people/paweena`, wait: 4500 },
+  {
+    name: '11-person-detail.png',
+    url: `${BASE}/workspace/people/${PERSON}`,
+    wait: 4500,
+  },
   { name: '12-work-list.png', url: `${BASE}/work/list`, wait: 3500 },
+  {
+    name: '12b-ticket-drawer.png',
+    url: `${BASE}/work/list`,
+    wait: 2500,
+    action: 'open-ticket-drawer',
+  },
   { name: '13-queue.png', url: `${BASE}/work/queue`, wait: 3500 },
   { name: '13b-work-handoff.png', url: `${BASE}/work/handoff`, wait: 4500 },
   { name: '13c-work-team-time.png', url: `${BASE}/work/team-time`, wait: 3500 },
@@ -77,6 +87,12 @@ const screens = [
   { name: '23-admin-rubrics.png', url: `${BASE}/admin/rubrics`, wait: 3500 },
   { name: '24-admin-snapshot-check.png', url: `${BASE}/admin/snapshot-check`, wait: 3500 },
   { name: '25-integrations.png', url: `${BASE}/integrations`, wait: 3500 },
+  {
+    name: '25b-integrations-sync-audit.png',
+    url: `${BASE}/integrations`,
+    wait: 2500,
+    action: 'integrations-sync-audit',
+  },
   { name: '26-teams.png', url: `${BASE}/teams`, wait: 3500 },
   { name: '27-admin-projects.png', url: `${BASE}/admin/projects`, wait: 4500 },
   { name: '28-project-detail-health.png', url: `${BASE}/org/projects/331`, wait: 4500 },
@@ -159,6 +175,49 @@ async function spaNavigate(page, absoluteUrl) {
   await page.waitForTimeout(400);
 }
 
+async function runScreenAction(page, action) {
+  if (!action) return;
+  if (action === 'open-ticket-drawer') {
+    const link = page.locator('button.e-link, a.e-link, .e-rowcell button').first();
+    const gridLink = page.getByRole('button', { name: /OP-|ดู|รายละเอียด|#/ }).first();
+    try {
+      if (await gridLink.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await gridLink.click({ timeout: 5000 });
+      } else if (await link.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await link.click({ timeout: 5000 });
+      } else {
+        // fallback: click first data row cell that looks like ticket id
+        await page.locator('.e-row .e-rowcell').first().click({ timeout: 5000 });
+      }
+      await page.waitForTimeout(2500);
+      await page.locator('#ticket-detail-drawer, .ticket-drawer').first().waitFor({
+        state: 'visible',
+        timeout: 8000,
+      }).catch(() => null);
+      await page.waitForTimeout(1500);
+    } catch {
+      console.log('(drawer open skipped)');
+    }
+    return;
+  }
+  if (action === 'integrations-sync-audit') {
+    try {
+      const btn = page.getByRole('button', { name: /ตรวจซิงก์|sync-audit|ตรวจซิงก์สด/i }).first();
+      if (await btn.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await btn.click();
+        await page.waitForTimeout(4000);
+      }
+      const auditCard = page.locator('text=รายงานเทียบซิงก์').first();
+      if (await auditCard.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await auditCard.scrollIntoViewIfNeeded();
+      }
+      await page.waitForTimeout(1000);
+    } catch {
+      console.log('(sync-audit click skipped)');
+    }
+  }
+}
+
 async function run() {
   const fromArg = process.argv.find((a) => a.startsWith('--from='));
   const fromName = fromArg ? fromArg.slice('--from='.length) : '';
@@ -216,6 +275,9 @@ async function run() {
           await spaNavigate(page, screen.url);
         }
         await page.waitForTimeout(screen.wait);
+        if (screen.action) {
+          await runScreenAction(page, screen.action);
+        }
         await page.screenshot({ path: dest, fullPage: false });
       }
       const kb = (statSync(dest).size / 1024).toFixed(1);

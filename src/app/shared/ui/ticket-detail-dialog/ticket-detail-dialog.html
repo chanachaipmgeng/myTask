@@ -13,52 +13,144 @@
   (close)="onDrawerClose()"
 >
   <div class="ticket-drawer">
-    <header class="ticket-drawer__head">
-      <div class="ticket-drawer__titles">
-        <p class="ticket-drawer__eyebrow m-0">รายละเอียดใบงาน</p>
-        <h2 class="ticket-drawer__title m-0">
-          {{ data()?.ticket?.id ? ('ใบงาน ' + data()!.ticket!.id) : 'กำลังโหลด…' }}
-        </h2>
-      </div>
-      <button
-        ejs-button
-        cssClass="e-flat e-small"
-        type="button"
-        iconCss="e-icons e-close"
-        aria-label="ปิด"
-        (click)="onClose()"
-      ></button>
-    </header>
-
-    <div class="ticket-drawer__body">
-      @if (loading()) {
-        <p class="muted">กำลังโหลดรายละเอียด…</p>
-      } @else if (!data()?.ok || !data()?.ticket) {
-        <p class="muted">{{ data()?.message || 'ไม่พบข้อมูลใบงาน' }}</p>
-      } @else {
-        @let t = data()!.ticket!;
-        @let scores = data()!.scores;
-        <div class="detail-meta">
-          <app-status-badge [value]="t.workflowStatus || ''" [toneMap]="workflowStatusToneMap"></app-status-badge>
-          <span class="meta-chip inline-flex items-center gap-1.5">
-            <app-person-avatar [personId]="t.assigneeId" [name]="t.assigneeId || 'ยังไม่มอบหมาย'" [showName]="true" size="xs"></app-person-avatar>
-          </span>
-          <span class="meta-chip">{{ data()!.source === 'live' ? 'สดจาก myProject' : 'โหมดออฟไลน์' }}</span>
-          @if (data()!.opUrl) {
-            <a class="meta-link" [href]="data()!.opUrl!" target="_blank" rel="noopener">เปิดใน myProject</a>
-          }
-          <button ejs-button cssClass="e-outline e-small" type="button" (click)="refresh()">รีเฟรช</button>
+    @if (loading() && !data()?.ticket) {
+      <header class="ticket-drawer__head">
+        <div class="ticket-drawer__titles">
+          <p class="ticket-drawer__eyebrow m-0">รายละเอียดใบงาน</p>
+          <h2 class="ticket-drawer__title m-0">กำลังโหลด…</h2>
         </div>
+        <button
+          ejs-button
+          cssClass="e-flat e-small"
+          type="button"
+          iconCss="e-icons e-close"
+          aria-label="ปิด"
+          (click)="onClose()"
+        ></button>
+      </header>
+      <div class="ticket-drawer__body">
+        <p class="muted">กำลังโหลดรายละเอียด…</p>
+      </div>
+    } @else if (!loading() && (!data()?.ok || !data()?.ticket)) {
+      <header class="ticket-drawer__head">
+        <div class="ticket-drawer__titles">
+          <p class="ticket-drawer__eyebrow m-0">รายละเอียดใบงาน</p>
+          <h2 class="ticket-drawer__title m-0">ไม่พบข้อมูล</h2>
+        </div>
+        <button
+          ejs-button
+          cssClass="e-flat e-small"
+          type="button"
+          iconCss="e-icons e-close"
+          aria-label="ปิด"
+          (click)="onClose()"
+        ></button>
+      </header>
+      <div class="ticket-drawer__body">
+        <p class="muted">{{ data()?.message || 'ไม่พบข้อมูลใบงาน' }}</p>
+      </div>
+    } @else if (data()?.ticket) {
+      @let t = data()!.ticket!;
+      <header class="ticket-drawer__head">
+        <div class="ticket-drawer__titles">
+          <div class="ticket-drawer__type-row">
+            @if (t.opType || t.type) {
+              <span class="ticket-drawer__type">{{ t.opType || t.type }}</span>
+            }
+            <span class="ticket-drawer__id">#{{ t.opId ?? t.id }}</span>
+          </div>
+          <h2 class="ticket-drawer__subject m-0">{{ t.title || t.id }}</h2>
+          <div class="ticket-drawer__status-row">
+            <app-status-badge [value]="t.workflowStatus || ''" [toneMap]="workflowStatusToneMap"></app-status-badge>
+            @if (t.opStatus && t.opStatus !== t.workflowStatus) {
+              <span class="meta-chip meta-chip--soft">{{ t.opStatus }}</span>
+            }
+            <span class="meta-chip">{{ data()!.source === 'live' ? 'สดจาก myProject' : 'โหมดออฟไลน์' }}</span>
+          </div>
+          <p class="ticket-drawer__meta m-0">
+            @if (data()!.authorName) {
+              <span>สร้างโดย {{ data()!.authorName }}</span>
+            }
+            @if (formatStamp(data()!.createdAt)) {
+              <span>· {{ formatStamp(data()!.createdAt) }}</span>
+            }
+            @if (formatStamp(data()!.updatedAt)) {
+              <span>· อัปเดต {{ formatStamp(data()!.updatedAt) }}</span>
+            }
+          </p>
+        </div>
+        <div class="ticket-drawer__actions">
+          @if (data()!.opUrl) {
+            <a
+              ejs-button
+              cssClass="e-outline e-small"
+              [href]="data()!.opUrl!"
+              target="_blank"
+              rel="noopener"
+            >myProject</a>
+          }
+          <button
+            ejs-button
+            cssClass="e-outline e-small"
+            type="button"
+            iconCss="e-icons e-refresh"
+            [disabled]="loading()"
+            (click)="refresh()"
+          ></button>
+          <button
+            ejs-button
+            cssClass="e-flat e-small"
+            type="button"
+            iconCss="e-icons e-close"
+            aria-label="ปิด"
+            (click)="onClose()"
+          ></button>
+        </div>
+      </header>
 
-        <ng-template #infoTabTpl>
+      @if (data()!.projectTitle || t.opProject) {
+        <div class="ticket-drawer__project">
+          โปรเจกต์: <strong>{{ data()!.projectTitle || t.opProject }}</strong>
+        </div>
+      }
+
+      <div class="ticket-drawer__body">
+        <ng-template #overviewTabTpl>
           <div class="tab-pane">
-            <h3 class="ticket-title">{{ t.title || t.id }}</h3>
             @if (data()!.description) {
               <pre class="desc-block">{{ data()!.description }}</pre>
             } @else {
               <p class="muted">ไม่มีคำอธิบาย</p>
             }
-            @if (scores) {
+
+            <div class="field-grid">
+              <div class="field-cell">
+                <span class="field-cell__label">สายงาน</span>
+                <span class="field-cell__val">{{ t.track || '—' }}</span>
+              </div>
+              <div class="field-cell">
+                <span class="field-cell__label">ขนาด</span>
+                <span class="field-cell__val">{{ t.size || '—' }}</span>
+              </div>
+              <div class="field-cell">
+                <span class="field-cell__label">Estimate</span>
+                <span class="field-cell__val">{{ t.estimateMd }} MD</span>
+              </div>
+              <div class="field-cell">
+                <span class="field-cell__label">Actual</span>
+                <span class="field-cell__val">{{ t.actualMd }} MD</span>
+              </div>
+              <div class="field-cell">
+                <span class="field-cell__label">First Due</span>
+                <span class="field-cell__val">{{ t.firstDueOn || '—' }}</span>
+              </div>
+              <div class="field-cell">
+                <span class="field-cell__label">Due</span>
+                <span class="field-cell__val">{{ t.dueOn || '—' }}</span>
+              </div>
+            </div>
+
+            @if (data()!.scores; as scores) {
               <div class="score-row">
                 <span>ตรงเวลา {{ scores.week }}</span>
                 <span>แม่นยำ {{ scores.accuracy }}</span>
@@ -70,7 +162,7 @@
 
             <div class="sla-box">
               <div class="sla-box__head">
-                <strong>เส้นเวลา Policy &amp; SLA (myProject)</strong>
+                <strong>เส้นเวลา Policy &amp; SLA</strong>
                 @if (policySla(); as sla) {
                   @if (sla.state !== 'none') {
                     <app-status-badge [label]="sla.label" [tone]="sla.tone"></app-status-badge>
@@ -79,7 +171,7 @@
               </div>
               <div class="sla-grid">
                 <div class="sla-cell">
-                  <span class="sla-cell__label">Receipt Date (รับเรื่อง)</span>
+                  <span class="sla-cell__label">Receipt</span>
                   <div class="sla-cell__val">
                     <span>{{ t.receiptDate || '—' }}</span>
                     @if (t.slaAutoFilled?.receipt) {
@@ -88,7 +180,7 @@
                   </div>
                 </div>
                 <div class="sla-cell">
-                  <span class="sla-cell__label">Alert Date (เตือนล่วงหน้า)</span>
+                  <span class="sla-cell__label">Alert</span>
                   <div class="sla-cell__val">
                     <span>{{ t.alertDate || '—' }}</span>
                     @if (t.slaAutoFilled?.alert) {
@@ -97,7 +189,7 @@
                   </div>
                 </div>
                 <div class="sla-cell">
-                  <span class="sla-cell__label">Policy Date (เส้นตาย SLA)</span>
+                  <span class="sla-cell__label">Policy</span>
                   <div class="sla-cell__val">
                     <span>{{ t.policyDate || '—' }}</span>
                     @if (t.slaAutoFilled?.policy) {
@@ -106,7 +198,7 @@
                   </div>
                 </div>
                 <div class="sla-cell">
-                  <span class="sla-cell__label">Reply Date (วันส่งมอบ)</span>
+                  <span class="sla-cell__label">Reply</span>
                   <div class="sla-cell__val">
                     <span>{{ t.replyDate || t.devDeliveredOn || '—' }}</span>
                     @if (t.slaAutoFilled?.reply) {
@@ -115,34 +207,158 @@
                   </div>
                 </div>
               </div>
-              <p class="sla-foot m-0">
-                First Due (ล็อกแรก): <strong>{{ t.firstDueOn || '—' }}</strong> · Due ปัจจุบัน: <strong>{{ t.dueOn || '—' }}</strong>
-              </p>
             </div>
-            @if ((data()!.relations?.length ?? 0) > 0) {
-              <h4>ความสัมพันธ์</h4>
-              <ul class="rel-list">
-                @for (rel of data()!.relations!; track rel.id) {
-                  <li>
-                    <strong>{{ rel.type }}</strong>
-                    — {{ rel.fromTitle || rel.fromId }} → {{ rel.toTitle || rel.toId }}
-                  </li>
-                }
-              </ul>
-            }
-            @if ((data()!.attachments?.length ?? 0) > 0) {
-              <h4>ไฟล์แนบ</h4>
-              <ul class="rel-list">
-                @for (att of data()!.attachments!; track att.id) {
-                  <li>
+          </div>
+        </ng-template>
+
+        <ng-template #activityTabTpl>
+          <div class="tab-pane">
+            <ul class="activity-list">
+              @for (act of data()!.activities ?? []; track act.createdAt + act.text) {
+                <li class="activity-item">
+                  <div class="activity-item__meta">
+                    <time>{{ formatStamp(act.createdAt) || (act.createdAt | slice: 0:16) }}</time>
+                    @if (act.userTitle) {
+                      <span class="activity-item__user">{{ act.userTitle }}</span>
+                    }
+                  </div>
+                  <p class="activity-item__text m-0">{{ act.text }}</p>
+                </li>
+              } @empty {
+                <li class="muted">ยังไม่มีประวัติจาก myProject</li>
+              }
+            </ul>
+            <div class="log-form">
+              <h4>ตอบกลับ</h4>
+              @if (!data()!.writeback) {
+                <p class="muted">Writeback ยังปิด — พิมพ์ได้ แต่ยังไม่ส่งจริง</p>
+              }
+              <app-sf-textbox
+                [multiline]="true"
+                [value]="replyComment()"
+                (valueChange)="replyComment.set($event)"
+              />
+              <button
+                ejs-button
+                [isPrimary]="true"
+                type="button"
+                class="mt-2"
+                [disabled]="!data()!.writeback || !replyComment().trim()"
+                (click)="submitComment()"
+              >
+                ส่งคอมเมนต์
+              </button>
+            </div>
+          </div>
+        </ng-template>
+
+        <ng-template #filesTabTpl>
+          <div class="tab-pane">
+            <ul class="file-list">
+              @for (att of data()!.attachments ?? []; track att.id) {
+                <li class="file-item">
+                  <div class="file-item__main">
                     @if (att.downloadUrl) {
                       <a [href]="att.downloadUrl" target="_blank" rel="noopener">{{ att.fileName }}</a>
                     } @else {
-                      {{ att.fileName }}
+                      <span>{{ att.fileName }}</span>
                     }
-                  </li>
+                    <span class="file-item__meta">{{ formatFileSize(att.fileSize) }}{{ att.contentType ? ' · ' + att.contentType : '' }}</span>
+                  </div>
+                </li>
+              } @empty {
+                <li class="muted">ยังไม่มีไฟล์แนบ</li>
+              }
+            </ul>
+          </div>
+        </ng-template>
+
+        <ng-template #relationsTabTpl>
+          <div class="tab-pane">
+            <ul class="rel-list">
+              @for (rel of data()!.relations ?? []; track rel.id) {
+                <li class="rel-item">
+                  <span class="e-badge e-badge-info e-badge-pill">{{ rel.type }}</span>
+                  <span class="rel-item__path">
+                    {{ rel.fromTitle || ('#' + (rel.fromId ?? '?')) }}
+                    →
+                    @if (relatedTicketId(rel); as relatedId) {
+                      <button ejs-button cssClass="e-link e-small" type="button" (click)="openRelated(relatedId)">
+                        {{ rel.toTitle || relatedId }}
+                      </button>
+                    } @else {
+                      {{ rel.toTitle || ('#' + (rel.toId ?? '?')) }}
+                    }
+                  </span>
+                </li>
+              } @empty {
+                <li class="muted">ยังไม่มีความสัมพันธ์</li>
+              }
+            </ul>
+          </div>
+        </ng-template>
+
+        <ng-template #peopleTabTpl>
+          <div class="tab-pane">
+            <div class="people-grid">
+              <div class="people-card">
+                <span class="people-card__label">ผู้รับผิดชอบ</span>
+                <app-person-avatar
+                  [personId]="t.assigneeId"
+                  [name]="t.assigneeId || 'ยังไม่มอบหมาย'"
+                  [showName]="true"
+                  size="sm"
+                ></app-person-avatar>
+              </div>
+              @if (t.reviewerId) {
+                <div class="people-card">
+                  <span class="people-card__label">ผู้รีวิว</span>
+                  <app-person-avatar
+                    [personId]="t.reviewerId"
+                    [name]="t.reviewerId"
+                    [showName]="true"
+                    size="sm"
+                  ></app-person-avatar>
+                </div>
+              }
+              @if (t.qaAssigneeId) {
+                <div class="people-card">
+                  <span class="people-card__label">QA</span>
+                  <app-person-avatar
+                    [personId]="t.qaAssigneeId"
+                    [name]="t.qaAssigneeId"
+                    [showName]="true"
+                    size="sm"
+                  ></app-person-avatar>
+                </div>
+              }
+              @if (data()!.authorName) {
+                <div class="people-card">
+                  <span class="people-card__label">ผู้สร้าง</span>
+                  <span class="people-card__plain">{{ data()!.authorName }}</span>
+                </div>
+              }
+            </div>
+
+            <h4 class="people-subhead">ผู้ติดตาม (Watchers)</h4>
+            <div class="watcher-list">
+              @for (w of data()!.watchers ?? []; track w.id) {
+                <span class="e-badge e-badge-secondary e-badge-pill">{{ w.name }}</span>
+              } @empty {
+                <p class="muted m-0">ยังไม่มีผู้ติดตามจาก myProject</p>
+              }
+            </div>
+
+            @if ((t.reviewers?.length ?? 0) > 0 || (t.approvedBy?.length ?? 0) > 0) {
+              <h4 class="people-subhead">จาก GitLab MR</h4>
+              <div class="watcher-list">
+                @for (r of t.reviewers ?? []; track r) {
+                  <span class="e-badge e-badge-info e-badge-pill">รีวิว {{ r }}</span>
                 }
-              </ul>
+                @for (a of t.approvedBy ?? []; track a) {
+                  <span class="e-badge e-badge-success e-badge-pill">อนุมัติ {{ a }}</span>
+                }
+              </div>
             }
           </div>
         </ng-template>
@@ -241,47 +457,19 @@
           </div>
         </ng-template>
 
-        <ng-template #activityTabTpl>
-          <div class="tab-pane">
-            <ul class="activity-list">
-              @for (act of data()!.activities ?? []; track act.createdAt + act.text) {
-                <li>
-                  <time>{{ act.createdAt | slice: 0:16 }}</time>
-                  <span>{{ act.text }}</span>
-                </li>
-              } @empty {
-                <li class="muted">ยังไม่มีประวัติจาก myProject</li>
-              }
-            </ul>
-            <div class="log-form">
-              <h4>ตอบกลับ</h4>
-              @if (!data()!.writeback) {
-                <p class="muted">Writeback ยังปิด — พิมพ์ได้ แต่ยังไม่ส่งจริง</p>
-              }
-              <app-sf-textbox
-                [multiline]="true"
-                [value]="replyComment()"
-                (valueChange)="replyComment.set($event)"
-              />
-              <button
-                ejs-button
-                [isPrimary]="true"
-                type="button"
-                class="mt-2"
-                [disabled]="!data()!.writeback || !replyComment().trim()"
-                (click)="submitComment()"
-              >
-                ส่งคอมเมนต์
-              </button>
-            </div>
-          </div>
-        </ng-template>
-
         <app-sf-tabs
           [tabs]="detailTabs"
-          [tabTemplates]="{ info: infoTabTpl, time: timeTabTpl, mr: mrTabTpl, activity: activityTabTpl }"
+          [tabTemplates]="{
+            overview: overviewTabTpl,
+            activity: activityTabTpl,
+            files: filesTabTpl,
+            relations: relationsTabTpl,
+            people: peopleTabTpl,
+            time: timeTabTpl,
+            mr: mrTabTpl
+          }"
         />
-      }
-    </div>
+      </div>
+    }
   </div>
 </ejs-sidebar>

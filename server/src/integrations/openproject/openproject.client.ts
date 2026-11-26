@@ -265,6 +265,31 @@ export class OpenProjectClient {
     return data._embedded?.elements ?? [];
   }
 
+  /** Watchers ของ work package — best-effort (บาง instance อาจไม่มี endpoint) */
+  async listWorkPackageWatchers(
+    wpId: number,
+  ): Promise<{ id: number; name: string; href?: string }[]> {
+    try {
+      const data = await this.get<
+        OpCollection<{ id?: number; name?: string; _links?: { self?: { href?: string; title?: string } } }>
+      >(`/api/v3/work_packages/${wpId}/watchers?pageSize=100`);
+      return (data._embedded?.elements ?? [])
+        .map((w) => {
+          const href = w._links?.self?.href ?? undefined;
+          const id = typeof w.id === 'number' ? w.id : idFromHref(href);
+          if (id == null) return null;
+          return {
+            id,
+            name: (w.name || w._links?.self?.title || `User ${id}`).trim(),
+            ...(href ? { href } : {}),
+          };
+        })
+        .filter((row): row is { id: number; name: string; href?: string } => row != null);
+    } catch {
+      return [];
+    }
+  }
+
   async listWorkPackageTimeEntries(wpId: number): Promise<OpTimeEntry[]> {
     const entries: OpTimeEntry[] = [];
     for await (const entry of this.paginateTimeEntries({ workPackageId: wpId })) {

@@ -146,6 +146,10 @@ export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
     Rejected: 'Done',
     'Rejected/Not Applicable': 'Done',
     Cancelled: 'Done',
+    // Deprecated / unused statuses on myprojectplus — keep mapped so sync-audit stays clean
+    '*Not Use 1': 'Done',
+    '*Not Use 2': 'Done',
+    '*Not Use 3': 'Done',
     // Common Thai OpenProject status titles (lookup is case-insensitive).
     ใหม่: 'Backlog',
     'รอดำเนินการ': 'Backlog',
