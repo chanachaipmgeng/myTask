@@ -135,6 +135,26 @@ export class GitLabClient {
     );
   }
 
+  /** Create a new branch from `ref` (branch name or SHA). */
+  async createBranch(
+    projectId: string | number,
+    params: { branch: string; ref: string },
+  ): Promise<GitLabBranch> {
+    const encoded = encodeURIComponent(String(projectId));
+    const query = new URLSearchParams({
+      branch: params.branch,
+      ref: params.ref,
+    });
+    return this.post<GitLabBranch>(
+      `/api/v4/projects/${encoded}/repository/branches?${query.toString()}`,
+    );
+  }
+
+  async getProject(projectId: string | number): Promise<GitLabProject & { default_branch?: string }> {
+    const encoded = encodeURIComponent(String(projectId));
+    return this.get<GitLabProject & { default_branch?: string }>(`/api/v4/projects/${encoded}`);
+  }
+
   /** Group-level open MRs across all projects the token can see. */
   async listOpenMergeRequests(params?: {
     reviewerUsername?: string;
@@ -285,6 +305,27 @@ export class GitLabClient {
   private async get<T>(path: string): Promise<T> {
     const { data } = await this.getPage<T>(path);
     return data;
+  }
+
+  private async post<T>(path: string, attempt = 0): Promise<T> {
+    const url = `${this.baseUrl.replace(/\/+$/, '')}${path}`;
+    const response = await this.fetchImpl(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'PRIVATE-TOKEN': this.token,
+      },
+    });
+    if ((response.status === 429 || response.status >= 500) && attempt < 4) {
+      const wait = Math.min(8_000, 500 * 2 ** attempt);
+      await sleep(wait);
+      return this.post<T>(path, attempt + 1);
+    }
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`GitLab ${response.status} ${path}: ${body.slice(0, 300)}`);
+    }
+    return (await response.json()) as T;
   }
 
   private async getPage<T>(

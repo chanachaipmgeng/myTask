@@ -101,13 +101,14 @@ export class MyWorkspacePage {
     { field: 'type', headerText: 'ประเภท', width: 115 },
     { field: 'size', headerText: 'ขนาด', width: 75 },
     { field: 'status', headerText: 'สถานะ', width: 125 },
+    { field: 'priorityLabel', headerText: 'Priority', width: 100 },
     { field: 'estimateMd', headerText: 'Est MD', width: 90, textAlign: 'Right', format: 'N2' },
     { field: 'dueOnLabel', headerText: 'กำหนดส่ง', width: 115 },
     { field: 'unplannedLabel', headerText: 'แผน', width: 95 },
     { field: 'actions', headerText: 'จัดการ', width: 180, allowSorting: false },
   ];
   protected readonly openWorkGridOptions: SfGridOptions = listGridOptions({
-    id: 'my-open-work-grid',
+    id: 'my-open-work-grid-v2',
     height: '260',
   });
   protected readonly closedWorkColumns: SfGridColumn[] = [

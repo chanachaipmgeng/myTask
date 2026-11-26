@@ -37,6 +37,7 @@ description: >-
 - `cfDueDate` (`customField46` · `Due Date`): วันกำหนดส่งฝั่ง Custom Field
 - `alertDate` (`customField163` · `Alert`): วันเตือนล่วงหน้าก่อนครบ Policy SLA (ออกแจ้งเตือน `policy-alert`)
 - `policyDate` (`customField185` · `Policy Date`): เส้นตาย Policy SLA (ออกแจ้งเตือน `policy-breach` และอยู่ในลำดับ Fallback ของ `dueOn` / `firstDueOn` แรกเข้า)
+- `unitTest` / `checkPass`: หลักฐาน DoD จาก myProject (อ่านอย่างเดียวใน drawer · ไม่ writeback) — discover จับชื่อ `Unit Test` / `Check pass` / `Check score`
 
 การสแกนจับคู่ฟิลด์อัตโนมัติ & กฎ Auto-SLA (`shared/domain/policy-sla.ts`):
 - `POST /api/integrations/openproject/discover-fields` (`@Roles('admin', 'lead')`) สแกน `_links.schema` จาก Work Packages ล่าสุด แล้วเรียก `autoMatchCustomFieldsFromSchema()` คืน `fields` + `suggested` ให้หน้า `/integrations`

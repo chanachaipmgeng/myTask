@@ -76,6 +76,52 @@ export function parseTicketIdFromBranch(branchName: string): string | null {
   return null;
 }
 
+export interface SuggestBranchNameInput {
+  /** OpenProject work package id (numeric). */
+  opId: number | string;
+  title?: string | null;
+  /** Ticket type / opType — drives feat|bug|spike prefix. */
+  type?: string | null;
+}
+
+/**
+ * Builds a Git branch name that round-trips through {@link parseTicketIdFromBranch}.
+ * Example: `{ opId: 73306, title: 'Migrate Bootstrap 3.5 Security', type: 'Feature' }`
+ * → `feat/OP-73306-migrate-bootstrap-3-5-security`
+ */
+export function suggestBranchNameFromTicket(input: SuggestBranchNameInput): string {
+  const opId = String(input.opId ?? '').replace(/\D/g, '');
+  if (!opId) {
+    throw new Error('opId is required to suggest a branch name');
+  }
+  const prefix = branchPrefixFromType(input.type);
+  const slug = slugifyTicketTitle(input.title ?? '');
+  return slug ? `${prefix}/OP-${opId}-${slug}` : `${prefix}/OP-${opId}`;
+}
+
+function branchPrefixFromType(type: string | null | undefined): 'feat' | 'bug' | 'spike' {
+  const raw = (type ?? '').trim().toLowerCase();
+  if (!raw) return 'feat';
+  if (/(bug|defect|hotfix|fix)/.test(raw)) return 'bug';
+  if (/(spike|poc|research|r&d|rnd|ai)/.test(raw)) return 'spike';
+  return 'feat';
+}
+
+/** Latin / digits / hyphens only · collapse · trim · max ~40 chars. */
+export function slugifyTicketTitle(title: string, maxLen = 40): string {
+  const ascii = title
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+  if (!ascii) return '';
+  if (ascii.length <= maxLen) return ascii;
+  const cut = ascii.slice(0, maxLen).replace(/-+$/g, '');
+  return cut || ascii.slice(0, maxLen);
+}
+
 /**
  * Converts a git branch name into a clean, human-readable ticket subject.
  * e.g. "feat/1234-payroll-tax-calc" -> "Payroll tax calc"

@@ -4,6 +4,7 @@ import {
   DEFAULT_OPENPROJECT_MAPPING,
   autoMatchCustomFieldsFromSchema,
   countReopens,
+  interpretUnitTestLabel,
   isoDurationToHours,
   mapWorkPackage,
   sizeFromEstimate,
@@ -73,6 +74,38 @@ describe('mapWorkPackage', () => {
     assert.equal(ticket.assigneeId, 'itsara');
     assert.equal(ticket.module, 'Auth');
     assert.equal(ticket.source, 'openproject');
+  });
+
+  it('maps priority and Unit Test / Check pass CF into ticket + DoD checklist', () => {
+    const mapping = {
+      ...DEFAULT_OPENPROJECT_MAPPING,
+      customFields: {
+        ...DEFAULT_OPENPROJECT_MAPPING.customFields,
+        unitTest: 'customField90',
+        checkPass: 'customField91',
+      },
+    };
+    const wp: OpWorkPackage = {
+      ...sampleWp(),
+      customField90: 'ไม่ได้ทดสอบ',
+      customField91: 'no',
+      _links: {
+        ...sampleWp()._links,
+        priority: { href: '/api/v3/priorities/2', title: 'Normal' },
+      },
+    };
+    const ticket = mapWorkPackage(wp, { ...baseCtx(), mapping });
+    assert.equal(ticket.priority, 'Normal');
+    assert.equal(ticket.opUnitTest, 'ไม่ได้ทดสอบ');
+    assert.equal(ticket.opCheckPass, false);
+    assert.equal(ticket.dodChecklist?.unitTest, false);
+  });
+
+  it('interpretUnitTestLabel handles Thai and English evidence labels', () => {
+    assert.equal(interpretUnitTestLabel('ไม่ได้ทดสอบ'), false);
+    assert.equal(interpretUnitTestLabel('ผ่านแล้ว'), true);
+    assert.equal(interpretUnitTestLabel('tested'), true);
+    assert.equal(interpretUnitTestLabel('unknown-label'), null);
   });
 
   it('maps _links.parent to opParentId and parentId', () => {
@@ -417,6 +450,8 @@ describe('Policy & SLA dates sync + Auto-SLA rules', () => {
       { key: 'customField21', name: 'Exception Tag', type: 'String' },
       { key: 'customField22', name: 'RD Work Track', type: 'String' },
       { key: 'customField23', name: 'Spike Outcome', type: 'String' },
+      { key: 'customField24', name: 'Unit Test', type: 'String' },
+      { key: 'customField25', name: 'Check pass', type: 'Boolean' },
     ]);
     assert.equal(matched.size, 'customField10');
     assert.equal(matched.track, 'customField11');
@@ -432,6 +467,8 @@ describe('Policy & SLA dates sync + Auto-SLA rules', () => {
     assert.equal(matched.exceptionTag, 'customField21');
     assert.equal(matched.rdWorkTrack, 'customField22');
     assert.equal(matched.spikeOutcome, 'customField23');
+    assert.equal(matched.unitTest, 'customField24');
+    assert.equal(matched.checkPass, 'customField25');
   });
 
   it('preserves raw OpenProject opType, opTypeId, opStatus, custom bugCause, and normalizes /api/v3/users/:id/avatar URLs', async () => {

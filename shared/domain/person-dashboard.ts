@@ -43,6 +43,7 @@ export interface PersonWorkRow {
   type: string;
   size: string;
   status: string;
+  priorityLabel: string;
   estimateMd: number;
   actualMd: number;
   weekOffsetLabel: string;
@@ -221,6 +222,7 @@ function toWorkRow(ticket: Ticket): PersonWorkRow {
     type: ticket.type,
     size: ticket.size,
     status: workflowStatusOf(ticket),
+    priorityLabel: ticket.priority?.trim() || '—',
     estimateMd: ticket.estimateMd,
     actualMd: ticket.actualMd,
     weekOffsetLabel: weekOffsetLabel(ticket.weekOffset),

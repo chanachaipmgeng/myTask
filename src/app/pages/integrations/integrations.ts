@@ -57,6 +57,8 @@ type CustomFieldKey =
   | 'reviewRounds'
   | 'blocker'
   | 'dodPassed'
+  | 'unitTest'
+  | 'checkPass'
   | 'inTimeBox'
   | 'childTicketsSized'
   | 'mrLink'
@@ -88,6 +90,8 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
     reviewRounds: '',
     blocker: '',
     dodPassed: '',
+    unitTest: '',
+    checkPass: '',
     inTimeBox: '',
     childTicketsSized: '',
     mrLink: '',
@@ -196,6 +200,8 @@ export class IntegrationsPage {
     { key: 'reviewRounds', label: 'Review rounds', hint: 'integer ≥ 0' },
     { key: 'blocker', label: 'Blocker', hint: 'boolean' },
     { key: 'dodPassed', label: 'DoD passed', hint: 'boolean' },
+    { key: 'unitTest', label: 'Unit Test', hint: 'เช่น customField · อ่านอย่างเดียวใน drawer' },
+    { key: 'checkPass', label: 'Check pass / Check score', hint: 'boolean · อ่านอย่างเดียว' },
     { key: 'inTimeBox', label: 'Spike in time-box', hint: 'boolean' },
     { key: 'childTicketsSized', label: 'Children sized', hint: 'boolean' },
     { key: 'mrLink', label: 'MR link', hint: 'URL' },

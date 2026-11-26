@@ -11,6 +11,7 @@ import {
 import {
   cleanBranchToTicketTitle,
   parseTicketIdFromBranch,
+  suggestBranchNameFromTicket,
   CreateTicketFromBranchPayload,
 } from '../../../shared/domain/git-branch';
 import {
@@ -34,6 +35,7 @@ import {
 } from '../data/settings.repo';
 import {
   finishSyncRun,
+  getWorkItem,
   listSyncRuns,
   listWorkItems,
   startSyncRun,
@@ -513,7 +515,7 @@ export class IntegrationsController {
   }
 
   @Get('integrations/gitlab/projects')
-  @Roles('admin', 'lead')
+  @Roles('admin', 'lead', 'member')
   async listGitLabProjects() {
     const resolved = await this.resolveGitLab();
     if (!resolved) {
@@ -732,6 +734,152 @@ export class IntegrationsController {
       ticketId,
       unmatched: !ticketId,
     };
+  }
+
+  @Post('integrations/gitlab/create-branch-from-ticket')
+  @Roles('admin', 'lead', 'member')
+  async createBranchFromTicket(
+    @Body()
+    body: {
+      ticketId?: string;
+      gitlabProjectId?: string | number;
+      branchName?: string;
+      ref?: string;
+    },
+    @Req() req: AuthedRequest,
+  ) {
+    const ticketId = String(body.ticketId ?? '').trim();
+    const gitlabProjectId = String(body.gitlabProjectId ?? '').trim();
+    if (!ticketId || !gitlabProjectId) {
+      return { ok: false, message: 'ต้องระบุ ticketId และ gitlabProjectId' };
+    }
+
+    const ticket = await getWorkItem(this.db, ticketId);
+    if (!ticket) {
+      return { ok: false, message: `ไม่พบใบงาน ${ticketId}` };
+    }
+    if (ticket.opId == null) {
+      return { ok: false, message: 'ใบงานยังไม่มีรหัส OpenProject (opId) — สร้าง branch ไม่ได้' };
+    }
+
+    const role = req.authUser?.access ?? 'member';
+    const selfId = req.authUser?.person.id;
+    if (role === 'member' && ticket.assigneeId !== selfId) {
+      return {
+        ok: false,
+        message: 'สมาชิกสร้าง branch ได้เฉพาะใบงานที่มอบหมายให้ตัวเอง',
+      };
+    }
+
+    let branchName = String(body.branchName ?? '').trim();
+    if (!branchName) {
+      try {
+        branchName = suggestBranchNameFromTicket({
+          opId: ticket.opId,
+          title: ticket.title ?? ticket.module,
+          type: ticket.opType ?? ticket.type,
+        });
+      } catch (err) {
+        return {
+          ok: false,
+          message: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+
+    const parsedId = parseTicketIdFromBranch(branchName);
+    if (parsedId !== String(ticket.opId)) {
+      return {
+        ok: false,
+        message: `ชื่อ branch ต้องมีรหัส OP-${ticket.opId} เพื่อให้จับคู่ใบงานได้ (ตอนนี้จับได้: ${parsedId ?? 'ไม่มี'})`,
+      };
+    }
+
+    const gitlab = await this.resolveGitLab();
+    if (!gitlab) {
+      const demoUrl = `https://mygitplus.example/-/tree/${encodeURIComponent(branchName)}`;
+      await upsertGitBranch(this.db, {
+        projectId: Number(gitlabProjectId) || 0,
+        projectName: `GitLab ${gitlabProjectId}`,
+        branchName,
+        authorUsername: req.authUser?.person.gitlabUsername ?? req.authUser?.person.id ?? null,
+        personId: req.authUser?.person.id ?? null,
+        ticketId: ticket.id,
+        webUrl: demoUrl,
+        lastCommitSha: null,
+        lastCommitTitle: `branch from ticket ${ticket.id}`,
+        lastCommitAt: new Date().toISOString(),
+        status: 'active',
+      });
+      await this.db.audit(
+        req.authUser?.person.id ?? null,
+        'gitlab.create_branch_from_ticket',
+        ticket.id,
+        { branchName, gitlabProjectId, source: 'offline' },
+      );
+      return {
+        ok: true,
+        source: 'offline' as const,
+        branchName,
+        webUrl: demoUrl,
+        message: 'โหมดออฟไลน์: จำลองสร้าง branch ในฐานข้อมูล (ยังไม่ได้ยิง GitLab)',
+      };
+    }
+
+    try {
+      let ref = String(body.ref ?? '').trim();
+      if (!ref) {
+        try {
+          const project = await gitlab.client.getProject(gitlabProjectId);
+          ref = (project.default_branch || '').trim() || 'main';
+        } catch {
+          ref = 'main';
+        }
+      }
+
+      const created = await gitlab.client.createBranch(gitlabProjectId, {
+        branch: branchName,
+        ref,
+      });
+
+      const webUrl =
+        created.web_url ||
+        `${gitlab.baseUrl.replace(/\/+$/, '')}/${gitlabProjectId}/-/tree/${encodeURIComponent(branchName)}`;
+
+      await upsertGitBranch(this.db, {
+        projectId: Number(gitlabProjectId) || 0,
+        projectName: String(gitlabProjectId),
+        branchName: created.name || branchName,
+        authorUsername: req.authUser?.person.gitlabUsername ?? req.authUser?.person.id ?? null,
+        personId: req.authUser?.person.id ?? null,
+        ticketId: ticket.id,
+        webUrl,
+        lastCommitSha: created.commit?.short_id ?? created.commit?.id ?? null,
+        lastCommitTitle: created.commit?.title ?? null,
+        lastCommitAt: created.commit?.created_at ?? new Date().toISOString(),
+        status: created.merged ? 'merged' : 'active',
+      });
+
+      await this.db.audit(
+        req.authUser?.person.id ?? null,
+        'gitlab.create_branch_from_ticket',
+        ticket.id,
+        { branchName, gitlabProjectId, ref, source: 'live' },
+      );
+
+      return {
+        ok: true,
+        source: 'live' as const,
+        branchName: created.name || branchName,
+        webUrl,
+        ref,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
   }
 
   @Post('integrations/openproject/create-from-branch')

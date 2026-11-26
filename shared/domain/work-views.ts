@@ -107,6 +107,7 @@ export interface WorkListRow {
   type: string;
   assignee: string;
   status: string;
+  priorityLabel: string;
   size: string;
   dueOnLabel: string;
   receiptDateLabel: string;
@@ -689,6 +690,7 @@ export function workListRows(
       type: ticket.opType?.trim() || ticket.type,
       assignee: person?.nickname ?? (ticket.assigneeId || 'Unassigned'),
       status: workflowStatusOf(ticket),
+      priorityLabel: ticket.priority?.trim() || '—',
       size: ticket.size,
       dueOnLabel: ticket.dueOn ?? ticket.firstDueOn ?? '—',
       receiptDateLabel: ticket.receiptDate ?? '—',

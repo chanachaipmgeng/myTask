@@ -76,6 +76,10 @@ export interface OpenProjectMapping {
     reviewRounds: string;
     blocker: string;
     dodPassed: string;
+    /** Unit Test evidence CF (often enum/label e.g. ไม่ได้ทดสอบ) */
+    unitTest: string;
+    /** Check pass / Check score CF (boolean-ish) */
+    checkPass: string;
     inTimeBox: string;
     childTicketsSized: string;
     mrLink: string;
@@ -211,6 +215,8 @@ export const DEFAULT_OPENPROJECT_MAPPING: OpenProjectMapping = {
     reviewRounds: '',
     blocker: '',
     dodPassed: '',
+    unitTest: '',
+    checkPass: '',
     inTimeBox: '',
     childTicketsSized: '',
     mrLink: '',
@@ -306,6 +312,9 @@ export const OPENPROJECT_OWNED_FIELDS = [
   'opType',
   'opTypeId',
   'opStatus',
+  'priority',
+  'opUnitTest',
+  'opCheckPass',
   'opParentId',
   'parentId',
   'source',
@@ -397,6 +406,7 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   const statusName = linkTitle(links['status']) || wp._embedded?.status?.name || '';
   const typeName = linkTitle(links['type']);
   const opTypeId = idFromHref(singleLink(links['type'])?.href);
+  const priority = linkTitle(links['priority']) || null;
   const projectHref = singleLink(links['project'])?.href;
   const project = projectIdentifierFromHref(projectHref) || String(idFromHref(projectHref) ?? '');
   const projectTitle = linkTitle(links['project']);
@@ -438,6 +448,9 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   const reviewRounds = asNonNegInt(customValue(wp, cf.reviewRounds));
   const blocker = asBool(customValue(wp, cf.blocker));
   const dodPassed = asBool(customValue(wp, cf.dodPassed));
+  const opUnitTestRaw = customValue(wp, cf.unitTest)?.trim() || null;
+  const opCheckPass = asBool(customValue(wp, cf.checkPass));
+  const unitTestFromCf = interpretUnitTestLabel(opUnitTestRaw);
   const inTimeBox = asBool(customValue(wp, cf.inTimeBox));
   const childTicketsSized = asBool(customValue(wp, cf.childTicketsSized));
   const mrLink = customValue(wp, cf.mrLink)?.trim() || null;
@@ -525,6 +538,9 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
     opType: typeName || undefined,
     opTypeId,
     opStatus: statusName || undefined,
+    priority,
+    opUnitTest: opUnitTestRaw,
+    opCheckPass,
     opParentId,
     parentId,
     title: wp.subject ?? '',
@@ -552,6 +568,14 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   };
   if (workflowStatus) {
     base.workflowStatus = workflowStatus;
+  }
+  const unitTestEvidence = unitTestFromCf ?? opCheckPass;
+  if (unitTestEvidence !== null || opUnitTestRaw || opCheckPass !== null) {
+    base.dodChecklist = {
+      unitTest: unitTestEvidence ?? ctx.existing?.dodChecklist?.unitTest ?? false,
+      mrLinked: ctx.existing?.dodChecklist?.mrLinked ?? Boolean(mrLink),
+      stagingVerified: ctx.existing?.dodChecklist?.stagingVerified ?? false,
+    };
   }
 
   if (!ctx.existing) {
@@ -613,6 +637,23 @@ export function mapWorkPackage(wp: OpWorkPackage, ctx: MapContext): Ticket {
   }
   if (spikeOutcome) {
     merged.spikeOutcome = spikeOutcome;
+  }
+  if (priority) {
+    merged.priority = priority;
+  }
+  if (opUnitTestRaw) {
+    merged.opUnitTest = opUnitTestRaw;
+  }
+  if (opCheckPass !== null) {
+    merged.opCheckPass = opCheckPass;
+  }
+  if (base.dodChecklist) {
+    merged.dodChecklist = {
+      unitTest: base.dodChecklist.unitTest,
+      mrLinked: base.dodChecklist.mrLinked || Boolean(merged.mrLink),
+      stagingVerified:
+        base.dodChecklist.stagingVerified || Boolean(merged.dodChecklist?.stagingVerified),
+    };
   }
   if (weekOffsetCf !== null) {
     merged.weekOffset = weekOffsetCf;
@@ -803,6 +844,31 @@ function asBool(value: string | null): boolean | null {
   }
   if (['false', 'no', '0', 'ไม่'].includes(v)) {
     return false;
+  }
+  return null;
+}
+
+/** Interpret myProject Unit Test CF labels into pass/fail when possible. */
+export function interpretUnitTestLabel(value: string | null | undefined): boolean | null {
+  const v = value?.trim().toLowerCase();
+  if (!v) return null;
+  if (
+    v.includes('ไม่ได้') ||
+    v.includes('not tested') ||
+    v.includes('fail') ||
+    v.includes('ไม่ผ่าน') ||
+    ['false', 'no', '0', 'ไม่'].includes(v)
+  ) {
+    return false;
+  }
+  if (
+    v.includes('ผ่าน') ||
+    v.includes('tested') ||
+    v.includes('passed') ||
+    v.includes('done') ||
+    ['true', 'yes', '1', 'ใช่'].includes(v)
+  ) {
+    return true;
   }
   return null;
 }
@@ -1051,6 +1117,27 @@ export function autoMatchCustomFieldsFromSchema(
     (n) => n.includes('dod') || n.includes('definition of done') || n.includes('ผ่าน dod'),
   ]);
   if (dodPassed) out.dodPassed = dodPassed;
+
+  const unitTest = findField([
+    (n) =>
+      n === 'unit test' ||
+      n.includes('unit test') ||
+      n.includes('unittest') ||
+      n.includes('ทดสอบยูนิต') ||
+      n === 'unit testing',
+  ]);
+  if (unitTest) out.unitTest = unitTest;
+
+  const checkPass = findField([
+    (n) =>
+      n === 'check pass' ||
+      n.includes('check pass') ||
+      n === 'check score' ||
+      n.includes('check score') ||
+      n.includes('ตรวจผ่าน') ||
+      n.includes('คะแนนตรวจ'),
+  ]);
+  if (checkPass) out.checkPass = checkPass;
 
   const pocResult = findField([
     (n) => n.includes('poc result') || n.includes('spike result') || n.includes('ผล poc') || n === 'outcome',

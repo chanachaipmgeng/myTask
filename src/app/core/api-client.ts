@@ -686,6 +686,25 @@ export class ApiClient {
     });
   }
 
+  createBranchFromTicket(payload: {
+    ticketId: string;
+    gitlabProjectId: string | number;
+    branchName?: string;
+    ref?: string;
+  }): Promise<{
+    ok: boolean;
+    source?: 'live' | 'offline';
+    branchName?: string;
+    webUrl?: string | null;
+    ref?: string;
+    message?: string;
+  }> {
+    return api('/api/integrations/gitlab/create-branch-from-ticket', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   getPersonGitSummary(personId: string): Promise<{ summary: PersonGitSummary }> {
     return api(`/api/integrations/gitlab/person/${encodeURIComponent(personId)}`);
   }

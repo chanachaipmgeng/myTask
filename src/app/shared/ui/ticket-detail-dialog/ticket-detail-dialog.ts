@@ -9,19 +9,22 @@ import {
 import { SlicePipe } from '@angular/common';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { SidebarModule } from '@syncfusion/ej2-angular-navigations';
+import { openprojectProjectCatalog } from '../../../core/admin-settings';
 import { ApiClient, TicketDetailResponse } from '../../../core/api-client';
 import { ScorecardService } from '../../../core/scorecard.service';
 import { ShellNotice } from '../../../core/shell-notice';
 import { TicketDetailService } from '../../../core/ticket-detail.service';
 import { ViewportService } from '../../../core/viewport.service';
+import { suggestBranchNameFromTicket } from '../../../../../shared/domain/git-branch';
 import { scoreTicket } from '../../../../../shared/domain/scoring';
 import { evaluatePolicySla, PolicySlaEvaluation } from '../../../../../shared/domain/policy-sla';
 import { todayInBangkok, workflowStatusOf } from '../../../../../shared/domain/workflow';
 import { SfDatePickerComponent } from '../../sf/sf-datepicker/sf-datepicker';
+import { SfDropdownComponent } from '../../sf/sf-dropdown/sf-dropdown';
 import { SfNumberComponent } from '../../sf/sf-number/sf-number';
 import { SfTabItem, SfTabsComponent } from '../../sf/sf-tabs/sf-tabs';
 import { SfTextBoxComponent } from '../../sf/sf-textbox/sf-textbox';
-import { BadgeTone, workflowStatusToneMap } from '../badge';
+import { BadgeTone, toneForPriority, workflowStatusToneMap } from '../badge';
 import { FormFieldComponent } from '../form-field/form-field';
 import { PersonAvatarComponent } from '../person-avatar/person-avatar';
 import { StatusBadgeComponent } from '../status-badge/status-badge';
@@ -37,6 +40,7 @@ import { StatusBadgeComponent } from '../status-badge/status-badge';
     StatusBadgeComponent,
     SlicePipe,
     SfDatePickerComponent,
+    SfDropdownComponent,
     SfNumberComponent,
     SfTabsComponent,
     SfTextBoxComponent,
@@ -68,6 +72,18 @@ export class TicketDetailDialogComponent {
   protected readonly logComment = signal('');
   protected readonly replyComment = signal('');
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
+
+  protected readonly gitlabProjects = signal<{ text: string; value: string }[]>([]);
+  protected readonly branchGitlabProjectId = signal('');
+  protected readonly branchName = signal('');
+  protected readonly branchRef = signal('main');
+  protected readonly creatingBranch = signal(false);
+  protected readonly createdBranchUrl = signal<string | null>(null);
+
+  protected readonly canCreateBranch = computed(() => {
+    const ticket = this.data()?.ticket;
+    return !!ticket?.opId;
+  });
 
   protected readonly isOpen = computed(() => !!this.detail.ticketId());
   protected readonly policySla = computed<PolicySlaEvaluation | null>(() => {
@@ -198,6 +214,50 @@ export class TicketDetailDialogComponent {
     }
   }
 
+  protected async createBranch(): Promise<void> {
+    const ticket = this.data()?.ticket;
+    if (!ticket?.opId) {
+      this.notice.warning('ใบงานต้องมีรหัส OpenProject ก่อน', 'สร้าง branch ไม่ได้');
+      return;
+    }
+    const gitlabProjectId = this.branchGitlabProjectId().trim();
+    if (!gitlabProjectId) {
+      this.notice.warning('เลือกโปรเจกต์ GitLab ก่อน', 'สร้าง branch');
+      return;
+    }
+    const branchName = this.branchName().trim();
+    if (!branchName) {
+      this.notice.warning('ระบุชื่อ branch', 'สร้าง branch');
+      return;
+    }
+    this.creatingBranch.set(true);
+    try {
+      const res = await this.api.createBranchFromTicket({
+        ticketId: ticket.id,
+        gitlabProjectId,
+        branchName,
+        ref: this.branchRef().trim() || undefined,
+      });
+      if (!res.ok) {
+        this.notice.error(res.message ?? 'เกิดข้อผิดพลาด', 'สร้าง branch ไม่สำเร็จ');
+        return;
+      }
+      this.createdBranchUrl.set(res.webUrl ?? null);
+      const sourceLabel = res.source === 'offline' ? ' (โหมดจำลอง)' : '';
+      this.notice.success(
+        `${res.branchName ?? branchName}${sourceLabel}`,
+        'สร้าง branch แล้ว',
+      );
+      if (res.webUrl && typeof window !== 'undefined') {
+        window.open(res.webUrl, '_blank', 'noopener');
+      }
+    } catch (err) {
+      this.notice.error(err instanceof Error ? err.message : String(err), 'สร้าง branch ไม่สำเร็จ');
+    } finally {
+      this.creatingBranch.set(false);
+    }
+  }
+
   protected ciTone(status: string): BadgeTone {
     switch (status) {
       case 'passed':
@@ -211,8 +271,13 @@ export class TicketDetailDialogComponent {
     }
   }
 
+  protected priorityTone(label: string): BadgeTone {
+    return toneForPriority(label);
+  }
+
   private async load(id: string): Promise<void> {
     this.loading.set(true);
+    this.createdBranchUrl.set(null);
     try {
       if (this.scorecard.usingApi()) {
         const res = await this.api.getWorkItemDetail(id);
@@ -236,6 +301,10 @@ export class TicketDetailDialogComponent {
           },
         );
       }
+      this.prepareBranchForm(this.data()?.ticket ?? null);
+      if (this.data()?.ticket?.opId) {
+        void this.loadGitlabProjects(this.data()?.ticket?.opProject);
+      }
     } catch {
       const local = this.offlineDetail(id);
       this.data.set(
@@ -246,9 +315,66 @@ export class TicketDetailDialogComponent {
           message: `ไม่พบใบงาน ${id}`,
         },
       );
+      this.prepareBranchForm(this.data()?.ticket ?? null);
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private prepareBranchForm(
+    ticket: TicketDetailResponse['ticket'] | null | undefined,
+  ): void {
+    if (!ticket?.opId) {
+      this.branchName.set('');
+      this.branchGitlabProjectId.set('');
+      this.branchRef.set('main');
+      return;
+    }
+    try {
+      this.branchName.set(
+        suggestBranchNameFromTicket({
+          opId: ticket.opId,
+          title: ticket.title ?? ticket.module,
+          type: ticket.opType ?? ticket.type,
+        }),
+      );
+    } catch {
+      this.branchName.set(`feat/OP-${ticket.opId}`);
+    }
+    this.branchRef.set('main');
+  }
+
+  private async loadGitlabProjects(opProject?: string | null): Promise<void> {
+    try {
+      const res = await this.api.listGitLabProjects();
+      const all = (res.projects ?? []).map((p) => ({
+        text: p.path || p.name || p.id,
+        value: String(p.id),
+      }));
+      const preferredIds = this.preferredGitRepoIds(opProject);
+      const preferred = preferredIds.length
+        ? all.filter((p) => preferredIds.includes(p.value))
+        : [];
+      const items = preferred.length > 0 ? preferred : all;
+      this.gitlabProjects.set(items);
+      if (!this.branchGitlabProjectId() && items[0]) {
+        this.branchGitlabProjectId.set(items[0].value);
+      }
+    } catch {
+      this.gitlabProjects.set([]);
+    }
+  }
+
+  private preferredGitRepoIds(opProject?: string | null): string[] {
+    const key = (opProject ?? '').trim().toLowerCase();
+    if (!key) return [];
+    const match = openprojectProjectCatalog().find(
+      (p) =>
+        p.identifier.toLowerCase() === key ||
+        (p.name ?? '').toLowerCase() === key ||
+        String(p.id) === key,
+    );
+    return (match?.gitRepoIds ?? []).map(String);
   }
 
   private offlineDetail(id: string): TicketDetailResponse | null {

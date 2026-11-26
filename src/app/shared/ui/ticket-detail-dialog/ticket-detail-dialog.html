@@ -133,6 +133,16 @@
                 <span class="field-cell__val">{{ t.size || '—' }}</span>
               </div>
               <div class="field-cell">
+                <span class="field-cell__label">Priority</span>
+                <span class="field-cell__val">
+                  @if (t.priority) {
+                    <app-status-badge [label]="t.priority" [tone]="priorityTone(t.priority)"></app-status-badge>
+                  } @else {
+                    —
+                  }
+                </span>
+              </div>
+              <div class="field-cell">
                 <span class="field-cell__label">Estimate</span>
                 <span class="field-cell__val">{{ t.estimateMd }} MD</span>
               </div>
@@ -147,6 +157,36 @@
               <div class="field-cell">
                 <span class="field-cell__label">Due</span>
                 <span class="field-cell__val">{{ t.dueOn || '—' }}</span>
+              </div>
+            </div>
+
+            <div class="dod-readonly">
+              <h4 class="people-subhead">หลักฐาน DoD จาก myProject (อ่านอย่างเดียว)</h4>
+              <div class="field-grid">
+                <div class="field-cell">
+                  <span class="field-cell__label">Unit Test</span>
+                  <span class="field-cell__val">{{ t.opUnitTest || (t.dodChecklist?.unitTest ? 'ผ่าน' : '—') }}</span>
+                </div>
+                <div class="field-cell">
+                  <span class="field-cell__label">Check pass</span>
+                  <span class="field-cell__val">
+                    @if (t.opCheckPass === true) {
+                      ผ่าน
+                    } @else if (t.opCheckPass === false) {
+                      ไม่ผ่าน
+                    } @else {
+                      —
+                    }
+                  </span>
+                </div>
+                <div class="field-cell">
+                  <span class="field-cell__label">MR ผูกแล้ว</span>
+                  <span class="field-cell__val">{{ t.dodChecklist?.mrLinked || t.mrLink ? 'ใช่' : '—' }}</span>
+                </div>
+                <div class="field-cell">
+                  <span class="field-cell__label">Staging</span>
+                  <span class="field-cell__val">{{ t.dodChecklist?.stagingVerified ? 'ยืนยันแล้ว' : '—' }}</span>
+                </div>
               </div>
             </div>
 
@@ -434,6 +474,58 @@
 
         <ng-template #mrTabTpl>
           <div class="tab-pane">
+            @if (canCreateBranch()) {
+              <div class="create-branch-card">
+                <h4 class="people-subhead">สร้าง branch บน mygit</h4>
+                <p class="muted">
+                  สร้างกิ่งจากใบงานนี้ด้วยชื่อที่จับคู่รหัส OP อัตโนมัติ (เช่น feat/OP-1234-…)
+                  — กลับทิศกับหน้า Git &amp; MR ที่สร้างใบจาก Branch ที่ยังไม่ผูก
+                </p>
+                <div class="form-grid">
+                  <app-form-field label="โปรเจกต์ GitLab" class="span-2">
+                    <app-sf-dropdown
+                      [items]="gitlabProjects()"
+                      [value]="branchGitlabProjectId()"
+                      [fields]="{ text: 'text', value: 'value' }"
+                      placeholder="เลือก repo"
+                      [allowFiltering]="true"
+                      (valueChange)="branchGitlabProjectId.set($event)"
+                    />
+                  </app-form-field>
+                  <app-form-field label="ชื่อ branch" class="span-2">
+                    <app-sf-textbox
+                      [value]="branchName()"
+                      (valueChange)="branchName.set($event)"
+                    />
+                  </app-form-field>
+                  <app-form-field label="สร้างจาก ref">
+                    <app-sf-textbox
+                      [value]="branchRef()"
+                      (valueChange)="branchRef.set($event)"
+                    />
+                  </app-form-field>
+                </div>
+                <div class="create-branch-actions">
+                  <button
+                    ejs-button
+                    cssClass="e-success"
+                    type="button"
+                    [disabled]="creatingBranch() || !branchGitlabProjectId()"
+                    (click)="createBranch()"
+                  >
+                    {{ creatingBranch() ? 'กำลังสร้าง…' : 'สร้าง branch' }}
+                  </button>
+                  @if (createdBranchUrl(); as url) {
+                    <a [href]="url" target="_blank" rel="noopener">เปิด branch ใน mygitplus</a>
+                  }
+                </div>
+              </div>
+            } @else {
+              <p class="muted">
+                ใบงานนี้ยังไม่มีรหัส OpenProject — ซิงก์จาก myProject ก่อนจึงจะสร้าง branch ได้
+              </p>
+            }
+
             @for (mr of data()!.mrs ?? []; track mr.webUrl + mr.iid) {
               <div class="mr-card">
                 <div class="mr-head">

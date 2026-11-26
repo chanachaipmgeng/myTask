@@ -142,6 +142,12 @@ export interface Ticket {
   opTypeId?: number | null;
   /** Raw OpenProject Status name (e.g. 'Work in Progress', '*Testing in Progress') */
   opStatus?: string;
+  /** OpenProject Priority title (e.g. Normal, High, Immediate) */
+  priority?: string | null;
+  /** Raw Unit Test CF label from myProject (read-only evidence) */
+  opUnitTest?: string | null;
+  /** Check pass CF from myProject when mapped (read-only) */
+  opCheckPass?: boolean | null;
   /** Parent ticket ID in the scorecard (e.g. OP-10 or RD-SPIKE) for Gantt hierarchy. */
   parentId?: string | null;
   /** Parent work package ID in OpenProject when source is openproject. */

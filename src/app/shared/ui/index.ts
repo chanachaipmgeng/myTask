@@ -8,6 +8,8 @@ export {
   trackToneMap,
   ticketTypeToneMap,
   toneForTicketType,
+  priorityToneMap,
+  toneForPriority,
   levelToneMap,
   sizeToneMap,
   yesNoToneMap,

@@ -86,4 +86,27 @@ describe('GitLabClient', () => {
     assert.equal(commits.length, 1);
     assert.ok(calls[0]?.includes('/projects/42/merge_requests/7/commits'));
   });
+
+  it('creates a branch via POST repository/branches', async () => {
+    const calls: { url: string; method: string }[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = String(input);
+      calls.push({ url, method: String(init?.method ?? 'GET') });
+      return new Response(
+        JSON.stringify({
+          name: 'feat/OP-1-demo',
+          web_url: 'https://gl.example/group/proj/-/tree/feat/OP-1-demo',
+          commit: { short_id: 'abc1234', title: 'init' },
+        }),
+        { status: 201, headers: { 'Content-Type': 'application/json' } },
+      );
+    };
+    const client = new GitLabClient('https://gl.example', 'tok', fetchImpl);
+    const branch = await client.createBranch(99, { branch: 'feat/OP-1-demo', ref: 'main' });
+    assert.equal(branch.name, 'feat/OP-1-demo');
+    assert.equal(calls[0]?.method, 'POST');
+    assert.ok(calls[0]?.url.includes('/projects/99/repository/branches'));
+    assert.ok(calls[0]?.url.includes('branch=feat%2FOP-1-demo'));
+    assert.ok(calls[0]?.url.includes('ref=main'));
+  });
 });

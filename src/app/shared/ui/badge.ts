@@ -129,6 +129,24 @@ export const levelToneMap: Record<string, BadgeTone> = {
 };
 
 /** ขนาดใบงาน (T-shirt Size) */
+export const priorityToneMap: Record<string, BadgeTone> = {
+  Immediate: 'danger',
+  High: 'warning',
+  Normal: 'secondary',
+  Low: 'info',
+};
+
+export function toneForPriority(label: string | null | undefined): BadgeTone {
+  const key = (label ?? '').trim();
+  if (!key || key === '—') return 'secondary';
+  if (priorityToneMap[key]) return priorityToneMap[key];
+  const lower = key.toLowerCase();
+  if (lower.includes('immediate') || lower.includes('urgent') || lower.includes('ด่วนมาก')) return 'danger';
+  if (lower.includes('high') || lower.includes('ด่วน')) return 'warning';
+  if (lower.includes('low') || lower.includes('ต่ำ')) return 'info';
+  return 'secondary';
+}
+
 export const sizeToneMap: Record<string, BadgeTone> = {
   XS: 'teal',
   S: 'info',
