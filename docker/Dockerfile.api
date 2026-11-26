@@ -19,6 +19,9 @@ RUN npm ci --omit=dev
 
 COPY --from=build /repo/server/dist ./dist
 COPY server/migrations ./migrations
+RUN chown -R node:node /app
+
+USER node
 
 ENV HOST=0.0.0.0
 ENV PORT=3000

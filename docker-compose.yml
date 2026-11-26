@@ -1,7 +1,14 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:16-alpine
     container_name: manday-db
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-manday}
       POSTGRES_USER: ${POSTGRES_USER:-manday}
@@ -24,19 +31,25 @@ services:
       context: .
       dockerfile: docker/Dockerfile.api
     container_name: manday-api
+    logging: *default-logging
     depends_on:
       db:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-manday}:${POSTGRES_PASSWORD:-manday}@db:5432/${POSTGRES_DB:-manday}
+      DB_POOL_MAX: ${DB_POOL_MAX:-20}
+      DATABASE_SSL: ${DATABASE_SSL:-false}
       HOST: 0.0.0.0
       PORT: 3000
       APP_URL: ${APP_URL:-http://localhost:8080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      ALLOWED_INTEGRATION_HOSTS: ${ALLOWED_INTEGRATION_HOSTS:-}
       # Dev stack ค่าเริ่มเปิด Dev Login — production ต้องตั้ง AUTH_DEV_LOGIN=false และ NODE_ENV=production
       NODE_ENV: ${NODE_ENV:-development}
       AUTH_DEV_LOGIN: ${AUTH_DEV_LOGIN:-true}
       DISABLE_AUTO_SEED: ${DISABLE_AUTO_SEED:-false}
       TOKEN_ENC_KEY: ${TOKEN_ENC_KEY:-dev-only-insecure-key-change-me-please}
+      TOKEN_ENC_KEY_PREV: ${TOKEN_ENC_KEY_PREV:-}
       SESSION_DAYS: ${SESSION_DAYS:-7}
       OPENPROJECT_URL: ${OPENPROJECT_URL:-}
       OPENPROJECT_API_TOKEN: ${OPENPROJECT_API_TOKEN:-}
@@ -46,11 +59,13 @@ services:
       GITLAB_URL: ${GITLAB_URL:-}
       GITLAB_OAUTH_CLIENT_ID: ${GITLAB_OAUTH_CLIENT_ID:-}
       GITLAB_OAUTH_CLIENT_SECRET: ${GITLAB_OAUTH_CLIENT_SECRET:-}
+      GITLAB_WEBHOOK_SECRET: ${GITLAB_WEBHOOK_SECRET:-}
       BOOTSTRAP_ADMIN_GITLAB_USERNAMES: ${BOOTSTRAP_ADMIN_GITLAB_USERNAMES:-}
       GITLAB_API_TOKEN: ${GITLAB_API_TOKEN:-}
       GITLAB_PROJECT_IDS: ${GITLAB_PROJECT_IDS:-}
       TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL:-}
       TEAMS_DEFAULT_CHANNEL: ${TEAMS_DEFAULT_CHANNEL:-scorecard-alerts}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "${API_PORT:-3000}:3000"
     healthcheck:
@@ -70,6 +85,7 @@ services:
       args:
         SYNCFUSION_LICENSE: ${SYNCFUSION_LICENSE:-}
     container_name: manday-web
+    logging: *default-logging
     depends_on:
       api:
         condition: service_started
@@ -87,6 +103,7 @@ services:
   adminer:
     image: adminer:latest
     container_name: manday-adminer
+    logging: *default-logging
     depends_on:
       - db
     ports:

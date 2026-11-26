@@ -2,7 +2,8 @@ import { Controller, Get, Inject, Req, ServiceUnavailableException } from '@nest
 import { normalizeOpenProjectAvatarUrl } from '../../../shared/domain/op-team-staging';
 import { computeEffectiveAllowedTeams } from '../../../shared/domain/team-visibility';
 import { filterPeopleByWorkspace } from '../../../shared/domain/workspace-scope';
-import { AuthedRequest, Public } from '../auth/auth.guard';
+import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
+import { getRuntimeMetricsSnapshot } from '../common/observability';
 import { APP_CONFIG, AppConfig } from '../config';
 import { listAllocations, listDisputes, listLeaves, listStageLogs } from '../data/multi-team.repo';
 import { listDepartments, listPeople, listTeams } from '../data/people.repo';
@@ -37,6 +38,12 @@ export class BootstrapController {
     } catch {
       throw new ServiceUnavailableException('Database unavailable');
     }
+  }
+
+  @Roles('admin')
+  @Get('health/metrics')
+  healthMetrics() {
+    return getRuntimeMetricsSnapshot(this.db);
   }
 
   /**

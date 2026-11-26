@@ -152,28 +152,47 @@
 </head>
 <body>
   <section class="cover">
-    <div class="badge">Man-day Scorecard · v2026.11</div>
+    <div class="badge">Man-day Scorecard · v2.3.0 (Enterprise)</div>
     <h1>คู่มือการใช้งานหน้าจอ<br/>มุมชนะชัย (Admin)</h1>
-    <p class="meta">ฉบับละเอียด — จุดประสงค์ · สิ่งที่เห็นบนจอ · ปุ่มสำคัญ · ผลเมื่อกด · สิทธิ์ admin</p>
-    <p class="meta">แคปจอ Light Mode · Dev Login ชนะชัย · รวมงานทีม · คุณภาพ · Admin · Integrations · Drawer 360°</p>
+    <p class="meta">ฉบับละเอียด v2.3.0 — จุดประสงค์ · สิ่งที่เห็นบนจอ · ปุ่มสำคัญ · ผลเมื่อกด · สิทธิ์ admin</p>
+    <p class="meta">แคปจอ Light Mode · รองรับ Zero-Flash Dark/Light · WCAG 2.1 AA · Observability & Docker Hardening</p>
     <p class="meta">แหล่ง: docs/คู่มือการใช้งานหน้าจอ.md</p>
   </section>
-  <h1>คู่มือการใช้งานหน้าจอ — Man-day Scorecard (v2026.11 · มุมชนะชัย / Admin)</h1>
-<p>เอกสารนี้เป็น<strong>คู่มือหน้าจอฉบับปัจจุบัน</strong> แคปจอโหมดสว่าง (Light Mode · <code>1600×1050</code>) ด้วยบัญชี Dev Login <strong>ชนะชัย</strong> (<code>chanachai</code> · สิทธิ์ <code>admin</code>) ไล่ทีละหน้าพร้อมคำอธิบายการทำงาน</p>
+  <h1>คู่มือการใช้งานหน้าจอ — Man-day Scorecard (v2.3.0 · มุมชนะชัย / Admin)</h1>
+<p>เอกสารนี้เป็น<strong>คู่มือหน้าจอฉบับปัจจุบัน (Release v2.3.0 · Enterprise Readiness)</strong> แคปจอโหมดสว่าง (Light Mode · <code>1600×1050</code>) ด้วยบัญชี Dev Login <strong>ชนะชัย</strong> (<code>chanachai</code> · สิทธิ์ <code>admin</code>) ไล่ทีละหน้าพร้อมคำอธิบายการทำงาน</p>
 <p><strong>อ้างอิง:</strong> <a href="./คู่มือ.md">คู่มือ.md</a> · <a href="./ระบบ.md">ระบบ.md</a> · Checklist: <a href="./checklist-ทดสอบมือ.md">checklist-ทดสอบมือ.md</a>  </p>
-<p><strong>แคปจอ:</strong> <code>docs/manual-screenshots/</code> · สคริปต์: <code>node scripts/capture_all_screens.mjs --person=chanachai</code>  </p>
+<p><strong>แคปจอ:</strong> <code>docs/manual-screenshots/</code> · สคริปต์ (Docker stack):  </p>
+<p><code>$env:CAPTURE_BASE=&quot;http://127.0.0.1:8080&quot;; $env:CAPTURE_API=&quot;http://127.0.0.1:3000&quot;; node scripts/capture_all_screens.mjs --person=chanachai</code>  </p>
 <p><strong>PDF:</strong> <code>node scripts/build-manual-pdf.mjs</code> → <a href="./คู่มือการใช้งานระบบ.pdf">คู่มือการใช้งานระบบ.pdf</a></p>
 <blockquote>หมายเหตุสิทธิ์: คู่มือนี้โฟกัสมุม <strong>Admin (ชนะชัย)</strong> — เมนูตั้งค่าระบบโผล่ครบ · หากสลับเป็น persona Member เมนูแอดมินจะหายและเห็นเฉพาะงานของตน</blockquote>
 <hr />
-<h2 class="section">ภาพรวมโครงสร้างและการนำทาง (ที่ชนะชัยเห็น)</h2>
+<h2 class="section">ภาพรวมโครงสร้างและการนำทาง (ที่ชนะชัยเห็น · v2.3.0)</h2>
 <ul>
-<li><strong>Sidebar เดียวตามสิทธิ์</strong>: งานของฉัน · ภาพรวมงาน · ทีมของฉัน · งานทีม · Git &amp; MR · ปฏิทิน · คะแนน &amp; วิเคราะห์ · คนในทีม · <strong>ตั้งค่าระบบ</strong> (สิทธิ์ &amp; ตั้งค่า · พนักงาน &amp; ทีม · โปรเจกต์ · เกณฑ์คะแนน · ตรวจก่อนล็อก · เชื่อมต่อระบบ · Teams)</li>
-<li><strong>หลังล็อกอิน:</strong> ทุกสิทธิ์ไป <strong><code>/me</code></strong> ก่อนเสมอ</li>
-<li><strong>คีย์ลัด:</strong> <code>Ctrl+B</code> ยุบ Sidebar · <code>Ctrl+K</code> Omnisearch (ใบงาน / คน / โปรเจกต์ / เมนู)</li>
+<li><strong>Sidebar เดียวตามสิทธิ์ (Sliding Active Pill)</strong>: งานของฉัน · ภาพรวมงาน · ทีมของฉัน · งานทีม · Git &amp; MR · ปฏิทิน · คะแนน &amp; วิเคราะห์ · คนในทีม · <strong>ตั้งค่าระบบ</strong> (สิทธิ์ &amp; ตั้งค่า · พนักงาน &amp; ทีม · โปรเจกต์ · เกณฑ์คะแนน · ตรวจก่อนล็อก · เชื่อมต่อระบบ · Teams)</li>
+<li><strong>หลังล็อกอิน:</strong> ทุกสิทธิ์ไป <strong><code>/me</code></strong> ก่อนเสมอ (ชิปทดสอบด่วนบน <code>/login</code> ดึงจากรายชื่อจริงใน DB)</li>
+<li><strong>สลับธีม Light / Dark แบบ Zero-Flash</strong>: กดปุ่มรูปพระอาทิตย์/พระจันทร์บน AppBar (<code>#appbar-theme-toggle</code>) ระบบปิด transition ชั่วขณะขณะสลับคลาส + อ่าน CSS ธีมที่มี <code>?v=2.3.0</code> ทำให้หน้าจอไม่กระพริบเทา</li>
+<li><strong>คีย์ลัด &amp; WCAG 2.1 AA / มือถือ</strong>: <code>Ctrl+B</code> ยุบ Sidebar · <code>Ctrl+K</code> Omnisearch (บนมือถือ $\le 640$px เปิดเป็น Overlay พร้อมปุ่มปิด <code>×</code>) · รองรับปุ่มข้ามไปเนื้อหาหลัก (<code>.skip-to-main</code>) และกรอบโฟกัสคีย์บอร์ดความเปรียบต่างสูง</li>
 <li><strong>Global Filter:</strong> โผล่บนหน้าศูนย์กลาง (<code>/work</code>, <code>/team</code>, <code>/cockpit</code>, <code>/people</code>, <code>/quality</code>, <code>/mygit</code>, <code>/schedule</code>) — ซ่อนบน <code>/me</code> และหน้า Admin</li>
-<li><strong>รายละเอียดใบงานกลาง:</strong> ทุกจุด「ดูใบงาน」เปิด drawer ขวาชุดเดียว (<code>TicketDetailService</code>) — ยกเว้น Board คลิกการ์ดยังเป็น dialog แก้ไขแผน</li>
+<li><strong>รายละเอียดใบงานกลาง:</strong> ทุกจุด「ดูใบงาน」เปิด drawer ขวาชุดเดียว (<code>TicketDetailService</code>) แบบ lazy <code>@defer</code> — ยกเว้น Board คลิกการ์ดยังเป็น dialog แก้ไขแผน</li>
+<li><strong>Observability &amp; ความปลอดภัย Enterprise</strong>: ทุกคำขอแนบ <code>X-Request-Id</code> ตั้งแต่ Nginx → NestJS (<code>manday-api</code> รัน non-root <code>USER node</code>) · ซิงก์ OpenProject/GitLab ผ่าน HTTP Circuit Breaker + Retry · Admin ตรวจ Runtime Metrics ได้ที่ <code>GET /api/health/metrics</code></li>
 </ul>
+<article class="screen"><h3>แผนที่ข้อมูล myProject → หน้า Scorecard (พนักงาน)</h3>
+
+<table class="md-table"><tbody>
+<tr><th>โมดูล / ข้อมูลบน myProject</th><th>ใช้บน Scorecard</th><th>หมายเหตุ</th></tr>
+<tr><td>Work packages (id · subject · type · status · assignee · project · <strong>priority</strong> · dates · estimate/spent)</td><td><code>/me</code> · <code>/work</code> · drawer</td><td>แหล่งความจริงของใบงาน</td></tr>
+<tr><td>Types / Statuses</td><td>Board workflow · typeMap/statusMap</td><td>ตั้ง mapping ที่ <code>/integrations</code></td></tr>
+<tr><td>Users + CF แผนก/ฝ่าย/ตำแหน่ง</td><td>คนในทีม · สิทธิ์ · staging</td><td><code>sync-users</code></td></tr>
+<tr><td>Projects catalog</td><td>Global Filter · <code>/admin/projects</code></td><td>Smart Merge</td></tr>
+<tr><td>Policy/SLA CF (Receipt/Reply/Plan/Due/Alert/Policy)</td><td>drawer · แจ้งเตือน</td><td>Auto-SLA ไม่ทับ myProject</td></tr>
+<tr><td><strong>Unit Test / Check pass CF</strong></td><td>drawer Overview (อ่านอย่างเดียว)</td><td>discover ที่ Integrations · ไม่ writeback</td></tr>
+<tr><td>Time entries</td><td>drawer แท็บเวลา · <code>/work/team-time</code></td><td>hours → MD</td></tr>
+<tr><td>Activity / Files / Relations / Watchers</td><td>drawer แท็บคู่ OP</td><td>ดึงสดตอนเปิดรายละเอียด</td></tr>
+<tr><td>GitLab MR / Branch</td><td><code>/mygit</code> · drawer แท็บโค้ด · <code>gitRepoIds</code> บนโปรเจกต์</td><td>ผูกด้วยชื่อ branch <code>OP-…</code> + เมลบริษัท / <code>gitlabUsername</code></td></tr>
+<tr><td>News · Meetings · OP Calendars/Team planners · Admin · Costs</td><td>—</td><td><strong>ไม่</strong>ดึงเป็นแกนของเว็บ Scorecard</td></tr>
+</tbody></table>
 <figure class="shot"><img src="manual-screenshots/00-omnisearch-floating.png" alt="Omnisearch" /><figcaption>Omnisearch</figcaption></figure>
+</article>
 <hr />
 <h2 class="section">สารบัญ</h2>
 <table class="md-table"><tbody>
@@ -300,7 +319,7 @@
 
 <dl class="detail-grid">
 <div class="detail-row"><dt>จุดประสงค์</dt><dd>ย้ายสถานะงานแบบลากวาง</dd></div>
-<div class="detail-row"><dt>สิ่งที่เห็น</dt><dd>คอลัมน์ workflow · ป้าย MD-DIRECT / MR / Reopen</dd></div>
+<div class="detail-row"><dt>สิ่งที่เห็น</dt><dd>คอลัมน์ workflow · ป้ายสายงานห่อบรรทัดอัตโนมัติไม่ล้นขอบ · ป้าย <code>MD-DIRECT</code> / <code>MR</code> / <code>Reopen</code> · ข้อความภาษาไทยเมื่อคอลัมน์ว่าง (<code>ยังไม่มีใบงานในสถานะนี้</code>)</dd></div>
 <div class="detail-row"><dt>ปุ่มสำคัญ</dt><dd><strong>คลิกการ์ด</strong> = dialog แก้แผน (admin/lead) · <strong>ดูรายละเอียด 360°</strong> = drawer กลาง</dd></div>
 <div class="detail-row"><dt>สิทธิ์</dt><dd>Admin/Lead ย้ายถึง Done ได้ · Member ห้ามปิด Done เอง</dd></div>
 </dl>
@@ -330,7 +349,8 @@
 <div class="detail-row"><dt>จุดประสงค์</dt><dd>ดูใบงานจากทุกจุดด้วย UI ชุดเดียว แนว myProject</dd></div>
 <div class="detail-row"><dt>สิ่งที่เห็นบนหัว</dt><dd>Type (เช่น Ops) · ชื่อเรื่อง · status workflow (+ opStatus) · ผู้สร้าง/วันอัปเดต · แถบโปรเจกต์ · ลิงก์ myProject</dd></div>
 <div class="detail-row"><dt>แท็บ</dt><dd>ภาพรวม · ความเคลื่อนไหว · ไฟล์ · ความสัมพันธ์ · คนเกี่ยวข้อง · เวลา · โค้ด &amp; MR</dd></div>
-<div class="detail-row"><dt>ภาพรวม</dt><dd>คำอธิบาย · สาย/ขนาด/Estimate/Actual/Due · คะแนนย่อ · กล่อง Policy &amp; SLA (+ ป้าย Auto)</dd></div>
+<div class="detail-row"><dt>ภาพรวม</dt><dd>คำอธิบาย · สาย/ขนาด/<strong>Priority</strong>/Estimate/Actual/Due · <strong>DoD จาก myProject (Unit Test / Check pass อ่านอย่างเดียว)</strong> · คะแนนย่อ · กล่อง Policy &amp; SLA (+ ป้าย Auto)</dd></div>
+<div class="detail-row"><dt>โค้ด &amp; MR</dt><dd>รายการ MR ที่จับคู่ · <strong>สร้าง branch บน mygitplus</strong> (เมื่อมี <code>opId</code>) — เลือก repo จาก <code>gitRepoIds</code> · ชื่อ <code>feat/OP-{id}-…</code> · ref ค่าเริ่ม = default branch ของ repo (เช่น <code>DEV</code>) · ต้องมี PAT เขียน repo</dd></div>
 <div class="detail-row"><dt>ผลเมื่อกดความสัมพันธ์</dt><dd>เปิดใบที่เกี่ยวข้องใน drawer ชุดเดิม</dd></div>
 <div class="detail-row"><dt>Writeback</dt><dd>ลงเวลา/คอมเมนต์ใช้ได้เมื่อ <code>OPENPROJECT_WRITEBACK=true</code></dd></div>
 </dl>
@@ -409,8 +429,11 @@
 <article class="screen"><h3>20. Git &amp; MR (<code>/mygit</code>)</h3>
 
 <dl class="detail-grid">
-<div class="detail-row"><dt>จุดประสงค์</dt><dd>ซิงก์ MR จาก GitLab · จับคู่ใบงาน · CI / รีวิว</dd></div>
-<div class="detail-row"><dt>หมายเหตุ</dt><dd>ฟีเจอร์ Git อยู่ที่ Scorecard + GitLab — ไม่พึ่ง OpenProject</dd></div>
+<div class="detail-row"><dt>จุดประสงค์</dt><dd>ซิงก์ Branch / MR จาก mygitplus · จับคู่ใบงาน · CI / รีวิว</dd></div>
+<div class="detail-row"><dt>โฟลว์ A</dt><dd>Branch ยังไม่มีใบ → การ์ด Unmatched · ปุ่ม <code>+ สร้างใบงาน</code> → สร้าง Work Package บน myProject แล้วผูก</dd></div>
+<div class="detail-row"><dt>โฟลว์ B</dt><dd>มีใบงานแล้ว → เปิด drawer แท็บ「โค้ด &amp; MR」→ <strong>สร้าง branch</strong> ตาม <code>feat/OP-{id}-…</code> บน mygitplus</dd></div>
+<div class="detail-row"><dt>จับคู่คน</dt><dd>เมลบริษัท (<code>people.email</code> = <code>git user.email</code>) → <code>gitlabUsername</code> (เช่น <code>chanachai.o</code>) → fallback ผู้รับใบ</dd></div>
+<div class="detail-row"><dt>หมายเหตุ</dt><dd>ตั้ง <code>GITLAB_URL</code> / PAT / <strong>เลข</strong> <code>GITLAB_PROJECT_IDS</code> ที่ Integrations · ไม่พึ่ง OpenProject writeback</dd></div>
 </dl>
 <figure class="shot"><img src="manual-screenshots/20-insights-mygit.png" alt="Git MR" /><figcaption>Git MR</figcaption></figure>
 </article>
@@ -428,6 +451,7 @@
 <div class="detail-row"><dt>จุดประสงค์</dt><dd>รอบประเมิน · โควตา · น้ำหนักคะแนน · Role Matrix · Audit Log</dd></div>
 <div class="detail-row"><dt>ปุ่มสำคัญ</dt><dd>เปิดรอบปี · ตั้งเป็นรอบระบบ · ปรับ access รายคน</dd></div>
 <div class="detail-row"><dt>ผลเมื่อกด</dt><dd>รอบระบบไปโผล่บน Global Filter ทั้งแอป</dd></div>
+<div class="detail-row"><dt>Observability (v2.3.0)</dt><dd>Admin เรียก <code>GET /api/health/metrics</code> ดู Uptime, Memory, PG Pool และ p95 HTTP Latency ได้ (ทุกคำขอมี <code>X-Request-Id</code>)</dd></div>
 </dl>
 <figure class="shot"><img src="manual-screenshots/22-admin.png" alt="Admin" /><figcaption>Admin</figcaption></figure>
 </article>
@@ -444,9 +468,10 @@
 <article class="screen"><h3>25. เชื่อมต่อระบบภายนอก (<code>/integrations</code>)</h3>
 
 <dl class="detail-grid">
-<div class="detail-row"><dt>จุดประสงค์</dt><dd>ตั้ง OpenProject · GitLab · Teams</dd></div>
+<div class="detail-row"><dt>จุดประสงค์</dt><dd>ตั้ง OpenProject · GitLab (mygitplus) · Teams</dd></div>
 <div class="detail-row"><dt>OpenProject</dt><dd>URL/Token · โปรเจกต์ซิงก์ · statusMap/typeMap · CF &amp; Auto-SLA · <strong>กลุ่ม roster (<code>people.active</code>)</strong> · ปุ่มซิงก์ใบงาน / ซิงค์พนักงาน</dd></div>
-<div class="detail-row"><dt>ปุ่มสำคัญ</dt><dd>ดึงโปรเจกต์/สถานะ · สแกน CF · Sync OpenProject · ซิงค์พนักงาน · บันทึก</dd></div>
+<div class="detail-row"><dt>GitLab</dt><dd>URL <code>https://mygitplus.myhr.co.th</code> · PAT · <strong>Project IDs เป็นเลข</strong> (เช่น <code>48</code> = research/mylive) · ดึงรายชื่อ Repo · ซิงก์ Branch / MR</dd></div>
+<div class="detail-row"><dt>ปุ่มสำคัญ</dt><dd>ดึงโปรเจกต์/สถานะ · สแกน CF · Sync OpenProject · ซิงค์พนักงาน · บันทึก GitLab</dd></div>
 <div class="detail-row"><dt>ผลเมื่อกดซิงค์พนักงาน</dt><dd>ถ้าตั้ง roster groups → เปิด active เฉพาะสมาชิกกลุ่ม (ไม่ลบแถวคนอื่น)</dd></div>
 </dl>
 <figure class="shot"><img src="manual-screenshots/25-integrations.png" alt="Integrations" /><figcaption>Integrations</figcaption></figure>
@@ -474,10 +499,11 @@
 <h2 class="section">ส่วนที่ 7: รายละเอียดโปรเจกต์ &amp; โหมดจำลอง</h2>
 <article class="screen"><h3>28. ศูนย์โปรเจกต์ (<code>/org/projects/:id</code>) — 4 แท็บ</h3>
 
+<p>ตัวอย่างแคปปัจจุบัน: โปรเจกต์ R&amp;D Internal <strong><code>171</code></strong> (ผูก mylive id <strong>48</strong>)</p>
 <ol>
 <li><strong>ภาพรวม &amp; สุขภาพ</strong> — KPI MD · Stage · Track · Risk watchlist  </li>
 <li><strong>ใบงาน</strong> — กริด · เปิด drawer  </li>
-<li><strong>Git &amp; กิ่งโค้ด</strong> — ผูก repo · CI · สร้างใบจาก unmatched branch  </li>
+<li><strong>Git &amp; กิ่งโค้ด</strong> — ผูก <code>gitRepoIds</code> (เลข id mygitplus) · CI · สร้างใบจาก unmatched branch · รายการ branch ที่ซิงก์แล้ว  </li>
 <li><strong>ทีม &amp; คน</strong></li>
 </ol>
 <figure class="shot"><img src="manual-screenshots/28-project-detail-health.png" alt="สุขภาพโปรเจกต์" /><figcaption>สุขภาพโปรเจกต์</figcaption></figure>
@@ -512,9 +538,9 @@ flowchart LR
 </pre></div>
 <ol>
 <li>ล็อกอินชนะชัย → ดู <code>/me</code>  </li>
-<li>ไป <code>/work</code> จัดงาน / เปิด drawer  </li>
-<li><code>/quality/tickets</code> ตรวจคะแนน  </li>
-<li><code>/integrations</code> ซิงก์ myProject + ตรวจ sync-audit + ตั้ง roster  </li>
+<li>ไป <code>/work</code> จัดงาน / เปิด drawer (แท็บโค้ดสร้าง <code>feat/OP-…</code> ได้เมื่อมี <code>opId</code>)  </li>
+<li><code>/mygit</code> ซิงก์ Branch/MR — ตรวจจับคู่ใบ + คนด้วยเมลบริษัท  </li>
+<li><code>/integrations</code> ซิงก์ myProject + GitLab (เลข project id) + sync-audit + roster  </li>
 <li><code>/admin</code> เปิดรอบประเมิน / ตรวจ snapshot ก่อนล็อกคะแนน  </li>
 </ol>
 </body>

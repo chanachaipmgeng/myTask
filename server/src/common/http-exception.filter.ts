@@ -6,6 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { getRequestId } from './observability';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -15,6 +16,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+    const requestId = getRequestId(request);
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
@@ -50,8 +52,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     if (status >= 500) {
+      const pathOnly = (request.originalUrl || request.url || '/').split('?')[0] || '/';
       console.error(
-        `[HTTP ${status}] ${request.method} ${request.originalUrl}:`,
+        `[HTTP ${status}] ${request.method} ${pathOnly}${requestId ? ` reqId=${requestId}` : ''}:`,
         exception instanceof Error ? exception.stack || exception.message : exception,
       );
     }
@@ -59,6 +62,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     response.status(status).json({
       statusCode: status,
       message,
+      ...(requestId ? { requestId } : {}),
       timestamp: new Date().toISOString(),
     });
   }

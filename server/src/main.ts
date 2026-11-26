@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/http-exception.filter';
+import { requestObservabilityMiddleware } from './common/observability';
 import {
   createRateLimiterMiddleware,
   originCsrfMiddleware,
@@ -23,6 +24,7 @@ async function bootstrap(): Promise<void> {
   expressApp.set('trust proxy', 1);
   expressApp.disable('x-powered-by');
 
+  app.use(requestObservabilityMiddleware(config.production));
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true, limit: '2mb' }));
   app.use(cookieParser());

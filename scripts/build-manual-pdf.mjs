@@ -391,10 +391,10 @@ function buildHtmlDocument(bodyHtml) {
 </head>
 <body>
   <section class="cover">
-    <div class="badge">Man-day Scorecard · v2026.11</div>
+    <div class="badge">Man-day Scorecard · v2.3.0 (Enterprise)</div>
     <h1>คู่มือการใช้งานหน้าจอ<br/>มุมชนะชัย (Admin)</h1>
-    <p class="meta">ฉบับละเอียด — จุดประสงค์ · สิ่งที่เห็นบนจอ · ปุ่มสำคัญ · ผลเมื่อกด · สิทธิ์ admin</p>
-    <p class="meta">แคปจอ Light Mode · Dev Login ชนะชัย · รวมงานทีม · คุณภาพ · Admin · Integrations · Drawer 360°</p>
+    <p class="meta">ฉบับละเอียด v2.3.0 — จุดประสงค์ · สิ่งที่เห็นบนจอ · ปุ่มสำคัญ · ผลเมื่อกด · สิทธิ์ admin</p>
+    <p class="meta">แคปจอ Light Mode · รองรับ Zero-Flash Dark/Light · WCAG 2.1 AA · Observability & Docker Hardening</p>
     <p class="meta">แหล่ง: docs/คู่มือการใช้งานหน้าจอ.md</p>
   </section>
   ${bodyHtml}

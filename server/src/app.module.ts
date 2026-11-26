@@ -10,6 +10,8 @@ import { OrgController } from './api/org.controller';
 import { RubricsController } from './api/rubrics.controller';
 import { ScorecardCyclesController } from './api/scorecard-cycles.controller';
 import { SettingsController } from './api/settings.controller';
+import { TeamsIntegrationController } from './api/teams-integration.controller';
+import { TimeEntriesController } from './api/time-entries.controller';
 import { V2EnterpriseController } from './api/v2-enterprise.controller';
 import { WorkItemsController } from './api/work-items.controller';
 import { AuthGuard } from './auth/auth.guard';
@@ -27,6 +29,8 @@ import { KpiSnapshotService } from './kpi/kpi-snapshot.service';
     ScorecardCyclesController,
     RubricsController,
     IntegrationsController,
+    TeamsIntegrationController,
+    TimeEntriesController,
     OrgController,
     KpiSnapshotsController,
     AnalyticsController,
