@@ -109,8 +109,13 @@ export class DisputesPage implements OnInit {
     { field: 'status', headerText: 'สถานะ', width: 110 },
   ];
   protected readonly disputeGridOptions: SfGridOptions = listGridOptions({
-    id: 'disputes-list-grid',
+    id: 'disputes-list-grid-v2',
     height: '380',
+    filtering: 'Excel',
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    exportFileName: 'score-disputes',
   });
 
   protected readonly role = effectiveRole;

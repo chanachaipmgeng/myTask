@@ -4,15 +4,17 @@
   [badge]="rows().length + ' ใบ'"
   badgeTone="info"
 >
-  <button
-    actions
-    ejs-button
-    type="button"
-    [cssClass]="groupByProject() ? 'e-primary e-small' : 'e-outline e-small'"
-    (click)="toggleGroupByProject()"
-  >
-    {{ groupByProject() ? 'จัดกลุ่มโปรเจกต์: เปิด' : 'จัดกลุ่มโปรเจกต์: ปิด' }}
-  </button>
+  @if (!useRemote()) {
+    <button
+      actions
+      ejs-button
+      type="button"
+      [cssClass]="groupByProject() ? 'e-primary e-small' : 'e-outline e-small'"
+      (click)="toggleGroupByProject()"
+    >
+      {{ groupByProject() ? 'จัดกลุ่มโปรเจกต์: เปิด' : 'จัดกลุ่มโปรเจกต์: ปิด' }}
+    </button>
+  }
 
   <ng-template #workTpl let-data>
     <button ejs-button cssClass="e-link e-small text-left font-semibold" type="button" (click)="openDetail(data.id, $event)">
@@ -27,6 +29,9 @@
   </ng-template>
   <ng-template #statusTpl let-data>
     <app-status-badge [value]="data.status" [toneMap]="workflowStatusToneMap" />
+  </ng-template>
+  <ng-template #priorityTpl let-data>
+    <app-status-badge [label]="data.priorityLabel" [tone]="priorityTone(data.priorityLabel)" />
   </ng-template>
   <ng-template #policyDateTpl let-data>
     <span class="inline-flex items-center gap-1 font-mono text-xs">
@@ -52,13 +57,14 @@
   </ng-template>
 
   <app-sf-grid
-    [data]="rows()"
+    [data]="gridData()"
     [columns]="columns"
     [cellTemplates]="{
       workLabel: workTpl,
       type: typeTpl,
       assignee: assigneeTpl,
       status: statusTpl,
+      priorityLabel: priorityTpl,
       policyDateLabel: policyDateTpl,
       policySlaLabel: policySlaTpl,
       weekOffsetLabel: weekTpl,
@@ -67,5 +73,6 @@
     }"
     [options]="gridOptions()"
     (rowSelected)="onRowSelected($event)"
+    (dataStateChange)="onGridDataStateChange($event)"
   />
 </app-section-card>

@@ -257,6 +257,7 @@
                 [xLabels]="indexHeatmap().months"
                 [yLabels]="indexHeatmap().people"
                 [options]="heatOptions()"
+                (cellClick)="onHeatmapCellClick($event)"
               />
             </div>
           }

@@ -281,6 +281,8 @@ export class TeamDashboard {
     height: '260px',
     exportable: true,
     fullscreenable: true,
+    zoomable: true,
+    crosshair: true,
     exportFileName: 'team-monthly-trend',
     enableAnimation: true,
     legend: { visible: true, position: 'Top', alignment: 'Center', textStyle: this.axisFont },
@@ -419,6 +421,14 @@ export class TeamDashboard {
 
   protected drillToPeople(): void {
     void this.workspace.navigateWithFilter(['/workspace/people']);
+  }
+
+  /** คลิก Heatmap → เปิด Person Workspace ตามชื่อเล่นบนแกน Y */
+  protected onHeatmapCellClick(args: { yLabel?: string; yValue?: string | number | Date }): void {
+    const nickname = String(args.yLabel ?? args.yValue ?? '').trim();
+    if (!nickname) return;
+    const person = this.scopedPeople().find((p) => p.nickname === nickname);
+    if (person) this.openMember(person.id);
   }
 
   protected onSamplePointClick(args: { point?: { x?: unknown } }): void {

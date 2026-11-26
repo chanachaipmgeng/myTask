@@ -578,6 +578,8 @@ export class CockpitPage implements OnInit, OnDestroy {
     tooltip: { enable: true },
     enableAnimation: true,
     exportable: true,
+    zoomable: true,
+    crosshair: true,
     exportFileName: 'cockpit-ols-trend',
   };
   protected readonly trendMaxOptions: SfChartOptions = { ...this.trendChartOptions, height: '380px', legend: { visible: true, position: 'Top' } };
@@ -704,5 +706,14 @@ export class CockpitPage implements OnInit, OnDestroy {
 
   protected drillToPeople(): void {
     void this.workspace.navigateWithFilter(['/people']);
+  }
+
+  /** คลิก Stage Aging → ตั้งสายงานแล้วไปรายการงาน */
+  protected onStagePointClick(args: { point?: { x?: unknown } }): void {
+    const track = String(args.point?.x ?? '').trim();
+    if (track) {
+      this.workspace.setTrack(track);
+    }
+    void this.workspace.navigateWithFilter(['/work/list']);
   }
 }

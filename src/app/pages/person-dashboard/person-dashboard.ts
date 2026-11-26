@@ -140,6 +140,8 @@ export class PersonDashboard {
     height: '300px',
     exportable: true,
     fullscreenable: true,
+    zoomable: true,
+    crosshair: true,
     enableAnimation: true,
     legend: { visible: true, position: 'Top', alignment: 'Center', textStyle: this.axisFont },
     tooltip: { enable: true, shared: true, enableMarker: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b>' },

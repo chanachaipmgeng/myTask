@@ -59,8 +59,10 @@ export class QueuePage {
     { field: 'status', headerText: 'สถานะ', width: 110, cellType: 'badge' },
   ];
   protected readonly capacityGridOptions: SfGridOptions = listGridOptions({
-    id: 'queue-capacity-grid',
+    id: 'queue-capacity-grid-v2',
     height: '340',
+    filtering: 'Excel',
+    columnChooser: true,
     excelExport: true,
     csvExport: true,
     autoFreezeDesktop: 1,
@@ -75,11 +77,16 @@ export class QueuePage {
     { field: 'assignee', headerText: 'ผู้รับ', width: 150 },
   ];
   protected readonly queueGridOptions: SfGridOptions = listGridOptions({
-    id: 'queue-unassigned-grid-v2',
+    id: 'queue-unassigned-grid-v3',
     height: '280',
     paging: true,
     pageSize: 15,
     pageSizes: [15, 30, 50],
+    filtering: 'Excel',
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    exportFileName: 'work-queue',
   });
   protected readonly message = signal('');
   protected readonly error = signal('');

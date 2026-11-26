@@ -198,7 +198,7 @@ export class SchedulePage {
     cssClass: 'team-schedule',
     readonly: true,
     currentView: 'TimelineMonth',
-    views: ['TimelineMonth', 'TimelineWeek', 'Agenda'],
+    views: ['Day', 'Week', 'WorkWeek', 'TimelineWeek', 'TimelineMonth', 'Agenda'],
     firstDayOfWeek: 1,
     group: this.boardModel().people.length > 0 ? { resources: ['People'] } : {},
     rowAutoHeight: true,

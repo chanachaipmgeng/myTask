@@ -49,12 +49,13 @@ export class WorkTimeline {
   @ViewChild('workGantt') private workGantt?: SfGanttComponent;
 
   protected readonly ganttOptions = computed<SfGanttOptions>(() => ({
-    id: 'work-gantt',
+    id: 'work-gantt-v2',
     height: '580px',
     viewType: this.ganttViewType(),
     renderBaseline: this.viewMode() === 'project',
     allowSelection: true,
-    enableVirtualization: false,
+    enableVirtualization: this.tasks().length > WorkTimeline.VIRTUALIZE_THRESHOLD,
+    allowExcelExport: true,
     treeColumnIndex: 1,
     gridLines: 'Horizontal',
     toolbar: this.toolbar as any,
@@ -80,7 +81,15 @@ export class WorkTimeline {
     { id: 'resource', label: 'มุมมองตามคน' },
   ];
 
-  protected readonly toolbar = ['ExpandAll', 'CollapseAll', 'ZoomIn', 'ZoomOut', 'ZoomToFit', 'Search'];
+  protected readonly toolbar = [
+    'ExpandAll',
+    'CollapseAll',
+    'ZoomIn',
+    'ZoomOut',
+    'ZoomToFit',
+    'ExcelExport',
+    'Search',
+  ];
   protected readonly editSettings = computed(() => ({
     allowEditing: this.canEdit(),
     allowTaskbarEditing: this.canEdit(),
@@ -142,17 +151,21 @@ export class WorkTimeline {
     ),
   );
 
-  private static readonly MAX_GANTT_TASKS = 150;
+  /** เปิด virtualization เมื่อเกินเกณฑ์ — ไม่ตัดทิ้งเงียบอีกต่อไป */
+  private static readonly VIRTUALIZE_THRESHOLD = 150;
 
   /**
    * Resource View: แบน ParentID · clone ResourceInfo เฉพาะ id ที่อยู่ใน resources
    * (กัน constructResourceViewDataSource พังเมื่อ object ไม่มี resourceId)
-   * จำกัด 150 รายการแรก เพื่อความลื่นไหลระดับ 60fps ของ Gantt DOM
    */
-  protected readonly isTruncated = computed(() => this.tasks().length > WorkTimeline.MAX_GANTT_TASKS);
+  protected readonly isVirtualized = computed(
+    () => this.tasks().length > WorkTimeline.VIRTUALIZE_THRESHOLD,
+  );
+  /** คง alias เดิมให้เทมเพลตที่อ้าง isTruncated แสดงคำเตือน virtualize */
+  protected readonly isTruncated = this.isVirtualized;
 
   protected readonly ganttTasks = computed(() => {
-    const list = this.tasks().slice(0, WorkTimeline.MAX_GANTT_TASKS);
+    const list = this.tasks();
     const known = new Map(this.resources().map((r) => [r.resourceId, r.resourceName]));
     const resourceMode = this.viewMode() === 'resource';
     return list.map((task) => {

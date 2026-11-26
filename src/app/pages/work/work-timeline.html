@@ -35,10 +35,10 @@
   @if (errorMessage()) {
     <app-sf-message [content]="errorMessage()" severity="Error" />
   }
-  @if (isTruncated()) {
+  @if (isVirtualized()) {
     <div class="mb-2">
       <app-sf-message
-        content="แสดง 150 ใบงานแรกตามลำดับวันที่ เพื่อความรวดเร็วในการเรนเดอร์ไทม์ไลน์ (สามารถกรองเฉพาะคนหรือโปรเจกต์เพิ่มเติมได้)"
+        content="เปิดโหมด virtualization แล้วเนื่องจากมีงานเกิน 150 รายการ — เลื่อนดูได้ครบทุกใบ และส่งออก Excel จากแถบเครื่องมือได้"
         severity="Info"
       />
     </div>

@@ -8,6 +8,7 @@ import {
   computed,
   inject,
   input,
+  output,
   signal,
 } from '@angular/core';
 import {
@@ -23,6 +24,7 @@ import {
   DataLabelService,
   DateTimeService,
   ExportService,
+  IPointEventArgs,
   LegendService,
   LegendSettingsModel,
   LineSeriesService,
@@ -242,6 +244,7 @@ export interface SfChartOptions {
         [zoomSettings]="zoomSettings()"
         [crosshair]="crosshairSettings()"
         [enableAnimation]="options().enableAnimation ?? true"
+        (pointClick)="pointClick.emit($event)"
       >
         <e-series-collection>
           @for (s of series(); track s.name || s.yName || $index) {
@@ -318,6 +321,8 @@ export class SfChartComponent implements AfterViewInit, OnDestroy {
   readonly primaryXAxis = input<AxisModel>({ valueType: 'Category' });
   readonly primaryYAxis = input<AxisModel>({});
   readonly options = input<SfChartOptions>({});
+  /** คลิกจุด/แท่งบนกราฟ — ใช้ drilldown ไปใบงานหรือตั้งตัวกรอง */
+  readonly pointClick = output<IPointEventArgs>();
 
   protected readonly fullscreen = signal(false);
   protected readonly chartArea = { border: { width: 0 } };

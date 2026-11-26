@@ -50,6 +50,73 @@ export class OrgController {
     return { departments, teams, people: scopedPeople };
   }
 
+  /** รายชื่อคนแบบแบ่งหน้า (directory ระยะยาว) */
+  @Get('people')
+  async listPeoplePaged(
+    @Req() req: AuthedRequest,
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('sort') sort?: string,
+    @Query('dir') dir?: string,
+    @Query('teamId') teamId?: string,
+    @Query('track') track?: string,
+    @Query('active') active?: string,
+  ) {
+    const listQuery = parseListQuery(
+      { q, page, pageSize, sort, dir, teamId, track, active },
+      { defaultSort: 'nickname', defaultDir: 'asc', defaultPageSize: 25 },
+    );
+    const includeInactive = listQuery.active === 'inactive' || listQuery.active === 'all';
+    const [people, visibility] = await Promise.all([
+      listPeople(this.db, !includeInactive),
+      getVisibilityConfig(this.db),
+    ]);
+    const allowedTeams = req.authUser?.person
+      ? computeEffectiveAllowedTeams(req.authUser.person, visibility)
+      : null;
+    let scoped =
+      allowedTeams === null
+        ? [...people]
+        : filterPeopleByWorkspace(people, { allowedTeams });
+
+    if (listQuery.teamId) {
+      scoped = scoped.filter((p) => p.teamId === listQuery.teamId);
+    }
+    if (listQuery.track && listQuery.track !== 'All') {
+      scoped = scoped.filter((p) => String(p.track) === listQuery.track);
+    }
+    if (listQuery.active === 'inactive') {
+      scoped = scoped.filter((p) => p.active === false);
+    } else if (listQuery.active === 'active') {
+      scoped = scoped.filter((p) => p.active !== false);
+    }
+    if (listQuery.q) {
+      const needle = listQuery.q.toLowerCase();
+      scoped = scoped.filter(
+        (p) =>
+          p.id.toLowerCase().includes(needle) ||
+          p.nickname.toLowerCase().includes(needle) ||
+          (p.role ?? '').toLowerCase().includes(needle) ||
+          (p.jobTitle ?? '').toLowerCase().includes(needle),
+      );
+    }
+
+    const sortField = listQuery.sort || 'nickname';
+    scoped = scoped
+      .slice()
+      .sort((a, b) => compareByField(a, b, sortField, listQuery.dir));
+
+    const forcedPaging = { ...listQuery, pagingRequested: true };
+    const pageResult = paginateItems(scoped, forcedPaging);
+    return {
+      ...pageResult,
+      people: pageResult.items,
+      result: pageResult.items,
+      count: pageResult.total,
+    };
+  }
+
   @Roles('admin')
   @Put('people/:id')
   async updatePerson(

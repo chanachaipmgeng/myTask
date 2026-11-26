@@ -623,6 +623,11 @@ export class ScorecardService {
     });
   }
 
+  /** สร้างแถวคะแนนจากชุดใบงาน (ใช้กับ remote page) */
+  mapTicketsToRows(tickets: readonly Ticket[]): TicketRow[] {
+    return this.toTicketRows(tickets, alertRules());
+  }
+
   private toTicketRows(
     tickets: readonly Ticket[],
     rules: { deadline: boolean; overrun: boolean; overrunLimit: number },

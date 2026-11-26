@@ -342,8 +342,14 @@ export class PersonWorkspacePage {
     { field: 'workflowStatus', headerText: 'สถานะ', width: 130 },
   ];
   protected readonly openWorkGridOptions: SfGridOptions = listGridOptions({
+    id: 'person-open-work-grid-v2',
     height: '280px',
     pageSize: 12,
+    filtering: 'Excel',
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    exportFileName: 'person-open-work',
   });
 
   protected readonly openWorkRows = computed(() =>

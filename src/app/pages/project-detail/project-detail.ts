@@ -133,12 +133,17 @@ export class ProjectDetailPage {
 
   // Tickets DataGrid Options & Columns
   readonly ticketGridOptions: SfGridOptions = listGridOptions({
-    id: 'project-detail-tickets-grid-v1',
+    id: 'project-detail-tickets-grid-v2',
     paging: true,
     pageSize: 15,
     pageSizes: [10, 15, 25, 50],
     search: false,
     height: 420,
+    filtering: 'Excel',
+    columnChooser: true,
+    excelExport: true,
+    csvExport: true,
+    exportFileName: 'project-tickets',
   });
 
   readonly ticketGridColumns: SfGridColumn[] = [

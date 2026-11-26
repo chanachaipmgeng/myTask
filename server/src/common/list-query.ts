@@ -5,6 +5,24 @@ export type ListSortDir = 'asc' | 'desc';
 /** สถานะใช้งานแคตตาล็อก (โปรเจกต์ / เอนทิตี active flag) */
 export type ListActiveFilter = 'all' | 'active' | 'inactive';
 
+/** ชุดย่อยของ Syncfusion Excel / Menu filter → ส่งเป็น JSON ใน `filters` */
+export type ListFilterOperator =
+  | 'equal'
+  | 'notequal'
+  | 'contains'
+  | 'startswith'
+  | 'endswith'
+  | 'greaterthan'
+  | 'greaterthanorequal'
+  | 'lessthan'
+  | 'lessthanorequal';
+
+export interface ListFilterPredicate {
+  field: string;
+  operator: ListFilterOperator;
+  value: string | number | boolean | null;
+}
+
 export interface ListQuery {
   q: string;
   page: number;
@@ -21,6 +39,10 @@ export interface ListQuery {
   opType?: string;
   track?: string;
   active?: ListActiveFilter;
+  /** จาก Syncfusion DataState / Excel filter */
+  filters: ListFilterPredicate[];
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface ListPageResult<T> {
@@ -83,7 +105,96 @@ export function parseListQuery(
     opType: (query['opType'] ?? query['type'] ?? '').trim() || undefined,
     track: (query['track'] ?? '').trim() || undefined,
     active,
+    filters: parseFilterPredicates(query['filters']),
+    fromDate: (query['from'] ?? query['fromDate'] ?? '').trim() || undefined,
+    toDate: (query['to'] ?? query['toDate'] ?? '').trim() || undefined,
   };
+}
+
+const ALLOWED_FILTER_OPS = new Set<ListFilterOperator>([
+  'equal',
+  'notequal',
+  'contains',
+  'startswith',
+  'endswith',
+  'greaterthan',
+  'greaterthanorequal',
+  'lessthan',
+  'lessthanorequal',
+]);
+
+/** แปลง `filters` จาก query string (JSON array) เป็น predicate ชุดย่อย */
+export function parseFilterPredicates(raw: string | undefined): ListFilterPredicate[] {
+  if (!raw?.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    const out: ListFilterPredicate[] = [];
+    for (const item of parsed) {
+      if (!item || typeof item !== 'object') continue;
+      const field = String((item as { field?: unknown }).field ?? '').trim();
+      const operatorRaw = String((item as { operator?: unknown }).operator ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_]/g, '') as ListFilterOperator;
+      if (!field || !ALLOWED_FILTER_OPS.has(operatorRaw)) continue;
+      const value = (item as { value?: unknown }).value;
+      out.push({
+        field,
+        operator: operatorRaw,
+        value:
+          value === null || value === undefined
+            ? null
+            : typeof value === 'number' || typeof value === 'boolean'
+              ? value
+              : String(value),
+      });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+/** กรองแถวด้วย predicate ชุดย่อย (Excel filter ของ Syncfusion) */
+export function applyFilterPredicates<T>(
+  items: readonly T[],
+  filters: readonly ListFilterPredicate[],
+  resolve?: (row: T, key: string) => unknown,
+): T[] {
+  if (!filters.length) return [...items];
+  const getter = resolve ?? ((row: T, key: string) => (row as Record<string, unknown>)[key]);
+  return items.filter((row) =>
+    filters.every((pred) => matchPredicate(getter(row, pred.field), pred.operator, pred.value)),
+  );
+}
+
+function matchPredicate(
+  raw: unknown,
+  operator: ListFilterOperator,
+  expected: ListFilterPredicate['value'],
+): boolean {
+  if (operator === 'equal') {
+    if (expected === null) return raw == null || raw === '';
+    return String(raw ?? '').toLowerCase() === String(expected).toLowerCase();
+  }
+  if (operator === 'notequal') {
+    if (expected === null) return raw != null && raw !== '';
+    return String(raw ?? '').toLowerCase() !== String(expected).toLowerCase();
+  }
+  const left = String(raw ?? '').toLowerCase();
+  const right = String(expected ?? '').toLowerCase();
+  if (operator === 'contains') return left.includes(right);
+  if (operator === 'startswith') return left.startsWith(right);
+  if (operator === 'endswith') return left.endsWith(right);
+  const ln = Number(raw);
+  const rn = Number(expected);
+  if (!Number.isFinite(ln) || !Number.isFinite(rn)) return false;
+  if (operator === 'greaterthan') return ln > rn;
+  if (operator === 'greaterthanorequal') return ln >= rn;
+  if (operator === 'lessthan') return ln < rn;
+  if (operator === 'lessthanorequal') return ln <= rn;
+  return true;
 }
 
 /** แบ่งหน้าเมื่อ client ขอเพจ — ถ้าไม่ขอ คืนทั้งชุด (รองรับผู้เรียกเก่า) */

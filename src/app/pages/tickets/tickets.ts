@@ -1,10 +1,16 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import type { DataStateChangeEventArgs } from '@syncfusion/ej2-angular-grids';
 import { currentViewer, effectiveRole, openprojectTypeCatalog } from '../../core/admin-settings';
+import {
+  ApiClient,
+  ListQueryParams,
+  listQueryFromGridState,
+} from '../../core/api-client';
 import { scorePartNotes } from '../../core/kpi-meaning';
 import { MyProjectSyncAdapter } from '../../core/myproject-sync';
-import { ScorecardService } from '../../core/scorecard.service';
+import { ScorecardService, TicketRow } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { BugCause, PocResult, Size, Ticket, TicketType, Track, VarianceCode, WorkflowStatus, normalizeTrack } from '../../core/models';
 import { SIZE_POINTS, SIZE_STANDARD_MD, scoreTicket } from '../../core/scoring';
@@ -25,10 +31,13 @@ import {
   SfDatePickerComponent,
   SfDialogComponent,
   SfDropdownComponent,
+  FilterChipOption,
+  FilterChipsComponent,
   SfGridAggregate,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
+  SfGridRemoteData,
   listGridOptions,
   SfMessageComponent,
   SfNumberComponent,
@@ -50,6 +59,22 @@ import {
 import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 import { listWorkspaceTrackChipOptions, parseWorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
+/** ฟิลด์เรียงที่ API รองรับบน Ticket ดิบ (คะแนนคำนวณฝั่ง client หลังโหลดหน้า) */
+const TICKET_REMOTE_SORT_FIELDS = new Set([
+  'id',
+  'module',
+  'estimateMd',
+  'actualMd',
+  'reviewRounds',
+  'reopenCount',
+  'assigneeId',
+  'workflowStatus',
+  'closedOn',
+  'track',
+  'size',
+  'type',
+]);
+
 type TrackFilter = WorkspaceTrackFilter;
 type TypeFilter = string;
 
@@ -69,6 +94,7 @@ type TypeFilter = string;
     SfDatePickerComponent,
     SfDialogComponent,
     SfDropdownComponent,
+    FilterChipsComponent,
     SfGridComponent,
     SfMessageComponent,
     SfNumberComponent,
@@ -82,6 +108,7 @@ export class TicketsPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly scorecard = inject(ScorecardService);
+  private readonly api = inject(ApiClient, { optional: true });
   private readonly myProject = inject(MyProjectSyncAdapter);
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
@@ -156,21 +183,54 @@ export class TicketsPage {
     { field: 'score', type: 'Average', format: 'N1', prefix: 'เฉลี่ย ' },
   ];
 
-  protected readonly ticketGridOptions = computed<SfGridOptions>(() =>
-    listGridOptions({
-      id: this.isMine() ? 'my-tickets-score-grid-v6' : 'tickets-score-grid-v6',
+  protected readonly groupBy = signal<'none' | 'track' | 'assignee' | 'project'>('none');
+  protected readonly groupByChips: FilterChipOption[] = [
+    { id: 'none', label: 'ไม่จัดกลุ่ม' },
+    { id: 'track', label: 'ตามสาย' },
+    { id: 'assignee', label: 'ตามผู้รับ' },
+    { id: 'project', label: 'ตามโมดูล' },
+  ];
+
+  protected readonly ticketGridOptions = computed<SfGridOptions>(() => {
+    const groupBy = this.useRemote() ? 'none' : this.groupBy();
+    const groupField =
+      groupBy === 'track' ? 'trackLabel' : groupBy === 'assignee' ? 'assignee' : groupBy === 'project' ? 'module' : '';
+    return listGridOptions({
+      id: this.isMine()
+        ? this.useRemote()
+          ? 'my-tickets-score-grid-v8-remote'
+          : 'my-tickets-score-grid-v8'
+        : this.useRemote()
+          ? 'tickets-score-grid-v8-remote'
+          : 'tickets-score-grid-v8',
       enablePersistence: true,
       pageSize: 10,
       search: false,
-      sortSettings: { columns: [{ field: 'score', direction: 'Descending' }] },
-      filtering: 'Menu',
+      sortSettings: {
+        columns: [
+          {
+            field: this.useRemote() ? 'id' : 'score',
+            direction: this.useRemote() ? 'Ascending' : 'Descending',
+          },
+        ],
+      },
+      filtering: 'Excel',
       columnChooser: true,
       excelExport: true,
       csvExport: true,
       autoFreezeDesktop: 2,
       exportFileName: this.isMine() ? 'my-tickets-scorecard' : 'team-tickets-scorecard',
-    }),
-  );
+      remote: this.useRemote(),
+      grouping: Boolean(groupField),
+      groupColumns: groupField ? [groupField] : [],
+    });
+  });
+
+  protected setGroupBy(id: string): void {
+    if (id === 'track' || id === 'assignee' || id === 'project' || id === 'none') {
+      this.groupBy.set(id);
+    }
+  }
   protected readonly trackToneMap = trackToneMap;
   protected readonly blockerToneMap = blockerToneMap;
   protected readonly closedToneMap = closedToneMap;
@@ -262,6 +322,21 @@ export class TicketsPage {
   protected readonly message = signal('');
   protected readonly error = signal('');
 
+  /** Remote page state (เมื่อ API ออนไลน์) */
+  private readonly remotePage = signal(1);
+  private readonly remotePageSize = signal(10);
+  private readonly remoteSort = signal('id');
+  private readonly remoteDir = signal<'asc' | 'desc'>('asc');
+  private readonly remoteRows = signal<TicketRow[]>([]);
+  private readonly remoteTotal = signal(0);
+  private readonly remoteClosedCount = signal(0);
+  private readonly remoteOpenCount = signal(0);
+  private remoteLoadSeq = 0;
+
+  protected readonly useRemote = computed(
+    () => Boolean(this.api) && this.scorecard.usingApi() && !this.scorecard.mockMode(),
+  );
+
   private readonly syncWorkspaceTrack = effect(() => {
     const track = this.isMine() ? 'All' : this.workspace.track();
     if (this.trackFilter() !== track) {
@@ -271,6 +346,25 @@ export class TicketsPage {
     if (this.typeFilter() !== wsType) {
       this.typeFilter.set(wsType);
     }
+  });
+
+  private readonly reloadRemote = effect(() => {
+    if (!this.useRemote()) return;
+    // อ่านสัญญาณตัวกรองเพื่อให้ effect รีโหลดเมื่อเปลี่ยน
+    this.trackFilter();
+    this.typeFilter();
+    this.query();
+    this.workspace.teamId();
+    this.workspace.personId();
+    this.workspace.statusScope();
+    this.workspace.opProject();
+    this.isMine();
+    this.activePersonId();
+    this.remotePage();
+    this.remotePageSize();
+    this.remoteSort();
+    this.remoteDir();
+    void this.loadRemoteTickets();
   });
 
   protected readonly track = signal<Track>('Implement');
@@ -360,7 +454,7 @@ export class TicketsPage {
     return base;
   });
 
-  protected readonly rows = computed(() => {
+  protected readonly localRows = computed(() => {
     const track = this.trackFilter();
     const type = this.typeFilter();
     const query = this.query();
@@ -382,10 +476,27 @@ export class TicketsPage {
       );
   });
 
+  protected readonly remoteGridData = computed<SfGridRemoteData<TicketRow>>(() => ({
+    result: this.remoteRows(),
+    count: this.remoteTotal(),
+  }));
+
+  protected readonly gridData = computed(() =>
+    this.useRemote() ? this.remoteGridData() : this.localRows(),
+  );
+
+  protected readonly rows = computed(() =>
+    this.useRemote() ? this.remoteRows() : this.localRows(),
+  );
+
   protected readonly myTicketStats = computed(() => {
     const list = this.rows();
     const closedRows = list.filter((r) => r.score !== null);
-    const openCount = list.length - closedRows.length;
+    const openCount = this.useRemote()
+      ? this.remoteOpenCount()
+      : list.length - closedRows.length;
+    const closedCount = this.useRemote() ? this.remoteClosedCount() : closedRows.length;
+    const total = this.useRemote() ? this.remoteTotal() : list.length;
     const avgScore =
       closedRows.length > 0
         ? Math.round(
@@ -395,13 +506,89 @@ export class TicketsPage {
     const totalActualMd =
       Math.round(list.reduce((sum, r) => sum + r.actualMd, 0) * 100) / 100;
     return {
-      total: list.length,
+      total,
       openCount,
-      closedCount: closedRows.length,
+      closedCount,
       avgScore,
       totalActualMd,
     };
   });
+
+  protected onGridDataStateChange(state: DataStateChangeEventArgs): void {
+    if (!this.useRemote()) return;
+    const mapped = listQueryFromGridState(state);
+    if (mapped.page) this.remotePage.set(mapped.page);
+    if (mapped.pageSize) this.remotePageSize.set(mapped.pageSize);
+    if (mapped.sort && TICKET_REMOTE_SORT_FIELDS.has(mapped.sort)) {
+      this.remoteSort.set(mapped.sort);
+    } else if (mapped.sort) {
+      this.remoteSort.set('id');
+    }
+    if (mapped.dir) this.remoteDir.set(mapped.dir);
+  }
+
+  protected async exportFromServer(): Promise<void> {
+    if (!this.api || !this.useRemote()) return;
+    try {
+      const blob = await this.api.exportWorkItems({
+        ...this.buildRemoteQuery(),
+        page: undefined,
+        pageSize: undefined,
+        format: 'csv',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `work-items-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.notice.success('ส่งออกใบงานจากเซิร์ฟเวอร์แล้ว');
+    } catch (err) {
+      this.notice.error(err instanceof Error ? err.message : 'ส่งออกไม่สำเร็จ');
+    }
+  }
+
+  private buildRemoteQuery(): ListQueryParams {
+    const track = this.trackFilter();
+    const type = this.typeFilter();
+    const selfId = this.activePersonId();
+    return {
+      page: Math.max(1, this.remotePage()),
+      pageSize: Math.max(1, this.remotePageSize()),
+      sort: this.remoteSort(),
+      dir: this.remoteDir(),
+      q: this.query().trim() || undefined,
+      track: track !== 'All' ? track : undefined,
+      opType: type !== 'All' ? type : undefined,
+      teamId: this.workspace.teamId() || undefined,
+      assigneeId: this.isMine()
+        ? selfId
+        : this.workspace.personId() || undefined,
+      statusScope: this.workspace.statusScope(),
+      project: this.workspace.opProject() || undefined,
+    };
+  }
+
+  private async loadRemoteTickets(): Promise<void> {
+    if (!this.api || !this.useRemote()) return;
+    const seq = ++this.remoteLoadSeq;
+    try {
+      const res = await this.api.listWorkItems(this.buildRemoteQuery());
+      if (seq !== this.remoteLoadSeq) return;
+      const tickets = res.tickets ?? res.items ?? res.result ?? [];
+      const rows = this.scorecard.mapTicketsToRows(tickets);
+      this.remoteRows.set(rows);
+      this.remoteTotal.set(res.count ?? res.total ?? rows.length);
+      const meta = res as { unclosedCount?: number; closedCount?: number };
+      this.remoteOpenCount.set(meta.unclosedCount ?? rows.filter((r) => r.score === null).length);
+      this.remoteClosedCount.set(meta.closedCount ?? rows.filter((r) => r.score !== null).length);
+      if (res.page && res.page > 0) this.remotePage.set(res.page);
+      if (res.pageSize && res.pageSize > 0) this.remotePageSize.set(res.pageSize);
+    } catch (err) {
+      if (seq !== this.remoteLoadSeq) return;
+      this.error.set(err instanceof Error ? err.message : 'โหลดใบงานจาก API ไม่สำเร็จ');
+    }
+  }
 
   protected openTicketDetail(ticketId: string): void {
     this.ticketDetail.open(ticketId);
@@ -490,18 +677,21 @@ export class TicketsPage {
 
   protected onSearch(value: string): void {
     this.query.set((value ?? '').trim().toLowerCase());
+    this.remotePage.set(1);
   }
 
   protected setTrackFilter(raw: string): void {
     const value = parseWorkspaceTrackFilter(raw);
     this.trackFilter.set(value);
     this.workspace.setTrack(value);
+    this.remotePage.set(1);
   }
 
   protected setTypeFilter(value: string): void {
     const v = (value ?? '').trim() || 'All';
     this.typeFilter.set(v);
     this.workspace.setType(v === 'All' ? '' : v);
+    this.remotePage.set(1);
   }
 
   protected typeTone(label: string): BadgeTone {

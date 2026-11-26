@@ -123,21 +123,49 @@ export class WorkHandoffPage {
     { field: 'status', headerText: 'สถานะค้าง', width: 140, textAlign: 'Left' },
     { field: 'title', headerText: 'ชื่องาน / รายละเอียด', width: 190, textAlign: 'Left' },
     { field: 'owner', headerText: 'เจ้าของงานหลัก', width: 140, textAlign: 'Left' },
+    { field: 'ownerTrack', headerText: 'สายเจ้าของ', width: 100, visible: false },
     { field: 'reviewerOrQa', headerText: 'ผู้ตรวจ/ผู้รับช่วง', width: 140, textAlign: 'Left' },
     { field: 'hoursSpent', headerText: 'เวลาค้างสะสม', width: 110, textAlign: 'Right' },
     { field: 'slaHours', headerText: 'เกณฑ์ SLA', width: 95, textAlign: 'Right' },
     { field: 'action', headerText: 'การจัดการ', width: 110, textAlign: 'Center' },
   ];
 
-  protected readonly gridOptions: SfGridOptions = listGridOptions({
-    id: 'work-handoff-grid',
-    filtering: 'Excel',
-    columnChooser: true,
-    excelExport: true,
-    csvExport: true,
-    autoFreezeDesktop: 2,
-    exportFileName: 'handoff-sla',
+  protected readonly groupBy = signal<'none' | 'track' | 'assignee' | 'status'>('none');
+  protected readonly groupByChips: FilterChipOption[] = [
+    { id: 'none', label: 'ไม่จัดกลุ่ม' },
+    { id: 'track', label: 'ตามสาย' },
+    { id: 'assignee', label: 'ตามเจ้าของงาน' },
+    { id: 'status', label: 'ตามสถานะ' },
+  ];
+
+  protected readonly gridOptions = computed<SfGridOptions>(() => {
+    const groupBy = this.groupBy();
+    const groupField =
+      groupBy === 'track'
+        ? 'ownerTrack'
+        : groupBy === 'assignee'
+          ? 'owner'
+          : groupBy === 'status'
+            ? 'status'
+            : '';
+    return listGridOptions({
+      id: 'work-handoff-grid-v2',
+      filtering: 'Excel',
+      columnChooser: true,
+      excelExport: true,
+      csvExport: true,
+      autoFreezeDesktop: 2,
+      exportFileName: 'handoff-sla',
+      grouping: Boolean(groupField),
+      groupColumns: groupField ? [groupField] : [],
+    });
   });
+
+  protected setGroupBy(id: string): void {
+    if (id === 'track' || id === 'assignee' || id === 'status' || id === 'none') {
+      this.groupBy.set(id);
+    }
+  }
 
   protected readonly statusToneMap: Record<string, BadgeTone> = {
     'Code Review': 'violet',
@@ -156,6 +184,22 @@ export class WorkHandoffPage {
 
   protected setSlaChip(value: string): void {
     this.onlyOverSla.set(value === 'over');
+  }
+
+  /** คลิกแท่ง Stage Aging → ตั้งสายงานแล้วไปรายการงาน (สถานะจาก series) */
+  protected onStageAgingClick(args: {
+    point?: { x?: unknown };
+    series?: { name?: string };
+  }): void {
+    const track = String(args.point?.x ?? '').trim();
+    if (track) {
+      this.workspace.setTrack(track);
+    }
+    const seriesName = String(args.series?.name ?? '');
+    if (seriesName === 'Blocked') {
+      this.onlyOverSla.set(true);
+    }
+    void this.workspace.navigateWithFilter(['/work/list']);
   }
 
   protected openTicket(id: string): void {

@@ -291,6 +291,7 @@
             [primaryXAxis]="horizontalCategoryAxis"
             [primaryYAxis]="hoursAxis"
             [options]="stageChartOptions"
+            (pointClick)="onStagePointClick($event)"
           />
         </div>
       </div>

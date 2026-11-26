@@ -13,6 +13,7 @@ import {
 import {
   ActionEventArgs,
   AgendaService,
+  DayService,
   EventClickArgs,
   EventRenderedArgs,
   EventSettingsModel,
@@ -24,6 +25,8 @@ import {
   TimelineMonthService,
   TimelineViewsService,
   View,
+  WeekService,
+  WorkWeekService,
 } from '@syncfusion/ej2-angular-schedule';
 import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 
@@ -55,7 +58,14 @@ export interface SfScheduleOptions {
   selector: 'app-sf-schedule',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet, ScheduleModule, MotionWrapperComponent],
-  providers: [TimelineViewsService, TimelineMonthService, AgendaService],
+  providers: [
+    DayService,
+    WeekService,
+    WorkWeekService,
+    TimelineViewsService,
+    TimelineMonthService,
+    AgendaService,
+  ],
   template: `
     <app-motion-wrapper [config]="options().motion" variant="fade-up">
     <div #hostBox class="sf-schedule-wrap">
@@ -166,7 +176,15 @@ export class SfScheduleComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  protected readonly defaultViews: View[] = ['TimelineDay', 'TimelineWeek', 'TimelineMonth', 'Agenda'];
+  protected readonly defaultViews: View[] = [
+    'Day',
+    'Week',
+    'WorkWeek',
+    'TimelineDay',
+    'TimelineWeek',
+    'TimelineMonth',
+    'Agenda',
+  ];
 
   private resizeObserver?: ResizeObserver;
   private resizeTimer?: ReturnType<typeof setTimeout>;

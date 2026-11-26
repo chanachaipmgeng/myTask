@@ -143,11 +143,13 @@ export class WorkBoard {
     return {};
   });
 
+  /** WIP limit สอดคล้อง MD-DIRECT — In Progress / Code Review จำกัดการ์ดต่อคอลัมน์ */
   protected readonly columns = WORKFLOW_STATUSES.map((status) => ({
     headerText: status,
     keyField: status,
     showItemCount: true,
     showAddButton: false,
+    ...(status === 'In Progress' || status === 'Code Review' ? { maxCount: 3 } : {}),
   }));
   protected readonly cardSettings = { headerField: 'id', contentField: 'summary' };
   protected readonly disciplineOptions = [

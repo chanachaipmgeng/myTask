@@ -140,6 +140,7 @@
             [primaryXAxis]="paretoXAxis"
             [primaryYAxis]="paretoCountAxis"
             [options]="paretoChartOptions"
+            (pointClick)="onParetoPointClick($event)"
           />
 
           <app-sf-message severity="Info" [content]="paretoReport().insight" />

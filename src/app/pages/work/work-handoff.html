@@ -42,6 +42,7 @@
         [primaryXAxis]="primaryXAxis"
         [primaryYAxis]="primaryYAxis"
         [options]="stageAgingOptions"
+        (pointClick)="onStageAgingClick($event)"
       />
     </app-section-card>
 
@@ -84,6 +85,11 @@
     title="ตารางตรวจสอบใบงานค้างส่งต่อและ SLA รายใบ"
     subtitle="ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล"
   >
+    <app-filter-chips
+      [options]="groupByChips"
+      [value]="groupBy()"
+      (valueChange)="setGroupBy($event)"
+    />
     <ng-template #ticketIdTpl let-data>
       <button
         ejs-button
@@ -128,7 +134,7 @@
     <app-sf-grid
       [data]="filteredTickets()"
       [columns]="gridColumns"
-      [options]="gridOptions"
+      [options]="gridOptions()"
       [cellTemplates]="{ ticketId: ticketIdTpl, status: statusTpl, hoursSpent: hoursTpl, slaHours: slaTpl, action: actionTpl }"
     />
   </app-section-card>

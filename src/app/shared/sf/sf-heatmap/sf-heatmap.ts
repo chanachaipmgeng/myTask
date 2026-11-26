@@ -9,11 +9,13 @@ import {
   effect,
   inject,
   input,
+  output,
 } from '@angular/core';
 import {
   AdaptorService,
   HeatMapComponent,
   HeatMapModule,
+  ICellClickEventArgs,
   LegendService,
   TooltipService,
 } from '@syncfusion/ej2-angular-heatmap';
@@ -66,6 +68,7 @@ const INDEX_PALETTE: PaletteSettingsModel = {
         [tooltipSettings]="tooltipSettings"
         [showTooltip]="true"
         [allowSelection]="false"
+        (cellClick)="cellClick.emit($event)"
       ></ejs-heatmap>
     </div>
   `,
@@ -90,6 +93,8 @@ export class SfHeatmapComponent implements AfterViewInit, OnDestroy {
   readonly xLabels = input<readonly string[]>([]);
   readonly yLabels = input<readonly string[]>([]);
   readonly options = input<SfHeatmapOptions>({});
+  /** คลิกเซลล์ → drill ไป Person Workspace */
+  readonly cellClick = output<ICellClickEventArgs>();
 
   protected readonly palette = INDEX_PALETTE;
   protected readonly dataSettings: DataModel = {

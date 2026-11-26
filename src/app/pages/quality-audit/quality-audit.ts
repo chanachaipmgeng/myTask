@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { effectiveRole } from '../../core/admin-settings';
 import { computeQualityAuditSummary } from '../../core/multi-team';
@@ -61,6 +61,8 @@ export class QualityAuditPage {
   }
 
   protected readonly role = effectiveRole;
+  /** สาเหตุที่เลือกจาก Pareto — กรองตาราง reopen */
+  protected readonly selectedCause = signal('');
   protected readonly report = computed(() =>
     computeQualityAuditSummary(
       this.workspace.applyToTickets(this.scorecard.tickets()),
@@ -69,13 +71,19 @@ export class QualityAuditPage {
   );
   protected readonly kpis = computed(() => this.report().kpis);
   protected readonly dodChecklist = computed(() => this.report().dodChecklist);
-  protected readonly reopenEscapes = computed(() => this.report().reopenEscapes);
+  protected readonly allReopenEscapes = computed(() => this.report().reopenEscapes);
+  protected readonly reopenEscapes = computed(() => {
+    const list = this.allReopenEscapes();
+    const cause = this.selectedCause().trim();
+    if (!cause) return list;
+    return list.filter((item) => (item.bugCause?.trim() || 'ไม่ระบุสาเหตุ') === cause);
+  });
 
   // ==========================================
   // Pareto 80/20 Root-Cause Analysis
   // ==========================================
   protected readonly paretoReport = computed(() => {
-    const list = this.reopenEscapes();
+    const list = this.allReopenEscapes();
     const map = new Map<string, number>();
 
     if (list.length === 0) {
@@ -236,6 +244,21 @@ export class QualityAuditPage {
     legend: { visible: true, position: 'Top' },
     tooltip: { enable: true },
   };
+
+  /** คลิกแท่ง Pareto → กรองตาราง reopen ตามสาเหตุ แล้วเปิดใบแรกถ้ามี */
+  protected onParetoPointClick(args: { point?: { x?: unknown }; series?: { name?: string } }): void {
+    const seriesName = String(args.series?.name ?? '');
+    if (seriesName.includes('สะสม')) return;
+    const cause = String(args.point?.x ?? '').trim();
+    if (!cause) return;
+    this.selectedCause.set(cause);
+    const first = this.reopenEscapes().find((item) => item.ticketId);
+    if (first?.ticketId) {
+      this.ticketDetail.open(first.ticketId);
+    } else {
+      this.notice.info(`กรองสาเหตุ: ${cause} (ยังไม่มีใบในชุดข้อมูลปัจจุบัน)`);
+    }
+  }
 
   protected rejectToDev(ticketId: string, devName: string): void {
     const ticket = this.scorecard.tickets().find((item) => item.id === ticketId);

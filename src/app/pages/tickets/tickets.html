@@ -12,6 +12,11 @@
     ] : []"
   >
     <div actions class="flex flex-wrap items-center gap-2">
+      @if (useRemote()) {
+        <button ejs-button cssClass="e-outline e-btn-teal" iconCss="e-icons e-export" type="button" (click)="exportFromServer()">
+          ส่งออกทั้งหมด (CSV)
+        </button>
+      }
       @if (isMine()) {
         <a ejs-button cssClass="e-primary" iconCss="e-icons e-chart" routerLink="/quality/ols">
           วิเคราะห์รายคน
@@ -194,6 +199,14 @@
       [items]="isMine() ? [{ template: searchTemplate }, { template: typeTemplate }] : [{ template: searchTemplate }, { template: trackTemplate }, { template: typeTemplate }]"
       [options]="{ id: 'ticket-toolbar', cssClass: 'page-toolbar m-0', overflowMode: 'Scrollable' }"
     />
+    @if (!useRemote()) {
+      <app-filter-chips
+        class="mt-2"
+        [options]="groupByChips"
+        [value]="groupBy()"
+        (valueChange)="setGroupBy($event)"
+      />
+    }
 
     <ng-template #idTpl let-data>
       <button ejs-button cssClass="e-link e-small" type="button" (click)="openTicketDetail(data.id)">
@@ -256,7 +269,7 @@
     </ng-template>
 
     <app-sf-grid
-      [data]="rows()"
+      [data]="gridData()"
       [columns]="ticketColumns"
       [aggregates]="ticketAggregates"
       [options]="ticketGridOptions()"
@@ -278,6 +291,7 @@
         alertLabel: alertTpl
       }"
       (rowDataBound)="markReference($event)"
+      (dataStateChange)="onGridDataStateChange($event)"
     />
   </app-section-card>
 
