@@ -112,7 +112,17 @@ export class App implements AfterViewInit {
   @ViewChild('toast') private toast?: ToastComponent;
   @ViewChild('alertDialog') private alertDialog?: SfDialogComponent;
   @ViewChild('globalSearchInput') private globalSearchInput?: ElementRef<HTMLInputElement>;
-  @ViewChild('saasNav') private saasNav?: ElementRef<HTMLElement>;
+  private saasNav?: ElementRef<HTMLElement>;
+  @ViewChild('saasNav') set saasNavRef(ref: ElementRef<HTMLElement> | undefined) {
+    this.saasNav = ref;
+    this.navResizeObserver?.disconnect();
+    this.navResizeObserver = undefined;
+    if (ref && typeof ResizeObserver !== 'undefined') {
+      this.navResizeObserver = new ResizeObserver(() => this.syncActivePill());
+      this.navResizeObserver.observe(ref.nativeElement);
+      this.scheduleSyncActivePill();
+    }
+  }
 
   protected readonly activePill = signal({ top: 0, height: 36, visible: false });
   protected readonly scrollProgress = signal(0);
@@ -122,6 +132,7 @@ export class App implements AfterViewInit {
 
   protected readonly globalSearch = signal('');
   protected readonly searchOpen = signal(false);
+  protected readonly mobileSearchOpen = signal(false);
   protected readonly liveSearching = signal(false);
   protected readonly liveResults = signal<
     { id: string; title: string; status: string; from: 'local' | 'live' }[]
@@ -313,17 +324,30 @@ export class App implements AfterViewInit {
   }
 
   protected focusGlobalSearch(): void {
-    this.globalSearchInput?.nativeElement.focus();
     this.searchOpen.set(true);
+    if (typeof window !== 'undefined' && window.innerWidth <= 720) {
+      this.mobileSearchOpen.set(true);
+    }
+    queueMicrotask(() => this.globalSearchInput?.nativeElement.focus());
+  }
+  protected toggleMobileSearch(): void {
+    const next = !this.mobileSearchOpen();
+    this.mobileSearchOpen.set(next);
+    this.searchOpen.set(next);
+    if (next) {
+      queueMicrotask(() => this.globalSearchInput?.nativeElement.focus());
+    }
   }
   protected closeSearchPanel(): void {
     this.searchOpen.set(false);
+    this.mobileSearchOpen.set(false);
   }
   protected openTicketFromSearch(id: string): void {
     this.ticketDetail.open(id);
     this.globalSearch.set('');
     this.liveResults.set([]);
     this.searchOpen.set(false);
+    this.mobileSearchOpen.set(false);
   }
 
   protected openTicketFromAlert(id: string): void {
@@ -335,11 +359,13 @@ export class App implements AfterViewInit {
     void this.router.navigate(['/people', id]);
     this.globalSearch.set('');
     this.searchOpen.set(false);
+    this.mobileSearchOpen.set(false);
   }
   protected goMenuFromSearch(route: string): void {
     void this.router.navigateByUrl(route);
     this.globalSearch.set('');
     this.searchOpen.set(false);
+    this.mobileSearchOpen.set(false);
   }
   protected async searchLiveMyProject(): Promise<void> {
     const q = this.globalSearch().trim();
@@ -383,6 +409,7 @@ export class App implements AfterViewInit {
   protected goProjectFromSearch(id: string | number): void {
     this.router.navigate(['/org/projects', id]);
     this.searchOpen.set(false);
+    this.mobileSearchOpen.set(false);
     this.globalSearch.set('');
   }
 
@@ -670,8 +697,9 @@ export class App implements AfterViewInit {
       this.selectedNodes.set([matchNavId(this.url(), this.role())]);
     });
     effect(() => {
-      // Re-measure sliding sidebar active pill whenever active item, collapse, or sections change
+      // Re-measure sliding sidebar active pill whenever active item, theme, collapse, or sections change
       this.selectedNodes();
+      this.theme.theme();
       this.collapsed();
       this.narrow();
       this.sidebarSections();
@@ -681,6 +709,8 @@ export class App implements AfterViewInit {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         this.focusGlobalSearch();
+      } else if (event.key === 'Escape' && (this.searchOpen() || this.mobileSearchOpen())) {
+        this.closeSearchPanel();
       } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
         const tag = (event.target as HTMLElement | null)?.tagName?.toLowerCase();
         if (tag === 'input' || tag === 'textarea' || (event.target as HTMLElement | null)?.isContentEditable) {
@@ -825,11 +855,6 @@ export class App implements AfterViewInit {
     });
 
     if (typeof window !== 'undefined') {
-      const navEl = this.saasNav?.nativeElement;
-      if (navEl && typeof ResizeObserver !== 'undefined') {
-        this.navResizeObserver = new ResizeObserver(() => this.syncActivePill());
-        this.navResizeObserver.observe(navEl);
-      }
       this.zone.runOutsideAngular(() => {
         let ticking = false;
         const onScroll = () => {
@@ -877,6 +902,10 @@ export class App implements AfterViewInit {
     }
     const navRect = nav.getBoundingClientRect();
     const itemRect = active.getBoundingClientRect();
+    if (navRect.height < 12 || itemRect.height < 12) {
+      this.activePill.update((p) => (p.visible ? { ...p, visible: false } : p));
+      return;
+    }
     const top = Math.round(itemRect.top - navRect.top + nav.scrollTop);
     const height = Math.round(itemRect.height);
     const prev = this.activePill();

@@ -6,8 +6,10 @@
 :host {
   display: block;
   container-type: inline-size;
+}
 
-  // Dark Mode (Default) Tokens — Deep Corporate Royal Navy
+.hero-band {
+  // Dark Mode (Default) Tokens — Deep Corporate Royal Navy (kept inside .hero-band so container-type on :host never freezes theme repaint)
   --hb-banner-bg: linear-gradient(110deg, rgba(23, 37, 84, 0.85) 0%, rgba(30, 58, 138, 0.55) 55%, rgba(41, 73, 184, 0.35) 100%);
   --hb-banner-border: rgba(148, 179, 255, 0.16);
   --hb-banner-accent: #4f73f0;
@@ -24,9 +26,12 @@
   --hb-badge-bg: rgba(59, 96, 220, 0.25);
   --hb-badge-border: rgba(147, 197, 253, 0.35);
   --hb-badge-text: #bfdbfe;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-:host-context(body.e-light-mode) {
+:host-context(.e-light-mode) .hero-band {
   --hb-banner-bg: linear-gradient(110deg, #eff4ff 0%, #e5eeff 58%, #dce7ff 100%);
   --hb-banner-border: #dce6fa;
   --hb-banner-accent: #2746b3;
@@ -43,12 +48,6 @@
   --hb-badge-bg: #ffffff;
   --hb-badge-border: #d5e0fa;
   --hb-badge-text: #2746b3;
-}
-
-.hero-band {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .hero-band.metrics-only .hero-band__top--actions-only:not(:has(button, a, input, select)) {

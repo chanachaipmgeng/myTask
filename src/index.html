@@ -6,7 +6,7 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link id="sf-theme-link" rel="stylesheet" href="assets/themes/tailwind3.css" data-beasties-skip>
+  <link id="sf-theme-link" rel="stylesheet" href="assets/themes/tailwind3.css?v=2.3.0" data-beasties-skip>
   <script>
     (function() {
       try {
@@ -14,7 +14,7 @@
         var qTheme = params.get('theme');
         var isDark = (qTheme === 'light' || qTheme === 'dark' ? qTheme : localStorage.getItem('md-theme')) === 'dark';
         var link = document.getElementById('sf-theme-link');
-        if (link) link.href = isDark ? 'assets/themes/tailwind3-dark.css' : 'assets/themes/tailwind3.css';
+        if (link) link.href = (isDark ? 'assets/themes/tailwind3-dark.css' : 'assets/themes/tailwind3.css') + '?v=2.3.0';
         document.documentElement.classList.toggle('e-dark-mode', isDark);
         document.documentElement.classList.toggle('e-light-mode', !isDark);
       } catch (e) {}

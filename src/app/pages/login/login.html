@@ -111,22 +111,16 @@
           <span>GitLab SSO</span>
         </button>
 
-        @if (canUseDevLogin()) {
+        @if (canUseDevLogin() && quickLoginChips().length) {
           <div class="login-demo">
             <p class="login-demo__label">ทดสอบด่วน</p>
             <div class="login-demo__chips">
-              <button type="button" class="login-chip" [disabled]="busy()" (click)="quickLogin('paweena')">
-                @if (busy()) { <span class="e-icons e-spinner e-spin mr-1"></span> }
-                ปวีณา · Admin
-              </button>
-              <button type="button" class="login-chip" [disabled]="busy()" (click)="quickLogin('chanachai')">
-                @if (busy()) { <span class="e-icons e-spinner e-spin mr-1"></span> }
-                ชนะชัย · Admin
-              </button>
-              <button type="button" class="login-chip" [disabled]="busy()" (click)="quickLogin('nakarin')">
-                @if (busy()) { <span class="e-icons e-spinner e-spin mr-1"></span> }
-                นครินทร์ · Member
-              </button>
+              @for (chip of quickLoginChips(); track chip.id) {
+                <button type="button" class="login-chip" [disabled]="busy()" (click)="quickLogin(chip.id)">
+                  @if (busy()) { <span class="e-icons e-spinner e-spin mr-1"></span> }
+                  {{ chip.label }}
+                </button>
+              }
             </div>
           </div>
         }

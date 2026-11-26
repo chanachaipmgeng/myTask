@@ -67,7 +67,7 @@ export class AnalyticsPage {
     { id: 'hygiene', header: `1. ตรวจสอบข้อมูลซิงก์ & Outliers (${this.report().syncHygiene.issueCount})` },
     { id: 'risks', header: `2. เรดาร์ติดตามความเสี่ยงใบงานเปิด (${this.report().deliveryRisks.length})` },
     { id: 'coaching', header: '3. วิเคราะห์พัฒนาการ & โค้ชรายคน (1-on-1 Coaching)' },
-    { id: 'bottlenecks', header: '4. วิเคราะห์คอขวดโมดูล & สาเหตุปัญหา (Bottlenecks)' },
+    { id: 'bottlenecks', header: '4. วิเคราะห์งานค้าง & จุดติดขัดโมดูล (Bottlenecks)' },
   ]);
 
   protected readonly hygieneColumns: SfGridColumn[] = [

@@ -41,6 +41,7 @@
     [class]="roleThemeClass()"
     (click)="closeFilterPopover()"
   >
+    <a class="skip-to-main" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
     <div
       class="shell-scroll-progress"
       [style.transform]="'scaleX(' + scrollProgress() + ')'"
@@ -109,6 +110,7 @@
                 <a
                   class="saas-nav__item"
                   [class.is-active]="selectedNodes()[0] === item.id"
+                  [attr.aria-current]="selectedNodes()[0] === item.id ? 'page' : null"
                   [routerLink]="item.route"
                   queryParamsHandling="preserve"
                   [title]="item.text"
@@ -188,21 +190,35 @@
 
         <!-- 2. Right: Clean Omnisearch + Status + Alerts + Theme + Profile -->
         <div class="navbar-right">
-          <div class="navbar-search-wrap">
+          <button
+            type="button"
+            class="navbar-icon-btn navbar-mobile-search-btn"
+            (click)="toggleMobileSearch()"
+            aria-label="ค้นหาด่วน"
+            title="ค้นหาด่วน"
+            [attr.aria-expanded]="mobileSearchOpen()"
+          >
+            <span class="e-icons e-search" aria-hidden="true"></span>
+          </button>
+
+          <div class="navbar-search-wrap" [class.is-mobile-open]="mobileSearchOpen()">
             <div class="navbar-search-bar" (click)="focusGlobalSearch()" title="ค้นหาด่วน (Ctrl+K)">
-              <span class="e-icons e-search navbar-search-icon"></span>
+              <span class="e-icons e-search navbar-search-icon" aria-hidden="true"></span>
               <input
                 #globalSearchInput
                 type="text"
                 class="navbar-search-input"
                 placeholder="ค้นหาใบงาน, พนักงาน, เมนู..."
+                aria-label="ค้นหาใบงาน พนักงาน โปรเจกต์ หรือเมนู"
                 [value]="globalSearch()"
                 (input)="onGlobalSearch($event)"
                 (keydown.enter)="onGlobalSearchSubmit()"
                 (focus)="searchOpen.set(true)"
               />
               @if (globalSearch()) {
-                <button type="button" class="navbar-search-clear" (click)="clearGlobalSearch($event)" title="ล้างคำค้น">×</button>
+                <button type="button" class="navbar-search-clear" (click)="$event.stopPropagation(); clearGlobalSearch($event)" aria-label="ล้างคำค้น" title="ล้างคำค้น">×</button>
+              } @else if (mobileSearchOpen()) {
+                <button type="button" class="navbar-search-clear" (click)="$event.stopPropagation(); closeSearchPanel()" aria-label="ปิดช่องค้นหา" title="ปิดช่องค้นหา">×</button>
               } @else {
                 <div class="navbar-kbd-pill" title="คีย์ลัด (Ctrl+K)">
                   <kbd>⌘</kbd><kbd>K</kbd>
@@ -337,6 +353,7 @@
               class="navbar-icon-btn"
               [title]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
               [attr.aria-label]="theme.isDark() ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด'"
+              [attr.aria-pressed]="theme.isDark()"
               (click)="theme.toggleTheme()"
             >
               @if (theme.isDark()) {
@@ -418,6 +435,7 @@
                   type="button"
                   class="filter-mine-btn"
                   [class.is-active]="workspaceFilter.isFilteringSelf()"
+                  [attr.aria-pressed]="workspaceFilter.isFilteringSelf()"
                   title="สลับกรองเฉพาะงานของฉันในหน้านี้ทันที"
                   (click)="toggleMineFilter()"
                 >
@@ -599,6 +617,8 @@
       }
 
       <main
+        id="main-content"
+        tabindex="-1"
         class="shell-main"
         [attr.data-nav-key]="navKey()"
         [class.route-glide-a]="!routeAnimParity()"

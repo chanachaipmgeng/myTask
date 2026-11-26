@@ -181,32 +181,31 @@ body {
   overflow-x: hidden;
 }
 
-body.e-light-mode {
-  background:
-    radial-gradient(at 8% 8%, #dbe7ff 0px, transparent 48%),
-    radial-gradient(at 92% 14%, #e4ecff 0px, transparent 46%),
-    radial-gradient(at 84% 88%, #e2f2f7 0px, transparent 50%),
-    radial-gradient(at 16% 86%, #e7e9fb 0px, transparent 50%),
-    var(--paper);
-  background-attachment: fixed;
-}
-
-.auth-viewport {
-  min-height: 100vh;
-  width: 100%;
-  overflow-x: hidden;
-  background: #0b1120;
-}
-
 body {
   transition:
     background-color 0.22s ease,
     color 0.22s ease;
 }
 
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
+}
+
+body.e-dark-mode {
+  color: var(--ink);
+}
+
 body.e-light-mode {
   color: #14213d;
-  background: #f4f7fe;
+  background:
+    radial-gradient(at 8% 8%, #dbe7ff 0px, transparent 48%),
+    radial-gradient(at 92% 14%, #e4ecff 0px, transparent 46%),
+    radial-gradient(at 84% 88%, #e2f2f7 0px, transparent 50%),
+    radial-gradient(at 16% 86%, #e7e9fb 0px, transparent 50%),
+    #f4f7fe;
+  background-attachment: fixed;
 }
 
 /* ==========================================================================
@@ -1649,6 +1648,45 @@ body.cockpit-tv-active {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
+}
+
+/* ==========================================================================
+   WCAG 2.1 AA Keyboard Accessibility (Skip Link & High-Contrast Focus Ring)
+   ========================================================================== */
+.skip-to-main {
+  position: fixed;
+  top: -100px;
+  left: 14px;
+  z-index: 2000;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--primary, #2746b3);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--shadow-floating);
+  transition: top 140ms ease;
+}
+
+.skip-to-main:focus {
+  top: 12px;
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+.e-control .e-btn:focus-visible,
+.e-control a:focus-visible,
+.e-control button:focus-visible,
+.e-control input:focus-visible {
+  outline: 2px solid var(--primary-bright, #3b60dc) !important;
+  outline-offset: 2px;
 }
 
 /* ==========================================================================

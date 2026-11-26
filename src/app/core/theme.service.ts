@@ -2,6 +2,8 @@ import { Injectable, computed, signal } from '@angular/core';
 
 export type AppTheme = 'dark' | 'light';
 
+const SF_THEME_VERSION = '2.3.0';
+
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private readonly _theme = signal<AppTheme>('light');
@@ -48,23 +50,37 @@ export class ThemeService {
     const body = document.body;
     const root = document.documentElement;
     const linkEl = document.getElementById('sf-theme-link') as HTMLLinkElement | null;
+    const targetHref =
+      mode === 'dark'
+        ? `assets/themes/tailwind3-dark.css?v=${SF_THEME_VERSION}`
+        : `assets/themes/tailwind3.css?v=${SF_THEME_VERSION}`;
+
+    root.classList.add('theme-switching');
 
     if (mode === 'dark') {
       body.classList.add('e-dark-mode');
       body.classList.remove('e-light-mode');
       root.classList.add('e-dark-mode');
       root.classList.remove('e-light-mode');
-      if (linkEl) {
-        linkEl.href = 'assets/themes/tailwind3-dark.css';
-      }
     } else {
       body.classList.remove('e-dark-mode');
       body.classList.add('e-light-mode');
       root.classList.remove('e-dark-mode');
       root.classList.add('e-light-mode');
-      if (linkEl) {
-        linkEl.href = 'assets/themes/tailwind3.css';
-      }
+    }
+
+    const finishSwitch = () => {
+      void root.offsetHeight;
+      requestAnimationFrame(() => root.classList.remove('theme-switching'));
+    };
+
+    if (linkEl && !linkEl.getAttribute('href')?.endsWith(targetHref)) {
+      linkEl.addEventListener('load', finishSwitch, { once: true });
+      linkEl.href = targetHref;
+      void root.offsetHeight;
+      setTimeout(finishSwitch, 120);
+    } else {
+      finishSwitch();
     }
   }
 }

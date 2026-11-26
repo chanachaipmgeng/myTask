@@ -67,6 +67,31 @@ export class LoginPage {
   protected readonly isSignedInAdmin = computed(
     () => this.session()?.access === 'admin',
   );
+  protected readonly quickLoginChips = computed(() => {
+    const list = this.roster();
+    if (list.length === 0) {
+      return [] as { id: string; label: string }[];
+    }
+    const roleLabel = (access: AccessRole | undefined): string =>
+      access === 'admin' ? 'Admin' : access === 'lead' ? 'Lead' : 'Member';
+    const picked: DevRosterAccount[] = [];
+    const pick = (pred: (p: DevRosterAccount) => boolean) => {
+      const found = list.find((p) => !picked.some((x) => x.id === p.id) && pred(p));
+      if (found) picked.push(found);
+    };
+    pick((p) => p.access === 'admin' && p.id.toLowerCase().includes('chanachai'));
+    pick((p) => p.access === 'admin');
+    pick((p) => p.access === 'lead');
+    pick((p) => p.access === 'member' && p.id.toLowerCase().includes('nakarin'));
+    pick((p) => p.access === 'member');
+    while (picked.length < 3 && picked.length < list.length) {
+      pick(() => true);
+    }
+    return picked.slice(0, 3).map((p) => ({
+      id: p.id,
+      label: `${p.nickname || p.id} · ${roleLabel(p.access)}`,
+    }));
+  });
 
   constructor() {
     effect(() => {

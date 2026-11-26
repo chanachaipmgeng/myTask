@@ -41,6 +41,7 @@ import {
   WORK_CATEGORIES,
   WORKFLOW_STATUSES,
   WorkCategory,
+  normalizeTrack,
 } from '../../core/models';
 import {
   CATEGORY_LABELS,
@@ -98,6 +99,10 @@ export class WorkBoard {
 
   protected trackBadgeClass(track: string): string {
     return badgeToneClass(resolveBadgeTone(track, trackToneMap, 'primary'));
+  }
+
+  protected trackShortLabel(track: string | undefined): string {
+    return normalizeTrack(track);
   }
 
   @ViewChild('blockDialog') private blockDialog?: ConfirmDialogComponent;
@@ -219,6 +224,7 @@ export class WorkBoard {
         title: ticket.title?.trim() || ticket.module,
         module: ticket.module,
         size: ticket.size,
+        track: ticket.track,
         trackKey: ticket.track,
         trackLabel,
         projectKey,

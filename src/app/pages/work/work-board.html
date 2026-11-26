@@ -40,9 +40,9 @@
         [class.bg-emerald-500]="!data.slipped && data.reopenCount < 2 && !data.isMdDirect && !data.isPaused && data.status !== 'Ready for QA' && data.status !== 'In QA' && data.status !== 'Code Review'"
       ></div>
 
-      <div class="flex items-center justify-between gap-1 pt-1">
-        <div class="flex items-center gap-1.5">
-          <span class="text-sm font-bold text-cyan">{{ data.id }}</span>
+      <div class="flex flex-wrap items-center justify-between gap-1 pt-1">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="text-sm font-bold text-cyan truncate">{{ data.id }}</span>
           @if (data.isMdDirect) {
             <span class="e-badge e-badge-warning e-badge-pill">MD-DIRECT</span>
           }
@@ -50,9 +50,9 @@
             <span class="e-badge e-badge-danger e-badge-pill">PAUSED</span>
           }
         </div>
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1 shrink-0">
           <span [class]="sizeBadgeClass(data.size)">{{ data.size }}</span>
-          <span [class]="trackBadgeClass(data.track || data.trackLabel)">{{ data.trackLabel }}</span>
+          <span [class]="trackBadgeClass(data.track || data.trackLabel)" [title]="data.trackLabel">{{ trackShortLabel(data.track || data.trackLabel) }}</span>
         </div>
       </div>
       <p class="m-0 text-xs font-medium line-clamp-2">{{ data.title }}</p>

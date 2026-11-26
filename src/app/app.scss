@@ -51,7 +51,7 @@
 }
 
 // Light Mode — Corporate Company Palette (MyHR Royal Blue Sidebar + Crisp White AppBar)
-:host-context(body.e-light-mode) .app-frame {
+:host-context(.e-light-mode) .app-frame {
   --shell-sidebar-bg: linear-gradient(180deg, #2746b3 0%, #3154cc 52%, #3b60dc 100%);
   --shell-sidebar-border: rgba(255, 255, 255, 0.18);
   --shell-brand-text: #ffffff;
@@ -1360,6 +1360,16 @@ body.e-dark-mode {
   gap: 8px;
 }
 
+.navbar-mobile-search-btn {
+  display: none;
+}
+
+.saas-sidebar a:focus-visible,
+.saas-sidebar button:focus-visible {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 2px;
+}
+
 // Responsive Breakpoints
 @media (max-width: 1024px) {
   .navbar-search-bar {
@@ -1377,9 +1387,34 @@ body.e-dark-mode {
   ::ng-deep .shell-appbar.e-appbar {
     padding: 0 12px !important;
   }
-  .navbar-search-bar,
+  .navbar-mobile-search-btn {
+    display: inline-flex;
+  }
+  .navbar-search-wrap:not(.is-mobile-open) .navbar-search-bar,
   .navbar-status-pill {
     display: none;
+  }
+  .navbar-search-wrap.is-mobile-open {
+    position: fixed;
+    top: 8px;
+    left: 10px;
+    right: 10px;
+    z-index: 1060;
+
+    .navbar-search-bar {
+      display: flex;
+      width: 100%;
+      box-shadow: var(--shadow-floating);
+      background: var(--surface, #131f37);
+    }
+
+    .navbar-kbd-pill {
+      display: none;
+    }
+
+    .navbar-search-panel {
+      width: 100%;
+    }
   }
   .shell-main {
     padding: 12px 12px 24px;
