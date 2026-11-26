@@ -1,0 +1,259 @@
+<!-- Directory — พนักงาน | ทีม -->
+<app-page-head
+  [title]="directoryTitle()"
+  [description]="directoryDescription()"
+  [metrics]="directoryView() === 'teams'
+    ? [
+        { label: 'จำนวนทีม', value: '' + teamCards().length },
+        { label: 'สมาชิก active', value: '' + teamMemberTotal() },
+      ]
+    : [
+        { label: 'พนักงานในรายการ', value: personCards().length, unit: 'คน' },
+      ]"
+>
+  <div actions class="flex flex-wrap items-center gap-2">
+    @if (directoryView() === 'people') {
+      <app-sf-textbox
+        placeholder="ค้นหาชื่อหรือตำแหน่ง..."
+        [value]="query()"
+        [clearButton]="true"
+        width="220px"
+        (valueInput)="setQuery($event)"
+        (valueChange)="setQuery($event)"
+      />
+      <app-sf-dropdown
+        [items]="sortOptions"
+        [value]="sortMode()"
+        [options]="{ width: '200px', placeholder: 'เรียงลำดับ' }"
+        (valueChange)="setSortMode($event)"
+      />
+      <app-filter-chips
+        [options]="trackChipOptions()"
+        [value]="trackFilter()"
+        (valueChange)="setTrackFilter($event)"
+      />
+      <div class="inline-flex items-center rounded-lg border border-[var(--color-border-subtle)] p-0.5 bg-[var(--color-bg-subtle)]">
+        <button
+          ejs-button
+          cssClass="e-small"
+          [class.e-primary]="viewMode() === 'grid'"
+          [class.e-flat]="viewMode() !== 'grid'"
+          type="button"
+          title="มุมมองการ์ด (Card Grid)"
+          (click)="viewMode.set('grid')"
+        >
+          <span class="e-icons e-grid-view"></span>
+        </button>
+        <button
+          ejs-button
+          cssClass="e-small"
+          [class.e-primary]="viewMode() === 'table'"
+          [class.e-flat]="viewMode() !== 'table'"
+          type="button"
+          title="มุมมองตาราง (Compact Table)"
+          (click)="viewMode.set('table')"
+        >
+          <span class="e-icons e-table"></span>
+        </button>
+      </div>
+      @if (workspace.teamId()) {
+        <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearTeamFilter()">
+          ล้างทีมที่เลือก
+        </button>
+      }
+    } @else {
+      <app-sf-textbox
+        placeholder="ค้นหาชื่อทีมหรือสายงาน..."
+        [value]="teamQuery()"
+        [clearButton]="true"
+        width="240px"
+        (valueInput)="setTeamQuery($event)"
+        (valueChange)="setTeamQuery($event)"
+      />
+      @if (workspace.teamId()) {
+        <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearTeamFilter()">
+          ล้างทีมที่เลือก
+        </button>
+      }
+    }
+  </div>
+</app-page-head>
+
+<nav class="hub-underline-tabs" role="tablist" aria-label="มุมมองพนักงานและทีม">
+  <button
+    type="button"
+    class="hub-underline-tab"
+    role="tab"
+    [class.is-active]="directoryView() === 'people'"
+    [attr.aria-selected]="directoryView() === 'people'"
+    (click)="setDirectoryView('people')"
+  >
+    พนักงาน
+  </button>
+  <button
+    type="button"
+    class="hub-underline-tab"
+    role="tab"
+    [class.is-active]="directoryView() === 'teams'"
+    [attr.aria-selected]="directoryView() === 'teams'"
+    (click)="setDirectoryView('teams')"
+  >
+    ทีม
+  </button>
+</nav>
+
+@if (directoryView() === 'teams') {
+  <div class="person-ws__teams-grid" role="list">
+    @for (card of teamCards(); track card.id) {
+      <button
+        type="button"
+        class="org-team-card"
+        role="listitem"
+        (click)="openTeamCard(card.id)"
+        [attr.aria-label]="'เปิดทีม ' + card.name"
+      >
+        <app-section-card
+          [title]="card.name"
+          [subtitle]="card.trackSummary"
+          [badge]="card.memberCount + ' คน'"
+          badgeTone="info"
+          variant="nested"
+        >
+          <div class="org-team-card__body">
+            <div class="org-team-card__meta flex items-center gap-2">
+              <span class="org-team-card__label">Lead</span>
+              <app-person-avatar
+                [personId]="card.leadId"
+                [name]="card.leadName"
+                [showName]="true"
+                size="xs"
+              ></app-person-avatar>
+            </div>
+            @let preview = teamMembersPreview(card.id);
+            @if (preview.length) {
+              <div class="flex items-center gap-2 mt-2">
+                <div class="flex items-center -space-x-2">
+                  @for (m of preview; track m.id) {
+                    <app-person-avatar [personId]="m.id" [name]="m.nickname" size="sm"></app-person-avatar>
+                  }
+                </div>
+                @if (card.memberCount > preview.length) {
+                  <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-600 dark:text-blue-300 tabular-nums">
+                    +{{ card.memberCount - preview.length }}
+                  </span>
+                }
+              </div>
+            }
+            <p class="org-team-card__hint">คลิกเพื่อดูพนักงานในทีม</p>
+          </div>
+        </app-section-card>
+      </button>
+    } @empty {
+      <app-section-card
+        [title]="teamQuery().trim() ? 'ไม่พบทีมตามคำค้นหา' : 'ยังไม่มีทีม'"
+        [subtitle]="teamQuery().trim() ? 'ลองเปลี่ยนคำค้นหาหรือล้างช่องค้นหา' : 'ซิงก์ผู้ใช้จาก OpenProject หรือตรวจ people.teamId'"
+      >
+        <p class="text-sm opacity-80 m-0">
+          {{ teamQuery().trim() ? 'ปรับคำค้นหาแล้วลองใหม่' : 'เมื่อมีทีมใน bootstrap จะแสดงเป็นการ์ดที่นี่' }}
+        </p>
+      </app-section-card>
+    }
+  </div>
+} @else if (personCards().length === 0) {
+  <app-section-card [showHead]="false">
+    <p class="person-ws__empty m-0 py-8 text-center">ไม่พบพนักงานตามคำค้นหาหรือสายงานที่เลือก</p>
+  </app-section-card>
+} @else if (viewMode() === 'table') {
+  <ng-template #actionsTpl let-data>
+    <button
+      ejs-button
+      cssClass="e-primary e-small"
+      type="button"
+      (click)="selectPerson(data.id)"
+    >
+      เปิด Workspace
+    </button>
+  </ng-template>
+  <app-sf-grid
+    [data]="directoryTableRows()"
+    [columns]="directoryColumns"
+    [options]="directoryGridOptions"
+    [cellTemplates]="{ actions: actionsTpl }"
+  />
+} @else {
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" appStagger [staggerStep]="40">
+    @for (card of pagedPersonCards(); track card.person.id) {
+      <button
+        type="button"
+        class="person-dir-card"
+        (click)="selectPerson(card.person.id)"
+      >
+        <div class="person-dir-card__top">
+          <app-person-avatar [personId]="card.person.id" [name]="card.person.nickname" size="lg" />
+          <div class="person-dir-card__meta">
+            <span class="person-dir-card__name">{{ card.person.nickname }}</span>
+            <span class="person-dir-card__role">{{ card.person.jobTitle || card.person.role }}</span>
+            <div class="flex flex-wrap items-center gap-1.5 mt-1">
+              <app-status-badge [value]="card.person.track" [label]="card.trackLabel" [toneMap]="trackToneMap" />
+              <app-status-badge [value]="card.person.level" [toneMap]="levelToneMap" />
+            </div>
+          </div>
+        </div>
+
+        <div class="person-dir-card__kpi">
+          <div class="person-dir-card__kpi-row">
+            <span class="text-xs text-muted">ดัชนีพัฒนาการ</span>
+            <span
+              class="text-sm font-bold tabular-nums"
+              [class.text-emerald-600]="card.onTarget"
+              [class.text-amber-600]="!card.onTarget"
+            >
+              {{ card.indexLabel }}
+            </span>
+          </div>
+          <div
+            class="person-dir-card__bar"
+            [class.is-good]="card.onTarget"
+            [class.is-warn]="!card.onTarget && card.index >= 60"
+            [class.is-low]="card.index < 60"
+          >
+            <span [style.width.%]="card.index > 100 ? 100 : card.index"></span>
+          </div>
+        </div>
+
+        <div class="person-dir-card__footer">
+          <span>ใบเปิด <strong>{{ card.openCount }}</strong></span>
+          <span>ปิดแล้ว <strong>{{ card.closedCount }}</strong></span>
+          <span class="person-dir-card__cta">เปิด Workspace →</span>
+        </div>
+      </button>
+    }
+  </div>
+  @if (totalCardPages() > 1) {
+    <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
+      <p class="m-0 text-sm text-muted">
+        แสดง {{ pagedPersonCards().length }} จาก {{ personCards().length }} คน · หน้า {{ cardPage() }} / {{ totalCardPages() }}
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <button
+          ejs-button
+          cssClass="e-outline e-small"
+          type="button"
+          [disabled]="cardPage() <= 1"
+          (click)="setCardPage(cardPage() - 1)"
+        >
+          ก่อนหน้า
+        </button>
+        <button
+          ejs-button
+          cssClass="e-outline e-small"
+          type="button"
+          [disabled]="cardPage() >= totalCardPages()"
+          (click)="setCardPage(cardPage() + 1)"
+        >
+          ถัดไป
+        </button>
+      </div>
+    </div>
+  }
+}

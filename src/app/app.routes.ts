@@ -67,18 +67,14 @@ export const routes: Routes = [
     ],
   },
 
-  // บริหารทีม: Person master-detail workspace (Lead / Admin)
+  // บริหารทีม / ตั้งค่า: Person Workspace (Lead · Admin) — shell + directory + detail lazy
   {
     path: 'workspace/people',
     canActivate: [requireRoles('admin', 'lead')],
-    loadComponent: () =>
-      import('./pages/person-workspace/person-workspace').then((m) => m.PersonWorkspacePage),
-  },
-  {
-    path: 'workspace/people/:personId',
-    canActivate: [requireRoles('admin', 'lead')],
-    loadComponent: () =>
-      import('./pages/person-workspace/person-workspace').then((m) => m.PersonWorkspacePage),
+    loadChildren: () =>
+      import('./pages/person-workspace/person-workspace.routes').then(
+        (m) => m.PERSON_WORKSPACE_ROUTES,
+      ),
   },
 
   // Unified Quality & Score Hub (ทุกสิทธิ์ใช้ร่วมกัน · QA/DoD เฉพาะ Lead/Admin)

@@ -1,10 +1,13 @@
 /**
  * แคปหน้าจอโหมดสว่างสำหรับคู่มือ
- * ต้องมี ng serve (:4200) + API (:3000) และ AUTH_DEV_LOGIN เปิด
+ * ต้องมีเว็บ + API และ AUTH_DEV_LOGIN เปิด
+ * - Docker stack (แนะนำ): web :8080 · api :3000
+ * - หรือ ng serve :4200 + API :3000
  *
  *   node scripts/capture_all_screens.mjs
  *   node scripts/capture_all_screens.mjs --from=22-admin.png
  *   node scripts/capture_all_screens.mjs --person=chanachai
+ *   CAPTURE_BASE=http://127.0.0.1:8080 CAPTURE_API=http://127.0.0.1:3000 node scripts/capture_all_screens.mjs --person=chanachai
  *
  * ต้องมี playwright (ติดตั้งชั่วคราวได้: npm i -D --no-save playwright)
  *
@@ -17,8 +20,10 @@ import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 
 const require = createRequire(import.meta.url);
-const BASE = process.env.CAPTURE_BASE || 'http://127.0.0.1:4200';
+const BASE = process.env.CAPTURE_BASE || 'http://127.0.0.1:8080';
 const API = process.env.CAPTURE_API || 'http://127.0.0.1:3000';
+/** โปรเจกต์ตัวอย่างสำหรับแคปศูนย์โปรเจกต์ — R&D Internal (ผูก mylive) */
+const CAPTURE_PROJECT_ID = process.env.CAPTURE_PROJECT_ID || '171';
 const CAPTURE_THEME = 'light';
 const PERSON = (process.argv.find((a) => a.startsWith('--person=')) || '--person=chanachai').slice(
   '--person='.length,
@@ -95,9 +100,9 @@ const screens = [
   },
   { name: '26-teams.png', url: `${BASE}/teams`, wait: 3500 },
   { name: '27-admin-projects.png', url: `${BASE}/admin/projects`, wait: 4500 },
-  { name: '28-project-detail-health.png', url: `${BASE}/org/projects/331`, wait: 4500 },
-  { name: '28-project-detail-tickets.png', url: `${BASE}/org/projects/331?tab=tickets`, wait: 3500 },
-  { name: '28-project-detail-git.png', url: `${BASE}/org/projects/331?tab=git`, wait: 3500 },
+  { name: '28-project-detail-health.png', url: `${BASE}/org/projects/${CAPTURE_PROJECT_ID}`, wait: 4500 },
+  { name: '28-project-detail-tickets.png', url: `${BASE}/org/projects/${CAPTURE_PROJECT_ID}?tab=tickets`, wait: 3500 },
+  { name: '28-project-detail-git.png', url: `${BASE}/org/projects/${CAPTURE_PROJECT_ID}?tab=git`, wait: 3500 },
   { name: '29-quality-mockup.png', url: `${BASE}/quality/mockup`, wait: 3500 },
 ].map((s) => ({ ...s, url: withTheme(s.url) }));
 
@@ -147,7 +152,10 @@ async function ensureLoggedIn(page) {
   console.log('✅ Dev Quick Login as', PERSON, '→', page.url());
 }
 
-/** Client-side navigate ผ่าน Angular Router บน app-root (dev mode) */
+/**
+ * Navigate หลังล็อกอิน — ลอง Angular Router (dev มี window.ng)
+ * ถ้าเป็น production Docker (ไม่มี ng) ใช้ page.goto แทน (พึ่ง cookie session)
+ */
 async function spaNavigate(page, absoluteUrl) {
   const u = new URL(absoluteUrl);
   const segments = u.pathname.split('/').filter(Boolean);
@@ -169,10 +177,12 @@ async function spaNavigate(page, absoluteUrl) {
     },
     { segments, queryParams },
   );
-  if (!ok?.ok) {
-    throw new Error(`SPA navigate failed for ${u.pathname}: ${ok?.reason || 'unknown'}`);
+  if (ok?.ok) {
+    await page.waitForTimeout(400);
+    return;
   }
-  await page.waitForTimeout(400);
+  await page.goto(absoluteUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
+  await page.waitForTimeout(600);
 }
 
 async function runScreenAction(page, action) {
@@ -278,7 +288,12 @@ async function run() {
         if (screen.action) {
           await runScreenAction(page, screen.action);
         }
-        await page.screenshot({ path: dest, fullPage: false });
+        await page.screenshot({
+          path: dest,
+          fullPage: false,
+          timeout: 120000,
+          animations: 'disabled',
+        });
       }
       const kb = (statSync(dest).size / 1024).toFixed(1);
       console.log(`✅ ${kb} KB · ${page.url().replace(BASE, '')}`);

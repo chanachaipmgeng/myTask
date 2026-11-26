@@ -542,9 +542,11 @@ export class App implements AfterViewInit {
       };
       return [shared];
     }
+    // Admin: 「พนักงาน & ทีม」จุดเดียวใต้ตั้งค่าระบบ — ไม่ซ้ำ「คนในทีม」ในบริหารทีม
     if (role === 'admin') {
-      return [SHARED_WORKSPACE_SECTION, MANAGER_SIDEBAR_SECTION, ADMIN_SIDEBAR_SECTION];
+      return [SHARED_WORKSPACE_SECTION, ADMIN_SIDEBAR_SECTION];
     }
+    // Lead: 「คนในทีม」ใต้บริหารทีม
     return [SHARED_WORKSPACE_SECTION, MANAGER_SIDEBAR_SECTION];
   });
 
@@ -1056,13 +1058,27 @@ const allNavGroups: NavGroup[] = [
   },
   {
     id: 'team-management',
-    text: 'บริหารทีม (Lead / Admin)',
+    text: 'บริหารทีม (Lead)',
     expanded: true,
-    roles: ['lead', 'admin'],
+    roles: ['lead'],
     children: [
       { id: 'hub-people', text: 'คนในทีม', iconCss: 'e-icons e-people', route: '/workspace/people' },
       { id: 'people', text: 'ตารางพนักงาน', iconCss: 'e-icons e-table', route: '/people', exact: true },
       { id: 'team-dash', text: 'แดชบอร์ดทีม', iconCss: 'e-icons e-home', route: '/team' },
+      { id: 'hub-queue', text: 'คิวจ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/work/queue' },
+      { id: 'work-handoff', text: 'งานค้าง & SLA', iconCss: 'e-icons e-clock', route: '/work/handoff' },
+      { id: 'quality-audit', text: 'ตรวจคุณภาพ QA', iconCss: 'e-icons e-check-box', route: '/quality/audit' },
+      { id: 'insights-report', text: 'วิเคราะห์ทีม', iconCss: 'e-icons e-chart', route: '/quality/report' },
+      { id: 'insights-mockup', text: 'โหมดจำลอง', iconCss: 'e-icons e-play', route: '/quality/mockup' },
+    ],
+  },
+  {
+    id: 'admin-ops',
+    text: 'งานทีมขั้นสูง (Admin)',
+    expanded: true,
+    roles: ['admin'],
+    children: [
+      { id: 'people', text: 'ตารางพนักงาน', iconCss: 'e-icons e-table', route: '/people', exact: true },
       { id: 'hub-queue', text: 'คิวจ่ายงาน', iconCss: 'e-icons e-list-unordered', route: '/work/queue' },
       { id: 'work-handoff', text: 'งานค้าง & SLA', iconCss: 'e-icons e-clock', route: '/work/handoff' },
       { id: 'quality-audit', text: 'ตรวจคุณภาพ QA', iconCss: 'e-icons e-check-box', route: '/quality/audit' },

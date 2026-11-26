@@ -36,6 +36,7 @@ import {
 import {
   finishSyncRun,
   getWorkItem,
+  getWorkItemByOpId,
   listSyncRuns,
   listWorkItems,
   startSyncRun,
@@ -652,9 +653,27 @@ export class IntegrationsController {
 
             const authorEmail = b.commit?.author_email?.toLowerCase();
             const authorName = b.commit?.author_name;
-            const matchedPerson =
+            // Prefer company email on the person record, then GitLab username.
+            let matchedPerson =
               (authorEmail ? byEmail.get(authorEmail) : undefined) ??
               (authorName ? byUsername.get(authorName.toLowerCase()) : undefined);
+
+            // Fallback: branch named OP-… → assignee on that ticket (covers old commits with personal email).
+            if (!matchedPerson && ticketId) {
+              const opNum = Number(ticketId);
+              const ticket =
+                (await getWorkItem(this.db, ticketId)) ??
+                (await getWorkItem(this.db, `OP-${ticketId}`)) ??
+                (Number.isFinite(opNum) ? await getWorkItemByOpId(this.db, opNum) : null);
+              const assigneeId = ticket?.assigneeId?.trim();
+              if (assigneeId) {
+                matchedPerson =
+                  people.find((p) => p.id === assigneeId) ??
+                  (assigneeId.startsWith('op:')
+                    ? people.find((p) => p.openprojectUserId === Number(assigneeId.slice(3)))
+                    : undefined);
+              }
+            }
 
             await upsertGitBranch(this.db, {
               projectId: proj.id,
@@ -702,12 +721,15 @@ export class IntegrationsController {
     const projectId = Number(payload.project?.id || payload.project_id);
     const projectName = String(payload.project?.path_with_namespace || payload.project?.name || `Project ${projectId}`);
     const authorUsername = payload.user_username || payload.user_name;
-    const authorEmail = payload.user_email?.toLowerCase();
+    const authorEmail = String(payload.user_email ?? '').trim().toLowerCase() || undefined;
 
     const people = await listPeople(this.db);
+    // Prefer company email, then GitLab username.
     const matchedPerson =
-      people.find((p) => p.gitlabUsername?.toLowerCase() === authorUsername?.toLowerCase()) ??
-      people.find((p) => p.email?.toLowerCase() === authorEmail);
+      (authorEmail
+        ? people.find((p) => p.email?.toLowerCase() === authorEmail)
+        : undefined) ??
+      people.find((p) => p.gitlabUsername?.toLowerCase() === authorUsername?.toLowerCase());
 
     const ticketId = parseTicketIdFromBranch(branchName);
     const latestCommit = Array.isArray(payload.commits) && payload.commits.length > 0
