@@ -131,14 +131,16 @@
           </div>
         }
 
-        <button
-          type="button"
-          class="login-sync"
-          [disabled]="busy()"
-          (click)="syncMyProjectUsers()"
-        >
-          {{ busy() ? 'กำลังซิงค์…' : 'ซิงค์รายชื่อจาก myProject' }}
-        </button>
+        @if (isSignedInAdmin()) {
+          <button
+            type="button"
+            class="login-sync"
+            [disabled]="busy()"
+            (click)="syncMyProjectUsers()"
+          >
+            {{ busy() ? 'กำลังซิงค์…' : 'ซิงค์รายชื่อจาก myProject' }}
+          </button>
+        }
       </form>
     </div>
   </main>

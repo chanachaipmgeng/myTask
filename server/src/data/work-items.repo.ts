@@ -53,7 +53,7 @@ export async function listWorkItemsForWorkspace(
     }
     params.push(opts.allowedAssigneeIds);
     where.push(
-      `(assignee_id = '' OR assignee_id = ANY($${params.length}::text[]) OR data->>'track' = 'RD')`,
+      `(assignee_id = '' OR assignee_id = ANY($${params.length}::text[]))`,
     );
   }
 
@@ -94,6 +94,7 @@ export interface WorkItemPageQuery {
   dir?: ListSortDir;
   limit: number;
   offset: number;
+  maxLimit?: number;
   filters?: readonly ListFilterPredicate[];
 }
 
@@ -236,7 +237,8 @@ export async function queryWorkItemsPage(
   const { whereSql, params } = buildWorkItemWhere(query);
   const sortExpr = SORT_SQL[query.sort || ''] ?? 'id';
   const dir = query.dir === 'desc' ? 'DESC' : 'ASC';
-  const limit = Math.max(1, Math.min(100, query.limit || 25));
+  const cap = Math.max(1, Math.min(50_000, query.maxLimit ?? 100));
+  const limit = Math.max(1, Math.min(cap, query.limit || 25));
   const offset = Math.max(0, query.offset || 0);
 
   const countParams = [...params];

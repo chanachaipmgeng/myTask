@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Inject, Param, Post, Put, Query, Req } from '@nestjs/common';
 import { AccessRole, Level, Track } from '../../../shared/domain/models';
 import {
   ProjectDetail,
@@ -9,10 +9,12 @@ import {
 import { computeEffectiveAllowedTeams, TeamVisibilityRule } from '../../../shared/domain/team-visibility';
 import { filterPeopleByWorkspace } from '../../../shared/domain/workspace-scope';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
+import { VisibilityScopeService } from '../auth/visibility-scope.service';
 import { compareByField, paginateItems, parseListQuery } from '../common/list-query';
 import { APP_CONFIG, AppConfig } from '../config';
 import { listGitBranches } from '../data/git.repo';
 import { getPerson, listDepartments, listPeople, listTeams, upsertPerson } from '../data/people.repo';
+import { deleteSessionsByPerson } from '../data/sessions.repo';
 import { getConnection, connectionToken, getSettings, saveSettings } from '../data/settings.repo';
 import { OpenProjectCatalogEntry } from '../data/types';
 import { getVisibilityConfig, setTeamVisibilityMatrix, setUserAllowedTeams } from '../data/visibility.repo';
@@ -36,6 +38,7 @@ export class OrgController {
   constructor(
     private readonly db: Db,
     private readonly opSync: OpenProjectSyncService,
+    private readonly scope: VisibilityScopeService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -88,6 +91,9 @@ export class OrgController {
         : filterPeopleByWorkspace(people, { allowedTeams });
 
     if (listQuery.teamId) {
+      if (allowedTeams !== null && !allowedTeams.includes(listQuery.teamId)) {
+        throw new ForbiddenException('ไม่มีสิทธิ์เข้าถึงข้อมูลทีมนี้');
+      }
       scoped = scoped.filter((p) => p.teamId === listQuery.teamId);
     }
     if (listQuery.track && listQuery.track !== 'All') {
@@ -175,6 +181,9 @@ export class OrgController {
     });
     if (Array.isArray(body.allowedTeams)) {
       await setUserAllowedTeams(this.db, id, body.allowedTeams);
+    }
+    if (nextAccess !== (existing.access ?? 'member')) {
+      await deleteSessionsByPerson(this.db, id);
     }
     await this.db.audit(req.authUser?.person.id ?? null, 'person.update_access', id, {
       access: nextAccess,
@@ -504,13 +513,22 @@ export class OrgController {
   }
 
   @Get('projects/:id')
-  async getProjectDetail(@Param('id') id: string) {
+  async getProjectDetail(@Param('id') id: string, @Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
     const settings = await getSettings(this.db);
     const catalog = settings.openprojectProjectCatalog ?? [];
     const project = catalog.find((p) => String(p.id) === id || p.identifier === id);
 
     if (!project) {
       return { ok: false, message: 'ไม่พบโปรเจกต์ที่ระบุ' };
+    }
+    if (
+      !ctx.isAdmin &&
+      ctx.allowedTeams !== null &&
+      (project.assignedTeamIds ?? []).length > 0 &&
+      !(project.assignedTeamIds ?? []).some((t) => ctx.allowedTeams!.includes(t))
+    ) {
+      throw new ForbiddenException('ไม่มีสิทธิ์เข้าถึงโปรเจกต์นอกขอบเขตทีม');
     }
 
     const projectIdStr = String(project.id);
@@ -674,13 +692,22 @@ export class OrgController {
   }
 
   @Get('projects/:id/git-summary')
-  async getProjectGitSummary(@Param('id') id: string) {
+  async getProjectGitSummary(@Param('id') id: string, @Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
     const settings = await getSettings(this.db);
     const catalog = settings.openprojectProjectCatalog ?? [];
     const project = catalog.find((p) => String(p.id) === id || p.identifier === id);
 
     if (!project) {
       return { ok: false, message: 'ไม่พบโปรเจกต์ที่ระบุ' };
+    }
+    if (
+      !ctx.isAdmin &&
+      ctx.allowedTeams !== null &&
+      (project.assignedTeamIds ?? []).length > 0 &&
+      !(project.assignedTeamIds ?? []).some((t) => ctx.allowedTeams!.includes(t))
+    ) {
+      throw new ForbiddenException('ไม่มีสิทธิ์เข้าถึงโปรเจกต์นอกขอบเขตทีม');
     }
 
     const repoIdStrs = (project.gitRepoIds ?? []).map(String).filter(Boolean);

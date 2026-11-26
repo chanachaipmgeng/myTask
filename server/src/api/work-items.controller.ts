@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Header,
   Inject,
@@ -15,22 +16,19 @@ import type { Response } from 'express';
 import { extractTicketIdFromText } from '../../../shared/domain/gitlab-mr';
 import { Ticket, TicketDueShift, TicketStageLog } from '../../../shared/domain/models';
 import { scoreTicket } from '../../../shared/domain/scoring';
-import { computeEffectiveAllowedTeams } from '../../../shared/domain/team-visibility';
 import {
   addWorkingDays,
   applyGanttDateEdit,
   detectActiveWipTickets,
-  resolvePersonTeamId,
 } from '../../../shared/domain/work-views';
-import { filterPeopleByWorkspace } from '../../../shared/domain/workspace-scope';
-import { todayInBangkok, workflowStatusOf } from '../../../shared/domain/workflow';
+import { canMoveWorkflowByRole, todayInBangkok, workflowStatusOf } from '../../../shared/domain/workflow';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
+import { VisibilityScopeService } from '../auth/visibility-scope.service';
 import { ListQuery, parseListQuery, toListPageResult } from '../common/list-query';
 import { APP_CONFIG, AppConfig } from '../config';
 import { closeOpenStageLog, insertDueShift, insertStageLog } from '../data/multi-team.repo';
-import { getPerson, listPeople } from '../data/people.repo';
+import { getPerson } from '../data/people.repo';
 import { connectionToken, getConnection, getSettings } from '../data/settings.repo';
-import { getVisibilityConfig } from '../data/visibility.repo';
 import {
   getWorkItem,
   insertWorkItems,
@@ -50,6 +48,7 @@ export class WorkItemsController {
   constructor(
     private readonly db: Db,
     private readonly openProject: OpenProjectSyncService,
+    private readonly scope: VisibilityScopeService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -121,10 +120,10 @@ export class WorkItemsController {
       ...listQuery,
       pagingRequested: false,
       page: 1,
-      pageSize: 10_000,
+      pageSize: 50_000,
       offset: 0,
     };
-    const { tickets } = await this.queryTickets(req, exportQuery);
+    const { tickets } = await this.queryTickets(req, exportQuery, 50_000);
     const fmt = (format ?? 'csv').toLowerCase();
     const stamp = todayInBangkok().replace(/-/g, '');
     if (fmt === 'xlsx' || fmt === 'xls') {
@@ -145,28 +144,19 @@ export class WorkItemsController {
   private async queryTickets(
     req: AuthedRequest,
     listQuery: ListQuery,
+    maxLimit = 100,
   ): Promise<{
     tickets: Ticket[];
     total: number;
     unclosedCount: number;
     closedCount: number;
   }> {
-    const [people, visibility] = await Promise.all([
-      listPeople(this.db),
-      getVisibilityConfig(this.db),
-    ]);
-    const allowedTeams = req.authUser?.person
-      ? computeEffectiveAllowedTeams(req.authUser.person, visibility)
-      : null;
+    const ctx = await this.scope.resolve(req.authUser);
 
-    let assigneeIds: string[] | null = null;
-    if (listQuery.teamId) {
-      assigneeIds = people
-        .filter((p) => resolvePersonTeamId(p, p.track) === listQuery.teamId)
-        .map((p) => p.id);
-    } else if (allowedTeams !== null) {
-      assigneeIds = filterPeopleByWorkspace(people, { allowedTeams }).map((p) => p.id);
+    if (listQuery.assigneeId) {
+      ctx.assertCanAccessPerson(listQuery.assigneeId);
     }
+    const assigneeIds = ctx.resolveTeamAssignees(listQuery.teamId);
 
     const page = await queryWorkItemsPage(this.db, {
       q: listQuery.q || undefined,
@@ -178,8 +168,9 @@ export class WorkItemsController {
       track: listQuery.track,
       sort: listQuery.sort || 'id',
       dir: listQuery.dir,
-      limit: listQuery.pagingRequested ? listQuery.pageSize : 10_000,
+      limit: listQuery.pagingRequested ? listQuery.pageSize : maxLimit,
       offset: listQuery.pagingRequested ? listQuery.offset : 0,
+      maxLimit,
       filters: listQuery.filters,
     });
 
@@ -193,12 +184,15 @@ export class WorkItemsController {
 
   @Get('live-search')
   @Roles('admin', 'lead', 'member')
-  async liveSearch(@Query('q') qRaw: string | undefined) {
+  async liveSearch(@Query('q') qRaw: string | undefined, @Req() req: AuthedRequest) {
     const q = (qRaw ?? '').trim();
     if (!q) {
       return { source: 'offline' as const, local: [], live: [], writeback: this.config.openproject.writeback };
     }
-    const foundLocal = await searchWorkItemsLocal(this.db, q, 20);
+    const ctx = await this.scope.resolve(req.authUser);
+    const foundLocal = (await searchWorkItemsLocal(this.db, q, 20)).filter((t) =>
+      ctx.canAccessTicket(t),
+    );
     const local = foundLocal.map((t) => ({
       id: t.id,
       title: t.title ?? t.id,
@@ -235,11 +229,13 @@ export class WorkItemsController {
 
   @Get(':id/detail')
   @Roles('admin', 'lead', 'member')
-  async detail(@Param('id') id: string) {
+  async detail(@Param('id') id: string, @Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
     const ticket = await getWorkItem(this.db, id);
     if (!ticket) {
       return { ok: false, message: 'ไม่พบใบงาน', source: 'offline' as const };
     }
+    ctx.assertCanAccessTicket(ticket);
     const scores = scoreTicket(ticket);
     const writeback = this.config.openproject.writeback;
     const client = await this.openProject.getClient();
@@ -463,10 +459,12 @@ export class WorkItemsController {
     @Body() body: { comment?: string },
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const ticket = await getWorkItem(this.db, id);
     if (!ticket) {
       return { ok: false, message: 'ไม่พบใบงาน' };
     }
+    ctx.assertCanAccessTicket(ticket);
     if (!this.config.openproject.writeback) {
       return { ok: false, writebackDisabled: true, message: 'Writeback ยังปิดอยู่ (OPENPROJECT_WRITEBACK=false)' };
     }
@@ -490,8 +488,12 @@ export class WorkItemsController {
   }
 
   @Get(':id')
-  async one(@Param('id') id: string) {
+  async one(@Param('id') id: string, @Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
     const ticket = await getWorkItem(this.db, id);
+    if (ticket) {
+      ctx.assertCanAccessTicket(ticket);
+    }
     return ticket ? { ticket } : { ticket: null };
   }
 
@@ -623,7 +625,7 @@ export class WorkItemsController {
   }
 
   @Post('import')
-  @Roles('admin', 'lead', 'member')
+  @Roles('admin', 'lead')
   async importMany(@Body() body: { tickets?: Ticket[] }, @Req() req: AuthedRequest) {
     const incoming = body.tickets ?? [];
     const added = await insertWorkItems(this.db, incoming);
@@ -645,22 +647,69 @@ export class WorkItemsController {
     if (!body.ticket || body.ticket.id !== id) {
       return { ok: false, message: 'ticket.id must match path' };
     }
+    const ctx = await this.scope.resolve(req.authUser);
     const existing = await getWorkItem(this.db, id);
     if (!existing) {
       return { ok: false, message: 'not found' };
     }
-    const saved = await upsertWorkItem(this.db, body.ticket);
+    ctx.assertCanAccessTicket(existing, { allowUnassignedForMember: false });
+
     const fromStatus = workflowStatusOf(existing);
-    const toStatus = workflowStatusOf(saved);
-    if (fromStatus !== toStatus) {
+    const toStatus = workflowStatusOf(body.ticket);
+    const roleCheck = canMoveWorkflowByRole(ctx.access, fromStatus, toStatus);
+    if (!roleCheck.ok) {
+      throw new ForbiddenException(roleCheck.message);
+    }
+
+    let nextTicket: Ticket;
+    if (ctx.access === 'member') {
+      if (existing.assigneeId !== ctx.selfId) {
+        throw new ForbiddenException('สมาชิกแก้ไขได้เฉพาะใบงานที่มอบหมายให้ตนเอง');
+      }
+      if (body.ticket.closed === true || toStatus === 'Done') {
+        throw new ForbiddenException('สมาชิกไม่สามารถปิดใบงานเป็น Done ได้ด้วยตนเอง');
+      }
+      nextTicket = {
+        ...existing,
+        workflowStatus: body.ticket.workflowStatus ?? existing.workflowStatus,
+        actualMd: typeof body.ticket.actualMd === 'number' ? body.ticket.actualMd : existing.actualMd,
+        actualStartOn:
+          body.ticket.actualStartOn !== undefined ? body.ticket.actualStartOn : existing.actualStartOn,
+        mrLink: body.ticket.mrLink !== undefined ? body.ticket.mrLink : existing.mrLink,
+        dodChecklist:
+          body.ticket.dodChecklist !== undefined ? body.ticket.dodChecklist : existing.dodChecklist,
+        bugCause: body.ticket.bugCause !== undefined ? body.ticket.bugCause : existing.bugCause,
+        pocResult: body.ticket.pocResult !== undefined ? body.ticket.pocResult : existing.pocResult,
+        blocker: typeof body.ticket.blocker === 'boolean' ? body.ticket.blocker : existing.blocker,
+        note: body.ticket.note !== undefined ? body.ticket.note : existing.note,
+        readyForQaAt:
+          body.ticket.readyForQaAt !== undefined ? body.ticket.readyForQaAt : existing.readyForQaAt,
+        devDeliveredOn:
+          body.ticket.devDeliveredOn !== undefined ? body.ticket.devDeliveredOn : existing.devDeliveredOn,
+      };
+    } else {
+      nextTicket = {
+        ...body.ticket,
+        id: existing.id,
+        // ป้องกันการเขียนทับ firstDueOn ที่มีอยู่แล้วจาก PATCH ทั่วไป (ยกเว้น admin หรือคำสั่ง shift)
+        firstDueOn:
+          ctx.isAdmin || !existing.firstDueOn
+            ? body.ticket.firstDueOn
+            : existing.firstDueOn,
+      };
+    }
+
+    const saved = await upsertWorkItem(this.db, nextTicket);
+    const finalStatus = workflowStatusOf(saved);
+    if (fromStatus !== finalStatus) {
       const nowIso = new Date().toISOString();
       await closeOpenStageLog(this.db, id, nowIso);
       const stageLog: TicketStageLog = {
         id: `slog-${id}-${Date.now()}`,
         ticketId: id,
         fromStatus,
-        toStatus,
-        changedBy: req.authUser?.person.id ?? null,
+        toStatus: finalStatus,
+        changedBy: ctx.selfId,
         blockingTeam: saved.blocker || saved.varianceCode === 'BLK' || saved.varianceCode === 'ENV' ? 'INFRA' : null,
         blockerFlag: saved.varianceCode !== 'NONE' ? saved.varianceCode : saved.blocker ? 'BLK' : 'NONE',
         enteredAt: nowIso,
@@ -669,9 +718,9 @@ export class WorkItemsController {
       };
       await insertStageLog(this.db, stageLog);
     }
-    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.replace', id, {
+    await this.db.audit(ctx.selfId, 'work_item.replace', id, {
       fromStatus,
-      toStatus,
+      toStatus: finalStatus,
     });
     return { ok: true, ticket: saved };
   }
@@ -773,14 +822,17 @@ export class WorkItemsController {
   @Roles('admin', 'lead', 'member')
   async detectWip(
     @Body() body: { assigneeId: string; excludeTicketId?: string },
+    @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
+    ctx.assertCanAccessPerson(body.assigneeId);
     const tickets = await listWorkItems(this.db);
     const active = detectActiveWipTickets(tickets, body.assigneeId, body.excludeTicketId);
     return { ok: true, activeTickets: active };
   }
 
   @Post('md-mandate/shift')
-  @Roles('admin', 'lead', 'member')
+  @Roles('admin', 'lead')
   async shiftForMdMandate(
     @Body()
     body: {
@@ -790,10 +842,12 @@ export class WorkItemsController {
     },
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const mdTicket = await getWorkItem(this.db, body.mdTicketId);
     if (!mdTicket) {
       return { ok: false, message: 'ไม่พบใบงาน MD Mandate' };
     }
+    ctx.assertCanAccessTicket(mdTicket);
 
     const shiftDays = body.shiftDays > 0 ? body.shiftDays : Math.max(1, Math.ceil(mdTicket.estimateMd || 1));
     const nowIso = new Date().toISOString();
@@ -802,6 +856,7 @@ export class WorkItemsController {
     for (const targetId of body.targetTicketIds) {
       const ticket = await getWorkItem(this.db, targetId);
       if (!ticket) continue;
+      ctx.assertCanAccessTicket(ticket);
 
       const originalFirstDueOn = ticket.originalFirstDueOn || ticket.firstDueOn || null;
       const newFirstDueOn = addWorkingDays(ticket.firstDueOn || originalFirstDueOn, shiftDays);
@@ -831,7 +886,7 @@ export class WorkItemsController {
           shiftDays,
           reason: `MD Mandate pause from ${mdTicket.id}`,
           status: 'APPROVED',
-          approvedBy: req.authUser?.person.id ?? null,
+          approvedBy: ctx.selfId,
           approvedAt: nowIso,
           createdAt: nowIso,
         };
@@ -850,7 +905,7 @@ export class WorkItemsController {
         await this.openProject.postActivity(ticket.opId, commentMarkdown);
       }
 
-      await this.db.audit(req.authUser?.person.id ?? null, 'work_item.md_mandate_shift', targetId, {
+      await this.db.audit(ctx.selfId, 'work_item.md_mandate_shift', targetId, {
         mdTicketId: mdTicket.id,
         shiftDays,
         originalFirstDueOn,
@@ -862,15 +917,17 @@ export class WorkItemsController {
   }
 
   @Post('md-mandate/resume')
-  @Roles('admin', 'lead', 'member')
+  @Roles('admin', 'lead')
   async resumeTicket(
     @Body() body: { ticketId: string },
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const ticket = await getWorkItem(this.db, body.ticketId);
     if (!ticket) {
       return { ok: false, message: 'ไม่พบใบงาน' };
     }
+    ctx.assertCanAccessTicket(ticket);
 
     const resumedTicket: Ticket = {
       ...ticket,
@@ -880,7 +937,7 @@ export class WorkItemsController {
     };
 
     const saved = await upsertWorkItem(this.db, resumedTicket);
-    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.md_mandate_resume', body.ticketId, {
+    await this.db.audit(ctx.selfId, 'work_item.md_mandate_resume', body.ticketId, {
       pausedDays: saved.pausedDays,
     });
 
@@ -905,12 +962,13 @@ function hoursToIsoDuration(hours: number): string {
   return `PT${h}H${m}M`;
 }
 
-function csvEscape(value: unknown): string {
-  const text = value == null ? '' : String(value);
-  if (/[",\n\r]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
+export function csvEscape(value: unknown): string {
+  const raw = value == null ? '' : String(value);
+  const safe = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+  if (/[",\n\r]/.test(safe)) {
+    return `"${safe.replace(/"/g, '""')}"`;
   }
-  return text;
+  return safe;
 }
 
 function ticketsToCsv(tickets: readonly Ticket[]): string {

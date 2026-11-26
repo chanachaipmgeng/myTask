@@ -288,6 +288,9 @@ export class DisputesPage implements OnInit {
       this.newReason(),
       this.newEvidenceUrl(),
     );
+    if (!created) {
+      return;
+    }
     this.showCreateDialog.set(false);
     this.selectedDispute.set(created);
     this.notice.success(`ส่งคำขอทบทวนคะแนน ${created.disputeCode} สำเร็จ`);
@@ -297,7 +300,10 @@ export class DisputesPage implements OnInit {
     const sel = this.selectedDispute();
     if (!sel) return;
 
-    await this.scorecard.resolveDispute(sel.id, status, this.reviewerComment());
+    const ok = await this.scorecard.resolveDispute(sel.id, status, this.reviewerComment());
+    if (!ok) {
+      return;
+    }
     if (status === 'APPROVED') {
       this.notice.success(`อนุมัติคำขอ ${sel.disputeCode} และคำนวณคะแนนใหม่เรียบร้อยแล้ว`);
     } else {

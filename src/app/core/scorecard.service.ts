@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, ProviderToken, computed, inject, signal } from '@angular/core';
 import {
   SEED_ALLOCATIONS,
   SEED_DISPUTES,
@@ -18,6 +18,7 @@ import {
 } from './admin-settings';
 import { trackHexColor } from '../../../shared/domain/palette';
 import { evaluatePolicySla, PolicySlaEvaluation } from '../../../shared/domain/policy-sla';
+import { RubricDefinition } from '../../../shared/domain/rubrics';
 import { todayInBangkok } from '../../../shared/domain/workflow';
 import { collectAlerts } from './alerts';
 import { ApiClient } from './api-client';
@@ -50,7 +51,7 @@ import {
   runPreflightChecklist,
   simulateDisputeImpact,
 } from '../../../shared/domain/multi-team';
-import { applyGanttDateEdit } from './work-views';
+import { addWorkingDays, applyGanttDateEdit } from './work-views';
 import {
   INDEX_TARGET,
   UNPLANNED_TARGET,
@@ -60,11 +61,12 @@ import {
   scorePerson,
   scoreTicket,
 } from './scoring';
-import { setSessionUser } from './session';
+import { currentSession, setSessionUser } from './session';
+import { ShellNotice } from './shell-notice';
 
-function optionalApiClient(): ApiClient | null {
+function optionalInject<T>(token: ProviderToken<T>): T | null {
   try {
-    return inject(ApiClient, { optional: true });
+    return inject(token, { optional: true });
   } catch {
     return null;
   }
@@ -188,20 +190,43 @@ interface LocalSnapshot {
 
 @Injectable({ providedIn: 'root' })
 export class ScorecardService {
-  private readonly peopleState = signal<Person[]>(SEED_PEOPLE.map((person) => ({ ...person })));
-  private readonly ticketsState = signal<Ticket[]>(SEED_TICKETS.map((ticket) => ({ ...ticket })));
+  private readonly api = optionalInject(ApiClient);
+  private readonly notice = optionalInject(ShellNotice);
+
+  // When running inside Angular with ApiClient, start empty (fail closed).
+  // Outside Angular DI (e.g. Node verify-scores.ts script), initialize with seed fixtures.
+  private readonly peopleState = signal<Person[]>(
+    this.api ? [] : SEED_PEOPLE.map((person) => ({ ...person })),
+  );
+  private readonly ticketsState = signal<Ticket[]>(
+    this.api ? [] : SEED_TICKETS.map((ticket) => ({ ...ticket })),
+  );
   private readonly sequence = signal(1);
   private readonly apiOnline = signal(false);
-  private readonly readyState = signal(false);
+  private readonly readyState = signal(!this.api);
+  private readonly bootstrapStateSig = signal<'loading' | 'ready' | 'error'>(
+    this.api ? 'loading' : 'ready',
+  );
+  private readonly bootstrapErrorSig = signal<string | null>(null);
+  private readonly ticketsLoadErrorSig = signal<string | null>(null);
   private readonly mockModeState = signal(false);
   private snapshot: LocalSnapshot | null = null;
+  private readyPromise: Promise<void> | null = null;
+  private resolveReadyWaiters: (() => void)[] = [];
+
   /** Memo scoreTicket ต่อใบ — ลดงาน computed ระดับรากเมื่อ tickets ไม่เปลี่ยนฟิลด์คะแนน */
   private readonly ticketScoreCache = new Map<string, ReturnType<typeof scoreTicket>>();
+  private readonly rubricsMapState = signal<Record<string, RubricDefinition>>({});
+  private readonly rubricsVersionState = signal(0);
 
-  private readonly allocationsState = signal<TicketAllocation[]>([...SEED_ALLOCATIONS]);
-  private readonly stageLogsState = signal<TicketStageLog[]>([...SEED_STAGE_LOGS]);
-  private readonly leavesState = signal<EmployeeLeave[]>([...SEED_LEAVES]);
-  private readonly disputesState = signal<TicketDispute[]>([...SEED_DISPUTES]);
+  private readonly allocationsState = signal<TicketAllocation[]>(
+    this.api ? [] : [...SEED_ALLOCATIONS],
+  );
+  private readonly stageLogsState = signal<TicketStageLog[]>(
+    this.api ? [] : [...SEED_STAGE_LOGS],
+  );
+  private readonly leavesState = signal<EmployeeLeave[]>(this.api ? [] : [...SEED_LEAVES]);
+  private readonly disputesState = signal<TicketDispute[]>(this.api ? [] : [...SEED_DISPUTES]);
   private readonly departmentsState = signal<Department[]>([]);
   private readonly teamsState = signal<Team[]>([]);
   private readonly visibilityState = signal<VisibilityConfig>({ matrix: [], userOverrides: {} });
@@ -222,8 +247,12 @@ export class ScorecardService {
   readonly leaves = this.leavesState.asReadonly();
   readonly disputes = this.disputesState.asReadonly();
   readonly apiReady = this.readyState.asReadonly();
+  readonly bootstrapState = this.bootstrapStateSig.asReadonly();
+  readonly bootstrapError = this.bootstrapErrorSig.asReadonly();
+  readonly ticketsLoadError = this.ticketsLoadErrorSig.asReadonly();
   readonly usingApi = this.apiOnline.asReadonly();
   readonly mockMode = this.mockModeState.asReadonly();
+  readonly activeRubrics = this.rubricsMapState.asReadonly();
 
   readonly handoffReport = computed<HandoffSlaReport>(() =>
     computeHandoffSlaSummary(this.ticketsState(), this.stageLogsState(), this.roster()),
@@ -241,9 +270,7 @@ export class ScorecardService {
     runPreflightChecklist(this.roster(), this.ticketsState(), this.disputesState(), this.leavesState()),
   );
 
-  readonly mdMandateReport = computed(() =>
-    calculateMdMandateShare(this.ticketsState()),
-  );
+  readonly mdMandateReport = computed(() => calculateMdMandateShare(this.ticketsState()));
 
   readonly roster = computed(() =>
     this.peopleState().map((person) => ({
@@ -270,34 +297,107 @@ export class ScorecardService {
     planNewWork(this.roster(), this.ticketsState(), weeklyQuotas(), this.leavesState()),
   );
 
-  private readonly devLoginEnabledState = signal(true);
+  private readonly devLoginEnabledState = signal(false);
   readonly devLoginEnabled = this.devLoginEnabledState.asReadonly();
-
-  private readonly api = optionalApiClient();
 
   constructor() {
     if (this.api) {
       void this.reloadFromApi();
     } else {
       this.readyState.set(true);
+      this.bootstrapStateSig.set('ready');
     }
+  }
+
+  clearSessionState(): void {
+    setSessionUser(null, null);
+    this.peopleState.set([]);
+    this.ticketsState.set([]);
+  }
+
+  whenReady(): Promise<void> {
+    if (this.readyState()) {
+      return Promise.resolve();
+    }
+    if (!this.readyPromise) {
+      this.readyPromise = new Promise<void>((resolve) => {
+        this.resolveReadyWaiters.push(resolve);
+      });
+    }
+    return this.readyPromise;
+  }
+
+  private markReady(): void {
+    this.readyState.set(true);
+    const waiters = this.resolveReadyWaiters.splice(0);
+    for (const resolve of waiters) {
+      resolve();
+    }
+    this.readyPromise = null;
+  }
+
+  setRubrics(list: readonly RubricDefinition[]): void {
+    const map: Record<string, RubricDefinition> = {};
+    for (const r of list) {
+      map[r.rubric_id] = r;
+    }
+    this.rubricsMapState.set(map);
+    this.rubricsVersionState.update((v) => v + 1);
+    this.ticketScoreCache.clear();
+  }
+
+  private rubricOptions(): { rubrics?: Record<string, RubricDefinition> } | undefined {
+    const map = this.rubricsMapState();
+    return Object.keys(map).length > 0 ? { rubrics: map } : undefined;
   }
 
   async reloadFromApi(): Promise<boolean> {
     if (this.mockModeState()) {
-      this.readyState.set(true);
+      this.bootstrapStateSig.set('ready');
+      this.markReady();
       return false;
     }
     if (!this.api) {
-      this.readyState.set(true);
+      this.bootstrapStateSig.set('ready');
+      this.markReady();
       return false;
     }
+    this.bootstrapErrorSig.set(null);
+    this.ticketsLoadErrorSig.set(null);
+    if (!this.readyState()) {
+      this.bootstrapStateSig.set('loading');
+    }
+
     try {
       const data = await this.api.bootstrap();
       if (this.mockModeState()) {
-        this.readyState.set(true);
+        this.bootstrapStateSig.set('ready');
+        this.markReady();
         return false;
       }
+
+      this.devLoginEnabledState.set(data.auth.devLoginEnabled ?? false);
+      if (data.teamStaging === 'all' || data.teamStaging === 'rd') {
+        teamStagingMode.set(data.teamStaging);
+      }
+
+      if (!data.auth.authenticated || !data.auth.person) {
+        setSessionUser(null, null);
+        this.peopleState.set([]);
+        this.ticketsState.set([]);
+        this.departmentsState.set([]);
+        this.teamsState.set([]);
+        this.disputesState.set([]);
+        this.leavesState.set([]);
+        this.stageLogsState.set([]);
+        this.allocationsState.set([]);
+        this.effectiveAllowedTeamsState.set(null);
+        this.apiOnline.set(true);
+        this.bootstrapStateSig.set('ready');
+        this.markReady();
+        return true;
+      }
+
       this.peopleState.set(data.people.map((person) => ({ ...person })));
       this.departmentsState.set((data.departments ?? []).map((item) => ({ ...item })));
       this.teamsState.set((data.teams ?? []).map((item) => ({ ...item })));
@@ -305,51 +405,56 @@ export class ScorecardService {
       this.leavesState.set((data.leaves ?? []).map((item) => ({ ...item })));
       this.stageLogsState.set((data.stageLogs ?? []).map((item) => ({ ...item })));
       this.allocationsState.set((data.allocations ?? []).map((item) => ({ ...item })));
-      const cycleSettings = normalizeCycleSettings(
-        (data.settings as { scorecardCycles?: Parameters<typeof normalizeCycleSettings>[0] })?.scorecardCycles,
-      );
-      const resolvedCycles =
-        cycleSettings.cycles.length > 0 ? cycleSettings : defaultCycleSettings();
-      this.cyclesState.set(resolvedCycles.cycles.map((row) => ({ ...row, teamIds: [...row.teamIds] })));
-      this.activeCycleIdState.set(resolvedCycles.activeCycleId);
-      this.devLoginEnabledState.set(data.auth.devLoginEnabled ?? false);
-      applyRemoteSettings(data.settings);
+      if (Array.isArray(data.rubrics) && data.rubrics.length > 0) {
+        this.setRubrics(data.rubrics);
+      }
+      if (data.settings) {
+        const cycleSettings = normalizeCycleSettings(
+          (data.settings as { scorecardCycles?: Parameters<typeof normalizeCycleSettings>[0] })
+            ?.scorecardCycles,
+        );
+        const resolvedCycles =
+          cycleSettings.cycles.length > 0 ? cycleSettings : defaultCycleSettings();
+        this.cyclesState.set(resolvedCycles.cycles.map((row) => ({ ...row, teamIds: [...row.teamIds] })));
+        this.activeCycleIdState.set(resolvedCycles.activeCycleId);
+        applyRemoteSettings(data.settings);
+      }
       if (data.visibility) {
         this.visibilityState.set(data.visibility);
       }
       this.effectiveAllowedTeamsState.set(data.auth.effectiveAllowedTeams ?? null);
-      if (data.teamStaging === 'all' || data.teamStaging === 'rd') {
-        teamStagingMode.set(data.teamStaging);
-      }
-      if (data.auth.authenticated && data.auth.person) {
-        setSessionUser(data.auth.person, data.auth.access ?? data.auth.person.access ?? 'member');
-      } else {
-        setSessionUser(null, null);
-      }
+      setSessionUser(data.auth.person, data.auth.access ?? data.auth.person.access ?? 'member');
+
       this.apiOnline.set(true);
+      this.bootstrapStateSig.set('ready');
 
       // ใบงานแยกโหลด — ไม่บล็อก shell ด้วย SELECT * ทั้งฐาน
       if (data.ticketsDeferred || !data.tickets?.length) {
         this.ticketsState.set([]);
-        this.readyState.set(true);
+        this.markReady();
         try {
           const ticketPayload = await this.api.bootstrapTickets();
           if (!this.mockModeState()) {
             this.ticketsState.set((ticketPayload.tickets ?? []).map((ticket) => ({ ...ticket })));
             this.ticketScoreCache.clear();
           }
-        } catch {
-          // hubs จะว่างชั่วคราว — remote grids ยังใช้ /api/work-items ได้
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'โหลดข้อมูลใบงานไม่สำเร็จ';
+          this.ticketsLoadErrorSig.set(msg);
+          this.notice?.error(msg, 'โหลดรายการใบงานไม่สำเร็จ');
         }
       } else {
         this.ticketsState.set(data.tickets.map((ticket) => ({ ...ticket })));
         this.ticketScoreCache.clear();
-        this.readyState.set(true);
+        this.markReady();
       }
       return true;
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ API ได้';
       this.apiOnline.set(false);
-      this.readyState.set(true);
+      this.bootstrapErrorSig.set(msg);
+      this.bootstrapStateSig.set('error');
+      this.markReady();
       return false;
     }
   }
@@ -365,7 +470,8 @@ export class ScorecardService {
     this.mockModeState.set(true);
     this.peopleState.set(people.map((person) => ({ ...person })));
     this.ticketsState.set(tickets.map((ticket) => ({ ...ticket })));
-    this.readyState.set(true);
+    this.bootstrapStateSig.set('ready');
+    this.markReady();
   }
 
   setMockTickets(tickets: readonly Ticket[]): void {
@@ -390,7 +496,9 @@ export class ScorecardService {
         this.visibilityState.update((prev) => ({ ...prev, matrix: res.matrix ?? matrix }));
         return true;
       }
-    } catch {}
+    } catch (err) {
+      this.notice?.error(err instanceof Error ? err.message : 'อัปเดตสิทธิ์การมองเห็นทีมไม่สำเร็จ');
+    }
     return false;
   }
 
@@ -409,7 +517,9 @@ export class ScorecardService {
         );
         return true;
       }
-    } catch {}
+    } catch (err) {
+      this.notice?.error(err instanceof Error ? err.message : 'บันทึกสิทธิ์ทีมรายบุคคลไม่สำเร็จ');
+    }
     return false;
   }
 
@@ -433,11 +543,22 @@ export class ScorecardService {
     this.sequence.update((value) => value + 1);
     this.ticketsState.update((current) => [...current, ticket]);
     if (!this.mockModeState() && this.apiOnline() && this.api) {
-      void this.api.createWorkItem(ticket).then((result) => {
-        if (result.ticket) {
-          this.replaceLocal(result.ticket);
-        }
-      });
+      void this.api
+        .createWorkItem(ticket)
+        .then((result) => {
+          if (result.ok === false) {
+            this.ticketsState.update((current) => current.filter((t) => t.id !== ticket.id));
+            this.notice?.error('สร้างใบงานไม่สำเร็จ');
+            return;
+          }
+          if (result.ticket) {
+            this.replaceLocal(result.ticket);
+          }
+        })
+        .catch((err) => {
+          this.ticketsState.update((current) => current.filter((t) => t.id !== ticket.id));
+          this.notice?.error(err instanceof Error ? err.message : 'สร้างใบงานไม่สำเร็จ');
+        });
     }
     return ticket;
   }
@@ -455,29 +576,51 @@ export class ScorecardService {
       added.push({ ...ticket });
     }
     if (added.length > 0) {
+      const addedIds = new Set(added.map((t) => t.id));
       this.ticketsState.update((current) => [...current, ...added]);
       if (!this.mockModeState() && this.apiOnline() && this.api) {
-        void this.api.importWorkItems(added);
+        void this.api
+          .importWorkItems(added)
+          .then((res) => {
+            if (res.ok === false) {
+              this.ticketsState.update((current) => current.filter((t) => !addedIds.has(t.id)));
+              this.notice?.error('นำเข้าใบงานไม่สำเร็จ');
+            }
+          })
+          .catch((err) => {
+            this.ticketsState.update((current) => current.filter((t) => !addedIds.has(t.id)));
+            this.notice?.error(err instanceof Error ? err.message : 'นำเข้าใบงานไม่สำเร็จ');
+          });
       }
     }
     return { added: added.map((ticket) => ticket.id), skipped };
   }
 
   replaceTicket(next: Ticket): boolean {
-    let updated = false;
-    this.ticketsState.update((current) =>
-      current.map((ticket) => {
-        if (ticket.id !== next.id) {
-          return ticket;
-        }
-        updated = true;
-        return { ...next, id: ticket.id };
-      }),
-    );
-    if (updated && !this.mockModeState() && this.apiOnline() && this.api) {
-      void this.api.replaceWorkItem(next);
+    const previous = this.ticketsState().find((t) => t.id === next.id);
+    if (!previous) {
+      return false;
     }
-    return updated;
+    this.replaceLocal({ ...next, id: previous.id });
+    if (!this.mockModeState() && this.apiOnline() && this.api) {
+      void this.api
+        .replaceWorkItem(next)
+        .then((res) => {
+          if (res.ok === false) {
+            this.replaceLocal(previous);
+            this.notice?.error('บันทึกใบงานไม่สำเร็จ ระบบคืนค่าเดิมแล้ว');
+            return;
+          }
+          if (res.ticket) {
+            this.replaceLocal(res.ticket);
+          }
+        })
+        .catch((err) => {
+          this.replaceLocal(previous);
+          this.notice?.error(err instanceof Error ? err.message : 'บันทึกใบงานไม่สำเร็จ ระบบคืนค่าเดิมแล้ว');
+        });
+    }
+    return true;
   }
 
   async assignTicket(
@@ -567,6 +710,8 @@ export class ScorecardService {
     const pending = new Map<string, { reviewRounds: number; reopenCount: number; mrLink?: string }>();
     const matched: MyGitMatch[] = [];
     const unmatched: MyGitUnmatched[] = [];
+    const rubricOpts = this.rubricOptions();
+
     for (const commit of commits) {
       const ticket = commit.ticketId ? byId.get(commit.ticketId) : undefined;
       if (!ticket) {
@@ -578,17 +723,20 @@ export class ScorecardService {
         });
         continue;
       }
-      const reviewBefore = scoreTicket(ticket).review;
+      const reviewBefore = scoreTicket(ticket, rubricOpts).review;
       pending.set(ticket.id, {
         reviewRounds: commit.reviewRounds,
         reopenCount: commit.reopenCount,
         mrLink: commit.mrLink,
       });
-      const reviewAfter = scoreTicket({
-        ...ticket,
-        reviewRounds: commit.reviewRounds,
-        reopenCount: commit.reopenCount,
-      }).review;
+      const reviewAfter = scoreTicket(
+        {
+          ...ticket,
+          reviewRounds: commit.reviewRounds,
+          reopenCount: commit.reopenCount,
+        },
+        rubricOpts,
+      ).review;
       matched.push({
         sha: commit.sha,
         message: commit.message,
@@ -601,7 +749,9 @@ export class ScorecardService {
         mrLink: commit.mrLink || ticket.mrLink,
       });
     }
+
     if (pending.size > 0) {
+      const updatedList: Ticket[] = [];
       this.ticketsState.update((current) =>
         current.map((ticket) => {
           const update = pending.get(ticket.id);
@@ -614,12 +764,26 @@ export class ScorecardService {
             reopenCount: update.reopenCount,
             mrLink: update.mrLink || ticket.mrLink,
           };
-          if (!this.mockModeState() && this.apiOnline() && this.api) {
-            void this.api.replaceWorkItem(next);
-          }
+          updatedList.push(next);
           return next;
         }),
       );
+      if (!this.mockModeState() && this.apiOnline() && this.api && updatedList.length > 0) {
+        void (async () => {
+          let failed = 0;
+          for (const next of updatedList) {
+            try {
+              const res = await this.api!.replaceWorkItem(next);
+              if (res.ok === false) failed++;
+            } catch {
+              failed++;
+            }
+          }
+          if (failed > 0) {
+            this.notice?.error(`อัปเดตข้อมูล GitLab กลับเซิร์ฟเวอร์ไม่สำเร็จ ${failed} รายการ`);
+          }
+        })();
+      }
     }
     return { matched, unmatched };
   }
@@ -652,6 +816,7 @@ export class ScorecardService {
       ticket.id,
       ticket.closed ? 1 : 0,
       ticket.size,
+      ticket.type,
       ticket.estimateMd,
       ticket.actualMd,
       ticket.reviewRounds,
@@ -662,10 +827,15 @@ export class ScorecardService {
       ticket.devDeliveredOn ?? '',
       ticket.blocker ? 1 : 0,
       ticket.pausedDays ?? 0,
+      ticket.isPaused ? 1 : 0,
+      ticket.varianceCode,
+      ticket.inTimeBox ? 1 : 0,
+      ticket.childTicketsSized ? 1 : 0,
+      this.rubricsVersionState(),
     ].join('|');
     const hit = this.ticketScoreCache.get(key);
     if (hit) return hit;
-    const score = scoreTicket(ticket);
+    const score = scoreTicket(ticket, this.rubricOptions());
     if (this.ticketScoreCache.size > 20_000) this.ticketScoreCache.clear();
     this.ticketScoreCache.set(key, score);
     return score;
@@ -738,8 +908,9 @@ export class ScorecardService {
     weights: Parameters<typeof scorePerson>[2],
     quotas: Record<Person['level'], number>,
   ): PersonRow[] {
+    const rubricOpts = this.rubricOptions();
     return people.map((person) => {
-      const score = scorePerson(person, tickets, weights);
+      const score = scorePerson(person, tickets, weights, rubricOpts);
       const weighted = person.track === 'Implement' ? score.weightedScore : score.dodWeightedScore;
       const sidePct =
         person.track === 'Implement' ? score.unplannedRatio * 100 : score.spikeRatio * 100;
@@ -779,11 +950,27 @@ export class ScorecardService {
     requestedFlag: VarianceCode,
     reason: string,
     evidenceUrl?: string,
-  ): Promise<TicketDispute> {
+  ): Promise<TicketDispute | null> {
+    if (!this.mockModeState() && this.usingApi() && this.api) {
+      try {
+        const res = await this.api.createDispute({ ticketId, requestedFlag, reason, evidenceUrl });
+        if (res?.ok && res?.dispute) {
+          this.disputesState.update((list) => [res.dispute, ...list]);
+          return res.dispute;
+        }
+        this.notice?.error('ส่งคำขอทบทวนคะแนนไม่สำเร็จ');
+        return null;
+      } catch (err) {
+        this.notice?.error(err instanceof Error ? err.message : 'ส่งคำขอทบทวนคะแนนไม่สำเร็จ');
+        return null;
+      }
+    }
+
     const ticket = this.ticketsState().find((t) => t.id === ticketId);
     const person = this.roster().find((p) => p.id === ticket?.assigneeId) ?? this.roster()[0];
+    if (!person) return null;
 
-    const sim = ticket && person
+    const sim = ticket
       ? simulateDisputeImpact(ticket, person, this.ticketsState(), requestedFlag)
       : { scoreBefore: 60, scoreProjected: 100, scoreDiff: 40, personIndexBefore: 70, personIndexProjected: 76, personIndexDiff: 6 };
 
@@ -801,35 +988,28 @@ export class ScorecardService {
       createdAt: new Date().toISOString(),
     };
 
-    if (this.usingApi() && this.api) {
-      try {
-        const res = await this.api.createDispute({ ticketId, requestedFlag, reason, evidenceUrl });
-        if (res?.dispute) {
-          this.disputesState.update((list) => [res.dispute, ...list]);
-          return res.dispute;
-        }
-      } catch {
-        // Fallback to local
-      }
-    }
-
     this.disputesState.update((list) => [newDispute, ...list]);
     return newDispute;
   }
 
   async resolveDispute(id: string, status: 'APPROVED' | 'REJECTED', comment?: string): Promise<boolean> {
-    if (this.usingApi() && this.api) {
+    if (!this.mockModeState() && this.usingApi() && this.api) {
       try {
         const res = await this.api.resolveDispute(id, status, comment);
-        if (res?.dispute) {
+        if (!res?.ok) {
+          this.notice?.error('พิจารณาคำขอทบทวนคะแนนไม่สำเร็จ');
+          return false;
+        }
+        if (res.dispute) {
           this.disputesState.update((list) => list.map((d) => (d.id === id ? res.dispute : d)));
         }
-        if (res?.ticket) {
+        if (res.ticket) {
           this.replaceLocal(res.ticket);
         }
-        return Boolean(res?.ok ?? true);
-      } catch {
-        // Fallback to local state below
+        return true;
+      } catch (err) {
+        this.notice?.error(err instanceof Error ? err.message : 'พิจารณาคำขอทบทวนคะแนนไม่สำเร็จ');
+        return false;
       }
     }
 
@@ -851,7 +1031,7 @@ export class ScorecardService {
       if (dispute) {
         const ticket = this.ticketsState().find((t) => t.id === dispute.ticketId);
         if (ticket) {
-          this.replaceTicket({
+          this.replaceLocal({
             ...ticket,
             varianceCode: dispute.requestedFlag,
             reopenCount:
@@ -872,29 +1052,56 @@ export class ScorecardService {
       id: `leave-${Date.now()}`,
     };
     this.leavesState.update((list) => [...list, item]);
-    if (this.usingApi() && this.api) {
-      void this.api.createLeave(item).then((res) => {
-        if (res?.leave) {
-          this.leavesState.update((list) => list.map((row) => (row.id === item.id ? res.leave! : row)));
-        }
-      });
+    if (!this.mockModeState() && this.usingApi() && this.api) {
+      void this.api
+        .createLeave(item)
+        .then((res) => {
+          if (res?.leave) {
+            this.leavesState.update((list) => list.map((row) => (row.id === item.id ? res.leave! : row)));
+          }
+        })
+        .catch((err) => {
+          this.leavesState.update((list) => list.filter((row) => row.id !== item.id));
+          this.notice?.error(err instanceof Error ? err.message : 'บันทึกวันลาไม่สำเร็จ');
+        });
     }
   }
 
   removeEmployeeLeave(id: string): void {
+    const removed = this.leavesState().find((item) => item.id === id);
     this.leavesState.update((list) => list.filter((item) => item.id !== id));
-    if (this.usingApi() && this.api) {
-      void this.api.deleteLeave(id);
+    if (!this.mockModeState() && this.usingApi() && this.api) {
+      void this.api
+        .deleteLeave(id)
+        .then((res) => {
+          if (res && res.ok === false && removed) {
+            this.leavesState.update((list) => [...list, removed]);
+            this.notice?.error('ลบวันลาไม่สำเร็จ');
+          }
+        })
+        .catch((err) => {
+          if (removed) {
+            this.leavesState.update((list) => [...list, removed]);
+          }
+          this.notice?.error(err instanceof Error ? err.message : 'ลบวันลาไม่สำเร็จ');
+        });
     }
   }
 
   updateTicketAllocations(ticketId: string, allocations: TicketAllocation[]): void {
+    const prevAllocs = this.allocationsState().filter((a) => a.ticketId === ticketId);
     this.allocationsState.update((list) => [
       ...list.filter((a) => a.ticketId !== ticketId),
       ...allocations,
     ]);
-    if (this.usingApi() && this.api) {
-      void this.api.saveAllocations(ticketId, allocations);
+    if (!this.mockModeState() && this.usingApi() && this.api) {
+      void this.api.saveAllocations(ticketId, allocations).catch((err) => {
+        this.allocationsState.update((list) => [
+          ...list.filter((a) => a.ticketId !== ticketId),
+          ...prevAllocs,
+        ]);
+        this.notice?.error(err instanceof Error ? err.message : 'บันทึกสัดส่วนงานร่วมไม่สำเร็จ');
+      });
     }
   }
 
@@ -904,12 +1111,11 @@ export class ScorecardService {
       tickets.map((t) => {
         if (t.assigneeId === assigneeId && t.workflowStatus === 'In Progress' && t.firstDueOn) {
           shiftedCount++;
-          const current = new Date(t.firstDueOn);
-          current.setDate(current.getDate() + shiftDays);
+          const shiftedDue = addWorkingDays(t.firstDueOn, shiftDays);
           return {
             ...t,
-            firstDueOn: current.toISOString().slice(0, 10),
-            note: `${t.note ? t.note + ' · ' : ''}เลื่อนกำหนดส่ง ${shiftDays} วันจากงานแทรก`,
+            firstDueOn: shiftedDue,
+            note: `${t.note ? t.note + ' · ' : ''}เลื่อนกำหนดส่ง ${shiftDays} วันทำงานจากงานแทรก`,
           };
         }
         return t;
@@ -922,34 +1128,30 @@ export class ScorecardService {
     const mdTicket = this.ticketsState().find((t) => t.id === mdTicketId);
     if (!mdTicket) return false;
 
-    if (this.usingApi() && this.api) {
+    if (!this.mockModeState() && this.usingApi() && this.api) {
       try {
         const res = await this.api.shiftForMdMandate({ mdTicketId, targetTicketIds, shiftDays });
         if (res.ok && res.updatedTickets) {
           for (const ut of res.updatedTickets) {
-            this.replaceTicket(ut);
+            this.replaceLocal(ut);
           }
           return true;
         }
+        this.notice?.error('เลื่อนกำหนดส่งงานด่วน MD ไม่สำเร็จ');
+        return false;
       } catch (err) {
-        console.warn('API shift failed, falling back to local state:', err);
+        this.notice?.error(err instanceof Error ? err.message : 'เลื่อนกำหนดส่งงานด่วน MD ไม่สำเร็จ');
+        return false;
       }
     }
 
-    // Local fallback
+    // Offline / mock sandbox only
     const nowIso = new Date().toISOString();
     this.ticketsState.update((tickets) =>
       tickets.map((t) => {
         if (targetTicketIds.includes(t.id)) {
           const orig = t.originalFirstDueOn || t.firstDueOn || null;
-          const currentDue = new Date(t.firstDueOn || new Date());
-          let added = 0;
-          while (added < shiftDays) {
-            currentDue.setDate(currentDue.getDate() + 1);
-            if (currentDue.getDay() !== 0 && currentDue.getDay() !== 6) added++;
-          }
-          const newDueStr = currentDue.toISOString().slice(0, 10);
-
+          const newDueStr = addWorkingDays(t.firstDueOn || todayInBangkok(), shiftDays);
           return {
             ...t,
             isPaused: true,
@@ -969,15 +1171,18 @@ export class ScorecardService {
   }
 
   async resumePausedTicket(ticketId: string): Promise<boolean> {
-    if (this.usingApi() && this.api) {
+    if (!this.mockModeState() && this.usingApi() && this.api) {
       try {
         const res = await this.api.resumeTicket(ticketId);
         if (res.ok && res.ticket) {
-          this.replaceTicket(res.ticket);
+          this.replaceLocal(res.ticket);
           return true;
         }
+        this.notice?.error('กลับมาดำเนินงานต่อไม่สำเร็จ');
+        return false;
       } catch (err) {
-        console.warn('API resume failed, falling back to local state:', err);
+        this.notice?.error(err instanceof Error ? err.message : 'กลับมาดำเนินงานต่อไม่สำเร็จ');
+        return false;
       }
     }
 

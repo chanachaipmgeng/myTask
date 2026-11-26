@@ -5,7 +5,12 @@ import { randomToken } from '../common/crypto';
 import { APP_CONFIG, AppConfig } from '../config';
 import { Db } from '../db/db.service';
 import { findPersonByGitlabUsername, getPerson, upsertPerson } from '../data/people.repo';
-import { createSession, deleteSession, findSessionPersonId } from '../data/sessions.repo';
+import {
+  createSession,
+  deleteSession,
+  deleteSessionsByPerson,
+  findSessionPersonId,
+} from '../data/sessions.repo';
 import { AuthUser, GitlabProfile, SESSION_COOKIE } from './auth.types';
 
 @Injectable()
@@ -24,7 +29,8 @@ export class AuthService {
       return null;
     }
     const person = await getPerson(this.db, personId);
-    if (!person) {
+    if (!person || person.active === false) {
+      await deleteSession(this.db, rawToken).catch(() => undefined);
       return null;
     }
     return { person, access: (person.access ?? 'member') as AccessRole };
@@ -43,8 +49,6 @@ export class AuthService {
     if (!url || !clientId) {
       throw new UnauthorizedException('GitLab OAuth is not configured');
     }
-    const redirectUri = `${this.config.appUrl.replace(/4200$/, '3000')}/api/auth/gitlab/callback`;
-    // Prefer API callback on the server host.
     const callback = this.oauthCallbackUrl();
     const params = new URLSearchParams({
       client_id: clientId,
@@ -53,17 +57,18 @@ export class AuthService {
       scope: 'read_user',
       state,
     });
-    void redirectUri;
     return `${url}/oauth/authorize?${params.toString()}`;
   }
 
   oauthCallbackUrl(): string {
-    // Server listens on PORT; OAuth redirect must hit the API, not the Angular app.
-    const port = this.config.port;
-    const base = this.config.appUrl.includes('4200')
-      ? this.config.appUrl.replace('4200', String(port))
-      : `http://127.0.0.1:${port}`;
-    return `${base}/api/auth/gitlab/callback`;
+    if (this.config.oauthCallbackUrl) {
+      return this.config.oauthCallbackUrl;
+    }
+    const baseAppUrl = this.config.appUrl.replace(/\/+$/, '');
+    if (!this.config.production && /:4200$/.test(baseAppUrl)) {
+      return `${baseAppUrl.replace(/:4200$/, `:${this.config.port}`)}/api/auth/gitlab/callback`;
+    }
+    return `${baseAppUrl}/api/auth/gitlab/callback`;
   }
 
   async exchangeGitlabCode(code: string): Promise<GitlabProfile> {
@@ -82,6 +87,7 @@ export class AuthService {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
+      signal: AbortSignal.timeout(15_000),
     });
     if (!tokenRes.ok) {
       throw new UnauthorizedException('GitLab token exchange failed');
@@ -92,6 +98,7 @@ export class AuthService {
     }
     const userRes = await fetch(`${url}/api/v4/user`, {
       headers: { Authorization: `Bearer ${tokenJson.access_token}` },
+      signal: AbortSignal.timeout(15_000),
     });
     if (!userRes.ok) {
       throw new UnauthorizedException('GitLab user fetch failed');
@@ -117,7 +124,6 @@ export class AuthService {
       if (!isBootstrap) {
         throw new UnauthorizedException('GitLab user is not linked to a person');
       }
-      // teamId ว่างไว้ให้ sync-users จาก myProject เติมแผนกจริง — ไม่ hardcode stub `implement`
       person = await upsertPerson(this.db, {
         id: `gl-${profile.username.toLowerCase()}`,
         nickname: profile.name || profile.username,
@@ -130,7 +136,12 @@ export class AuthService {
         email: profile.email,
         gitlabUsername: profile.username,
         teamId: '',
+        active: true,
       });
+    }
+    if (person.active === false) {
+      await deleteSessionsByPerson(this.db, person.id);
+      throw new UnauthorizedException('บัญชีผู้ใช้งานถูกปิดใช้งาน');
     }
     return this.issueSession(person, res);
   }
@@ -142,6 +153,10 @@ export class AuthService {
     const person = await getPerson(this.db, personId);
     if (!person) {
       throw new UnauthorizedException('person not found');
+    }
+    if (person.active === false) {
+      await deleteSessionsByPerson(this.db, person.id);
+      throw new UnauthorizedException('บัญชีผู้ใช้งานถูกปิดใช้งาน');
     }
     return this.issueSession(person, res);
   }

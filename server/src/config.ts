@@ -60,14 +60,20 @@ export interface AppConfig {
   databaseUrl: string;
   /** Public URL of the web app, used for OAuth redirects. */
   appUrl: string;
+  oauthCallbackUrl: string;
+  corsOrigins: string[];
+  allowedIntegrationHosts: string[];
   sessionDays: number;
   devLogin: boolean;
   tokenEncKey: string;
+  tokenEncKeyPrev: string[];
+  geminiApiKey: string;
   gitlab: {
     url: string;
     clientId: string;
     clientSecret: string;
     apiToken: string;
+    webhookSecret: string;
     projectIds: string[];
     bootstrapAdmins: string[];
   };
@@ -89,11 +95,15 @@ export interface AppConfig {
   };
 }
 
+export const INSECURE_DEV_TOKEN_ENC_KEY = 'dev-only-insecure-key-change-me-please';
+
 export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const production = env['NODE_ENV'] === 'production';
-  const tokenEncKey = env['TOKEN_ENC_KEY'] ?? '';
-  if (production && tokenEncKey.length < 32) {
-    throw new Error('TOKEN_ENC_KEY must be set (32+ chars) in production');
+  const tokenEncKey = (env['TOKEN_ENC_KEY'] ?? '').trim();
+  if (production && (tokenEncKey.length < 32 || tokenEncKey === INSECURE_DEV_TOKEN_ENC_KEY)) {
+    throw new Error(
+      'TOKEN_ENC_KEY must be set to a unique secret (32+ chars, not the dev placeholder) in production',
+    );
   }
   return {
     production,
@@ -101,14 +111,20 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     host: (env['HOST'] ?? '127.0.0.1').trim() || '127.0.0.1',
     databaseUrl: env['DATABASE_URL'] ?? 'postgres://manday:manday@localhost:5433/manday',
     appUrl: trimSlash(env['APP_URL'] ?? 'http://127.0.0.1:4200'),
+    oauthCallbackUrl: trimSlash(env['OAUTH_CALLBACK_URL'] ?? ''),
+    corsOrigins: list(env['CORS_ORIGINS']).map(trimSlash),
+    allowedIntegrationHosts: list(env['ALLOWED_INTEGRATION_HOSTS']).map((h) => h.toLowerCase()),
     sessionDays: Number(env['SESSION_DAYS'] ?? 7),
     devLogin: !production && bool(env['AUTH_DEV_LOGIN'], false),
-    tokenEncKey: tokenEncKey || 'dev-only-insecure-key-change-me-please',
+    tokenEncKey: tokenEncKey || INSECURE_DEV_TOKEN_ENC_KEY,
+    tokenEncKeyPrev: list(env['TOKEN_ENC_KEY_PREV']),
+    geminiApiKey: (env['GEMINI_API_KEY'] ?? '').trim(),
     gitlab: {
       url: trimSlash(env['GITLAB_URL'] ?? ''),
       clientId: env['GITLAB_OAUTH_CLIENT_ID'] ?? '',
       clientSecret: env['GITLAB_OAUTH_CLIENT_SECRET'] ?? '',
       apiToken: (env['GITLAB_API_TOKEN'] ?? '').trim(),
+      webhookSecret: (env['GITLAB_WEBHOOK_SECRET'] ?? '').trim(),
       projectIds: list(env['GITLAB_PROJECT_IDS']),
       bootstrapAdmins: list(env['BOOTSTRAP_ADMIN_GITLAB_USERNAMES']).map((name) => name.toLowerCase()),
     },

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Inject,
   Param,
@@ -19,7 +20,9 @@ import {
 } from '../../../shared/domain/multi-team';
 import { EmployeeLeave, TicketAllocation, TicketDispute } from '../../../shared/domain/models';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
+import { VisibilityScopeService } from '../auth/visibility-scope.service';
 import { compareByField, parseListQuery, toListPageResult } from '../common/list-query';
+import { sanitizeEvidenceUrl } from '../common/security';
 import { APP_CONFIG, AppConfig } from '../config';
 import {
   deleteLeave,
@@ -32,7 +35,7 @@ import {
   resolveDisputeRow,
   upsertLeave,
 } from '../data/multi-team.repo';
-import { listPeople } from '../data/people.repo';
+import { getPerson } from '../data/people.repo';
 import { connectionToken, getConnection } from '../data/settings.repo';
 import { getWorkItem, listWorkItems, upsertWorkItem } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
@@ -41,17 +44,19 @@ import { Db } from '../db/db.service';
 export class V2EnterpriseController {
   constructor(
     private readonly db: Db,
+    private readonly scope: VisibilityScopeService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Get('work/handoff-sla')
-  async getHandoffSla() {
-    const [people, tickets, stageLogs] = await Promise.all([
-      listPeople(this.db),
+  async getHandoffSla(@Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
+    const [tickets, stageLogs] = await Promise.all([
       listWorkItems(this.db),
       listStageLogs(this.db),
     ]);
-    const report = computeHandoffSlaSummary(tickets, stageLogs, people);
+    const scopedTickets = ctx.isAdmin ? tickets : tickets.filter((t) => ctx.canAccessTicket(t));
+    const report = computeHandoffSlaSummary(scopedTickets, stageLogs, ctx.visiblePeople);
     return { ok: true, ...report };
   }
 
@@ -62,12 +67,20 @@ export class V2EnterpriseController {
     @Body() body: { target?: string; message?: string },
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
+    const ticket = await getWorkItem(this.db, ticketId);
+    if (ticket) {
+      ctx.assertCanAccessTicket(ticket);
+    }
+
     const messageText =
       body.message?.trim() ||
       `แจ้งเตือนการส่งต่องาน ${ticketId}${body.target ? ` ถึง ${body.target}` : ''} เกิน SLA`;
 
     const connection = await getConnection(this.db, 'teams');
-    const webhookUrl = this.config.teams.webhookUrl || connectionToken(connection, this.config.tokenEncKey);
+    const webhookUrl =
+      this.config.teams.webhookUrl ||
+      connectionToken(connection, this.config.tokenEncKey, this.config.tokenEncKeyPrev);
 
     let sent = false;
     let sendError: string | undefined;
@@ -79,6 +92,7 @@ export class V2EnterpriseController {
           body: JSON.stringify({
             text: `**Handoff SLA Ping**\n- ใบงาน: **${ticketId}**\n- ข้อความ: ${messageText}`,
           }),
+          signal: AbortSignal.timeout(10_000),
         });
         if (!response.ok) {
           sendError = `Teams webhook HTTP ${response.status}`;
@@ -111,13 +125,13 @@ export class V2EnterpriseController {
     };
   }
 
+  @Roles('admin', 'lead')
   @Get('quality/audit')
-  async getQualityAudit() {
-    const [people, tickets] = await Promise.all([
-      listPeople(this.db),
-      listWorkItems(this.db),
-    ]);
-    const report = computeQualityAuditSummary(tickets, people);
+  async getQualityAudit(@Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
+    const tickets = await listWorkItems(this.db);
+    const scopedTickets = ctx.isAdmin ? tickets : tickets.filter((t) => ctx.canAccessTicket(t));
+    const report = computeQualityAuditSummary(scopedTickets, ctx.visiblePeople);
     return { ok: true, ...report };
   }
 
@@ -128,10 +142,12 @@ export class V2EnterpriseController {
     @Body() body: { allocations: TicketAllocation[] },
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const ticket = await getWorkItem(this.db, id);
     if (!ticket) {
       return { ok: false, message: 'ไม่พบใบงาน' };
     }
+    ctx.assertCanAccessTicket(ticket);
     const allocations = (body.allocations ?? []).map((a) => ({
       ...a,
       ticketId: id,
@@ -150,19 +166,23 @@ export class V2EnterpriseController {
   }
 
   @Get('tickets/:id/allocations')
-  async getAllocations(@Param('id') id: string) {
+  async getAllocations(@Param('id') id: string, @Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
+    const ticket = await getWorkItem(this.db, id);
+    if (ticket) {
+      ctx.assertCanAccessTicket(ticket);
+    }
     const allocations = await listAllocations(this.db, id);
     return { ok: true, allocations };
   }
 
   @Roles('admin', 'lead')
   @Get('analytics/time-audit')
-  async getTimeAudit() {
-    const [people, tickets] = await Promise.all([
-      listPeople(this.db),
-      listWorkItems(this.db),
-    ]);
-    const report = computeThreeWayTimeAudit(tickets, people);
+  async getTimeAudit(@Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
+    const tickets = await listWorkItems(this.db);
+    const scopedTickets = ctx.isAdmin ? tickets : tickets.filter((t) => ctx.canAccessTicket(t));
+    const report = computeThreeWayTimeAudit(scopedTickets, ctx.visiblePeople);
     return { ok: true, ...report };
   }
 
@@ -176,12 +196,16 @@ export class V2EnterpriseController {
     @Query('dir') dir?: string,
     @Query('statusScope') statusScope?: string,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const listQuery = parseListQuery(
       { q, page, pageSize, sort, dir, statusScope },
       { defaultSort: 'createdAt', defaultDir: 'desc', defaultPageSize: 25 },
     );
-    const requesterId = req.authUser?.access === 'member' ? req.authUser.person.id : undefined;
+    const requesterId = ctx.access === 'member' ? ctx.selfId : undefined;
     let disputes = await listDisputes(this.db, requesterId);
+    if (!ctx.isAdmin && ctx.allowedPersonIds) {
+      disputes = disputes.filter((d) => ctx.allowedPersonIds!.has(d.requesterId));
+    }
 
     if (listQuery.statusScope === 'unclosed') {
       disputes = disputes.filter((d) => d.status === 'PENDING');
@@ -227,20 +251,25 @@ export class V2EnterpriseController {
     },
     @Req() req: AuthedRequest,
   ) {
-    const [people, tickets] = await Promise.all([
-      listPeople(this.db),
-      listWorkItems(this.db),
-    ]);
-    const ticket = tickets.find((t) => t.id === body.ticketId);
+    const ctx = await this.scope.resolve(req.authUser);
+    const ticket = await getWorkItem(this.db, body.ticketId);
     if (!ticket) {
       return { ok: false, message: 'ไม่พบใบงาน' };
     }
-    const person = people.find((p) => p.id === (req.authUser?.person.id ?? ticket.assigneeId));
+    ctx.assertCanAccessTicket(ticket);
+    if (ctx.access === 'member' && ticket.assigneeId !== ctx.selfId) {
+      throw new ForbiddenException('สมาชิกยื่นคำขอทบทวนคะแนนได้เฉพาะใบงานของตนเอง');
+    }
+
+    const person = await getPerson(this.db, ctx.selfId);
     if (!person) {
       return { ok: false, message: 'ไม่พบผู้ยื่นคำขอ' };
     }
 
-    const sim = simulateDisputeImpact(ticket, person, tickets, body.requestedFlag);
+    const cleanEvidenceUrl = sanitizeEvidenceUrl(body.evidenceUrl);
+    const tickets = await listWorkItems(this.db);
+    const personTickets = tickets.filter((t) => t.assigneeId === person.id);
+    const sim = simulateDisputeImpact(ticket, person, personTickets, body.requestedFlag);
     const dispute: TicketDispute = {
       id: `dsp-${Date.now()}`,
       disputeCode: `DSP-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
@@ -248,7 +277,7 @@ export class V2EnterpriseController {
       requesterId: person.id,
       requestedFlag: body.requestedFlag,
       reason: body.reason,
-      evidenceUrl: body.evidenceUrl,
+      evidenceUrl: cleanEvidenceUrl,
       scoreBefore: sim.scoreBefore,
       scoreProjected: sim.scoreProjected,
       status: 'PENDING',
@@ -256,7 +285,7 @@ export class V2EnterpriseController {
     };
 
     await insertDispute(this.db, dispute);
-    await this.db.audit(req.authUser?.person.id ?? null, 'dispute.created', dispute.disputeCode, {
+    await this.db.audit(ctx.selfId, 'dispute.created', dispute.disputeCode, {
       ticketId: body.ticketId,
       flag: body.requestedFlag,
     });
@@ -271,10 +300,16 @@ export class V2EnterpriseController {
     @Body() body: { status: 'APPROVED' | 'REJECTED'; comment?: string },
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const existing = (await listDisputes(this.db)).find((d) => d.id === id);
     if (!existing) {
-      return { ok: false, message: 'ไม่พบคำขอยุทธรณ์' };
+      return { ok: false, message: 'ไม่พบคำขอทบทวนคะแนน' };
     }
+    if (existing.requesterId === ctx.selfId && !ctx.isAdmin) {
+      throw new ForbiddenException('ไม่สามารถอนุมัติคำขอทบทวนคะแนนของตนเองได้');
+    }
+    ctx.assertCanAccessPerson(existing.requesterId);
+
     if (existing.status !== 'PENDING') {
       return { ok: false, message: 'คำขอนี้ได้รับการพิจารณาแล้ว', dispute: existing };
     }
@@ -283,7 +318,7 @@ export class V2EnterpriseController {
       this.db,
       id,
       body.status,
-      req.authUser?.person.id ?? null,
+      ctx.selfId,
       body.comment,
     );
     if (!dispute) {
@@ -305,7 +340,7 @@ export class V2EnterpriseController {
       }
     }
 
-    await this.db.audit(req.authUser?.person.id ?? null, 'dispute.resolve', id, {
+    await this.db.audit(ctx.selfId, 'dispute.resolve', id, {
       status: body.status,
       comment: body.comment,
       ticketId: dispute.ticketId,
@@ -325,6 +360,7 @@ export class V2EnterpriseController {
 
   @Get('leaves')
   async getLeaves(
+    @Req() req: AuthedRequest,
     @Query('q') q?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -332,11 +368,24 @@ export class V2EnterpriseController {
     @Query('dir') dir?: string,
     @Query('assigneeId') assigneeId?: string,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const listQuery = parseListQuery(
       { q, page, pageSize, sort, dir, assigneeId },
       { defaultSort: 'leaveDate', defaultDir: 'desc', defaultPageSize: 25 },
     );
+    if (listQuery.assigneeId) {
+      ctx.assertCanAccessPerson(listQuery.assigneeId, { selfOnlyForMember: true });
+    }
+
     let leaves = await listLeaves(this.db);
+    if (!ctx.isAdmin) {
+      leaves =
+        ctx.access === 'member'
+          ? leaves.filter((row) => row.userId === ctx.selfId)
+          : ctx.allowedPersonIds
+            ? leaves.filter((row) => ctx.allowedPersonIds!.has(row.userId))
+            : leaves;
+    }
 
     if (listQuery.assigneeId) {
       leaves = leaves.filter((row) => row.userId === listQuery.assigneeId);
@@ -370,6 +419,8 @@ export class V2EnterpriseController {
   @Roles('admin', 'lead')
   @Post('leaves')
   async createLeave(@Body() body: Omit<EmployeeLeave, 'id'> & { id?: string }, @Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
+    ctx.assertCanAccessPerson(body.userId);
     const leave: EmployeeLeave = {
       id: body.id ?? `leave-${Date.now()}`,
       userId: body.userId,
@@ -379,7 +430,7 @@ export class V2EnterpriseController {
       reason: body.reason,
     };
     const saved = await upsertLeave(this.db, leave);
-    await this.db.audit(req.authUser?.person.id ?? null, 'leave.upsert', saved.id, {
+    await this.db.audit(ctx.selfId, 'leave.upsert', saved.id, {
       userId: saved.userId,
       leaveDate: saved.leaveDate,
     });
@@ -389,23 +440,40 @@ export class V2EnterpriseController {
   @Roles('admin', 'lead')
   @Delete('leaves/:id')
   async removeLeave(@Param('id') id: string, @Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
+    if (!ctx.isAdmin) {
+      const leaves = await listLeaves(this.db);
+      const target = leaves.find((l) => l.id === id);
+      if (target) {
+        ctx.assertCanAccessPerson(target.userId);
+      }
+    }
     const ok = await deleteLeave(this.db, id);
     if (ok) {
-      await this.db.audit(req.authUser?.person.id ?? null, 'leave.delete', id, {});
+      await this.db.audit(ctx.selfId, 'leave.delete', id, {});
     }
     return { ok };
   }
 
   @Roles('admin', 'lead')
   @Get('snapshots/preflight-check')
-  async getPreflightCheck() {
-    const [people, tickets, disputes, leaves] = await Promise.all([
-      listPeople(this.db),
+  async getPreflightCheck(@Req() req: AuthedRequest) {
+    const ctx = await this.scope.resolve(req.authUser);
+    const [tickets, disputes, leaves] = await Promise.all([
       listWorkItems(this.db),
       listDisputes(this.db),
       listLeaves(this.db),
     ]);
-    const report = runPreflightChecklist(people, tickets, disputes, leaves);
+    const scopedTickets = ctx.isAdmin ? tickets : tickets.filter((t) => ctx.canAccessTicket(t));
+    const scopedDisputes =
+      !ctx.isAdmin && ctx.allowedPersonIds
+        ? disputes.filter((d) => ctx.allowedPersonIds!.has(d.requesterId))
+        : disputes;
+    const scopedLeaves =
+      !ctx.isAdmin && ctx.allowedPersonIds
+        ? leaves.filter((l) => ctx.allowedPersonIds!.has(l.userId))
+        : leaves;
+    const report = runPreflightChecklist(ctx.visiblePeople, scopedTickets, scopedDisputes, scopedLeaves);
     return { ok: true, ...report };
   }
 }

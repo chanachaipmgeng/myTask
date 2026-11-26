@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ApiClient } from '../../../core/api-client';
 import { DEFAULT_RUBRICS, RubricDefinition } from '../../../core/rubrics';
+import { ScorecardService } from '../../../core/scorecard.service';
 import { ThemeService } from '../../../core/theme.service';
 import {
   FlashMessagesComponent,
@@ -42,6 +43,7 @@ interface RubricGridRow {
 })
 export class AdminRubricsPage implements OnInit {
   private readonly api = inject(ApiClient);
+  private readonly scorecard = inject(ScorecardService);
   protected readonly theme = inject(ThemeService);
 
   protected readonly rubrics = signal<RubricGridRow[]>([]);
@@ -78,6 +80,7 @@ export class AdminRubricsPage implements OnInit {
     try {
       const res = await this.api.getRubrics();
       const list = res?.rubrics?.length ? res.rubrics : Object.values(DEFAULT_RUBRICS);
+      this.scorecard.setRubrics(list);
       this.rubrics.set(this.transformRows(list));
     } catch {
       this.rubrics.set(this.transformRows(Object.values(DEFAULT_RUBRICS)));

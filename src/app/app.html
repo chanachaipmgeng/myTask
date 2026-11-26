@@ -1,7 +1,37 @@
 @if (isAuthScreen()) {
-  <main class="auth-viewport">
+  <div class="auth-viewport">
     <router-outlet />
-  </main>
+  </div>
+} @else if (bootstrapState() === 'loading') {
+  <div class="shell-boot-guard" role="status" aria-live="polite">
+    <div class="shell-boot-card">
+      <span class="e-icons e-spinner e-spin shell-boot-card__icon" aria-hidden="true"></span>
+      <h2 class="shell-boot-card__title">กำลังเตรียมพื้นที่ทำงาน…</h2>
+      <p class="shell-boot-card__sub">กำลังตรวจสอบสิทธิ์และซิงก์ข้อมูลล่าสุด</p>
+    </div>
+  </div>
+} @else if (bootstrapState() === 'error' && !mockMode()) {
+  <div class="shell-boot-guard" role="alert">
+    <div class="shell-boot-card shell-boot-card--error">
+      <span class="e-icons e-circle-close shell-boot-card__icon" aria-hidden="true"></span>
+      <h2 class="shell-boot-card__title">ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้</h2>
+      <p class="shell-boot-card__sub">{{ bootstrapError() || 'กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่อีกครั้ง' }}</p>
+      <div class="shell-boot-card__actions">
+        <button ejs-button cssClass="e-primary" type="button" (click)="retryBootstrap()">
+          ลองเชื่อมต่อใหม่
+        </button>
+        <a ejs-button cssClass="e-outline" routerLink="/login">ไปหน้าเข้าสู่ระบบ</a>
+      </div>
+    </div>
+  </div>
+} @else if (!hasActiveSession()) {
+  <div class="shell-boot-guard" role="status" aria-live="polite">
+    <div class="shell-boot-card">
+      <span class="e-icons e-spinner e-spin shell-boot-card__icon" aria-hidden="true"></span>
+      <h2 class="shell-boot-card__title">กำลังเปลี่ยนเส้นทาง…</h2>
+      <p class="shell-boot-card__sub">กำลังไปยังหน้าเข้าสู่ระบบ</p>
+    </div>
+  </div>
 } @else {
   <div
     class="app-frame"

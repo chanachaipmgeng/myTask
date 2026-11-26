@@ -5,25 +5,33 @@ import { Controller, Get, Post, Req } from '@nestjs/common';
 import { AnalyticsReport, buildAnalyticsReport } from '../../../shared/domain/analytics';
 import { Person, Ticket } from '../../../shared/domain/models';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
-import { listPeople } from '../data/people.repo';
+import { VisibilityScopeService } from '../auth/visibility-scope.service';
 import { listWorkItems } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
 
 @Controller('api/analytics')
 export class AnalyticsController {
-  constructor(private readonly db: Db) {}
+  constructor(
+    private readonly db: Db,
+    private readonly scope: VisibilityScopeService,
+  ) {}
 
+  @Roles('admin', 'lead')
   @Get('report')
-  async getReport(): Promise<AnalyticsReport> {
-    const [people, tickets] = await Promise.all([listPeople(this.db), listWorkItems(this.db)]);
-    return runPythonAnalyticsOrFallback(people, tickets);
+  async getReport(@Req() req: AuthedRequest): Promise<AnalyticsReport> {
+    const ctx = await this.scope.resolve(req.authUser);
+    const allTickets = await listWorkItems(this.db);
+    const scopedTickets = ctx.isAdmin ? allTickets : allTickets.filter((t) => ctx.canAccessTicket(t));
+    return runPythonAnalyticsOrFallback(ctx.visiblePeople, scopedTickets);
   }
 
   @Roles('admin', 'lead')
   @Post('run')
   async runNow(@Req() req: AuthedRequest): Promise<AnalyticsReport> {
-    const [people, tickets] = await Promise.all([listPeople(this.db), listWorkItems(this.db)]);
-    const report = await runPythonAnalyticsOrFallback(people, tickets);
+    const ctx = await this.scope.resolve(req.authUser);
+    const allTickets = await listWorkItems(this.db);
+    const scopedTickets = ctx.isAdmin ? allTickets : allTickets.filter((t) => ctx.canAccessTicket(t));
+    const report = await runPythonAnalyticsOrFallback(ctx.visiblePeople, scopedTickets);
     await this.db.audit(req.authUser?.person.id ?? null, 'analytics.run', 'python_engine', {
       engine: report.engine,
       readinessScore: report.syncHygiene.readinessScore,
@@ -71,6 +79,8 @@ function invokePythonScript(
     });
     const chunks: Buffer[] = [];
     child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+    child.stderr.on('data', () => undefined);
+    child.stdin.on('error', () => undefined);
     child.on('error', (err) => rejectPromise(err));
     child.on('close', (code) => {
       if (code !== 0) {

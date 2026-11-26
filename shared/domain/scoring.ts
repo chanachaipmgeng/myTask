@@ -160,17 +160,32 @@ export function accuracyBand(ratio: number, size?: Size, rubrics?: Record<string
               : 'RUB-SIZE-M';
     try {
       const rubric = getRubricOrDefault<SizingRubricParams>(rubricId, rubrics);
-      const minRatio = rubric.params.min_ratio ?? 0.8;
-      const maxRatio = rubric.params.max_ratio ?? 1.5;
-      if (ratio >= minRatio && ratio <= maxRatio) {
-        return { points: 20, inBand: true };
+      if (rubric.is_active !== false) {
+        const minRatio = rubric.params.min_ratio ?? 0.8;
+        const maxRatio = rubric.params.max_ratio ?? 1.5;
+        const defaultFull =
+          size === 'XS' || size === 'S'
+            ? [0.5, 2.0]
+            : size === 'L' || size === 'XL'
+              ? [0.85, 1.3]
+              : [0.8, 1.5];
+        const defaultPartial =
+          size === 'XS' || size === 'S'
+            ? [0.3, 2.5]
+            : size === 'L' || size === 'XL'
+              ? [0.7, 1.6]
+              : [0.5, 2.0];
+        const matchesDefault = minRatio === defaultFull[0] && maxRatio === defaultFull[1];
+        if (ratio >= minRatio && ratio <= maxRatio) {
+          return { points: 20, inBand: true };
+        }
+        const partialMin = matchesDefault ? defaultPartial[0] : Math.max(0, minRatio - 0.3);
+        const partialMax = matchesDefault ? defaultPartial[1] : maxRatio + 0.5;
+        if ((ratio >= partialMin && ratio < minRatio) || (ratio > maxRatio && ratio <= partialMax)) {
+          return { points: 10, inBand: false };
+        }
+        return { points: 0, inBand: false };
       }
-      const partialMin = Math.max(0, minRatio - 0.3);
-      const partialMax = maxRatio + 0.5;
-      if ((ratio >= partialMin && ratio < minRatio) || (ratio > maxRatio && ratio <= partialMax)) {
-        return { points: 10, inBand: false };
-      }
-      return { points: 0, inBand: false };
     } catch {
       // Fall through to hardcoded bands when rubric id missing.
     }
@@ -324,14 +339,18 @@ function closedTickets(tickets: readonly Ticket[]): Ticket[] {
   return tickets.filter((ticket) => ticket.closed);
 }
 
-function weighted(tickets: readonly Ticket[], include: (ticket: Ticket) => boolean): number {
+function weighted(
+  tickets: readonly Ticket[],
+  include: (ticket: Ticket) => boolean,
+  options?: ScoreTicketOptions,
+): number {
   let weightedPoints = 0;
   let points = 0;
   for (const ticket of tickets) {
     if (!include(ticket)) {
       continue;
     }
-    const score = scoreTicket(ticket);
+    const score = scoreTicket(ticket, options);
     if (score.total === null) {
       continue;
     }
@@ -349,6 +368,7 @@ export function scorePerson(
   person: Person,
   tickets: readonly Ticket[],
   weights: TrackWeights = DEFAULT_TRACK_WEIGHTS,
+  options?: ScoreTicketOptions,
 ): PersonScore {
   const assigned = tickets.filter((ticket) => ticket.assigneeId === person.id && !ticket.isSplitEffort);
   const splitTickets = tickets.filter(
@@ -382,8 +402,8 @@ export function scorePerson(
   const plannedMd = person.plannedMd;
   const planRawPct = plannedMd === 0 ? 0 : (closedMd / plannedMd) * 100;
   const planIndexPct = Math.min(planRawPct, 100);
-  const weightedScore = weighted(closed, () => true);
-  const inBand = closed.filter((ticket) => scoreTicket(ticket).accuracyInBand).length;
+  const weightedScore = weighted(closed, () => true, options);
+  const inBand = closed.filter((ticket) => scoreTicket(ticket, options).accuracyInBand).length;
   const accuracyShare = closed.length === 0 ? 0 : inBand / closed.length;
   const reopened = closed.filter((ticket) => ticket.reopenCount > 0).length;
   const reworkRate = closed.length === 0 ? 0 : reopened / closed.length;
@@ -398,6 +418,7 @@ export function scorePerson(
   const dodWeightedScore = weighted(
     closed,
     (ticket) => (ticket.type === 'Feature' || ticket.type === 'CR') && ticket.dodPassed,
+    options,
   );
   const spikes = own.filter((ticket) => ticket.type === 'Spike');
   const spikeQuality =
@@ -418,7 +439,7 @@ export function scorePerson(
   let reviewWeighted = 0;
   let reviewPointsTotal = 0;
   for (const ticket of closed) {
-    const score = scoreTicket(ticket);
+    const score = scoreTicket(ticket, options);
     reviewWeighted += (score.review + score.reopen) * score.points;
     reviewPointsTotal += score.points;
   }

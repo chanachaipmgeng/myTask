@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
 import { KpiPeriodType, parsePeriodKey } from '../../../shared/domain/kpi-snapshot';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
+import { VisibilityScopeService } from '../auth/visibility-scope.service';
 import { listKpiSnapshotPeriods, listKpiSnapshots } from '../data/kpi-snapshots.repo';
 import { Db } from '../db/db.service';
 import { KpiSnapshotService } from '../kpi/kpi-snapshot.service';
@@ -10,6 +11,7 @@ export class KpiSnapshotsController {
   constructor(
     private readonly db: Db,
     private readonly snapshots: KpiSnapshotService,
+    private readonly scope: VisibilityScopeService,
   ) {}
 
   @Get('periods')
@@ -21,6 +23,7 @@ export class KpiSnapshotsController {
   async list(
     @Query('periodType') periodTypeRaw: string | undefined,
     @Query('periodKey') periodKeyRaw: string | undefined,
+    @Req() req: AuthedRequest,
   ) {
     const periodType = periodTypeRaw as KpiPeriodType;
     const periodKey = (periodKeyRaw ?? '').trim();
@@ -39,7 +42,15 @@ export class KpiSnapshotsController {
         rows: [],
       };
     }
-    const rows = await listKpiSnapshots(this.db, periodType, periodKey);
+    const ctx = await this.scope.resolve(req.authUser);
+    const allRows = await listKpiSnapshots(this.db, periodType, periodKey);
+    const rows = ctx.isAdmin
+      ? allRows
+      : ctx.access === 'member'
+        ? allRows.filter((r) => r.personId === ctx.selfId)
+        : ctx.allowedPersonIds
+          ? allRows.filter((r) => ctx.allowedPersonIds!.has(r.personId))
+          : allRows;
     return { ok: true, rows };
   }
 

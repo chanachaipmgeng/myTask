@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { currentViewer, effectiveRole, setViewer, setWorkspaceMode } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
@@ -9,6 +9,15 @@ import { currentSession, setSessionUser } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { RevealDirective, StaggerDirective } from '../../shared/motion';
 import { FlashMessagesComponent, SfCheckboxComponent } from '../../shared/ui';
+
+type DevRosterAccount = {
+  id: string;
+  nickname: string;
+  fullName: string;
+  role: string;
+  department?: string | null;
+  access: AccessRole;
+};
 
 @Component({
   selector: 'app-login',
@@ -27,15 +36,23 @@ export class LoginPage {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly notice = inject(ShellNotice);
 
   protected readonly session = currentSession;
   protected readonly viewer = currentViewer;
   protected readonly role = effectiveRole;
   protected readonly usingApi = this.scorecard.usingApi;
-  protected readonly roster = this.scorecard.roster;
+  protected readonly devAccounts = signal<DevRosterAccount[]>([]);
+  protected readonly roster = computed<DevRosterAccount[]>(() => {
+    const live = this.scorecard.roster();
+    if (live.length > 0) {
+      return live;
+    }
+    return this.devAccounts();
+  });
 
-  protected readonly username = signal('paweena');
+  protected readonly username = signal('');
   protected readonly password = signal('');
   protected readonly showPassword = signal(false);
   protected readonly rememberMe = signal(true);
@@ -47,6 +64,31 @@ export class LoginPage {
   protected readonly canUseDevLogin = computed(
     () => !this.usingApi() || this.scorecard.devLoginEnabled(),
   );
+  protected readonly isSignedInAdmin = computed(
+    () => this.session()?.access === 'admin',
+  );
+
+  constructor() {
+    effect(() => {
+      const apiReady = this.scorecard.apiReady();
+      const devEnabled = this.scorecard.devLoginEnabled();
+      const hasRoster = this.scorecard.roster().length > 0;
+      if (apiReady && devEnabled && !hasRoster && this.devAccounts().length === 0) {
+        void this.loadDevRoster();
+      }
+    });
+  }
+
+  private async loadDevRoster(): Promise<void> {
+    try {
+      const res = await this.api.devRoster();
+      if (res.enabled && Array.isArray(res.people)) {
+        this.devAccounts.set(res.people);
+      }
+    } catch {
+      // Ignore if dev roster is disabled
+    }
+  }
 
   protected onUsernameInput(event: Event): void {
     const target = event.target as HTMLInputElement | null;
@@ -81,14 +123,14 @@ export class LoginPage {
     }
 
     const cleanInput = rawInput.toLowerCase().replace(/@myhr\.co\.th$/, '');
+    const list = this.roster();
     const person =
-      this.roster().find((p) => p.id.toLowerCase() === cleanInput) ||
-      this.roster().find((p) => p.nickname.toLowerCase() === cleanInput) ||
-      this.roster().find((p) => p.email?.toLowerCase() === rawInput.toLowerCase()) ||
-      this.roster().find((p) => p.fullName.toLowerCase().includes(rawInput.toLowerCase()));
+      list.find((p) => p.id.toLowerCase() === cleanInput) ||
+      list.find((p) => p.nickname.toLowerCase() === cleanInput) ||
+      list.find((p) => p.fullName.toLowerCase().includes(rawInput.toLowerCase()));
 
     if (!person) {
-      this.error.set(`ไม่พบบัญชีผู้ใช้งาน "${rawInput}" ในระบบองค์กร (ตัวอย่างบัญชี: paweena, nakarin, chanachai)`);
+      this.error.set(`ไม่พบบัญชีผู้ใช้งาน "${rawInput}" ในระบบองค์กร`);
       return;
     }
 
@@ -106,18 +148,13 @@ export class LoginPage {
     await this.loginAs(person);
   }
 
-  /** Seed shortcut ids → คนจริงจาก sync OpenProject (เช่น chanachai → chanachaiomyhrcoth) */
-  private resolveQuickLoginPerson(personId: string): Person | undefined {
+  private resolveQuickLoginPerson(personId: string): DevRosterAccount | undefined {
     const roster = this.roster();
     const direct = roster.find((p) => p.id === personId);
     if (direct) {
       return direct;
     }
     const key = personId.trim().toLowerCase();
-    const byEmail = roster.find((p) => p.email?.toLowerCase().startsWith(`${key}.`) || p.email?.toLowerCase().startsWith(`${key}@`));
-    if (byEmail) {
-      return byEmail;
-    }
     const byIdPrefix = roster.find((p) => p.id.toLowerCase().startsWith(key));
     if (byIdPrefix) {
       return byIdPrefix;
@@ -125,7 +162,7 @@ export class LoginPage {
     return roster.find((p) => p.nickname.toLowerCase().includes(key) || p.fullName.toLowerCase().includes(key));
   }
 
-  protected async loginAs(person: Person): Promise<void> {
+  protected async loginAs(person: DevRosterAccount | Person): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     this.message.set('');
@@ -151,7 +188,7 @@ export class LoginPage {
         this.busy.set(false);
         return;
       }
-    } else {
+    } else if ('plannedMd' in person) {
       setViewer(person.id);
       setSessionUser(person, person.access ?? 'member');
     }
@@ -164,7 +201,12 @@ export class LoginPage {
     this.message.set(text);
     this.notice.success(text);
     this.busy.set(false);
-    void this.router.navigate(['/me'], { replaceUrl: true });
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    const safeTarget =
+      returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') && !returnUrl.startsWith('/login')
+        ? returnUrl
+        : '/me';
+    void this.router.navigateByUrl(safeTarget, { replaceUrl: true });
   }
 
   protected startGitLabSso(): void {

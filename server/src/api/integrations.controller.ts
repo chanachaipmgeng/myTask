@@ -1,6 +1,19 @@
-import { Body, Controller, Get, Put, Post, Query, Req, Res, Param, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Put,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { Response } from 'express';
-import { Inject } from '@nestjs/common';
 import { Ticket } from '../../../shared/domain/models';
 import { collectAlerts, projectedActual } from '../../../shared/domain/alerts';
 import {
@@ -28,6 +41,9 @@ import {
 } from '../data/git.repo';
 import { formatMd, scoreTicket } from '../../../shared/domain/scoring';
 import { AuthedRequest, Public, Roles } from '../auth/auth.guard';
+import { VisibilityScopeService } from '../auth/visibility-scope.service';
+import { timingSafeEqualStr } from '../common/crypto';
+import { validateExternalUrl } from '../common/security';
 import { APP_CONFIG, AppConfig } from '../config';
 import { getPerson, listPeople, listUnmappedOpUsers, setPersonOpenProjectUser } from '../data/people.repo';
 import {
@@ -66,10 +82,12 @@ export class IntegrationsController {
   constructor(
     private readonly db: Db,
     private readonly syncService: OpenProjectSyncService,
+    private readonly scope: VisibilityScopeService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Get('integrations/openproject')
+  @Roles('admin', 'lead')
   async getOpenProject() {
     const [settings, connection, runs, unmapped, people] = await Promise.all([
       getSettings(this.db),
@@ -157,9 +175,17 @@ export class IntegrationsController {
 
     if (body.baseUrl !== undefined || body.token !== undefined || body.enabled !== undefined) {
       const existing = await getConnection(this.db, 'openproject');
+      const rawUrl = body.baseUrl ?? existing?.base_url ?? this.config.openproject.url ?? '';
+      const cleanBaseUrl = rawUrl
+        ? validateExternalUrl(rawUrl, {
+            production: this.config.production,
+            allowedHosts: this.config.allowedIntegrationHosts,
+            allowEmpty: true,
+          })
+        : '';
       await upsertConnection(this.db, {
         id: 'openproject',
-        baseUrl: body.baseUrl ?? existing?.base_url ?? this.config.openproject.url ?? '',
+        baseUrl: cleanBaseUrl,
         token: body.token === undefined ? null : body.token,
         enabled: body.enabled ?? existing?.enabled ?? true,
         updatedBy: req.authUser?.person.id ?? null,
@@ -177,12 +203,9 @@ export class IntegrationsController {
     return { ok: result.status === 'success', ...result };
   }
 
-  @Public()
   @Post('integrations/openproject/sync-users')
+  @Roles('admin')
   async syncUsers(@Req() req: AuthedRequest) {
-    if (!req.authUser && !this.config.devLogin) {
-      throw new UnauthorizedException('login required');
-    }
     const result = await this.syncService.syncUsers(req.authUser?.person.id ?? 'manual');
     return { ok: result.errors.length === 0, ...result };
   }
@@ -257,7 +280,14 @@ export class IntegrationsController {
   ) {
     const existing = await getConnection(this.db, 'gitlab');
     const prev = parseGitLabBaseUrl(existing?.base_url ?? '');
-    const baseUrl = (body.baseUrl ?? prev.baseUrl ?? this.config.gitlab.url ?? '').trim().replace(/\/+$/, '');
+    const rawBaseUrl = (body.baseUrl ?? prev.baseUrl ?? this.config.gitlab.url ?? '').trim().replace(/\/+$/, '');
+    const baseUrl = rawBaseUrl
+      ? validateExternalUrl(rawBaseUrl, {
+          production: this.config.production,
+          allowedHosts: this.config.allowedIntegrationHosts,
+          allowEmpty: true,
+        })
+      : '';
     const projectIds = (body.projectIds ?? prev.projectIds)
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
@@ -566,22 +596,36 @@ export class IntegrationsController {
   }
 
   @Get('integrations/gitlab/branches')
+  @Roles('admin', 'lead', 'member')
   async listBranches(
+    @Req() req: AuthedRequest,
     @Query('personId') personId?: string,
     @Query('unmatchedOnly') unmatchedOnly?: string,
     @Query('teamId') teamId?: string,
     @Query('status') status?: string,
   ) {
-    const branches = await listGitBranches(this.db, {
-      personId,
+    const ctx = await this.scope.resolve(req.authUser);
+    if (teamId) {
+      ctx.resolveTeamAssignees(teamId);
+    }
+    if (personId) {
+      ctx.assertCanAccessPerson(personId, { selfOnlyForMember: true });
+    }
+    const effectivePersonId = ctx.access === 'member' ? ctx.selfId : personId;
+    let branches = await listGitBranches(this.db, {
+      personId: effectivePersonId,
       unmatchedOnly: unmatchedOnly === 'true',
       teamId,
       status,
     });
+    if (!ctx.isAdmin && ctx.allowedPersonIds) {
+      branches = branches.filter((b) => !b.personId || ctx.allowedPersonIds!.has(b.personId));
+    }
     return { branches };
   }
 
   @Post('integrations/gitlab/sync-branches')
+  @Roles('admin', 'lead', 'member')
   async syncBranches(@Req() req: AuthedRequest) {
     const gitlab = await this.resolveGitLab();
     if (!gitlab) {
@@ -730,7 +774,18 @@ export class IntegrationsController {
 
   @Public()
   @Post('integrations/gitlab/webhook')
-  async gitlabWebhook(@Body() payload: any) {
+  async gitlabWebhook(@Body() payload: any, @Req() req: AuthedRequest) {
+    const secret = this.config.gitlab.webhookSecret;
+    const headerRaw = req.headers['x-gitlab-token'];
+    const token = Array.isArray(headerRaw) ? headerRaw[0] : (headerRaw ?? '');
+    if (secret) {
+      if (!token || !timingSafeEqualStr(token, secret)) {
+        throw new UnauthorizedException('Invalid X-Gitlab-Token');
+      }
+    } else if (this.config.production) {
+      throw new UnauthorizedException('GITLAB_WEBHOOK_SECRET is not configured');
+    }
+
     if (!payload || payload.object_kind !== 'push') {
       return { ok: true, ignored: true };
     }
@@ -928,10 +983,19 @@ export class IntegrationsController {
   }
 
   @Post('integrations/openproject/create-from-branch')
+  @Roles('admin', 'lead', 'member')
   async createTicketFromBranch(
     @Body() body: CreateTicketFromBranchPayload,
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
+    if (ctx.access === 'member' && body.assigneePersonId && body.assigneePersonId !== ctx.selfId) {
+      throw new ForbiddenException('สมาชิกสร้างใบงานจาก branch ได้เฉพาะสำหรับตนเอง');
+    }
+    if (body.assigneePersonId) {
+      ctx.assertCanAccessPerson(body.assigneePersonId);
+    }
+
     const opClient = await this.syncService.getClient();
     if (!opClient) {
       return { ok: false, message: 'ไม่ได้ตั้งค่าการเชื่อมต่อ myProject (OpenProject)' };
@@ -939,9 +1003,10 @@ export class IntegrationsController {
 
     const settings = await getSettings(this.db);
     let assigneeOpId: number | undefined;
+    const effectiveAssigneeId = ctx.access === 'member' ? ctx.selfId : body.assigneePersonId;
 
-    if (body.assigneePersonId) {
-      const person = await getPerson(this.db, body.assigneePersonId);
+    if (effectiveAssigneeId) {
+      const person = await getPerson(this.db, effectiveAssigneeId);
       if (person?.openprojectUserId) {
         assigneeOpId = person.openprojectUserId;
       }
@@ -1009,9 +1074,12 @@ export class IntegrationsController {
   @Get('integrations/gitlab/person/:personId')
   async personGitSummary(
     @Param('personId') personId: string,
+    @Req() req: AuthedRequest,
     @Query('ticketId') ticketId?: string,
     @Query('days') daysRaw?: string,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
+    ctx.assertCanAccessPerson(personId);
     const summary = await getPersonGitSummary(this.db, personId);
     const person = await getPerson(this.db, personId);
     const days = Math.min(365, Math.max(7, Number(daysRaw) || 90));
@@ -1153,8 +1221,35 @@ export class IntegrationsController {
     number,
     { ok: boolean; contentType: string; bytes: Buffer | null; expiresAt: number }
   >();
+  private avatarCacheBytes = 0;
 
-  @Public()
+  private setAvatarCache(
+    opUserId: number,
+    entry: { ok: boolean; contentType: string; bytes: Buffer | null; expiresAt: number },
+  ): void {
+    const prev = this.avatarCache.get(opUserId);
+    if (prev?.bytes) {
+      this.avatarCacheBytes = Math.max(0, this.avatarCacheBytes - prev.bytes.length);
+      this.avatarCache.delete(opUserId);
+    }
+    const nextBytes = entry.bytes?.length ?? 0;
+    if (nextBytes > 1_048_576) {
+      return;
+    }
+    this.avatarCache.set(opUserId, entry);
+    this.avatarCacheBytes += nextBytes;
+
+    while (this.avatarCache.size > 200 || this.avatarCacheBytes > 20 * 1024 * 1024) {
+      const oldestKey = this.avatarCache.keys().next().value;
+      if (oldestKey === undefined) break;
+      const evicted = this.avatarCache.get(oldestKey);
+      if (evicted?.bytes) {
+        this.avatarCacheBytes = Math.max(0, this.avatarCacheBytes - evicted.bytes.length);
+      }
+      this.avatarCache.delete(oldestKey);
+    }
+  }
+
   @Get('integrations/openproject/users/:opUserId/avatar')
   async proxyOpenProjectUserAvatar(
     @Param('opUserId') opUserIdRaw: string,
@@ -1169,53 +1264,56 @@ export class IntegrationsController {
     const cached = this.avatarCache.get(opUserId);
     if (cached && cached.expiresAt > now) {
       if (!cached.ok || !cached.bytes) {
-        res.setHeader('Cache-Control', 'public, max-age=7200');
+        res.setHeader('Cache-Control', 'private, max-age=7200');
         res.status(404).end();
         return;
       }
       res.setHeader('Content-Type', cached.contentType);
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'private, max-age=3600');
       res.status(200).send(cached.bytes);
       return;
     }
 
     const client = await this.syncService.getClient();
     if (!client) {
-      this.avatarCache.set(opUserId, {
+      this.setAvatarCache(opUserId, {
         ok: false,
         contentType: 'text/plain',
         bytes: null,
-        expiresAt: now + 2 * 3600_000,
+        expiresAt: now + 30 * 60_000,
       });
-      res.setHeader('Cache-Control', 'public, max-age=7200');
+      res.setHeader('Cache-Control', 'private, max-age=1800');
       res.status(404).end();
       return;
     }
     try {
       const fetched = await client.fetchUserAvatar(opUserId);
-      const isOk = Boolean(fetched.ok && fetched.bytes);
-      this.avatarCache.set(opUserId, {
+      const ctype = (fetched.contentType || 'image/jpeg').toLowerCase();
+      const safeType = ctype.startsWith('image/') && !ctype.includes('svg');
+      const withinLimit = Boolean(fetched.bytes && fetched.bytes.length <= 1_048_576);
+      const isOk = Boolean(fetched.ok && fetched.bytes && safeType && withinLimit);
+      this.setAvatarCache(opUserId, {
         ok: isOk,
-        contentType: fetched.contentType || 'image/jpeg',
-        bytes: fetched.bytes,
-        expiresAt: now + (isOk ? 60 * 60_000 : 2 * 3600_000),
+        contentType: isOk ? ctype : 'text/plain',
+        bytes: isOk ? fetched.bytes : null,
+        expiresAt: now + (isOk ? 60 * 60_000 : 30 * 60_000),
       });
       if (!isOk) {
-        res.setHeader('Cache-Control', 'public, max-age=7200');
+        res.setHeader('Cache-Control', 'private, max-age=1800');
         res.status(404).end();
         return;
       }
-      res.setHeader('Content-Type', fetched.contentType || 'image/jpeg');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Content-Type', ctype);
+      res.setHeader('Cache-Control', 'private, max-age=3600');
       res.status(200).send(fetched.bytes);
     } catch {
-      this.avatarCache.set(opUserId, {
+      this.setAvatarCache(opUserId, {
         ok: false,
         contentType: 'text/plain',
         bytes: null,
-        expiresAt: now + 2 * 3600_000,
+        expiresAt: now + 30 * 60_000,
       });
-      res.setHeader('Cache-Control', 'public, max-age=7200');
+      res.setHeader('Cache-Control', 'private, max-age=1800');
       res.status(404).end();
     }
   }
@@ -1565,15 +1663,16 @@ export class IntegrationsController {
     @Query('to') toRaw: string | undefined,
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const settings = await getSettings(this.db);
     const hoursPerMd = settings.hoursPerMd || 6;
     const { from, to } = resolveWeekRange(fromRaw, toRaw);
-    const days = enumerateDates(from, to);
-    const people = await listPeople(this.db, true);
-    const role = req.authUser?.access ?? 'member';
-    const selfId = req.authUser?.person.id;
+    const days = enumerateDates(from, to, 62);
+    const activeVisible = ctx.visiblePeople.filter((p) => p.active !== false);
     const visiblePeople =
-      role === 'member' ? people.filter((p) => p.id === selfId) : people;
+      ctx.access === 'member'
+        ? activeVisible.filter((p) => p.id === ctx.selfId)
+        : activeVisible;
 
     const client = await this.syncService.getClient();
     type DayCell = {
@@ -1703,24 +1802,13 @@ export class IntegrationsController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const { from, to } = resolveWeekRange(fromRaw, toRaw);
-    const people = await listPeople(this.db, true);
-    const role = req.authUser?.access ?? 'member';
-    const selfId = req.authUser?.person.id;
-    const personId = (personIdRaw ?? '').trim() || (role === 'member' ? selfId ?? '' : '');
-    if (role === 'member' && personId && personId !== selfId) {
-      return {
-        source: 'offline' as const,
-        from,
-        to,
-        items: [],
-        result: [],
-        count: 0,
-        total: 0,
-        page: 1,
-        pageSize: 25,
-        message: 'สมาชิกดูได้เฉพาะรายการของตัวเอง',
-      };
+    enumerateDates(from, to, 93);
+    const people = ctx.visiblePeople.filter((p) => p.active !== false);
+    const personId = (personIdRaw ?? '').trim() || (ctx.access === 'member' ? ctx.selfId : '');
+    if (personId) {
+      ctx.assertCanAccessPerson(personId, { selfOnlyForMember: true });
     }
 
     const person = personId ? people.find((p) => p.id === personId) : undefined;
@@ -1840,10 +1928,18 @@ export class IntegrationsController {
   ) {
     const existing = await getConnection(this.db, 'teams');
     const channel = (body.channel ?? existing?.base_url ?? this.config.teams.defaultChannel).trim() || 'dev-alerts';
+    const cleanWebhookUrl =
+      body.webhookUrl === undefined
+        ? null
+        : validateExternalUrl(body.webhookUrl, {
+            production: this.config.production,
+            allowedHosts: this.config.allowedIntegrationHosts,
+            allowEmpty: true,
+          });
     await upsertConnection(this.db, {
       id: 'teams',
       baseUrl: channel,
-      token: body.webhookUrl === undefined ? null : body.webhookUrl.trim(),
+      token: cleanWebhookUrl,
       enabled: body.enabled ?? existing?.enabled ?? true,
       updatedBy: req.authUser?.person.id ?? null,
       encKey: this.config.tokenEncKey,
@@ -1994,7 +2090,9 @@ export class IntegrationsController {
     const baseUrl = (this.config.gitlab.url || stored.baseUrl).replace(/\/+$/, '');
     const projectIds =
       this.config.gitlab.projectIds.length > 0 ? this.config.gitlab.projectIds : stored.projectIds;
-    const token = this.config.gitlab.apiToken || connectionToken(connection, this.config.tokenEncKey);
+    const token =
+      this.config.gitlab.apiToken ||
+      connectionToken(connection, this.config.tokenEncKey, this.config.tokenEncKeyPrev);
     if (!baseUrl || !token) {
       return null;
     }
@@ -2055,10 +2153,17 @@ function resolveWeekRange(fromRaw?: string, toRaw?: string): { from: string; to:
   return { from: monday.toISOString().slice(0, 10), to };
 }
 
-function enumerateDates(from: string, to: string): string[] {
-  const out: string[] = [];
+function enumerateDates(from: string, to: string, maxDays = 62): string[] {
   const cursor = new Date(`${from}T12:00:00Z`);
   const end = new Date(`${to}T12:00:00Z`);
+  if (Number.isNaN(cursor.getTime()) || Number.isNaN(end.getTime()) || cursor.getTime() > end.getTime()) {
+    throw new BadRequestException('ช่วงวันที่ไม่ถูกต้อง (from ต้องไม่เกิน to)');
+  }
+  const diffDays = Math.floor((end.getTime() - cursor.getTime()) / 86_400_000) + 1;
+  if (diffDays > maxDays) {
+    throw new BadRequestException(`ช่วงวันที่ต้องไม่เกิน ${maxDays} วัน`);
+  }
+  const out: string[] = [];
   while (cursor.getTime() <= end.getTime()) {
     out.push(cursor.toISOString().slice(0, 10));
     cursor.setUTCDate(cursor.getUTCDate() + 1);

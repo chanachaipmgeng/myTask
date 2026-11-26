@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AnalyticsReport } from './analytics';
 import { AccessRole, Department, Level, Person, Team, Ticket, Track } from './models';
+import { RubricDefinition } from '../../../shared/domain/rubrics';
 import { TeamVisibilityRule, VisibilityConfig } from '../../../shared/domain/team-visibility';
 import {
   CreateTicketFromBranchPayload,
@@ -13,6 +14,23 @@ import { ProjectDetail, ProjectGitSummary } from '../../../shared/domain/project
 import { KpiPeriodType } from './kpi-snapshot';
 import { PersonScore, TrackWeights } from './scoring';
 import { AlertRules } from './admin-settings';
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly path: string,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+let unauthorizedHandler: (() => void) | null = null;
+
+export function registerUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
 
 export interface AuditLogDto {
   id: number;
@@ -181,11 +199,12 @@ export interface BootstrapResponse {
   tickets: Ticket[];
   /** true เมื่อใบงานต้องโหลดต่อที่ /api/bootstrap/tickets */
   ticketsDeferred?: boolean;
-  settings: BootstrapSettings;
+  settings: BootstrapSettings | null;
   departments: Department[];
   teams: Team[];
   teamStaging?: 'rd' | 'all';
-  visibility?: VisibilityConfig;
+  visibility?: VisibilityConfig | null;
+  rubrics?: RubricDefinition[];
   effectiveAllowedTeams?: string[] | null;
   disputes?: import('./models').TicketDispute[];
   leaves?: import('./models').EmployeeLeave[];
@@ -314,7 +333,40 @@ export interface TeamsIntegration {
   lastRuns: SyncRunDto[];
 }
 
-async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+function extractErrorMessage(rawText: string, status: number, path: string): string {
+  const trimmed = rawText.trim();
+  if (!trimmed) {
+    return `${status} ${path}`;
+  }
+  try {
+    const parsed = JSON.parse(trimmed) as { message?: unknown; error?: unknown };
+    if (Array.isArray(parsed.message)) {
+      return parsed.message.map(String).join(', ');
+    }
+    if (typeof parsed.message === 'string' && parsed.message.trim()) {
+      return parsed.message.trim();
+    }
+    if (typeof parsed.error === 'string' && parsed.error.trim()) {
+      return parsed.error.trim();
+    }
+  } catch {
+    // Plain text response
+  }
+  return trimmed;
+}
+
+async function api<T>(
+  path: string,
+  init: RequestInit = {},
+  opts?: { timeoutMs?: number },
+): Promise<T> {
+  const timeoutMs = opts?.timeoutMs ?? (path.includes('/sync') || path.includes('/discovery') ? 120_000 : 30_000);
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  const signal =
+    init.signal && typeof AbortSignal.any === 'function'
+      ? AbortSignal.any([init.signal, timeoutSignal])
+      : init.signal ?? timeoutSignal;
+
   const response = await fetch(path, {
     credentials: 'include',
     headers: {
@@ -323,18 +375,47 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
       ...(init.headers ?? {}),
     },
     ...init,
+    signal,
   });
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      !path.startsWith('/api/bootstrap') &&
+      !path.startsWith('/api/auth/')
+    ) {
+      unauthorizedHandler?.();
+    }
     const text = await response.text();
-    throw new Error(text || `${response.status} ${path}`);
+    throw new ApiError(extractErrorMessage(text, response.status, path), response.status, path);
   }
   return (await response.json()) as T;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ApiClient {
+  private inflightBootstrap: Promise<BootstrapResponse> | null = null;
+
   bootstrap(): Promise<BootstrapResponse> {
-    return api<BootstrapResponse>('/api/bootstrap');
+    if (!this.inflightBootstrap) {
+      this.inflightBootstrap = api<BootstrapResponse>('/api/bootstrap').finally(() => {
+        this.inflightBootstrap = null;
+      });
+    }
+    return this.inflightBootstrap;
+  }
+
+  devRoster(): Promise<{
+    enabled: boolean;
+    people: {
+      id: string;
+      nickname: string;
+      fullName: string;
+      role: string;
+      department: string;
+      access: AccessRole;
+    }[];
+  }> {
+    return api('/api/auth/dev-roster');
   }
 
   bootstrapTickets(): Promise<{ tickets: Ticket[]; source: string; count: number }> {

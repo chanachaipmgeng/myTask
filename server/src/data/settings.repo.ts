@@ -299,12 +299,16 @@ export async function upsertConnection(
   );
 }
 
-export function connectionToken(row: ConnectionRow | null, encKey: string): string {
+export function connectionToken(
+  row: ConnectionRow | null,
+  encKey: string,
+  prevKeys: readonly string[] = [],
+): string {
   if (!row?.token_enc) {
     return '';
   }
   try {
-    return decryptSecret(row.token_enc, encKey);
+    return decryptSecret(row.token_enc, encKey, prevKeys);
   } catch {
     return '';
   }

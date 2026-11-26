@@ -27,6 +27,10 @@ export async function deleteSession(db: Queryable, rawToken: string): Promise<vo
   await db.query('DELETE FROM sessions WHERE id_hash = $1', [sha256(rawToken)]);
 }
 
+export async function deleteSessionsByPerson(db: Queryable, personId: string): Promise<void> {
+  await db.query('DELETE FROM sessions WHERE person_id = $1', [personId]);
+}
+
 export async function deleteExpiredSessions(db: Queryable): Promise<void> {
   await db.query('DELETE FROM sessions WHERE expires_at <= now()');
 }

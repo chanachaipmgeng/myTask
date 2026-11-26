@@ -16,7 +16,7 @@ import {
   viewAsRole,
 } from './core/admin-settings';
 import { AccessRole } from './core/models';
-import { ApiClient } from './core/api-client';
+import { ApiClient, registerUnauthorizedHandler } from './core/api-client';
 import { ShellNotice, shellNoticeCssClass, shellNoticeTitle } from './core/shell-notice';
 import { ScorecardService } from './core/scorecard.service';
 import { currentSession, setSessionUser } from './core/session';
@@ -451,6 +451,11 @@ export class App implements AfterViewInit {
   });
   protected readonly mockMode = this.scorecard.mockMode;
   protected readonly usingApi = this.scorecard.usingApi;
+  protected readonly bootstrapState = this.scorecard.bootstrapState;
+  protected readonly bootstrapError = this.scorecard.bootstrapError;
+  protected readonly hasActiveSession = computed(
+    () => Boolean(currentSession()) || this.mockMode(),
+  );
   protected readonly role = effectiveRole;
   protected readonly trueRole = actualRole;
   protected readonly previewingMember = computed(() => viewAsRole() === 'member');
@@ -597,8 +602,28 @@ export class App implements AfterViewInit {
   /** true เมื่อ Lead/Admin กำลังพรีวิวในมุม Member */
   protected readonly viewingBorrowedMode = computed(() => this.role() !== this.trueRole());
   private lastAutoModeNoticeKey = '';
+  private handlingUnauthorized = false;
+
+  private handleUnauthorized(): void {
+    if (this.handlingUnauthorized || this.mockMode()) return;
+    this.handlingUnauthorized = true;
+    const hadSession = Boolean(currentSession());
+    this.scorecard.clearSessionState();
+    if (hadSession) {
+      this.notice.warning('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+    }
+    if (!this.router.url.startsWith('/login')) {
+      void this.router.navigate(['/login'], {
+        queryParams: { returnUrl: this.router.url },
+      });
+    }
+    setTimeout(() => {
+      this.handlingUnauthorized = false;
+    }, 1500);
+  }
 
   constructor() {
+    registerUnauthorizedHandler(() => this.handleUnauthorized());
     const isNarrowNow = typeof window !== 'undefined' ? window.innerWidth <= 800 : false;
     this.narrow.set(isNarrowNow);
     this.navOpen.set(!isNarrowNow);
@@ -755,6 +780,10 @@ export class App implements AfterViewInit {
     } else {
       this.notice.success(`กลับสู่มุมมอง ${next === 'admin' ? 'Admin' : 'Lead'} แล้ว`);
     }
+  }
+
+  protected async retryBootstrap(): Promise<void> {
+    await this.scorecard.reloadFromApi();
   }
 
   protected async logout(): Promise<void> {
