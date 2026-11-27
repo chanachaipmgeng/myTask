@@ -27,11 +27,19 @@
     </div>
   </app-page-head>
 
-  <div class="schedule-layout">
+  <app-workspace-asidebar
+    mode="right"
+    asideTitle="รายละเอียดวัน"
+    [asideSubtitle]="selectedDayLabel() + ' · ' + dayAgendaAll().length + ' ใบ'"
+    asideWidth="316px"
+    chromeOffset="196px"
+    [lockViewport]="true"
+  >
     <app-section-card
+      main
       class="schedule-layout__timeline"
       [title]="isMine() ? 'ไทม์ไลน์ของฉัน' : 'ไทม์ไลน์ทีม'"
-      subtitle="คลิกแถบงานเพื่อโฟกัสวันทางขวา · อ่านอย่างเดียว"
+      subtitle="คลิกแถบงานเพื่อโฟกัสวันทางขวา · กดพับแผงขวา (Ctrl+.) เพื่อดูเต็มหน้าจอ"
     >
       <div actions class="flex flex-wrap items-center gap-2">
         <app-live-pulse tone="primary" [label]="selectedDayLabel()" />
@@ -131,13 +139,7 @@
       }
     </app-section-card>
 
-    <app-section-card
-      class="schedule-layout__day"
-      title="รายละเอียดวัน"
-      [subtitle]="selectedDayLabel()"
-      [badge]="dayAgendaAll().length + ' ใบ'"
-      badgeTone="info"
-    >
+    <div aside class="flex flex-col gap-3">
       <div class="schedule-day-calendar">
         <app-sf-calendar
           [value]="selectedDay()"
@@ -198,8 +200,8 @@
           }
         </div>
       }
-    </app-section-card>
-  </div>
+    </div>
+  </app-workspace-asidebar>
 </section>
 
 <app-sf-dialog

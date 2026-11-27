@@ -1,99 +1,123 @@
-<div class="page work-summary flex flex-col gap-4">
+<div class="page work-summary flex flex-col gap-3">
   @if (mdMandate().mdDirectCount > 0) {
     <div class="flex flex-wrap items-center gap-2">
       <span class="e-badge e-badge-warning e-badge-pill">MD MANDATE</span>
       <app-sf-message
         class="grow"
         severity="Warning"
-        [content]="'ทีมรับงานด่วนสั่งตรงจาก MD รวม ' + mdMandate().mdDirectCount + ' ใบ คิดเป็น ' + mdMandate().mdDirectMd + ' MD (' + mdMandate().mdDirectSharePct + '% ของโหลดงานทั้งหมด) — คุ้มครองคะแนนความแม่นยำและ On-Time อัตโนมัติ'"
+        [content]="'ทีมรับงานด่วนสั่งตรงจาก MD รวม ' + mdMandate().mdDirectCount + ' ใบ (' + mdMandate().mdDirectMd + ' MD · ' + mdMandate().mdDirectSharePct + '%) — คุ้มครองคะแนนความแม่นยำและ On-Time อัตโนมัติ'"
       />
     </div>
   }
 
   <app-hero-band ariaLabel="สรุปงาน" [metrics]="summaryMetrics()"></app-hero-band>
 
-  <app-section-card
-    title="งานค้างตามวันส่ง"
-    [subtitle]="'จัดกลุ่มวัน → โปรเจกต์ · ใบเปิด ' + openGrouped().totalOpen + ' ใบ (ตามกรองด้านบน)'"
-    badge="ศูนย์งานค้าง"
-    badgeTone="warning"
-  >
-    @if (openGrouped().totalOpen === 0) {
-      <app-sf-message
-        severity="Success"
-        content="ไม่มีใบเปิดตามกรองนี้ — ลองเปลี่ยนทีม สัปดาห์ หรือถังวัน"
-      />
-    } @else {
-      <div class="stuck-buckets">
-        @for (bucket of openGrouped().buckets; track bucket.bucket) {
-          <section class="stuck-bucket" [attr.data-bucket]="bucket.bucket">
-            <header class="stuck-bucket__head">
-              <strong>{{ bucket.label }}</strong>
-              <span class="stuck-bucket__count tabular-nums">{{ bucket.count }} ใบ</span>
-            </header>
-            @for (project of bucket.projects; track project.projectKey) {
-              <div class="stuck-project">
-                <div class="flex items-center justify-between gap-2">
-                  <h4 class="stuck-project__title">
-                    {{ project.projectLabel }}
-                    @if (project.totalCount && project.totalCount > project.items.length) {
-                      <span class="text-xs text-muted font-normal">(แสดง {{ project.items.length }}/{{ project.totalCount }} ใบ)</span>
-                    }
-                  </h4>
-                  <a routerLink="/work/list" class="text-xs text-primary hover:underline" [title]="'ดูรายการเต็ม ' + project.projectLabel">ดูตารางรายการ →</a>
-                </div>
-                <ul class="stuck-list">
-                  @for (item of project.items; track item.id) {
-                    <li class="stuck-list__item">
-                      <button type="button" class="stuck-list__open" (click)="openTicket(item.id)">
-                        <span class="stuck-list__id">{{ item.id }}</span>
-                        <span class="stuck-list__title">{{ item.title }}</span>
-                      </button>
-                      <span class="stuck-list__meta">
-                        <app-status-badge [value]="item.status" [toneMap]="workflowStatusToneMap"></app-status-badge>
-                        <span>{{ item.assignee }}</span>
-                        <span>{{ item.dueOn || 'ไม่มี due' }}</span>
-                        <span class="tabular-nums">{{ item.estimateMd }} MD</span>
-                      </span>
-                    </li>
-                  }
-                </ul>
-              </div>
-            }
-          </section>
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <app-filter-chips
+      [options]="summaryTabOptions()"
+      [value]="summaryTab()"
+      (valueChange)="setSummaryTab($event)"
+    ></app-filter-chips>
+    <a routerLink="/work/list" class="text-xs font-semibold text-primary hover:underline">
+      เปิดตารางรายการทั้งหมด →
+    </a>
+  </div>
+
+  @if (summaryTab() === 'buckets') {
+    <div class="tab-stage-in">
+      <app-section-card
+        title="งานค้างตามวันส่ง"
+        [subtitle]="'ใบเปิด ' + openGrouped().totalOpen + ' ใบ · เลือกถังวันด้านล่างเพื่อดูรายโปรเจกต์ (แบ่งหน้าละ 6 โปรเจกต์)'"
+        badge="ศูนย์งานค้าง"
+        badgeTone="warning"
+      >
+        @if (projectTotalPages() > 1) {
+          <div actions class="inline-flex items-center gap-1.5">
+            <button ejs-button cssClass="e-small e-outline" type="button" [disabled]="projectPage() <= 1" (click)="setProjectPage(projectPage() - 1)">«</button>
+            <span class="text-xs font-semibold tabular-nums px-1">หน้า {{ projectPage() }} / {{ projectTotalPages() }}</span>
+            <button ejs-button cssClass="e-small e-outline" type="button" [disabled]="projectPage() >= projectTotalPages()" (click)="setProjectPage(projectPage() + 1)">»</button>
+          </div>
         }
-      </div>
-    }
-  </app-section-card>
 
-  <div class="card-grid-2">
-    <app-section-card title="สัดส่วนสถานะ" subtitle="จำนวนใบงานแยกตามสถานะปัจจุบัน">
-      <app-sf-donut-chart
-        [data]="view().statusShare"
-        xName="x"
-        yName="y"
-        [options]="statusDonutOptions()"
-      />
-    </app-section-card>
+        @if (openGrouped().totalOpen === 0) {
+          <app-sf-message
+            severity="Success"
+            content="ไม่มีใบเปิดตามกรองนี้ — ลองเปลี่ยนทีม สัปดาห์ หรือถังวัน"
+          />
+        } @else {
+          <div class="mb-3">
+            <app-filter-chips
+              [options]="bucketChipOptions()"
+              [value]="activeBucket()?.bucket ?? ''"
+              (valueChange)="setBucket($event)"
+            ></app-filter-chips>
+          </div>
 
-    <app-section-card title="สัดส่วนสายงาน" subtitle="การกระจายตัวของใบงานแยกตามสายงานหลัก">
-      <app-sf-donut-chart
-        [data]="view().trackShare"
-        xName="x"
-        yName="y"
-        [options]="trackDonutOptions()"
-      />
-    </app-section-card>
-
-    <div class="card-grid-2__full">
-      <app-section-card title="WIP ต่อคน (MD ประมาณ)" subtitle="ภาระงานที่เปิดค้างอยู่รายบุคคลเทียบตาม Man-days">
-        <app-sf-chart
-          [series]="wipChartSeries()"
-          [primaryXAxis]="wipXAxis"
-          [primaryYAxis]="wipYAxis"
-          [options]="wipChartOptions"
-        />
+          @if (activeBucket(); as bucket) {
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              @for (project of pagedProjects(); track project.projectKey) {
+                <div class="stuck-project p-3 rounded-xl border border-[color:var(--line)] bg-[color:var(--card)]">
+                  <div class="flex items-center justify-between gap-2 mb-2">
+                    <h4 class="stuck-project__title m-0 truncate">
+                      {{ resolveProjectTitle(project.projectKey, project.projectLabel) }}
+                      @if (project.totalCount && project.totalCount > project.items.length) {
+                        <span class="text-xs text-muted font-normal">({{ project.items.length }}/{{ project.totalCount }} ใบ)</span>
+                      }
+                    </h4>
+                    <a routerLink="/work/list" class="text-xs text-primary hover:underline shrink-0">ดูทั้งหมด →</a>
+                  </div>
+                  <ul class="stuck-list">
+                    @for (item of project.items; track item.id) {
+                      <li class="stuck-list__item">
+                        <button type="button" class="stuck-list__open" (click)="openTicket(item.id)">
+                          <span class="stuck-list__id">{{ item.id }}</span>
+                          <span class="stuck-list__title">{{ item.title }}</span>
+                        </button>
+                        <span class="stuck-list__meta">
+                          <app-status-badge [value]="item.status" [toneMap]="workflowStatusToneMap"></app-status-badge>
+                          <span>{{ item.assignee }}</span>
+                          <span class="tabular-nums">{{ item.estimateMd }} MD</span>
+                        </span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        }
       </app-section-card>
     </div>
-  </div>
+  } @else {
+    <div class="tab-stage-in card-grid-2">
+      <app-section-card title="สัดส่วนสถานะ" subtitle="จำนวนใบงานแยกตามสถานะปัจจุบัน">
+        <app-sf-donut-chart
+          [data]="view().statusShare"
+          xName="x"
+          yName="y"
+          [options]="statusDonutOptions()"
+        />
+      </app-section-card>
+
+      <app-section-card title="สัดส่วนสายงาน" subtitle="การกระจายตัวของใบงานแยกตามสายงานหลัก">
+        <app-sf-donut-chart
+          [data]="view().trackShare"
+          xName="x"
+          yName="y"
+          [options]="trackDonutOptions()"
+        />
+      </app-section-card>
+
+      <div class="card-grid-2__full">
+        <app-section-card title="WIP ต่อคน (MD ประมาณ)" subtitle="ภาระงานที่เปิดค้างอยู่รายบุคคลเทียบตาม Man-days">
+          <app-sf-chart
+            [series]="wipChartSeries()"
+            [primaryXAxis]="wipXAxis"
+            [primaryYAxis]="wipYAxis"
+            [options]="wipChartOptions"
+          />
+        </app-section-card>
+      </div>
+    </div>
+  }
 </div>

@@ -16,6 +16,7 @@ import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { TooltipModule } from '@syncfusion/ej2-angular-popups';
 import { currentViewer, effectiveRole } from '../../core/admin-settings';
 import { HeroBandComponent, HeroBandMetric } from '../../shared/ui';
+import { BentoSpotlightDirective } from '../../shared/motion/bento-spotlight.directive';
 import {
   SfChartComponent,
   SfChartOptions,
@@ -58,6 +59,7 @@ interface QualityPiePoint {
     ButtonModule,
     TooltipModule,
     HeroBandComponent,
+    BentoSpotlightDirective,
     SfChartComponent,
     SfDonutChartComponent,
     SfDialogComponent,

@@ -1,9 +1,4 @@
-<section class="page">
-  <app-page-head
-    title="คิวงานใหม่"
-    description="ใบที่ยังไม่มีผู้รับ แยก R&amp;D กับ Implement. คนว่าง = โควต้าสัปดาห์ − MD ของใบที่ยังไม่ปิด − 1 MD ที่กันไว้นอกแผน. WIP ไม่เกิน 2 และ XL ไม่เกิน 1 ใบต่อคน. ข้อเสนอไม่ย้ายใบจนกว่าจะกดรับ · เฉพาะ admin/lead"
-  ></app-page-head>
-
+<section class="page flex flex-col gap-2.5">
   @if (!canAssign()) {
     <app-sf-message
       content="บัญชีนี้เป็น member — ดูคิวได้อย่างเดียว รับข้อเสนอได้เฉพาะ admin หรือ lead"
@@ -13,134 +8,185 @@
 
   <app-flash-messages [success]="message()" [error]="error()"></app-flash-messages>
 
-  <app-section-card
-    title="กำลังคนที่เหลือในสัปดาห์"
-    subtitle="ตรวจสอบโควตาคงเหลือหลังหักใบงานเปิดและสำรองนอกแผน 1 MD · กดรับข้อเสนอที่ด้านล่างเพื่อจ่ายใบงาน"
-    [badge]="'ว่าง ' + freePeople().length + ' คน'"
-    badgeTone="info"
+  <app-workspace-asidebar
+    mode="right"
+    asideTitle="กำลังคนว่างในสัปดาห์"
+    [asideSubtitle]="'พร้อมรับงาน ' + freePeople().length + ' / ' + plan().rows.length + ' คน'"
+    asideWidth="348px"
+    chromeOffset="186px"
+    [lockViewport]="true"
   >
-    <app-sf-grid
-      [data]="plan().rows"
-      [columns]="capacityColumns"
-      [options]="capacityGridOptions"
-    />
-  </app-section-card>
+    <!-- LEFT MAIN: Tabbed Queue & Paginated Proposals -->
+    <div main class="flex flex-col gap-3 min-w-0">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <app-filter-chips
+          [options]="queueTabOptions()"
+          [value]="activeQueueTab()"
+          (valueChange)="setQueueTab($event)"
+        ></app-filter-chips>
+        <span class="text-xs text-muted tabular-nums">
+          พร้อมจ่าย {{ actionablePlans().length }} ใบ · ค้าง {{ backlogPlans().length }} ใบ
+        </span>
+      </div>
 
-  <div class="card-grid-2">
-    <app-section-card
-      title="คิวสาย Implement"
-      subtitle="ใบงานสาย Implement ที่รอจัดสรรผู้รับผิดชอบ"
-      [badge]="implementQueue().length + ' ใบ'"
-      badgeTone="primary"
-    >
-      <app-sf-grid
-        [data]="implementQueue()"
-        [columns]="queueColumns"
-        [options]="queueGridOptions"
-        (cellAction)="openTicket($event.row.id)"
-      />
-    </app-section-card>
-
-    <app-section-card
-      title="คิวสาย R&amp;D"
-      subtitle="ใบงานสาย R&amp;D / Spike ที่รอจัดสรรผู้รับผิดชอบ"
-      [badge]="researchQueue().length + ' ใบ'"
-      badgeTone="info"
-    >
-      <app-sf-grid
-        [data]="researchQueue()"
-        [columns]="queueColumns"
-        [options]="queueGridOptions"
-        (cellAction)="openTicket($event.row.id)"
-      />
-    </app-section-card>
-  </div>
-
-  <app-section-card
-    title="วิเคราะห์แผนและข้อเสนอรับงาน"
-    subtitle="ข้อเสนอการจับคู่ใบงานกับพนักงานที่โควตาว่างและ WIP ยังไม่เต็ม (แสดงใบงานพร้อมจ่ายก่อน และตัวอย่างงานค้างรับ)"
-    [badge]="plan().plans.length + ' รายการ' + (actionablePlans().length ? ' (พร้อมจ่าย ' + actionablePlans().length + ' ใบ)' : '')"
-    badgeTone="secondary"
-  >
-    <div class="grid grid-cols-1 gap-3">
-      @for (item of displayPlans(); track item.ticket.id) {
-        <app-section-card variant="nested" [showHead]="false">
-          <div
-            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between pl-3 border-l-4"
-            [class.border-emerald-500]="!!item.personId"
-            [class.border-amber-500]="!item.personId"
+      @if (activeQueueTab() === 'proposals') {
+        <div class="tab-stage-in">
+          <app-section-card
+            title="ข้อเสนอจ่ายงานตามโควตา"
+            subtitle="จับคู่อัตโนมัติตามโควตาสัปดาห์ (กันนอกแผน 1 MD, WIP ≤ 2, XL ≤ 1) · แบ่งหน้าละ 10 รายการ"
+            [badge]="allOrderedPlans().length + ' รายการ'"
+            badgeTone="secondary"
           >
-            <div class="flex flex-col gap-1.5 min-w-0">
-              <div class="flex flex-wrap items-center gap-2">
-                <button ejs-button cssClass="e-link e-small font-bold p-0" type="button" (click)="openTicket(item.ticket.id)">
-                  {{ item.ticket.id }}
-                </button>
-                <app-status-badge [label]="item.ticket.size + ' · ' + item.ticket.estimateMd + ' MD'" tone="info" />
-                <app-status-badge
-                  [label]="item.ticket.track === 'RD' ? 'R&D' : 'Implement'"
-                  [tone]="item.ticket.track === 'RD' ? 'info' : 'primary'"
-                />
-                <app-status-badge
-                  [label]="item.personId ? 'พร้อมจ่ายงาน' : 'ลงสัปดาห์นี้ไม่ได้'"
-                  [tone]="item.personId ? 'success' : 'warning'"
-                />
-                @if (item.personId) {
-                  <app-person-avatar [personId]="item.personId" [showName]="true" size="xs" />
-                }
-              </div>
-              <p class="m-0 text-sm text-muted leading-relaxed">{{ item.text }}</p>
-            </div>
-            @if (item.personId) {
-              <div class="flex items-center gap-2">
-                <button
-                  ejs-button
-                  [isPrimary]="true"
-                  type="button"
-                  [attr.data-ticket]="item.ticket.id"
-                  [disabled]="!canAssign() || accepting()"
-                  (click)="accept(item)"
-                >
-                  รับข้อเสนอ
-                </button>
-                <button
-                  ejs-button
-                  cssClass="e-outline e-warning"
-                  type="button"
-                  title="จ่ายงานแทรกพร้อมสั่ง Auto-Shift เลื่อนวันส่งงานเดิมของน้องทันที"
-                  [disabled]="!canAssign() || accepting()"
-                  (click)="acceptAsMdDirect(item)"
-                >
-                  ⚡ รับงานด่วน MD &amp; เลื่อนงานเดิม
-                </button>
+            @if (planTotalPages() > 1) {
+              <div actions class="inline-flex items-center gap-1.5">
+                <button ejs-button cssClass="e-small e-outline" type="button" [disabled]="planPage() <= 1" (click)="setPlanPage(planPage() - 1)">« ก่อนหน้า</button>
+                <span class="text-xs font-semibold tabular-nums px-1">หน้า {{ planPage() }} / {{ planTotalPages() }}</span>
+                <button ejs-button cssClass="e-small e-outline" type="button" [disabled]="planPage() >= planTotalPages()" (click)="setPlanPage(planPage() + 1)">ถัดไป »</button>
               </div>
             }
-          </div>
-        </app-section-card>
-      }
-      @if (hasMoreBacklog()) {
-        <div class="flex items-center justify-center p-3">
-          <button
-            ejs-button
-            cssClass="e-outline e-primary"
-            type="button"
-            (click)="loadMorePlans()"
+
+            <div class="grid grid-cols-1 gap-2.5">
+              @for (item of pagedPlans(); track item.ticket.id) {
+                <app-section-card variant="nested" [showHead]="false">
+                  <div
+                    class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pl-3 border-l-4"
+                    [class.border-emerald-500]="!!item.personId"
+                    [class.border-amber-500]="!item.personId"
+                  >
+                    <div class="flex flex-col gap-1 min-w-0">
+                      <div class="flex flex-wrap items-center gap-1.5">
+                        <button ejs-button cssClass="e-link e-small font-bold p-0" type="button" (click)="openTicket(item.ticket.id)">
+                          {{ item.ticket.id }}
+                        </button>
+                        <app-status-badge [label]="item.ticket.size + ' · ' + item.ticket.estimateMd + ' MD'" tone="info" />
+                        <app-status-badge
+                          [label]="item.ticket.track === 'RD' || item.ticket.track === 'RND' ? 'R&D' : item.ticket.track"
+                          [tone]="item.ticket.track === 'RD' || item.ticket.track === 'RND' ? 'teal' : 'primary'"
+                        />
+                        <app-status-badge
+                          [label]="item.personId ? 'พร้อมจ่ายงาน' : 'ลงสัปดาห์นี้ไม่ได้'"
+                          [tone]="item.personId ? 'success' : 'warning'"
+                        />
+                        @if (item.personId) {
+                          <app-person-avatar [personId]="item.personId" [showName]="true" size="xs" />
+                        }
+                      </div>
+                      <p class="m-0 text-xs text-muted leading-relaxed">{{ item.text }}</p>
+                    </div>
+                    @if (item.personId) {
+                      <div class="flex items-center gap-1.5 shrink-0">
+                        <button
+                          ejs-button
+                          [isPrimary]="true"
+                          cssClass="e-small"
+                          type="button"
+                          [attr.data-ticket]="item.ticket.id"
+                          [disabled]="!canAssign() || accepting()"
+                          (click)="accept(item)"
+                        >
+                          รับข้อเสนอ
+                        </button>
+                        <button
+                          ejs-button
+                          cssClass="e-outline e-warning e-small"
+                          type="button"
+                          title="จ่ายงานแทรกพร้อมสั่ง Auto-Shift เลื่อนวันส่งงานเดิมทันที"
+                          [disabled]="!canAssign() || accepting()"
+                          (click)="acceptAsMdDirect(item)"
+                        >
+                          ⚡ งานด่วน MD
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </app-section-card>
+              } @empty {
+                <app-sf-message content="ไม่มีข้อเสนอจ่ายงานค้างในคิวตอนนี้" severity="Success" />
+              }
+            </div>
+          </app-section-card>
+        </div>
+      } @else if (activeQueueTab() === 'implement') {
+        <div class="tab-stage-in">
+          <app-section-card
+            title="คิวสาย Implement & ปฏิบัติการ"
+            subtitle="ใบงานที่รอจัดสรรผู้รับผิดชอบ"
+            [badge]="implementQueue().length + ' ใบ'"
+            badgeTone="primary"
           >
-            แสดงงานค้างรับเพิ่มอีก 30 ใบ (เหลือ {{ backlogPlans().length - planLimit() }} ใบ)
-          </button>
+            <app-sf-grid
+              [data]="implementQueue()"
+              [columns]="queueColumns"
+              [options]="queueGridOptions"
+              (cellAction)="openTicket($event.row.id)"
+            />
+          </app-section-card>
+        </div>
+      } @else if (activeQueueTab() === 'research') {
+        <div class="tab-stage-in">
+          <app-section-card
+            title="คิวสาย R&amp;D"
+            subtitle="ใบงานสาย R&amp;D / Spike ที่รอจัดสรรผู้รับผิดชอบ"
+            [badge]="researchQueue().length + ' ใบ'"
+            badgeTone="teal"
+          >
+            <app-sf-grid
+              [data]="researchQueue()"
+              [columns]="queueColumns"
+              [options]="queueGridOptions"
+              (cellAction)="openTicket($event.row.id)"
+            />
+          </app-section-card>
+        </div>
+      } @else {
+        <div class="tab-stage-in">
+          <app-section-card
+            title="ตารางกำลังคนและโควตาสัปดาห์ทั้งหมด"
+            subtitle="โควตาสัปดาห์ − MD ที่เปิดอยู่ − 1 MD สำรองนอกแผน"
+            [badge]="'ว่าง ' + freePeople().length + ' คน'"
+            badgeTone="info"
+          >
+            <app-sf-grid
+              [data]="plan().rows"
+              [columns]="capacityColumns"
+              [options]="capacityGridOptions"
+            />
+          </app-section-card>
         </div>
       }
     </div>
-  </app-section-card>
-</section>
 
-<app-confirm-dialog
-  #writebackConfirm
-  dialogId="queueWritebackDialog"
-  header="ยืนยันเขียนกลับ OpenProject"
-  [message]="writebackMessage()"
-  confirmLabel="ยืนยันและรับข้อเสนอ"
-  [confirmDisabled]="accepting()"
-  width="480px"
-  (confirmed)="confirmWriteback()"
-  (cancelled)="cancelWriteback()"
-></app-confirm-dialog>
+    <!-- RIGHT ASIDEBAR: Available Capacity Roster -->
+    <div aside class="flex flex-col gap-2">
+      @if (freePeople().length === 0) {
+        <app-sf-message content="สัปดาห์นี้ยังไม่มีพนักงานที่มีโควตาว่าง" severity="Warning" />
+      } @else {
+        @for (person of freePeople().slice(0, 20); track person.id) {
+          <div class="p-2.5 rounded-xl border border-[color:var(--line)] bg-[color:var(--card)] flex items-center justify-between gap-2">
+            <div class="min-w-0 flex items-center gap-2">
+              <app-person-avatar [personId]="person.id" [name]="person.personLabel" size="xs" />
+              <div class="min-w-0">
+                <div class="text-xs font-bold truncate text-[color:var(--ink)]">{{ person.personLabel }}</div>
+                <div class="text-[11px] text-muted truncate">{{ person.trackLabel }} · WIP {{ person.wipLabel }}</div>
+              </div>
+            </div>
+            <span class="e-badge e-badge-success e-badge-pill tabular-nums shrink-0">
+              ว่าง {{ person.freeMd }} MD
+            </span>
+          </div>
+        }
+      }
+    </div>
+  </app-workspace-asidebar>
+
+  <app-confirm-dialog
+    #writebackConfirm
+    dialogId="queue-writeback-confirm"
+    header="ยืนยันเขียนกลับ OpenProject"
+    confirmLabel="ยืนยันและเขียนกลับ"
+    confirmCssClass="e-primary"
+    [message]="writebackMessage()"
+    (confirmed)="confirmWriteback()"
+    (cancelled)="cancelWriteback()"
+  />
+</section>

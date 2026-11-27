@@ -1,37 +1,30 @@
-<section class="page">
-  <app-page-head
-    breadcrumb="ฮับบริหารงาน > ตรวจสอบการส่งต่อ &amp; SLA ข้ามทีม (/work/handoff)"
-    title="งานค้างส่งต่อ & SLA"
-    description="ดูงานที่ค้างระหว่าง Dev, Reviewer, QA และ Infra เพื่อเคลียร์ก่อนหลุดกำหนดส่ง"
-    [metrics]="[
-      { label: 'ค้างรอ Code Review', value: kpis().waitingReviewCount, unit: 'ใบ', hint: 'เกิน 24 ชม. ' + kpis().waitingReviewOverdue + ' ใบ', tone: kpis().waitingReviewOverdue > 0 ? 'bad' : 'good' },
-      { label: 'ค้างรอเข้า QA', value: kpis().waitingQaCount, unit: 'ใบ', hint: 'เกิน SLA ' + kpis().waitingQaOverdue + ' ใบ' },
-      { label: 'ติด Blocker', value: kpis().blockedCount, unit: 'ใบ', hint: 'รอ Infra ' + kpis().blockedInfraCount + ' ใบ', tone: kpis().blockedCount > 0 ? 'bad' : 'good' },
-      { label: 'เวลาส่งต่อเฉลี่ย', value: kpis().avgHandoffHours, unit: 'ชม.', hint: 'เป้า ≤ 6 ชม.', tone: kpis().avgHandoffHours <= 6 ? 'good' : 'bad' }
-    ]"
-  >
-    <div actions class="flex flex-wrap gap-3 items-end">
-      <app-form-field label="สายงาน" variant="filter">
-        <app-sf-dropdown
-          [items]="trackOptions()"
-          [value]="trackFilter()"
-          [options]="{ width: '180px', allowFiltering: false }"
-          (valueChange)="setTrack($event)"
-        />
-      </app-form-field>
-      <button ejs-button cssClass="e-outline e-btn-teal" iconCss="e-icons e-refresh" (click)="scorecard.reloadFromApi()">
-        ซิงก์ข้อมูล
+<section class="page flex flex-col gap-3">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex flex-wrap items-center gap-2">
+      <app-filter-chips
+        [options]="handoffTabOptions()"
+        [value]="handoffTab()"
+        (valueChange)="setHandoffTab($event)"
+      ></app-filter-chips>
+      <app-status-badge [label]="'รอ Review ' + kpis().waitingReviewCount" [tone]="kpis().waitingReviewOverdue > 0 ? 'danger' : 'info'"></app-status-badge>
+      <app-status-badge [label]="'รอ QA ' + kpis().waitingQaCount" [tone]="kpis().waitingQaOverdue > 0 ? 'warning' : 'teal'"></app-status-badge>
+      <app-status-badge [label]="'Blocker ' + kpis().blockedCount" [tone]="kpis().blockedCount > 0 ? 'danger' : 'success'"></app-status-badge>
+      <app-status-badge [label]="'เฉลี่ย ' + kpis().avgHandoffHours + ' ชม.'" [tone]="kpis().avgHandoffHours <= 6 ? 'success' : 'warning'"></app-status-badge>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <app-filter-chips
+        [options]="slaChipOptions"
+        [value]="slaChipValue()"
+        (valueChange)="setSlaChip($event)"
+      ></app-filter-chips>
+      <button ejs-button cssClass="e-outline e-small e-btn-teal" iconCss="e-icons e-refresh" (click)="scorecard.reloadFromApi()">
+        ซิงก์
       </button>
     </div>
-  </app-page-head>
+  </div>
 
-  <app-filter-chips
-    [options]="slaChipOptions"
-    [value]="slaChipValue()"
-    (valueChange)="setSlaChip($event)"
-  ></app-filter-chips>
-
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+  @if (handoffTab() === 'overview') {
+  <div class="tab-stage-in grid grid-cols-1 lg:grid-cols-12 gap-4">
     <app-section-card
       class="lg:col-span-7"
       title="Stage Aging by Track"
@@ -80,7 +73,8 @@
       />
     </app-section-card>
   </div>
-
+  } @else {
+  <div class="tab-stage-in">
   <app-section-card
     title="ตารางตรวจสอบใบงานค้างส่งต่อและ SLA รายใบ"
     subtitle="ตรึง 2 คอลัมน์แรกเพื่อความสะดวกในการเลื่อนตรวจสอบข้อมูล"
@@ -138,4 +132,6 @@
       [cellTemplates]="{ ticketId: ticketIdTpl, status: statusTpl, hoursSpent: hoursTpl, slaHours: slaTpl, action: actionTpl }"
     />
   </app-section-card>
+  </div>
+  }
 </section>

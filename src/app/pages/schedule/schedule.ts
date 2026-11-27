@@ -42,6 +42,7 @@ import {
   SectionCardComponent,
   StaggerDirective,
   StatusBadgeComponent,
+  WorkspaceAsidebarComponent,
   workflowStatusToneMap,
 } from '../../shared/ui';
 import { SfCalendarComponent } from '../../shared/sf/sf-calendar/sf-calendar';
@@ -131,6 +132,7 @@ const COLORS = [
     FormFieldComponent,
     FilterChipsComponent,
     StatusBadgeComponent,
+    WorkspaceAsidebarComponent,
     SfCalendarComponent,
     SfChartComponent,
     SfDialogComponent,

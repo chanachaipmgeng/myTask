@@ -6,13 +6,13 @@ const SF_THEME_VERSION = '2.3.0';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  private readonly _theme = signal<AppTheme>('light');
+  private readonly _theme = signal<AppTheme>('dark');
   readonly theme = this._theme.asReadonly();
   readonly isDark = computed(() => this._theme() === 'dark');
   readonly sfTheme = computed(() => (this._theme() === 'dark' ? 'Tailwind3Dark' : 'Tailwind3'));
   /** สี track ของ ProgressBar ให้เข้ากับพื้นการ์ดทั้งโหมดสว่าง/มืด */
-  readonly progressTrack = computed(() => (this._theme() === 'dark' ? '#1e293b' : '#e2e8f0'));
-  readonly progressFill = computed(() => (this._theme() === 'dark' ? '#5f7ce3' : '#2e4fc8'));
+  readonly progressTrack = computed(() => (this._theme() === 'dark' ? 'rgba(148, 163, 184, 0.14)' : '#e2e8f0'));
+  readonly progressFill = computed(() => (this._theme() === 'dark' ? '#6366f1' : '#2746b3'));
 
   constructor() {
     this.initTheme();
@@ -28,8 +28,8 @@ export class ThemeService {
     if (saved === 'light' || saved === 'dark') {
       this.applyTheme(saved);
     } else {
-      // ค่าเริ่มต้น: โหมดสว่าง
-      this.applyTheme('light');
+      // ค่าเริ่มต้น: Obsidian Cosmic Dark Mode
+      this.applyTheme('dark');
     }
   }
 

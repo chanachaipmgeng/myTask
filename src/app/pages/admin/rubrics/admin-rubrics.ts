@@ -61,13 +61,13 @@ export class AdminRubricsPage implements OnInit {
   }
 
   protected readonly columns: SfGridColumn[] = [
-    { field: 'rubric_id', headerText: 'รหัส Rubric', width: 120, isPrimaryKey: true },
-    { field: 'category', headerText: 'หมวดหมู่', width: 105, allowEditing: false, textAlign: 'Center' },
-    { field: 'title', headerText: 'ชื่อเกณฑ์', width: 170 },
+    { field: 'rubric_id', headerText: 'รหัส Rubric', width: 125, isPrimaryKey: true, cellType: 'code' },
+    { field: 'category', headerText: 'หมวดหมู่', width: 115, allowEditing: false, textAlign: 'Center', cellType: 'badge' },
+    { field: 'title', headerText: 'ชื่อเกณฑ์', width: 180 },
     { field: 'paramsSummary', headerText: 'สรุปพารามิเตอร์คำนวณ', width: 210, allowEditing: false },
-    { field: 'paramsJson', headerText: 'พารามิเตอร์ JSON (แก้ไขได้)', width: 210 },
-    { field: 'is_active', headerText: 'เปิดใช้งาน', width: 90, displayAsCheckBox: true, type: 'boolean', textAlign: 'Center' },
-    { field: 'version', headerText: 'เวอร์ชัน', width: 90, allowEditing: false, textAlign: 'Center' },
+    { field: 'paramsJson', headerText: 'พารามิเตอร์ JSON (แก้ไขได้)', width: 210, cellType: 'code' },
+    { field: 'is_active', headerText: 'เปิดใช้งาน', width: 95, displayAsCheckBox: true, type: 'boolean', textAlign: 'Center' },
+    { field: 'version', headerText: 'เวอร์ชัน', width: 90, allowEditing: false, textAlign: 'Center', cellType: 'code' },
   ];
 
   protected readonly gridOptions: SfGridOptions = listGridOptions({

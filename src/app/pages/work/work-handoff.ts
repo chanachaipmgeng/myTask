@@ -32,13 +32,10 @@ import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    PageHeadComponent,
     SectionCardComponent,
     StatusBadgeComponent,
-    FormFieldComponent,
     FilterChipsComponent,
     SfChartComponent,
-    SfDropdownComponent,
     SfGridComponent,
     SfMessageComponent,
   ],
@@ -53,6 +50,14 @@ export class WorkHandoffPage {
 
   protected readonly role = effectiveRole;
   protected readonly onlyOverSla = signal<boolean>(false);
+  protected readonly handoffTab = signal<'overview' | 'tickets'>('overview');
+  protected readonly handoffTabOptions = computed<FilterChipOption[]>(() => [
+    { id: 'overview', label: 'กราฟ Stage Aging & Blocker', count: this.blockerMatrix().length },
+    { id: 'tickets', label: 'รายการใบงานค้าง SLA', count: this.filteredTickets().length },
+  ]);
+  protected setHandoffTab(id: string): void {
+    this.handoffTab.set(id === 'tickets' ? 'tickets' : 'overview');
+  }
 
   protected readonly trackOptions = computed(() => {
     const chips = listWorkspaceTrackChipOptions(this.scorecard.people(), this.scorecard.tickets());
@@ -122,11 +127,11 @@ export class WorkHandoffPage {
     { field: 'ticketId', headerText: 'รหัสใบงาน', width: 105, textAlign: 'Left' },
     { field: 'status', headerText: 'สถานะค้าง', width: 140, textAlign: 'Left' },
     { field: 'title', headerText: 'ชื่องาน / รายละเอียด', width: 190, textAlign: 'Left' },
-    { field: 'owner', headerText: 'เจ้าของงานหลัก', width: 140, textAlign: 'Left' },
-    { field: 'ownerTrack', headerText: 'สายเจ้าของ', width: 100, visible: false },
-    { field: 'reviewerOrQa', headerText: 'ผู้ตรวจ/ผู้รับช่วง', width: 140, textAlign: 'Left' },
-    { field: 'hoursSpent', headerText: 'เวลาค้างสะสม', width: 110, textAlign: 'Right' },
-    { field: 'slaHours', headerText: 'เกณฑ์ SLA', width: 95, textAlign: 'Right' },
+    { field: 'owner', headerText: 'เจ้าของงานหลัก', width: 150, textAlign: 'Left', cellType: 'person' },
+    { field: 'ownerTrack', headerText: 'สายเจ้าของ', width: 105, visible: false, cellType: 'badge' },
+    { field: 'reviewerOrQa', headerText: 'ผู้ตรวจ/ผู้รับช่วง', width: 150, textAlign: 'Left', cellType: 'person' },
+    { field: 'hoursSpent', headerText: 'เวลาค้างสะสม', width: 115, textAlign: 'Right', cellType: 'metric', format: 'N1' },
+    { field: 'slaHours', headerText: 'เกณฑ์ SLA', width: 95, textAlign: 'Right', cellType: 'metric', format: 'N0' },
     { field: 'action', headerText: 'การจัดการ', width: 110, textAlign: 'Center' },
   ];
 

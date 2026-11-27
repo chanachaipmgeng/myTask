@@ -32,9 +32,9 @@ import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 })
 export class TeamsPage {
   protected readonly logColumns: SfGridColumn[] = [
-    { field: 'ticketId', headerText: 'ใบงาน', width: 140 },
+    { field: 'ticketId', headerText: 'ใบงาน', width: 140, cellType: 'code' },
     { field: 'text', headerText: 'ข้อความ', width: 420 },
-    { field: 'statusLabel', headerText: 'สถานะ', width: 180 },
+    { field: 'statusLabel', headerText: 'สถานะ', width: 180, cellType: 'badge' },
   ];
   protected readonly logGridOptions: SfGridOptions = listGridOptions({
     id: 'teams-log-grid',

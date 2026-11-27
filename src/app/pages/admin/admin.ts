@@ -32,6 +32,7 @@ import { TeamVisibilityRule } from '../../../../shared/domain/team-visibility';
 import { resolvePersonTeamId } from '../../../../shared/domain/work-views';
 import { listOrgTeamOptions, listWorkspaceTrackChipOptions } from '../../../../shared/domain/workspace-scope';
 import {
+  AsideNavItem,
   DateTimePipe,
   FlashMessagesComponent,
   FormFieldComponent,
@@ -39,6 +40,7 @@ import {
   PersonAvatarComponent,
   SectionCardComponent,
   StatusBadgeComponent,
+  WorkspaceAsidebarComponent,
 } from '../../shared/ui';
 import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
 import { SfDatePickerComponent } from '../../shared/sf/sf-datepicker/sf-datepicker';
@@ -68,6 +70,7 @@ import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
     FormFieldComponent,
     FlashMessagesComponent,
     StatusBadgeComponent,
+    WorkspaceAsidebarComponent,
     SfCheckboxComponent,
     SfDatePickerComponent,
     SfDropdownComponent,
@@ -87,13 +90,27 @@ export class AdminPage {
   private readonly notice = inject(ShellNotice);
   protected readonly theme = inject(ThemeService);
 
+  protected readonly adminSection = signal<'cycles' | 'users' | 'matrix' | 'scoring' | 'audit'>('users');
+  protected readonly adminNavItems = computed<AsideNavItem[]>(() => [
+    { id: 'users', label: 'สิทธิ์ & พนักงาน', description: 'บทบาท · ระดับ · ทีมที่เห็น', icon: 'e-icons e-people', badge: this.scorecard.people().length, badgeTone: 'primary' },
+    { id: 'cycles', label: 'รอบประเมิน', description: 'ปี พ.ศ. · ช่วงวัน · รอบระบบ', icon: 'e-icons e-day', badge: this.cycles().length, badgeTone: 'info' },
+    { id: 'matrix', label: 'เมทริกซ์ข้ามทีม', description: 'สิทธิ์ดูงานระหว่างแผนก', icon: 'e-icons e-grid-view' },
+    { id: 'scoring', label: 'โควตา & น้ำหนัก', description: 'โควตา MD · น้ำหนัก · แจ้งเตือน', icon: 'e-icons e-settings' },
+    { id: 'audit', label: 'ประวัติ Audit Log', description: 'บันทึกการแก้ไขสิทธิ์ล่าสุด', icon: 'e-icons e-clock', badge: this.auditLogs().length || null },
+  ]);
+  protected setAdminSection(id: string): void {
+    if (id === 'cycles' || id === 'users' || id === 'matrix' || id === 'scoring' || id === 'audit') {
+      this.adminSection.set(id);
+    }
+  }
+
   protected readonly auditColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'ID', width: 80, textAlign: 'Right' },
-    { field: 'actorName', headerText: 'ผู้ดำเนินการ', width: 130 },
-    { field: 'action', headerText: 'การกระทำ', width: 180 },
+    { field: 'id', headerText: 'ID', width: 75, textAlign: 'Right', cellType: 'code' },
+    { field: 'actorName', headerText: 'ผู้ดำเนินการ', width: 145, cellType: 'person' },
+    { field: 'action', headerText: 'การกระทำ', width: 185, cellType: 'code' },
     { field: 'target', headerText: 'เป้าหมาย', width: 140 },
-    { field: 'detail', headerText: 'รายละเอียด', width: 280 },
-    { field: 'createdAt', headerText: 'เวลา', width: 190 },
+    { field: 'detail', headerText: 'รายละเอียด', width: 260 },
+    { field: 'createdAt', headerText: 'เวลา', width: 170, cellType: 'datetime' },
   ];
   protected readonly auditGridOptions: SfGridOptions = listGridOptions({
     id: 'admin-audit-grid',

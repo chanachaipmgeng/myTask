@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { currentViewer, effectiveRole, trackWeights, weeklyQuotas } from '../../core/admin-settings';
 import { buildAnalyticsReport } from '../../core/analytics';
@@ -8,10 +8,16 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
-import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
-import { MotionWrapperComponent } from '../../shared/motion/motion-wrapper';
-import { PageHeadComponent, SectionCardComponent, StatusBadgeComponent } from '../../shared/ui';
+import { BentoSpotlightDirective } from '../../shared/motion/bento-spotlight.directive';
+import { CountUpDirective } from '../../shared/ui/count-up';
+import {
+  FilterChipOption,
+  FilterChipsComponent,
+  SectionCardComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
 import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
+import { SfDonutChartComponent, SfDonutChartOptions } from '../../shared/sf/sf-donut-chart/sf-donut-chart';
 import {
   SfGridAggregate,
   SfGridColumn,
@@ -21,27 +27,74 @@ import {
 } from '../../shared/sf/sf-grid/sf-grid';
 import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
 
+interface ActivityEventItem {
+  id: string;
+  ticketId: string;
+  timeLabel: string;
+  title: string;
+  sublabel: string;
+  tone: 'emerald' | 'violet' | 'info' | 'danger' | 'primary';
+  iconCss: string;
+}
+
+interface SmartCoachReply {
+  query: string;
+  headline: string;
+  detail: string;
+  ticketId?: string;
+  route?: string;
+  routeLabel?: string;
+}
+
 @Component({
   selector: 'app-my-workspace',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
     RouterLink,
-    PageHeadComponent,
     SectionCardComponent,
     StatusBadgeComponent,
-    KpiStatCardComponent,
-    MotionWrapperComponent,
+    FilterChipsComponent,
+    BentoSpotlightDirective,
+    CountUpDirective,
     SfChartComponent,
+    SfDonutChartComponent,
     SfGridComponent,
     SfMessageComponent,
   ],
   templateUrl: './my-workspace.html',
+  styleUrl: './my-workspace.scss',
 })
 export class MyWorkspacePage {
   private readonly scorecard = inject(ScorecardService);
   private readonly ticketDetail = inject(TicketDetailService);
+  private readonly router = inject(Router);
   protected readonly theme = inject(ThemeService);
+
+  protected readonly activeTab = signal<'bento' | 'open' | 'closed' | 'trend'>('bento');
+  protected readonly coachQuery = signal('');
+  protected readonly coachReply = signal<SmartCoachReply | null>(null);
+  protected readonly revealedAgendaId = signal<string | null>(null);
+
+  protected readonly quickPrompts = [
+    'งานไหนเสี่ยงสุด',
+    'สรุปคะแนนฉัน',
+    'โควตาคงเหลือ',
+    'เปิดบอร์ด',
+  ] as const;
+
+  protected readonly tabOptions = computed<FilterChipOption[]>(() => [
+    { id: 'bento', label: 'ภาพรวม Bento' },
+    { id: 'open', label: 'ตารางงานเปิด', count: this.view().openWork.length },
+    { id: 'closed', label: 'ประวัติงานปิด', count: this.view().closedWork.length },
+    { id: 'trend', label: 'แนวโน้มดัชนี' },
+  ]);
+
+  protected setActiveTab(id: string): void {
+    if (id === 'bento' || id === 'open' || id === 'closed' || id === 'trend') {
+      this.activeTab.set(id);
+    }
+  }
 
   protected readonly role = effectiveRole;
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
@@ -67,7 +120,7 @@ export class MyWorkspacePage {
       yName: 'index',
       name: 'ดัชนีของฉัน',
       width: 2.5,
-      fill: '#4c68e5',
+      fill: '#6382f6',
       marker: { visible: true, width: 7, height: 7, shape: 'Circle', isFilled: true },
     },
     {
@@ -79,45 +132,60 @@ export class MyWorkspacePage {
       width: 2,
       fill: '#f59e0b',
       dashArray: '6,4',
-      marker: { visible: true, width: 8, height: 8, shape: 'Diamond', isFilled: true, fill: '#f59e0b', border: { width: 1, color: '#f59e0b' } },
+      marker: {
+        visible: true,
+        width: 8,
+        height: 8,
+        shape: 'Diamond',
+        isFilled: true,
+        fill: '#f59e0b',
+        border: { width: 1, color: '#f59e0b' },
+      },
     },
   ]);
   protected readonly trendChartOptions: SfChartOptions = {
-    height: '260px',
+    height: '280px',
     exportable: true,
     fullscreenable: true,
     exportFileName: 'my-self-trend',
     enableAnimation: true,
     legend: { visible: true, position: 'Top', alignment: 'Center', textStyle: this.axisFont },
-    tooltip: { enable: true, shared: true, enableMarker: true, header: '${point.x}', format: '${series.name}: <b>${point.y}</b>' },
+    tooltip: {
+      enable: true,
+      shared: true,
+      enableMarker: true,
+      header: '${point.x}',
+      format: '${series.name}: <b>${point.y}</b>',
+    },
   };
+
   protected readonly openWorkColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'รหัสใบงาน', width: 120 },
+    { field: 'id', headerText: 'รหัสใบงาน', width: 115, cellType: 'ticket-link' },
     { field: 'title', headerText: 'ชื่องาน / โมดูล', width: 200 },
-    { field: 'type', headerText: 'ประเภท', width: 115 },
-    { field: 'size', headerText: 'ขนาด', width: 75 },
-    { field: 'status', headerText: 'สถานะ', width: 125 },
-    { field: 'priorityLabel', headerText: 'Priority', width: 100 },
-    { field: 'estimateMd', headerText: 'Est MD', width: 90, textAlign: 'Right', format: 'N2' },
+    { field: 'type', headerText: 'ประเภท', width: 115, cellType: 'badge' },
+    { field: 'size', headerText: 'ขนาด', width: 75, cellType: 'badge', textAlign: 'Center' },
+    { field: 'status', headerText: 'สถานะ', width: 125, cellType: 'badge' },
+    { field: 'priorityLabel', headerText: 'Priority', width: 100, cellType: 'badge' },
+    { field: 'estimateMd', headerText: 'Est MD', width: 90, textAlign: 'Right', format: 'N2', cellType: 'metric', suffix: ' MD' },
     { field: 'dueOnLabel', headerText: 'กำหนดส่ง', width: 115 },
-    { field: 'unplannedLabel', headerText: 'แผน', width: 95 },
+    { field: 'unplannedLabel', headerText: 'แผน', width: 95, cellType: 'badge' },
     { field: 'actions', headerText: 'จัดการ', width: 180, allowSorting: false },
   ];
   protected readonly openWorkGridOptions: SfGridOptions = listGridOptions({
     id: 'my-open-work-grid-v2',
-    height: '260',
+    height: '320',
   });
   protected readonly closedWorkColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'ใบงาน', width: 110 },
+    { field: 'id', headerText: 'ใบงาน', width: 110, cellType: 'ticket-link' },
     { field: 'title', headerText: 'เรื่อง', width: 'auto', minWidth: 150 },
-    { field: 'type', headerText: 'ประเภท', width: 100 },
-    { field: 'size', headerText: 'ขนาด', width: 68 },
-    { field: 'estimateMd', headerText: 'Est', width: 76, textAlign: 'Right', format: 'N2' },
-    { field: 'actualMd', headerText: 'Actual', width: 78, textAlign: 'Right', format: 'N2' },
-    { field: 'weekOffsetLabel', headerText: 'สัปดาห์', width: 100 },
-    { field: 'reviewRounds', headerText: 'รีวิว', width: 72, textAlign: 'Right' },
-    { field: 'reopenCount', headerText: 'Reopen', width: 78, textAlign: 'Right' },
-    { field: 'score', headerText: 'คะแนน', width: 88, textAlign: 'Right' },
+    { field: 'type', headerText: 'ประเภท', width: 105, cellType: 'badge' },
+    { field: 'size', headerText: 'ขนาด', width: 68, cellType: 'badge', textAlign: 'Center' },
+    { field: 'estimateMd', headerText: 'Est', width: 76, textAlign: 'Right', format: 'N2', cellType: 'metric' },
+    { field: 'actualMd', headerText: 'Actual', width: 78, textAlign: 'Right', format: 'N2', cellType: 'metric' },
+    { field: 'weekOffsetLabel', headerText: 'สัปดาห์', width: 105, cellType: 'badge' },
+    { field: 'reviewRounds', headerText: 'รีวิว', width: 72, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 78, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'score', headerText: 'คะแนน', width: 88, textAlign: 'Right', cellType: 'score', format: 'N0' },
   ];
   protected readonly closedWorkAggregates: SfGridAggregate[] = [
     { field: 'id', type: 'Count', prefix: 'รวม ', suffix: ' ใบ' },
@@ -126,7 +194,7 @@ export class MyWorkspacePage {
   ];
   protected readonly closedWorkGridOptions: SfGridOptions = listGridOptions({
     id: 'my-closed-work-grid',
-    height: '280',
+    height: '320',
     excelExport: true,
     exportFileName: 'my-closed-work',
   });
@@ -159,40 +227,59 @@ export class MyWorkspacePage {
     return this.analytics().deliveryRisks.filter((item) => item.assigneeId === id);
   });
 
+  protected readonly greetingLine = computed(() => {
+    const hour = new Date().getHours();
+    const salutation = hour < 12 ? 'สวัสดีตอนเช้า' : hour < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
+    return `${salutation} ${this.view().name}`;
+  });
+
   /** Agenda งานเปิดเรียงตามกำหนดส่ง + checklist ส่งมอบถัดไป */
   protected readonly dueAgenda = computed(() => {
     const personId = this.activePerson()?.id ?? '';
+    const riskIds = new Set(this.myRisks().map((r) => r.ticketId));
     return this.scorecard
       .tickets()
       .filter((ticket) => !ticket.closed && ticket.assigneeId === personId)
       .map((ticket) => {
         const dueKey = ticket.dueOn ?? ticket.firstDueOn ?? '';
         const status = ticket.workflowStatus ?? 'In Progress';
+        const isHighRisk = riskIds.has(ticket.id) || ticket.weekOffset > 0 || String(status) === 'Blocked' || status === 'Reopened';
+        const isMedium = status === 'Code Review' || status === 'Ready for QA' || status === 'In QA';
         return {
           id: ticket.id,
           title: ticket.title?.trim() || ticket.module,
           status,
           estimateMd: ticket.estimateMd,
           dueKey,
-          dueLabel: dueKey || 'ไม่ระบุกำหนดส่ง',
+          dueLabel: dueKey || 'ยังไม่ระบุกำหนดส่ง',
           slipped: ticket.weekOffset > 0,
           weekOffset: ticket.weekOffset,
+          priorityLevel: isHighRisk ? 'high' : isMedium ? 'medium' : 'normal',
+          priorityText: isHighRisk ? 'ด่วน / เสี่ยง' : isMedium ? 'รอตรวจ / QA' : 'กำลังทำ',
           nextAction: nextDeliveryAction(status),
           checklist: deliveryChecklist(status, !!ticket.mrLink?.trim()),
         };
       })
       .sort((a, b) => {
-        if (!a.dueKey && !b.dueKey) {
-          return a.id.localeCompare(b.id);
-        }
-        if (!a.dueKey) {
-          return 1;
-        }
-        if (!b.dueKey) {
-          return -1;
-        }
+        if (a.priorityLevel === 'high' && b.priorityLevel !== 'high') return -1;
+        if (b.priorityLevel === 'high' && a.priorityLevel !== 'high') return 1;
+        if (!a.dueKey && !b.dueKey) return a.id.localeCompare(b.id);
+        if (!a.dueKey) return 1;
+        if (!b.dueKey) return -1;
         return a.dueKey.localeCompare(b.dueKey) || a.id.localeCompare(b.id);
       });
+  });
+
+  protected readonly topTodoItems = computed(() => this.dueAgenda().slice(0, 5));
+
+  protected readonly totalTaskCount = computed(() => this.view().openCount + this.view().closedCount);
+
+  protected readonly overdueOrRiskCount = computed(() => {
+    const riskSet = new Set(this.myRisks().map((r) => r.ticketId));
+    for (const item of this.dueAgenda()) {
+      if (item.slipped) riskSet.add(item.id);
+    }
+    return riskSet.size;
   });
 
   protected readonly freeMdLabel = computed(() => {
@@ -201,17 +288,107 @@ export class MyWorkspacePage {
     const quota = weeklyQuotas()[person.level];
     const openMd = this.view().openWork.reduce((sum, item) => sum + item.estimateMd, 0);
     const free = Math.max(0, quota - openMd - 1);
-    return free.toFixed(2);
+    return free.toFixed(1);
   });
-
-  protected readonly trendSparklineData = computed<number[]>(() =>
-    this.view().trend.map((t) => t.index)
-  );
 
   protected readonly closedProgressPct = computed(() => {
     const closed = this.view().closedCount;
-    const total = closed + this.view().openCount;
+    const total = this.totalTaskCount();
     return total > 0 ? Math.min(100, Math.round((closed / total) * 100)) : 100;
+  });
+
+  /** Breakdown สำหรับ Donut Chart แบบ Agent Desk (4 หมวดชัดเจน) */
+  protected readonly overviewSegments = computed(() => {
+    const closed = this.view().closedCount;
+    const agenda = this.dueAgenda();
+    let inProgress = 0;
+    let reviewQa = 0;
+    let riskOverdue = 0;
+
+    for (const item of agenda) {
+      if (item.priorityLevel === 'high') {
+        riskOverdue++;
+      } else if (item.priorityLevel === 'medium') {
+        reviewQa++;
+      } else {
+        inProgress++;
+      }
+    }
+
+    const total = Math.max(1, closed + inProgress + reviewQa + riskOverdue);
+    const rows = [
+      { label: 'ปิดสมบูรณ์', count: closed, pct: Math.round((closed / total) * 100), color: '#22c55e' },
+      { label: 'กำลังพัฒนา', count: inProgress, pct: Math.round((inProgress / total) * 100), color: '#a855f7' },
+      { label: 'รอตรวจ / QA', count: reviewQa, pct: Math.round((reviewQa / total) * 100), color: '#3b82f6' },
+      { label: 'เสี่ยง / เลยกำหนด', count: riskOverdue, pct: Math.round((riskOverdue / total) * 100), color: '#f43f5e' },
+    ];
+    return rows;
+  });
+
+  protected readonly donutData = computed(() => {
+    const nonZero = this.overviewSegments().filter((s) => s.count > 0);
+    if (nonZero.length === 0) {
+      return [{ label: 'ยังไม่มีข้อมูล', count: 1, color: '#3154cc' }];
+    }
+    return nonZero;
+  });
+
+  protected readonly donutOptions = computed<SfDonutChartOptions>(() => ({
+    height: '188px',
+    innerRadius: '69%',
+    radius: '92%',
+    centerLabel: this.view().indexLabel,
+    centerSubLabel: 'ดัชนีคะแนน',
+    palettes: this.donutData().map((d) => d.color),
+    legend: { visible: false },
+    enableSmartLabels: false,
+    tooltip: { enable: true, format: '${point.x}: <b>${point.y} ใบ</b>' },
+    motion: 'none',
+  }));
+
+  /** Activity Timeline (5 เหตุการณ์ล่าสุดจากใบงานจริงของฉัน) */
+  protected readonly activityFeed = computed<ActivityEventItem[]>(() => {
+    const items: ActivityEventItem[] = [];
+
+    for (const risk of this.myRisks().slice(0, 2)) {
+      items.push({
+        id: `risk-${risk.ticketId}`,
+        ticketId: risk.ticketId,
+        timeLabel: `เสี่ยง ${risk.riskScore}`,
+        title: `${risk.ticketId} · ${risk.title}`,
+        sublabel: risk.reasons[0] || `สถานะ ${risk.status} · เฝ้าระวังส่งมอบ`,
+        tone: 'danger',
+        iconCss: 'e-icons e-warning',
+      });
+    }
+
+    for (const agenda of this.dueAgenda().slice(0, 2)) {
+      if (items.some((x) => x.ticketId === agenda.id)) continue;
+      items.push({
+        id: `open-${agenda.id}`,
+        ticketId: agenda.id,
+        timeLabel: agenda.dueKey ? agenda.dueKey.slice(5) : 'เปิดอยู่',
+        title: `${agenda.id} · ${agenda.title}`,
+        sublabel: `${agenda.status} · ถัดไป: ${agenda.nextAction}`,
+        tone: agenda.priorityLevel === 'medium' ? 'info' : 'violet',
+        iconCss: agenda.priorityLevel === 'medium' ? 'e-icons e-check-box' : 'e-icons e-clock',
+      });
+    }
+
+    for (const closed of this.view().closedWork.slice(0, 3)) {
+      if (items.length >= 5) break;
+      items.push({
+        id: `closed-${closed.id}`,
+        ticketId: closed.id,
+        timeLabel: closed.score != null ? `ได้ ${Math.round(closed.score)} คะแนน` : 'ปิดงานแล้ว',
+        title: `ปิดงาน ${closed.id} · ${closed.title}`,
+        sublabel: `ใช้ ${closed.actualMd} / Est ${closed.estimateMd} MD · รีวิว ${closed.reviewRounds} รอบ`,
+        tone: 'emerald',
+        iconCss: 'e-icons e-check',
+      });
+    }
+
+    return items.slice(0, 5);
   });
 
   protected readonly trendSparkline = computed(() => {
@@ -228,17 +405,15 @@ export class MyWorkspacePage {
     const coords = points.map((val, idx) => {
       const clamped = Math.max(minVal, Math.min(maxVal, val));
       const x = paddingX + idx * stepX;
-      const y = (height - paddingY) - ((clamped - minVal) / (maxVal - minVal)) * (height - paddingY * 2);
+      const y = height - paddingY - ((clamped - minVal) / (maxVal - minVal)) * (height - paddingY * 2);
       return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, val };
     });
 
     const linePath = coords.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ');
     const lastX = coords[coords.length - 1].x;
     const firstX = coords[0].x;
-    const bottomY = height;
-    const areaPath = `${linePath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
-
-    const targetY = (height - paddingY) - ((75 - minVal) / (maxVal - minVal)) * (height - paddingY * 2);
+    const areaPath = `${linePath} L ${lastX} ${height} L ${firstX} ${height} Z`;
+    const targetY = height - paddingY - ((75 - minVal) / (maxVal - minVal)) * (height - paddingY * 2);
 
     return {
       coords,
@@ -250,37 +425,140 @@ export class MyWorkspacePage {
     };
   });
 
-  protected readonly wipProgressPct = computed(() =>
-    Math.min(100, Math.round((this.view().openCount / 2) * 100))
-  );
-
-  protected readonly quotaProgressPct = computed(() => {
-    const person = this.activePerson();
-    if (!person) return 0;
-    const quota = weeklyQuotas()[person.level] || 3.5;
-    const free = parseFloat(this.freeMdLabel()) || 0;
-    return Math.min(100, Math.round((free / quota) * 100));
-  });
-
-  /** Agenda card reveal — เปิดแผง checklist ทับการ์ดทีละใบ (Syncfusion Card Reveal) */
-  protected readonly revealedAgendaId = signal<string | null>(null);
-
   protected openTicket(id: string, event?: Event): void {
     event?.stopPropagation();
     if (id) this.ticketDetail.open(id);
   }
 
-  protected openAgendaReveal(id: string): void {
-    this.revealedAgendaId.set(id);
-  }
-
-  protected closeAgendaReveal(): void {
-    this.revealedAgendaId.set(null);
+  protected toggleAgendaChecklist(id: string, event: Event): void {
+    event.stopPropagation();
+    this.revealedAgendaId.update((cur) => (cur === id ? null : id));
   }
 
   protected checklistProgress(item: { checklist: DeliveryCheckItem[] }): string {
     const done = item.checklist.filter((check) => check.done).length;
     return `${done}/${item.checklist.length}`;
+  }
+
+  protected onCoachInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    this.coachQuery.set(target?.value ?? '');
+  }
+
+  protected runQuickPrompt(prompt: string): void {
+    this.coachQuery.set(prompt);
+    this.submitCoachPrompt();
+  }
+
+  protected clearCoachReply(): void {
+    this.coachReply.set(null);
+  }
+
+  protected submitCoachPrompt(event?: Event): void {
+    event?.preventDefault();
+    const raw = this.coachQuery().trim();
+    if (!raw) return;
+    const q = raw.toLowerCase();
+
+    if (q.includes('บอร์ด') || q.includes('kanban') || q.includes('board')) {
+      void this.router.navigate(['/work/board']);
+      return;
+    }
+    if (q.includes('ไทม์ไลน์') || q.includes('gantt')) {
+      void this.router.navigate(['/work/timeline']);
+      return;
+    }
+    if (q.includes('ols') || q.includes('วิเคราะห์')) {
+      void this.router.navigate(['/quality/ols']);
+      return;
+    }
+
+    if (q.includes('เสี่ยง') || q.includes('เลยกำหนด') || q.includes('overdue') || q.includes('ด่วน')) {
+      const topRisk = this.myRisks()[0];
+      if (topRisk) {
+        this.coachReply.set({
+          query: raw,
+          headline: `พบงานเสี่ยงสูงสุด: ${topRisk.ticketId} (${topRisk.riskLevel} · ${topRisk.riskScore})`,
+          detail: `${topRisk.title} — ${topRisk.reasons.join(' · ')}`,
+          ticketId: topRisk.ticketId,
+        });
+      } else {
+        this.coachReply.set({
+          query: raw,
+          headline: 'ยอดเยี่ยม! ตอนนี้ไม่มีใบงานเสี่ยงหรือเลยกำหนด',
+          detail: `คุณถือ WIP ${this.view().openCount} ใบ และทุกใบยังอยู่ในกรอบเวลาปกติ`,
+          route: '/work/board',
+          routeLabel: 'เปิดบอร์ดงาน',
+        });
+      }
+      this.coachQuery.set('');
+      return;
+    }
+
+    if (q.includes('คะแนน') || q.includes('ดัชนี') || q.includes('score')) {
+      const c = this.myCoaching();
+      this.coachReply.set({
+        query: raw,
+        headline: `ดัชนีปัจจุบัน ${this.view().indexLabel} / เป้า ${this.view().target}`,
+        detail: c
+          ? `ตรงเวลา ${c.onTimePct}% · แม่นยำ ${c.estimationAccuracyPct}% · รีวิวรอบแรก ${c.firstPassPct}% (Slope ${c.trendSlope})`
+          : `ปิดงานไปแล้ว ${this.view().closedCount} ใบในรอบปัจจุบัน`,
+        route: '/quality/ols',
+        routeLabel: 'ดูกราฟวิเคราะห์เต็ม',
+      });
+      this.coachQuery.set('');
+      return;
+    }
+
+    if (q.includes('โควตา') || q.includes('quota') || q.includes('md') || q.includes('ว่าง')) {
+      this.coachReply.set({
+        query: raw,
+        headline: `โควตาสัปดาห์คงเหลือประมาณ ${this.freeMdLabel()} MD`,
+        detail: `ระดับ ${this.view().level} (ฐาน ${this.view().quota} MD) · ถือใบงานเปิด ${this.view().openCount} ใบ`,
+        route: '/schedule',
+        routeLabel: 'เช็กปฏิทิน & วันลา',
+      });
+      this.coachQuery.set('');
+      return;
+    }
+
+    // Search user's own tickets by ID or title
+    const matchedOpen = this.dueAgenda().find(
+      (item) => item.id.toLowerCase().includes(q) || item.title.toLowerCase().includes(q),
+    );
+    if (matchedOpen) {
+      this.coachReply.set({
+        query: raw,
+        headline: `พบใบงานเปิด ${matchedOpen.id}`,
+        detail: `${matchedOpen.title} · สถานะ ${matchedOpen.status} · กำหนดส่ง ${matchedOpen.dueLabel}`,
+        ticketId: matchedOpen.id,
+      });
+      this.coachQuery.set('');
+      return;
+    }
+
+    const matchedClosed = this.view().closedWork.find(
+      (item) => item.id.toLowerCase().includes(q) || item.title.toLowerCase().includes(q),
+    );
+    if (matchedClosed) {
+      this.coachReply.set({
+        query: raw,
+        headline: `พบใบงานปิดแล้ว ${matchedClosed.id}`,
+        detail: `${matchedClosed.title} · ได้คะแนน ${matchedClosed.score != null ? Math.round(matchedClosed.score) : '-'} · ใช้จริง ${matchedClosed.actualMd} MD`,
+        ticketId: matchedClosed.id,
+      });
+      this.coachQuery.set('');
+      return;
+    }
+
+    this.coachReply.set({
+      query: raw,
+      headline: `ไม่พบใบงานที่ตรงกับ "${raw}"`,
+      detail: 'ลองพิมพ์รหัสใบงาน หรือกดคำสั่งด่วน เช่น "งานไหนเสี่ยงสุด", "สรุปคะแนนฉัน", "โควตาคงเหลือ"',
+      route: '/work/board',
+      routeLabel: 'ไปที่บอร์ดงาน',
+    });
+    this.coachQuery.set('');
   }
 }
 

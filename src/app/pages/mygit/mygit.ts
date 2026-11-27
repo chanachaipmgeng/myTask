@@ -59,21 +59,21 @@ export class MyGitPage {
   protected readonly isMine = computed(
     () => this.route.snapshot.data['scope'] === 'mine' || effectiveRole() === 'member',
   );
-  protected readonly inboxTab = signal<'all' | 'mrs' | 'unmatched' | 'tickets' | 'sync'>('all');
+  protected readonly inboxTab = signal<'all' | 'mrs' | 'unmatched' | 'tickets' | 'sync'>('unmatched');
   protected readonly inboxChipOptions = computed((): FilterChipOption[] => {
     const options: FilterChipOption[] = [
-      { id: 'all', label: 'ทั้งหมด' },
-      { id: 'mrs', label: 'คิวรอรีวิว MR', count: this.openMrs().length || null },
       {
         id: 'unmatched',
         label: 'Branch ยังไม่ผูกใบงาน',
         count: this.unmatchedBranches().length || null,
       },
+      { id: 'mrs', label: 'คิวรอรีวิว MR', count: this.openMrs().length || null },
     ];
     if (this.isMine()) {
       options.push({ id: 'tickets', label: 'ใบงานที่ผูก MR ของฉัน' });
     }
     options.push({ id: 'sync', label: 'ซิงก์ GitLab & ประวัติ' });
+    options.push({ id: 'all', label: 'ทั้งหมด' });
     return options;
   });
   protected onInboxTab(id: string): void {
@@ -98,12 +98,12 @@ export class MyGitPage {
   );
 
   protected readonly unmatchedBranchColumns: SfGridColumn[] = [
-    { field: 'projectName', headerText: 'โปรเจกต์ Git', width: 160 },
-    { field: 'branchName', headerText: 'ชื่อ Branch', width: 220 },
-    { field: 'personName', headerText: 'ผู้สร้าง / Dev', width: 140 },
-    { field: 'lastCommitTitle', headerText: 'Commit ล่าสุด', width: 240 },
-    { field: 'lastCommitAt', headerText: 'เวลา Commit', width: 160 },
-    { field: 'actions', headerText: 'สร้างใบงาน', width: 130, textAlign: 'Center' },
+    { field: 'actions', headerText: 'สร้างใบงาน', width: 120, textAlign: 'Center' },
+    { field: 'branchName', headerText: 'ชื่อ Branch', width: 220, cellType: 'code', linkField: 'webUrl' },
+    { field: 'projectName', headerText: 'โปรเจกต์ Git', width: 150, cellType: 'badge', badgeTone: 'indigo' },
+    { field: 'personName', headerText: 'ผู้สร้าง / Dev', width: 140, cellType: 'person', personIdField: 'personId' },
+    { field: 'lastCommitTitle', headerText: 'Commit ล่าสุด', width: 220 },
+    { field: 'lastCommitAt', headerText: 'เวลา Commit', width: 155, cellType: 'datetime' },
   ];
 
   protected readonly unmatchedBranchGridOptions: SfGridOptions = listGridOptions({
@@ -131,12 +131,12 @@ export class MyGitPage {
 
   protected readonly canSyncApi = canAssignWork;
   protected readonly openMrColumns: SfGridColumn[] = [
-    { field: 'title', headerText: 'Merge Request', width: 260 },
-    { field: 'ticketId', headerText: 'ใบงาน', width: 120 },
-    { field: 'ageHours', headerText: 'ค้าง (ชม.)', width: 100, textAlign: 'Right' },
-    { field: 'ciStatus', headerText: 'CI', width: 110 },
+    { field: 'title', headerText: 'Merge Request', width: 260, cellType: 'title-sub', subtitleField: 'authorName' },
+    { field: 'ticketId', headerText: 'ใบงาน', width: 120, cellType: 'ticket-link' },
+    { field: 'ageHours', headerText: 'ค้าง (ชม.)', width: 105, textAlign: 'Right', cellType: 'metric', format: 'N1' },
+    { field: 'ciStatus', headerText: 'CI', width: 115, cellType: 'badge' },
     { field: 'reviewers', headerText: 'Reviewers', width: 160 },
-    { field: 'webUrl', headerText: 'ลิงก์', width: 180 },
+    { field: 'webUrl', headerText: 'ลิงก์', width: 120, cellType: 'link', linkLabel: 'เปิด MR' },
   ];
   protected readonly openMrGridOptions: SfGridOptions = listGridOptions({
     id: 'mygit-open-mrs-grid',
@@ -146,26 +146,26 @@ export class MyGitPage {
     exportFileName: 'open-mrs',
   });
   protected readonly myTicketsMrColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'รหัสใบงาน', width: 120 },
-    { field: 'title', headerText: 'ชื่องาน / โมดูล', width: 220 },
-    { field: 'status', headerText: 'สถานะงาน', width: 140 },
-    { field: 'mrLink', headerText: 'ลิงก์ Merge Request', width: 260 },
-    { field: 'reviewRounds', headerText: 'รอบรีวิว', width: 85, textAlign: 'Right' },
-    { field: 'reopenCount', headerText: 'Reopen', width: 85, textAlign: 'Right' },
+    { field: 'id', headerText: 'รหัสใบงาน', width: 120, cellType: 'ticket-link' },
+    { field: 'title', headerText: 'ชื่องาน / โมดูล', width: 240 },
+    { field: 'status', headerText: 'สถานะงาน', width: 145, cellType: 'badge' },
+    { field: 'mrLink', headerText: 'Merge Request', width: 140, cellType: 'link', linkLabel: 'ดู MR' },
+    { field: 'reviewRounds', headerText: 'รอบรีวิว', width: 95, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 95, textAlign: 'Right', cellType: 'metric', format: 'N0' },
   ];
   protected readonly myTicketsMrGridOptions: SfGridOptions = listGridOptions({
     id: 'mygit-my-tickets-grid',
     height: '240',
   });
   protected readonly matchedColumns: SfGridColumn[] = [
-    { field: 'sha', headerText: 'Commit / MR', width: 120 },
-    { field: 'ticketId', headerText: 'ใบงาน', width: 140 },
-    { field: 'reviewRounds', headerText: 'รอบรีวิว', width: 110, textAlign: 'Right' },
-    { field: 'reopenCount', headerText: 'Reopen', width: 100, textAlign: 'Right' },
-    { field: 'reviewBefore', headerText: 'คะแนนรีวิวก่อน', width: 140, textAlign: 'Right' },
-    { field: 'reviewAfter', headerText: 'คะแนนรีวิวหลัง', width: 140, textAlign: 'Right' },
-    { field: 'mrLink', headerText: 'ลิงก์ MR', width: 220 },
-    { field: 'mergedAt', headerText: 'เวลา merge', width: 190 },
+    { field: 'sha', headerText: 'Commit / MR', width: 125, cellType: 'code' },
+    { field: 'ticketId', headerText: 'ใบงาน', width: 125, cellType: 'ticket-link' },
+    { field: 'reviewRounds', headerText: 'รอบรีวิว', width: 100, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 95, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'reviewBefore', headerText: 'รีวิวก่อน', width: 110, textAlign: 'Right', cellType: 'score' },
+    { field: 'reviewAfter', headerText: 'รีวิวหลัง', width: 110, textAlign: 'Right', cellType: 'score' },
+    { field: 'mrLink', headerText: 'ลิงก์ MR', width: 120, cellType: 'link', linkLabel: 'เปิด MR' },
+    { field: 'mergedAt', headerText: 'เวลา merge', width: 165, cellType: 'datetime' },
     { field: 'message', headerText: 'ข้อความ', width: 260 },
   ];
   protected readonly matchedGridOptions: SfGridOptions = listGridOptions({
@@ -175,9 +175,9 @@ export class MyGitPage {
     exportFileName: 'mygit-matched',
   });
   protected readonly unmatchedColumns: SfGridColumn[] = [
-    { field: 'sha', headerText: 'Commit / MR', width: 120 },
-    { field: 'ticketId', headerText: 'รหัสที่อ้าง', width: 140 },
-    { field: 'mergedAt', headerText: 'เวลา merge', width: 200 },
+    { field: 'sha', headerText: 'Commit / MR', width: 125, cellType: 'code' },
+    { field: 'ticketId', headerText: 'รหัสที่อ้าง', width: 135, cellType: 'code' },
+    { field: 'mergedAt', headerText: 'เวลา merge', width: 165, cellType: 'datetime' },
     { field: 'message', headerText: 'ข้อความ', width: 320 },
   ];
   protected readonly unmatchedGridOptions: SfGridOptions = listGridOptions({

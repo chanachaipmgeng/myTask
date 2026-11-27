@@ -8,9 +8,9 @@
   max-width: none;
 }
 
-@media (min-width: 1200px) and (min-height: 850px) {
+@media (min-width: 1200px) and (min-height: 720px) {
   :host {
-    height: calc(100vh - 136px);
+    height: calc(100vh - 134px);
   }
   .schedule-page.page {
     height: 100%;

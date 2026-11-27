@@ -295,6 +295,55 @@ body.e-light-mode {
 .e-card.section-card .e-grid .e-headercell,
 .section-card .e-grid .e-headercell {
   font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: rgba(148, 163, 184, 0.06) !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+body.e-light-mode .e-card.section-card .e-grid .e-headercell,
+body.e-light-mode .section-card .e-grid .e-headercell,
+body:not(.e-dark-mode) .e-card.section-card .e-grid .e-headercell,
+body:not(.e-dark-mode) .section-card .e-grid .e-headercell {
+  background: rgba(39, 70, 179, 0.045) !important;
+}
+
+.e-grid .e-toolbar {
+  border: 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+  background: transparent !important;
+  padding: 4px 2px !important;
+}
+
+.e-grid .e-toolbar .e-tbar-btn {
+  border-radius: 9px !important;
+}
+
+.e-grid .e-gridpager {
+  border-top: 1px solid var(--line) !important;
+  padding: 6px 4px !important;
+}
+
+.e-grid .e-gridpager .e-pagerdropdown {
+  width: auto !important;
+  min-width: 74px !important;
+}
+
+.e-grid .e-gridpager .e-pagerconstant {
+  margin-left: 6px !important;
+}
+
+.e-grid .e-gridpager .e-currentitem {
+  background: #2746b3 !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+}
+
+.e-grid .e-summaryrow .e-summarycell {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: rgba(148, 163, 184, 0.05) !important;
 }
 
 .e-grid .e-gridcontent {

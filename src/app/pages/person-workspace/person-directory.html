@@ -1,15 +1,8 @@
 <!-- Directory — พนักงาน | ทีม -->
 <app-page-head
   [title]="directoryTitle()"
+  [badge]="directoryView() === 'teams' ? teamCards().length + ' ทีม · ' + teamMemberTotal() + ' คน' : personCards().length + ' คน'"
   [description]="directoryDescription()"
-  [metrics]="directoryView() === 'teams'
-    ? [
-        { label: 'จำนวนทีม', value: '' + teamCards().length },
-        { label: 'สมาชิก active', value: '' + teamMemberTotal() },
-      ]
-    : [
-        { label: 'พนักงานในรายการ', value: personCards().length, unit: 'คน' },
-      ]"
 >
   <div actions class="flex flex-wrap items-center gap-2">
     @if (directoryView() === 'people') {

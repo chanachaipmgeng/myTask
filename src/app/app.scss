@@ -5,42 +5,42 @@
 // =============================================================================
 
 .app-frame {
-  // Dark Mode (Default) Tokens — Deep Corporate Royal Navy
-  --shell-sidebar-bg: linear-gradient(180deg, #0b1437 0%, #132158 55%, #1a2d75 100%);
-  --shell-sidebar-border: rgba(148, 179, 255, 0.14);
+  // Dark Mode (Default) Tokens — Obsidian Royal × Violet Glow (Agent Desk Inspired)
+  --shell-sidebar-bg: linear-gradient(180deg, #090b16 0%, #0d1022 58%, #10132a 100%);
+  --shell-sidebar-border: rgba(139, 92, 246, 0.16);
   --shell-brand-text: #ffffff;
-  --shell-switcher-bg: rgba(255, 255, 255, 0.08);
-  --shell-switcher-border: rgba(255, 255, 255, 0.14);
-  --shell-switcher-hover: rgba(255, 255, 255, 0.14);
-  --shell-dropdown-bg: #111c44;
-  --shell-dropdown-border: rgba(148, 179, 255, 0.2);
-  --shell-search-bg: rgba(255, 255, 255, 0.08);
-  --shell-search-border: rgba(255, 255, 255, 0.14);
+  --shell-switcher-bg: rgba(255, 255, 255, 0.06);
+  --shell-switcher-border: rgba(139, 92, 246, 0.2);
+  --shell-switcher-hover: rgba(139, 92, 246, 0.14);
+  --shell-dropdown-bg: #0e1124;
+  --shell-dropdown-border: rgba(139, 92, 246, 0.24);
+  --shell-search-bg: rgba(255, 255, 255, 0.06);
+  --shell-search-border: rgba(148, 163, 255, 0.16);
   --shell-search-color: #ffffff;
-  --shell-search-placeholder: rgba(219, 234, 254, 0.6);
-  --shell-section-label: rgba(191, 219, 254, 0.68);
-  --shell-menu-color: rgba(241, 245, 249, 0.85);
-  --shell-menu-hover-bg: rgba(255, 255, 255, 0.1);
+  --shell-search-placeholder: rgba(203, 213, 225, 0.58);
+  --shell-section-label: rgba(148, 163, 200, 0.65);
+  --shell-menu-color: rgba(226, 232, 248, 0.82);
+  --shell-menu-hover-bg: rgba(139, 92, 246, 0.1);
   --shell-menu-hover-color: #ffffff;
-  --shell-menu-active-bg: rgba(255, 255, 255, 0.18);
+  --shell-menu-active-bg: linear-gradient(90deg, rgba(49, 84, 204, 0.34) 0%, rgba(139, 92, 246, 0.28) 100%);
   --shell-menu-active-color: #ffffff;
-  --shell-menu-active-icon: #ffffff;
-  --shell-menu-active-shadow: 0 2px 10px rgba(7, 13, 38, 0.35);
-  --shell-menu-active-border: rgba(255, 255, 255, 0.24);
-  --shell-appbar-bg: rgba(11, 20, 55, 0.92);
-  --shell-appbar-border: rgba(148, 179, 255, 0.12);
+  --shell-menu-active-icon: #c4b5fd;
+  --shell-menu-active-shadow: 0 4px 16px -4px rgba(124, 58, 237, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --shell-menu-active-border: rgba(167, 139, 250, 0.38);
+  --shell-appbar-bg: rgba(9, 11, 22, 0.88);
+  --shell-appbar-border: rgba(139, 92, 246, 0.15);
   --shell-appbar-title: #f8fafc;
-  --shell-omni-bg: rgba(255, 255, 255, 0.07);
-  --shell-omni-border: rgba(148, 179, 255, 0.16);
+  --shell-omni-bg: rgba(255, 255, 255, 0.05);
+  --shell-omni-border: rgba(148, 163, 255, 0.15);
   --shell-omni-color: #f8fafc;
-  --shell-omni-placeholder: #94a3b8;
-  --shell-omni-kbd-bg: rgba(255, 255, 255, 0.08);
-  --shell-omni-kbd-border: rgba(148, 179, 255, 0.22);
-  --shell-omni-kbd-color: #cbd5e1;
-  --shell-btn-bg: rgba(255, 255, 255, 0.06);
-  --shell-btn-border: rgba(148, 179, 255, 0.16);
+  --shell-omni-placeholder: #8e9cb8;
+  --shell-omni-kbd-bg: rgba(139, 92, 246, 0.12);
+  --shell-omni-kbd-border: rgba(167, 139, 250, 0.28);
+  --shell-omni-kbd-color: #ddd6fe;
+  --shell-btn-bg: rgba(255, 255, 255, 0.05);
+  --shell-btn-border: rgba(148, 163, 255, 0.14);
   --shell-btn-color: #cbd5e1;
-  --shell-btn-hover-bg: rgba(255, 255, 255, 0.14);
+  --shell-btn-hover-bg: rgba(139, 92, 246, 0.14);
   --shell-btn-hover-color: #ffffff;
 
   display: grid;
@@ -1099,20 +1099,21 @@
   position: relative;
   z-index: 25;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px 14px;
-  padding: 6px 22px;
+  gap: 8px 12px;
+  min-height: 44px;
+  padding: 5px 14px;
   background: var(--shell-appbar-bg);
   border-bottom: 1px solid var(--shell-appbar-border);
 }
 
 .workspace-filter-bar__controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 8px 12px;
+  gap: 8px 10px;
   min-width: 0;
 }
 

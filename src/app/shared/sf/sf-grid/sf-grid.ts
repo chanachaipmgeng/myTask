@@ -44,10 +44,24 @@ import { ClickEventArgs } from '@syncfusion/ej2-navigations';
 import { ViewportService } from '../../../core/viewport.service';
 import { MotionInput, MotionWrapperComponent } from '../../motion/motion-wrapper';
 import { BadgeTone } from '../../ui/badge';
+import { formatDateOnly, formatDateTime } from '../../ui/date-format';
 import { PersonAvatarComponent } from '../../ui/person-avatar/person-avatar';
 import { StatusBadgeComponent } from '../../ui/status-badge/status-badge';
 
-export type SfGridCellType = 'person' | 'badge' | 'progress' | 'ticket-link' | 'metric';
+export type SfGridCellType =
+  | 'person'
+  | 'badge'
+  | 'progress'
+  | 'score'
+  | 'ticket-link'
+  | 'metric'
+  | 'date'
+  | 'datetime'
+  | 'code'
+  | 'link'
+  | 'boolean'
+  | 'delta'
+  | 'title-sub';
 
 export interface SfGridColumn {
   field?: string;
@@ -73,8 +87,17 @@ export interface SfGridColumn {
   toneMap?: Record<string, BadgeTone>;
   /** For cellType: 'badge' — fixed badge tone */
   badgeTone?: BadgeTone;
-  /** For cellType: 'metric' | 'progress' — optional suffix (e.g. ' MD', '%') */
+  /** For cellType: 'metric' | 'progress' | 'score' | 'delta' — optional suffix (e.g. ' MD', '%') */
   suffix?: string;
+  /** For cellType: 'title-sub' — field holding the secondary muted subtitle */
+  subtitleField?: string;
+  /** For cellType: 'code' | 'link' — optional field holding external URL */
+  linkField?: string;
+  /** For cellType: 'link' — label shown for valid links (defaults to 'เปิดลิงก์') */
+  linkLabel?: string;
+  /** For cellType: 'boolean' — custom labels (defaults to 'ผ่าน' / 'ไม่ผ่าน') */
+  trueLabel?: string;
+  falseLabel?: string;
   /** Key in [cellTemplates] map; defaults to `field` when omitted */
   templateKey?: string;
 }
@@ -239,12 +262,17 @@ let nextGridId = 1;
                 </ng-template>
               } @else if (col.cellType === 'person') {
                 <ng-template #template let-rowData>
-                  <app-person-avatar
-                    [personId]="rowData[col.personIdField || 'personId'] || ''"
-                    [name]="rowData[col.field!] || ''"
-                    [showName]="true"
-                    size="xs"
-                  />
+                  @let pName = rowData[col.field!] || '';
+                  @if (pName && pName !== 'ยังไม่ระบุ' && pName !== '—') {
+                    <app-person-avatar
+                      [personId]="rowData[col.personIdField || 'personId'] || ''"
+                      [name]="pName"
+                      [showName]="true"
+                      size="xs"
+                    />
+                  } @else {
+                    <span class="sf-grid-muted">{{ pName || 'ยังไม่ระบุ' }}</span>
+                  }
                 </ng-template>
               } @else if (col.cellType === 'badge') {
                 <ng-template #template let-rowData>
@@ -255,31 +283,117 @@ let nextGridId = 1;
                 </ng-template>
               } @else if (col.cellType === 'ticket-link') {
                 <ng-template #template let-rowData>
-                  <button
-                    ejs-button
-                    cssClass="e-link e-small font-semibold"
-                    type="button"
-                    (click)="cellAction.emit({ column: col, row: rowData })"
-                  >
-                    {{ rowData[col.field!] }}
-                  </button>
+                  @if (rowData[col.field!]) {
+                    <button
+                      ejs-button
+                      cssClass="e-link e-small sf-grid-ticket-btn"
+                      type="button"
+                      (click)="cellAction.emit({ column: col, row: rowData })"
+                    >
+                      {{ rowData[col.field!] }}
+                    </button>
+                  } @else {
+                    <span class="sf-grid-muted">—</span>
+                  }
                 </ng-template>
               } @else if (col.cellType === 'progress') {
                 <ng-template #template let-rowData>
-                  <div class="sf-grid-progress">
-                    <span class="sf-grid-progress__val" [style.color]="progressBandColor(rowData[col.field!])">{{ formatMetric(rowData[col.field!], col.format) }}{{ col.suffix ?? '' }}</span>
-                    <span class="sf-grid-progress__track">
-                      <span
-                        class="sf-grid-progress__fill"
-                        [style.width.%]="clampPct(rowData[col.field!])"
-                        [style.background]="progressBandGradient(rowData[col.field!])"
-                      ></span>
+                  @if (isFiniteNum(rowData[col.field!])) {
+                    <div class="sf-grid-progress">
+                      <span class="sf-grid-progress__val" [style.color]="progressBandColor(rowData[col.field!])">{{ formatMetric(rowData[col.field!], col.format) }}{{ col.suffix ?? '' }}</span>
+                      <span class="sf-grid-progress__track">
+                        <span
+                          class="sf-grid-progress__fill"
+                          [style.width.%]="clampPct(rowData[col.field!])"
+                          [style.background]="progressBandGradient(rowData[col.field!])"
+                        ></span>
+                      </span>
+                    </div>
+                  } @else {
+                    <span class="sf-grid-muted">—</span>
+                  }
+                </ng-template>
+              } @else if (col.cellType === 'score') {
+                <ng-template #template let-rowData>
+                  @if (isFiniteNum(rowData[col.field!])) {
+                    <span class="sf-grid-score" [attr.data-band]="scoreBand(rowData[col.field!])">
+                      {{ formatMetric(rowData[col.field!], col.format) }}{{ col.suffix ?? '' }}
                     </span>
-                  </div>
+                  } @else {
+                    <span class="sf-grid-muted">—</span>
+                  }
                 </ng-template>
               } @else if (col.cellType === 'metric') {
                 <ng-template #template let-rowData>
-                  <span class="tabular-nums font-semibold">{{ formatMetric(rowData[col.field!], col.format) }}{{ col.suffix ?? '' }}</span>
+                  @if (isFiniteNum(rowData[col.field!])) {
+                    <span class="tabular-nums font-semibold">{{ formatMetric(rowData[col.field!], col.format) }}{{ col.suffix ?? '' }}</span>
+                  } @else {
+                    <span class="sf-grid-muted">—</span>
+                  }
+                </ng-template>
+              } @else if (col.cellType === 'date') {
+                <ng-template #template let-rowData>
+                  <span class="sf-grid-date">{{ formatDateVal(rowData[col.field!], false) }}</span>
+                </ng-template>
+              } @else if (col.cellType === 'datetime') {
+                <ng-template #template let-rowData>
+                  <span class="sf-grid-date">{{ formatDateVal(rowData[col.field!], true) }}</span>
+                </ng-template>
+              } @else if (col.cellType === 'code') {
+                <ng-template #template let-rowData>
+                  @let codeVal = rowData[col.field!];
+                  @let href = col.linkField ? rowData[col.linkField] : null;
+                  @if (codeVal) {
+                    @if (href) {
+                      <a class="sf-grid-code sf-grid-code--link" [href]="href" target="_blank" rel="noopener noreferrer" [title]="String(codeVal)">
+                        {{ codeVal }}
+                      </a>
+                    } @else {
+                      <span class="sf-grid-code" [title]="String(codeVal)">{{ codeVal }}</span>
+                    }
+                  } @else {
+                    <span class="sf-grid-muted">—</span>
+                  }
+                </ng-template>
+              } @else if (col.cellType === 'link') {
+                <ng-template #template let-rowData>
+                  @let rawUrl = safeHttpUrl(rowData[col.linkField || col.field!]);
+                  @if (rawUrl) {
+                    <a class="sf-grid-ext-link" [href]="rawUrl" target="_blank" rel="noopener noreferrer" [title]="rawUrl">
+                      <span class="e-icons e-link" aria-hidden="true"></span>
+                      <span>{{ col.linkLabel || 'เปิดลิงก์' }}</span>
+                    </a>
+                  } @else {
+                    <span class="sf-grid-muted">{{ rowData[col.field!] && !String(rowData[col.field!]).startsWith('http') ? rowData[col.field!] : '—' }}</span>
+                  }
+                </ng-template>
+              } @else if (col.cellType === 'boolean') {
+                <ng-template #template let-rowData>
+                  @let isTrue = Boolean(rowData[col.field!]);
+                  <span class="sf-grid-bool" [class.is-true]="isTrue" [class.is-false]="!isTrue">
+                    <span class="e-icons" [class.e-check]="isTrue" [class.e-close]="!isTrue" aria-hidden="true"></span>
+                    <span>{{ isTrue ? (col.trueLabel ?? 'ผ่าน') : (col.falseLabel ?? 'ไม่ผ่าน') }}</span>
+                  </span>
+                </ng-template>
+              } @else if (col.cellType === 'delta') {
+                <ng-template #template let-rowData>
+                  @if (isFiniteNum(rowData[col.field!])) {
+                    @let d = Number(rowData[col.field!]);
+                    <span class="sf-grid-delta" [class.is-pos]="d > 0" [class.is-neg]="d < 0">
+                      {{ d > 0 ? '+' : '' }}{{ formatMetric(d, col.format || 'N1') }}{{ col.suffix ?? '' }}
+                    </span>
+                  } @else {
+                    <span class="sf-grid-muted">—</span>
+                  }
+                </ng-template>
+              } @else if (col.cellType === 'title-sub') {
+                <ng-template #template let-rowData>
+                  <div class="sf-grid-title-sub">
+                    <span class="sf-grid-title-sub__main" [title]="String(rowData[col.field!] ?? '')">{{ rowData[col.field!] || '—' }}</span>
+                    @if (col.subtitleField && rowData[col.subtitleField]) {
+                      <span class="sf-grid-title-sub__sub">{{ rowData[col.subtitleField] }}</span>
+                    }
+                  </div>
                 </ng-template>
               }
             </e-column>
@@ -331,6 +445,149 @@ let nextGridId = 1;
       background: linear-gradient(90deg, #2746b3, #3b60dc);
       transition: width 320ms var(--ease-nordic, cubic-bezier(0.22, 1, 0.36, 1));
     }
+    .sf-grid-muted {
+      color: var(--ink-3, #94a3b8);
+    }
+    .sf-grid-ticket-btn {
+      background: transparent;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-weight: 600;
+      font-size: 0.8125rem;
+      color: var(--primary, #3b60dc);
+      text-decoration: none;
+    }
+    .sf-grid-ticket-btn:hover {
+      text-decoration: underline;
+    }
+    .sf-grid-score {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.75rem;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid transparent;
+    }
+    .sf-grid-score[data-band='excellent'] {
+      background: rgba(16, 185, 129, 0.14);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #059669;
+    }
+    .sf-grid-score[data-band='good'] {
+      background: rgba(14, 165, 233, 0.14);
+      border-color: rgba(14, 165, 233, 0.3);
+      color: #0284c7;
+    }
+    .sf-grid-score[data-band='warn'] {
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #d97706;
+    }
+    .sf-grid-score[data-band='bad'] {
+      background: rgba(244, 63, 94, 0.14);
+      border-color: rgba(244, 63, 94, 0.3);
+      color: #e11d48;
+    }
+    :host-context(.e-dark-mode) .sf-grid-score[data-band='excellent'] { color: #34d399; }
+    :host-context(.e-dark-mode) .sf-grid-score[data-band='good'] { color: #38bdf8; }
+    :host-context(.e-dark-mode) .sf-grid-score[data-band='warn'] { color: #fbbf24; }
+    :host-context(.e-dark-mode) .sf-grid-score[data-band='bad'] { color: #fb7185; }
+    .sf-grid-date {
+      font-size: 0.8125rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink-2, #64748b);
+      white-space: nowrap;
+    }
+    .sf-grid-code {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 0.75rem;
+      background: rgba(148, 163, 184, 0.14);
+      color: var(--ink-1, #0f172a);
+      text-decoration: none;
+    }
+    :host-context(.e-dark-mode) .sf-grid-code {
+      background: rgba(148, 163, 184, 0.16);
+      color: #e2e8f0;
+    }
+    .sf-grid-code--link {
+      color: var(--primary, #3b60dc);
+    }
+    .sf-grid-code--link:hover {
+      text-decoration: underline;
+    }
+    .sf-grid-ext-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--primary, #3b60dc);
+      text-decoration: none;
+    }
+    .sf-grid-ext-link:hover {
+      text-decoration: underline;
+    }
+    .sf-grid-bool {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .sf-grid-bool.is-true {
+      background: rgba(16, 185, 129, 0.14);
+      color: #059669;
+    }
+    .sf-grid-bool.is-false {
+      background: rgba(148, 163, 184, 0.14);
+      color: var(--ink-3, #64748b);
+    }
+    :host-context(.e-dark-mode) .sf-grid-bool.is-true { color: #34d399; }
+    .sf-grid-delta {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink-2, #64748b);
+    }
+    .sf-grid-delta.is-pos { color: #059669; }
+    .sf-grid-delta.is-neg { color: #e11d48; }
+    :host-context(.e-dark-mode) .sf-grid-delta.is-pos { color: #34d399; }
+    :host-context(.e-dark-mode) .sf-grid-delta.is-neg { color: #fb7185; }
+    .sf-grid-title-sub {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+    .sf-grid-title-sub__main {
+      font-weight: 600;
+      color: var(--ink-1, #0f172a);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    :host-context(.e-dark-mode) .sf-grid-title-sub__main { color: #f1f5f9; }
+    .sf-grid-title-sub__sub {
+      font-size: 0.75rem;
+      color: var(--ink-3, #64748b);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   `,
 })
 export class SfGridComponent {
@@ -354,6 +611,8 @@ export class SfGridComponent {
   readonly dataStateChange = output<DataStateChangeEventArgs>();
 
   protected readonly String = String;
+  protected readonly Boolean = Boolean;
+  protected readonly Number = Number;
 
   protected readonly remoteEnabled = computed(() => !!this.options().remote);
 
@@ -413,6 +672,40 @@ export class SfGridComponent {
     Junior: 'info',
     FirstMonth: 'warning',
     เดือนแรก: 'warning',
+    อนุมัติแล้ว: 'success',
+    APPROVED: 'success',
+    ปฏิเสธ: 'danger',
+    REJECTED: 'danger',
+    รอพิจารณา: 'warning',
+    PENDING: 'warning',
+    passed: 'success',
+    success: 'success',
+    failed: 'danger',
+    error: 'danger',
+    running: 'info',
+    partial: 'warning',
+    ในแผน: 'success',
+    นอกแผน: 'warning',
+    ตรงสัปดาห์: 'success',
+    ปกติ: 'success',
+    'สมบูรณ์ 100%': 'success',
+    หลักฐานไม่ครบ: 'warning',
+    'เกิน SLA': 'danger',
+    admin: 'violet',
+    Admin: 'violet',
+    lead: 'teal',
+    Lead: 'teal',
+    member: 'info',
+    Member: 'info',
+    XS: 'secondary',
+    S: 'info',
+    M: 'primary',
+    L: 'warning',
+    XL: 'coral',
+    Urgent: 'danger',
+    High: 'coral',
+    Medium: 'warning',
+    Low: 'secondary',
   };
 
   protected progressBandColor(value: unknown): string {
@@ -440,12 +733,38 @@ export class SfGridComponent {
   }
 
   protected formatMetric(value: unknown, format?: string): string {
+    if (value === null || value === undefined || value === '') return '—';
     const n = Number(value);
-    if (!Number.isFinite(n)) return String(value ?? '—');
+    if (!Number.isFinite(n)) return String(value);
     if (format === 'N1') return n.toFixed(1);
     if (format === 'N2') return n.toFixed(2);
     if (format === 'N0') return Math.round(n).toString();
     return String(value);
+  }
+
+  protected isFiniteNum(value: unknown): boolean {
+    return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+  }
+
+  protected scoreBand(value: unknown): 'excellent' | 'good' | 'warn' | 'bad' {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 'warn';
+    if (n >= 85) return 'excellent';
+    if (n >= 75) return 'good';
+    if (n >= 60) return 'warn';
+    return 'bad';
+  }
+
+  protected formatDateVal(value: unknown, withTime: boolean): string {
+    if (value === null || value === undefined || value === '') return '—';
+    const normalized = value instanceof Date ? value.toISOString() : String(value);
+    return withTime ? formatDateTime(normalized) : formatDateOnly(normalized);
+  }
+
+  protected safeHttpUrl(value: unknown): string | null {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return /^https?:\/\//i.test(trimmed) ? trimmed : null;
   }
 
   protected clampPct(value: unknown): number {

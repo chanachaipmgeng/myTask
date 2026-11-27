@@ -105,6 +105,7 @@ export function resolveMotionOptions(
       [class.is-settled]="settled()"
       [class.is-refreshing]="refreshing()"
       [class.is-interactive]="resolved().interactive"
+      [class.has-border-beam]="borderBeam()"
       [class.is-loading]="loading()"
       [style.--mw-delay.ms]="resolved().delay"
       [style.--mw-dur.ms]="resolved().duration"
@@ -153,6 +154,8 @@ export class MotionWrapperComponent implements AfterViewInit {
   readonly refreshKey = input<unknown>(undefined);
   /** Shows a subtle top shimmer bar when async data is refreshing */
   readonly loading = input<boolean>(false);
+  /** Enables a rotating cosmic gradient border beam on featured cards */
+  readonly borderBeam = input<boolean>(false);
 
   protected readonly revealed = signal(false);
   protected readonly settled = signal(false);

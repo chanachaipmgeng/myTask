@@ -137,14 +137,14 @@ export class QualityAuditPage {
   ]);
 
   protected readonly dodColumns: SfGridColumn[] = [
-    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 110, textAlign: 'Left' },
-    { field: 'devName', headerText: 'ผู้พัฒนา (Dev)', width: 130 },
-    { field: 'qaName', headerText: 'ผู้ตรวจ QA', width: 130 },
-    { field: 'mrLink', headerText: 'ลิงก์ MR', width: 110 },
-    { field: 'unitTestLabel', headerText: 'Unit Test', width: 110 },
-    { field: 'ciStatusLabel', headerText: 'CI Pipeline', width: 120 },
-    { field: 'stagingVerified', headerText: 'ผล Staging', width: 110 },
-    { field: 'dodStatus', headerText: 'สถานะหลักฐานส่งมอบ', width: 130 },
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 115, textAlign: 'Left', cellType: 'ticket-link' },
+    { field: 'devName', headerText: 'ผู้พัฒนา (Dev)', width: 140, cellType: 'person' },
+    { field: 'qaName', headerText: 'ผู้ตรวจ QA', width: 140, cellType: 'person' },
+    { field: 'mrLink', headerText: 'ลิงก์ MR', width: 115, cellType: 'link', linkLabel: 'เปิด MR' },
+    { field: 'unitTestLabel', headerText: 'Unit Test', width: 110, cellType: 'badge' },
+    { field: 'ciStatusLabel', headerText: 'CI Pipeline', width: 120, cellType: 'badge' },
+    { field: 'stagingVerified', headerText: 'ผล Staging', width: 110, cellType: 'boolean', trueLabel: 'ผ่าน', falseLabel: 'รอตรวจ' },
+    { field: 'dodStatus', headerText: 'สถานะหลักฐานส่งมอบ', width: 145, cellType: 'badge' },
     { field: 'action', headerText: 'การจัดการ', width: 110, textAlign: 'Center' },
   ];
   protected readonly dodGridOptions: SfGridOptions = listGridOptions({
@@ -154,13 +154,13 @@ export class QualityAuditPage {
   });
 
   protected readonly reopenColumns: SfGridColumn[] = [
-    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 110 },
-    { field: 'title', headerText: 'ชื่องาน', width: 180 },
-    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 130 },
-    { field: 'reopenCount', headerText: 'Reopen', width: 100, textAlign: 'Right' },
-    { field: 'bugCause', headerText: 'สาเหตุของบั๊ก', width: 150 },
-    { field: 'isBugEscape', headerText: 'หลุด Prod', width: 120, textAlign: 'Center' },
-    { field: 'notes', headerText: 'บันทึกเพิ่มเติม', width: 160 },
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 115, cellType: 'ticket-link' },
+    { field: 'title', headerText: 'ชื่องาน', width: 190 },
+    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 140, cellType: 'person' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 95, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'bugCause', headerText: 'สาเหตุของบั๊ก', width: 155, cellType: 'badge' },
+    { field: 'isBugEscape', headerText: 'หลุด Prod', width: 115, textAlign: 'Center', cellType: 'boolean', trueLabel: 'หลุด Prod', falseLabel: 'ไม่หลุด' },
+    { field: 'notes', headerText: 'บันทึกเพิ่มเติม', width: 170 },
   ];
   protected readonly reopenGridOptions: SfGridOptions = listGridOptions({
     id: 'quality-reopen-grid',

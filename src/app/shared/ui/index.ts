@@ -21,6 +21,13 @@ export {
   toneForAlertLabel,
 } from './badge';
 export { PageHeadComponent } from './page-head/page-head';
+export {
+  EcosystemHubComponent,
+  DEFAULT_ECOSYSTEM_NODES,
+  type EcosystemHubNode,
+  type EcosystemNodeTone,
+  type EcosystemNodeStatus,
+} from './ecosystem-hub/ecosystem-hub';
 export { HeroBandComponent, type HeroBandMetric } from './hero-band/hero-band';
 export {
   CountUpDirective,
@@ -39,6 +46,10 @@ export { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog';
 export { PersonAvatarComponent, type PersonAvatarSize } from './person-avatar/person-avatar';
 export { TicketDetailDialogComponent } from './ticket-detail-dialog/ticket-detail-dialog';
 export { TicketCreateDialogComponent } from './ticket-create-dialog/ticket-create-dialog';
+export {
+  WorkspaceAsidebarComponent,
+  type AsideNavItem,
+} from './workspace-asidebar/workspace-asidebar';
 export {
   LoadingSkeletonComponent,
   type LoadingSkeletonVariant,

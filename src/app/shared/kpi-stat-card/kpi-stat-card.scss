@@ -62,22 +62,23 @@
 
 /* Syncfusion KPI Stat Card — optical nesting + MyHR Prism multi-accent tokens */
 .e-card.kpi-stat {
-  --kpi-c1: #4c68e5;
-  --kpi-c2: #2e4fc8;
-  --kpi-rgb: 76, 104, 229;
-  --kpi-icon: #5f7ce3;
+  --kpi-c1: #4f73f0;
+  --kpi-c2: #2746b3;
+  --kpi-rgb: 79, 115, 240;
+  --kpi-icon: #6382f6;
   --kpi-val-light: #2746b3;
 
   display: flex;
   flex-direction: column;
   align-items: stretch;
   height: 100%;
-  min-height: 156px;
+  min-height: 146px;
   overflow: hidden;
   position: relative;
   padding: 0;
   border-radius: var(--radius-card) !important;
-  border: 1px solid color-mix(in srgb, var(--border, #e2e8f0) 80%, transparent);
+  border: 1px solid var(--border-glass, rgba(148, 163, 255, 0.14));
+  background: var(--card, rgba(12, 15, 28, 0.86));
   background-clip: padding-box;
   box-shadow: var(--shadow-card);
   transition:

@@ -9,23 +9,24 @@ html {
 
 :root,
 .e-dark-mode {
-  --ink: #edf3ff;
-  --muted: #a4b2c8;
-  --paper: #0b1120;
-  --surface: #131f37;
-  --card: rgba(19, 31, 55, 0.78);
-  --card-hover: rgba(24, 40, 70, 0.94);
-  --line: rgba(48, 67, 93, 0.75);
-  --line-bright: rgba(95, 124, 227, 0.55);
-  --primary: #2e4fc8;
-  --primary-rgb: 46, 79, 200;
-  --primary-hover: #2443b0;
-  --primary-bright: #5f7ce3;
-  --secondary: #4c68e5;
+  --ink: #f1f5ff;
+  --muted: #9aa7c2;
+  --paper: #06070d;
+  --surface: #0c0f1c;
+  --card: rgba(12, 15, 28, 0.86);
+  --card-hover: rgba(17, 21, 40, 0.96);
+  --line: rgba(139, 92, 246, 0.14);
+  --line-bright: rgba(124, 92, 246, 0.45);
+  --primary: #3154cc;
+  --primary-rgb: 49, 84, 204;
+  --primary-hover: #2746b3;
+  --primary-bright: #6382f6;
+  --secondary: #5b72f2;
   --ai-accent: #8b5cf6;
+  --ai-accent-rgb: 139, 92, 246;
   --teal: #14b8a6;
   --cyan: #38bdf8;
-  --violet: #a78bfa;
+  --violet: #a855f7;
   --coral: #fb923c;
   --indigo: #818cf8;
   --emerald: #34d399;
@@ -34,7 +35,7 @@ html {
   --good: #10b981;
   --bad: #f43f5e;
   --copper: #f59e0b;
-  --navy: #0b1120;
+  --navy: #06070d;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   /* Organic/Nordic motion — settle soft, ไม่เด้งเกินจริง */
@@ -48,13 +49,17 @@ html {
   --dur-slow: 320ms;
   --dur-deliberate: 460ms;
 
-  /* Nordic Soft Glass Surfaces (Dark — Deep Royal Navy Glass) */
-  --surface-glass: rgba(15, 24, 56, 0.72);
-  --surface-glass-strong: rgba(17, 28, 66, 0.92);
-  --surface-glass-hover: rgba(148, 179, 255, 0.08);
-  --surface-track: rgba(255, 255, 255, 0.07);
-  --border-glass: rgba(148, 179, 255, 0.16);
-  --blur-glass: blur(18px) saturate(155%);
+  /* Obsidian Cosmic Glass Surfaces (Dark — Agent Desk × MyHR Royal) */
+  --surface-glass: rgba(11, 14, 26, 0.8);
+  --surface-glass-strong: rgba(13, 16, 30, 0.94);
+  --surface-glass-hover: rgba(139, 92, 246, 0.08);
+  --surface-track: rgba(255, 255, 255, 0.06);
+  --border-glass: rgba(148, 163, 255, 0.14);
+  --border-glow: rgba(139, 92, 246, 0.34);
+  --blur-glass: blur(20px) saturate(165%);
+  --color-bg-subtle: rgba(17, 21, 38, 0.72);
+  --color-border-subtle: rgba(148, 163, 255, 0.12);
+  --color-fg-default: #e6ecff;
 
   /* Optical nesting radii (outer > nested > tile > pill) */
   --radius-panel: 24px;
@@ -64,25 +69,27 @@ html {
   --radius-tile: 10px;
   --radius-pill: 9999px;
 
-  /* Soft elevation — เงาบาง ไม่คม */
+  /* Crisp Obsidian elevation + subtle top luminous hairline */
   --shadow-card:
-    0 10px 28px -12px rgba(2, 6, 23, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    0 12px 32px -14px rgba(0, 0, 0, 0.78),
+    0 0 0 1px rgba(148, 163, 255, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --shadow-card-hover:
-    0 14px 32px -12px rgba(2, 6, 23, 0.65),
+    0 16px 38px -12px rgba(0, 0, 0, 0.85),
+    0 0 24px -8px rgba(139, 92, 246, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.11);
-  --shadow-pill: 0 2px 10px -2px rgba(2, 6, 23, 0.35);
-  --shadow-floating: 0 18px 42px -12px rgba(2, 6, 23, 0.45);
+  --shadow-pill: 0 2px 12px -2px rgba(0, 0, 0, 0.55);
+  --shadow-floating: 0 22px 48px -12px rgba(0, 0, 0, 0.72);
 
   /* Syncfusion Tailwind 3 Standard Theme Variables */
-  --tw-primary: #2e4fc8;
-  --color-sf-primary: #2e4fc8;
-  --color-sf-primary-hover: #2443b0;
+  --tw-primary: #3154cc;
+  --color-sf-primary: #3154cc;
+  --color-sf-primary-hover: #2746b3;
   --color-sf-primary-active: #1c3690;
-  --color-sf-surface: #131f37;
-  --color-sf-neutral-background1: #0b1120;
-  --color-sf-stroke-accessible: rgba(48, 67, 93, 0.85);
-  --color-sf-neutral-foreground1: #edf3ff;
+  --color-sf-surface: #0c0f1c;
+  --color-sf-neutral-background1: #06070d;
+  --color-sf-stroke-accessible: rgba(148, 163, 255, 0.18);
+  --color-sf-neutral-foreground1: #f1f5ff;
 
   color: var(--ink);
   background: var(--paper);
@@ -92,11 +99,11 @@ html {
 :root.e-light-mode,
 body.e-light-mode {
   --ink: #142b50;
-  --muted: #637490;
-  --paper: #eef3fb;
+  --muted: #5d6e8c;
+  --paper: #f3f6fd;
   --surface: #ffffff;
-  --card: rgba(255, 255, 255, 0.78);
-  --card-hover: rgba(255, 255, 255, 0.92);
+  --card: rgba(255, 255, 255, 0.86);
+  --card-hover: rgba(255, 255, 255, 0.98);
   --line: rgba(39, 70, 179, 0.1);
   --line-bright: rgba(39, 70, 179, 0.42);
   --primary: #2746b3;
@@ -104,15 +111,20 @@ body.e-light-mode {
   --primary-hover: #1f3999;
   --primary-bright: #3b60dc;
 
-  /* Nordic Soft Glass Surfaces (Light — MyHR Ice-Blue Mist) */
-  --surface-glass: rgba(255, 255, 255, 0.74);
-  --surface-glass-strong: rgba(255, 255, 255, 0.92);
+  /* Crisp Bento Glass Surfaces (Light — MyHR Ice-Blue Mist) */
+  --surface-glass: rgba(255, 255, 255, 0.8);
+  --surface-glass-strong: rgba(255, 255, 255, 0.96);
   --surface-glass-hover: rgba(39, 70, 179, 0.045);
   --surface-track: rgba(20, 43, 80, 0.06);
-  --border-glass: rgba(255, 255, 255, 0.86);
+  --border-glass: rgba(39, 70, 179, 0.1);
+  --border-glow: rgba(124, 58, 237, 0.22);
   --blur-glass: blur(18px) saturate(155%);
+  --color-bg-subtle: #f7f9fe;
+  --color-border-subtle: rgba(39, 70, 179, 0.1);
+  --color-fg-default: #142b50;
   --secondary: #4c68e5;
   --ai-accent: #7c3aed;
+  --ai-accent-rgb: 124, 58, 237;
   --teal: #0d9488;
   --cyan: #0284c7;
   --violet: #7c3aed;
@@ -128,19 +140,20 @@ body.e-light-mode {
 
   --shadow-card:
     0 10px 30px -12px rgba(39, 70, 179, 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
   --shadow-card-hover:
-    0 14px 34px -12px rgba(39, 70, 179, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96);
+    0 14px 34px -12px rgba(39, 70, 179, 0.15),
+    0 0 0 1px rgba(124, 58, 237, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
   --shadow-pill:
     0 2px 8px -2px rgba(39, 70, 179, 0.12),
     0 1px 2px rgba(20, 43, 80, 0.04);
   --shadow-floating: 0 18px 42px -12px rgba(20, 43, 80, 0.16);
 
   /* Syncfusion Tailwind 3 Standard Theme Variables for Light Mode */
-  --tw-primary: #2e4fc8;
-  --color-sf-primary: #2e4fc8;
-  --color-sf-primary-hover: #2443b0;
+  --tw-primary: #2746b3;
+  --color-sf-primary: #2746b3;
+  --color-sf-primary-hover: #1f3999;
   --color-sf-primary-active: #1c3690;
   --color-sf-surface: #ffffff;
   --color-sf-neutral-background1: #f8fafc;
@@ -172,13 +185,33 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(at 10% 8%, rgba(46, 79, 200, 0.22) 0px, transparent 48%),
-    radial-gradient(at 90% 12%, rgba(99, 102, 241, 0.16) 0px, transparent 46%),
-    radial-gradient(at 82% 90%, rgba(14, 165, 233, 0.11) 0px, transparent 50%),
-    radial-gradient(at 14% 88%, rgba(39, 70, 179, 0.14) 0px, transparent 48%),
+    radial-gradient(ellipse 68% 46% at 14% 6%, rgba(49, 84, 204, 0.24) 0px, transparent 62%),
+    radial-gradient(ellipse 56% 42% at 88% 10%, rgba(139, 92, 246, 0.2) 0px, transparent 58%),
+    radial-gradient(ellipse 50% 44% at 82% 92%, rgba(56, 189, 248, 0.1) 0px, transparent 60%),
+    radial-gradient(ellipse 52% 40% at 10% 88%, rgba(124, 58, 237, 0.14) 0px, transparent 56%),
     var(--paper);
   background-attachment: fixed;
   overflow-x: hidden;
+}
+
+body.e-dark-mode::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.34;
+  background-image:
+    radial-gradient(1.2px 1.2px at 12% 18%, rgba(255, 255, 255, 0.72), transparent),
+    radial-gradient(1px 1px at 28% 72%, rgba(196, 181, 253, 0.65), transparent),
+    radial-gradient(1.3px 1.3px at 46% 32%, rgba(147, 197, 253, 0.68), transparent),
+    radial-gradient(1px 1px at 67% 14%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.2px 1.2px at 82% 48%, rgba(196, 181, 253, 0.7), transparent),
+    radial-gradient(1px 1px at 91% 81%, rgba(125, 211, 252, 0.58), transparent),
+    radial-gradient(1.1px 1.1px at 36% 88%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 58% 64%, rgba(167, 139, 250, 0.58), transparent);
+  background-size: 420px 360px;
+  animation: cosmicStarDrift 38s linear infinite;
 }
 
 body {
@@ -201,7 +234,7 @@ body.e-light-mode {
   color: #14213d;
   background:
     radial-gradient(at 8% 8%, #dbe7ff 0px, transparent 48%),
-    radial-gradient(at 92% 14%, #e4ecff 0px, transparent 46%),
+    radial-gradient(at 92% 14%, #ece6ff 0px, transparent 46%),
     radial-gradient(at 84% 88%, #e2f2f7 0px, transparent 50%),
     radial-gradient(at 16% 86%, #e7e9fb 0px, transparent 50%),
     #f4f7fe;
@@ -1142,14 +1175,14 @@ app-section-card:hover .e-card.section-card,
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 9px 14px 10px;
+  gap: 5px;
+  padding: 8px 8px 9px;
   min-height: 40px;
   border: 0;
   background: transparent;
   color: var(--muted, #94a3b8);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
@@ -1160,7 +1193,7 @@ app-section-card:hover .e-card.section-card,
   transition: color 0.16s ease, background 0.16s ease;
 
   .e-icons {
-    font-size: 13.5px;
+    font-size: 13px;
     opacity: 0.78;
     transition: opacity 0.16s ease, color 0.16s ease;
   }
@@ -1168,15 +1201,15 @@ app-section-card:hover .e-card.section-card,
   &::after {
     content: '';
     position: absolute;
-    left: 10px;
-    right: 10px;
+    left: 8px;
+    right: 8px;
     bottom: 0;
     height: 2.5px;
     border-radius: 2px 2px 0 0;
     background: transparent;
-    transform: scaleX(0.4);
+    transform: scaleX(0.3);
     opacity: 0;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease, background 0.18s ease;
+    transition: transform 0.24s var(--ease-nordic, cubic-bezier(0.22, 1, 0.36, 1)), opacity 0.18s ease, background 0.18s ease;
   }
 
   &:hover:not(.is-active) {
@@ -1202,6 +1235,27 @@ app-section-card:hover .e-card.section-card,
       transform: scaleX(1);
       opacity: 1;
     }
+  }
+}
+
+@keyframes tabStageIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-stage-in {
+  animation: tabStageIn 220ms var(--ease-nordic, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-stage-in {
+    animation: none !important;
   }
 }
 
@@ -1687,6 +1741,288 @@ textarea:focus-visible,
 .e-control input:focus-visible {
   outline: 2px solid var(--primary-bright, #3b60dc) !important;
   outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Obsidian Cosmic Motion System (Agent Desk × MyHR Royal)
+   - Subtle Starfield drift, Mouse Spotlight Bento Glow, Rotating Border Beam
+   - Zero `:hover transform` on cards/buttons (Syncfusion-safe)
+   ========================================================================== */
+@property --beam-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes cosmicStarDrift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 420px 360px;
+  }
+}
+
+@keyframes cosmicBeamSpin {
+  0% {
+    --beam-angle: 0deg;
+  }
+  100% {
+    --beam-angle: 360deg;
+  }
+}
+
+@keyframes cosmicPulseGlow {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.bento-spotlight-host {
+  position: relative;
+  --mx: 50%;
+  --my: 0%;
+  --spotlight-color: rgba(139, 92, 246, 0.16);
+}
+
+.bento-spotlight-host::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  background: radial-gradient(
+    260px circle at var(--mx) var(--my),
+    var(--spotlight-color),
+    rgba(49, 84, 204, 0.08) 42%,
+    transparent 74%
+  );
+  transition: opacity 220ms var(--ease-crisp, ease);
+}
+
+.bento-spotlight-host.is-spotlight-active::after {
+  opacity: 1;
+}
+
+body.e-light-mode .bento-spotlight-host {
+  --spotlight-color: rgba(49, 84, 204, 0.09);
+}
+
+.cosmic-border-beam,
+.motion-wrap.has-border-beam > .e-card {
+  position: relative;
+  isolation: isolate;
+}
+
+.cosmic-border-beam::before,
+.motion-wrap.has-border-beam > .e-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--beam-angle, 0deg),
+    transparent 0deg,
+    transparent 215deg,
+    rgba(49, 84, 204, 0.65) 265deg,
+    rgba(168, 85, 247, 0.95) 315deg,
+    rgba(56, 189, 248, 0.75) 345deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 4;
+  animation: cosmicBeamSpin 6.5s linear infinite;
+}
+
+body.e-light-mode .cosmic-border-beam::before,
+body.e-light-mode .motion-wrap.has-border-beam > .e-card::after {
+  background: conic-gradient(
+    from var(--beam-angle, 0deg),
+    transparent 0deg,
+    transparent 225deg,
+    rgba(39, 70, 179, 0.45) 275deg,
+    rgba(124, 58, 237, 0.65) 325deg,
+    rgba(14, 165, 233, 0.48) 350deg,
+    transparent 360deg
+  );
+}
+
+/* Obsidian Glass Section Cards in Dark Mode */
+body.e-dark-mode .section-card,
+body.e-dark-mode .e-card.section-card {
+  background: linear-gradient(165deg, rgba(14, 18, 34, 0.92) 0%, rgba(9, 11, 22, 0.94) 100%) !important;
+  border: 1px solid rgba(148, 163, 255, 0.13) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+body.e-dark-mode .e-card.section-card[data-variant='nested'] {
+  background: rgba(16, 20, 38, 0.72) !important;
+  border-color: rgba(148, 163, 255, 0.1) !important;
+}
+
+body.e-dark-mode .e-card.section-card:hover {
+  border-color: rgba(139, 92, 246, 0.34) !important;
+  box-shadow: var(--shadow-card-hover) !important;
+}
+
+/* Bento Panel Primitive (usable on /me, /cockpit, /integrations) */
+.bento-obsidian-panel {
+  position: relative;
+  border-radius: var(--radius-card, 18px);
+  border: 1px solid var(--border-glass, rgba(148, 163, 255, 0.14));
+  background: linear-gradient(165deg, rgba(14, 17, 32, 0.92) 0%, rgba(9, 11, 21, 0.96) 100%);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition:
+    border-color var(--dur-fast, 180ms) ease,
+    box-shadow var(--dur-fast, 180ms) ease;
+}
+
+.bento-obsidian-panel:hover {
+  border-color: rgba(139, 92, 246, 0.36);
+  box-shadow: var(--shadow-card-hover);
+}
+
+body.e-light-mode .bento-obsidian-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  border-color: rgba(39, 70, 179, 0.12);
+}
+
+body.e-light-mode .bento-obsidian-panel:hover {
+  border-color: rgba(39, 70, 179, 0.32);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.e-dark-mode::before,
+  .cosmic-border-beam::before,
+  .motion-wrap.has-border-beam > .e-card::after {
+    animation: none !important;
+  }
+
+  .bento-spotlight-host::after {
+    display: none !important;
+  }
+}
+
+/* Obsidian Brand Emblem & Sidebar Glowing Scorecard Pulse Card */
+body.e-dark-mode .sidebar-brand__mark {
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #3154cc 0%, #7c3aed 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px -2px rgba(139, 92, 246, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+}
+
+.sidebar-score-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 13px;
+  margin-top: 4px;
+  border-radius: 15px;
+  text-decoration: none;
+  color: #ffffff;
+  background: linear-gradient(145deg, rgba(49, 84, 204, 0.88) 0%, rgba(109, 40, 217, 0.92) 60%, rgba(124, 58, 237, 0.94) 100%);
+  box-shadow:
+    0 12px 26px -10px rgba(109, 40, 217, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transition: filter var(--dur-fast, 180ms) ease, box-shadow var(--dur-fast, 180ms) ease;
+
+  &:hover {
+    filter: brightness(1.07);
+    box-shadow:
+      0 14px 30px -8px rgba(124, 58, 237, 0.68),
+      inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  }
+}
+
+body.e-light-mode .sidebar-score-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.18) 0%, rgba(139, 92, 246, 0.36) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 8px 20px -10px rgba(15, 23, 66, 0.35);
+}
+
+.sidebar-score-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.sidebar-score-card__label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(238, 242, 255, 0.86);
+}
+
+.sidebar-score-card__pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1.5px 7px;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.24);
+  color: #fef3c7;
+  border: 1px solid rgba(251, 191, 36, 0.42);
+
+  &.is-good {
+    background: rgba(52, 211, 153, 0.24);
+    color: #d1fae5;
+    border-color: rgba(52, 211, 153, 0.44);
+  }
+}
+
+.sidebar-score-card__metric {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.sidebar-score-card__val {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.sidebar-score-card__sub {
+  font-size: 10.5px;
+  color: rgba(226, 232, 255, 0.84);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-score-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 2px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #2746b3;
+  font-size: 11.5px;
+  font-weight: 700;
+
+  .e-icons {
+    font-size: 10px;
+  }
 }
 
 /* Syncfusion point overrides โหลดต่อท้ายผ่าน angular.json (src/styles/sf/index.scss) */

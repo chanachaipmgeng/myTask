@@ -1,59 +1,54 @@
-<section class="page flex flex-col gap-4">
-  <app-page-head [title]="heading()" [description]="subheading()">
-    <div actions class="flex flex-wrap gap-3 items-end">
-      @if (!isMine()) {
-        <a ejs-button cssClass="e-outline" routerLink="/quality/tickets">ตารางคะแนนใบงาน</a>
-      } @else {
-        <a ejs-button cssClass="e-outline" routerLink="/me">ผลงานของฉัน (/me)</a>
+<section class="page work-hub-page flex flex-col gap-2.5">
+  <div class="work-hub-topbar">
+    <nav class="hub-underline-tabs work-hub-topbar__tabs" role="tablist" [attr.aria-label]="heading()">
+      @for (tab of tabs(); track tab.path) {
+        <a
+          class="hub-underline-tab"
+          role="tab"
+          [id]="'work-tab-' + tab.path"
+          [routerLink]="[basePath(), tab.path]"
+          queryParamsHandling="preserve"
+          [class.is-active]="activePath() === tab.path"
+          [attr.aria-selected]="activePath() === tab.path"
+        >
+          <span [class]="tab.icon" aria-hidden="true"></span>
+          <span>{{ tab.text }}</span>
+        </a>
       }
-      @if (activePath() !== 'queue') {
-        <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearContext()">ล้างกรองสัปดาห์</button>
-      }
-    </div>
-  </app-page-head>
+    </nav>
 
-  @if (activePath() !== 'queue') {
-  <div class="work-context-bar flex flex-wrap items-center justify-between gap-3" aria-label="บริบทสัปดาห์และค้นหาใบ">
-    <div class="flex flex-wrap items-center gap-3">
-      <app-form-field label="ค้นหา" variant="filter">
+    <div class="work-hub-topbar__actions">
+      @if (activePath() !== 'queue') {
         <app-sf-textbox
-          placeholder="รหัสหรือชื่อใบ"
+          placeholder="ค้นหารหัสหรือชื่อใบ..."
           [value]="filter.query()"
-          width="196px"
+          width="172px"
+          (valueInput)="filter.query.set($event)"
           (valueChange)="filter.query.set($event)"
         />
-      </app-form-field>
-      <app-filter-chips
-        [options]="weekChipOptions"
-        [value]="'' + filter.weekOffset()"
-        (valueChange)="setWeekChip($event)"
-      ></app-filter-chips>
-      <app-filter-chips
-        [options]="dueBucketOptions"
-        [value]="filter.dueBucket()"
-        (valueChange)="setDueBucketChip($event)"
-      ></app-filter-chips>
+        <app-filter-chips
+          [options]="weekChipOptions"
+          [value]="'' + filter.weekOffset()"
+          (valueChange)="setWeekChip($event)"
+        ></app-filter-chips>
+        <app-filter-chips
+          [options]="dueBucketOptions"
+          [value]="filter.dueBucket()"
+          (valueChange)="setDueBucketChip($event)"
+        ></app-filter-chips>
+        @if (filter.query() || filter.weekOffset() !== 0 || filter.dueBucket() !== 'all') {
+          <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearContext()">ล้าง</button>
+        }
+      }
+      @if (!isMine()) {
+        <a ejs-button cssClass="e-outline e-small" routerLink="/quality/tickets">คะแนนใบงาน</a>
+      } @else {
+        <a ejs-button cssClass="e-outline e-small" routerLink="/me">ผลงานของฉัน</a>
+      }
     </div>
-    <p class="work-context-bar__line m-0 text-xs text-muted">{{ contextLine() }}</p>
   </div>
-  }
 
-  <nav class="hub-underline-tabs" role="tablist" [attr.aria-label]="heading()">
-    @for (tab of tabs(); track tab.path) {
-      <a
-        class="hub-underline-tab"
-        role="tab"
-        [id]="'work-tab-' + tab.path"
-        [routerLink]="[basePath(), tab.path]"
-        queryParamsHandling="preserve"
-        [class.is-active]="activePath() === tab.path"
-        [attr.aria-selected]="activePath() === tab.path"
-      >
-        <span [class]="tab.icon" aria-hidden="true"></span>
-        <span>{{ tab.text }}</span>
-      </a>
-    }
-  </nav>
-
-  <router-outlet />
+  <div class="tab-stage-in">
+    <router-outlet />
+  </div>
 </section>

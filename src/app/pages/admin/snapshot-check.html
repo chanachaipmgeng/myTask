@@ -3,13 +3,20 @@
     breadcrumb="แดชบอร์ดทีม > ตรวจสอบความพร้อมก่อนแช่แข็งคะแนน (/admin/snapshot-check)"
     title="ตรวจสอบความพร้อมก่อนปิดงวดคะแนน"
     description="รันเช็คลิสต์อัตโนมัติ 4 ด่านเพื่อยืนยันความถูกต้องของข้อมูลก่อนทำการบันทึกและแช่แข็งคะแนนประจำงวด"
-    [periodBadge]="'งวดที่กำลังปิด: ' + periodKey()"
-    [metrics]="[
-      { label: 'ความพร้อมรวม', value: readinessScore(), unit: '%', hint: 'ต้อง ≥ 75% และไม่มี Blocker ร้ายแรง', tone: readinessScore() >= 75 ? 'good' : 'bad' }
-    ]"
+    [periodBadge]="'งวด: ' + periodKey() + ' · พร้อม ' + readinessScore() + '%'"
   ></app-page-head>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-stretch">
+    <app-kpi-stat
+      class="h-full"
+      title="ความพร้อมรวม"
+      [value]="readinessScore() + '%'"
+      hint="ต้อง ≥ 75% และไม่มี Blocker"
+      [badge]="readinessScore() >= 75 ? 'พร้อม' : 'รอแก้'"
+      [badgeTone]="readinessScore() >= 75 ? 'success' : 'danger'"
+      [accent]="readinessScore() >= 75 ? 'teal' : 'danger'"
+      [progress]="readinessScore()"
+    ></app-kpi-stat>
     @for (item of checks(); track item.stage) {
       <app-kpi-stat
         class="h-full"

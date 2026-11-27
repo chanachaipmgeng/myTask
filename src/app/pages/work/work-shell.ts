@@ -47,8 +47,6 @@ const MINE_TABS = [
     ButtonModule,
     SfTextBoxComponent,
     FilterChipsComponent,
-    FormFieldComponent,
-    PageHeadComponent,
   ],
   providers: [WorkHubFilter],
   templateUrl: './work-shell.html',

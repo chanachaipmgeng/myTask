@@ -1,4 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  NgZone,
+  ViewChild,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { currentViewer, effectiveRole, setViewer, setWorkspaceMode } from '../../core/admin-settings';
@@ -7,8 +19,9 @@ import { AccessRole, Person } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession, setSessionUser } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
-import { RevealDirective, StaggerDirective } from '../../shared/motion';
-import { FlashMessagesComponent } from '../../shared/ui';
+import { ThemeService } from '../../core/theme.service';
+import { BentoSpotlightDirective, RevealDirective, StaggerDirective } from '../../shared/motion';
+import { EcosystemHubComponent, FlashMessagesComponent } from '../../shared/ui';
 import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
 
 type DevRosterAccount = {
@@ -20,25 +33,80 @@ type DevRosterAccount = {
   access: AccessRole;
 };
 
+type LoginShowcaseScene = 'ecosystem' | 'workflow' | 'bento';
+
+interface FlowStageMeta {
+  step: string;
+  title: string;
+  sub: string;
+  badge: string;
+  tone: 'primary' | 'coral' | 'violet' | 'cyan' | 'emerald';
+}
+
+const FLOW_STAGES: readonly FlowStageMeta[] = [
+  {
+    step: '01',
+    title: 'ใบงานเข้า',
+    sub: 'myProject Auto-SLA',
+    badge: 'ข้ามวันหยุด',
+    tone: 'primary',
+  },
+  {
+    step: '02',
+    title: 'พัฒนา & MR',
+    sub: 'GitLab Branch Link',
+    badge: 'รีวิวอัตโนมัติ',
+    tone: 'coral',
+  },
+  {
+    step: '03',
+    title: 'Fair Cutoff',
+    sub: 'วัดตรงเวลาที่ Ready QA',
+    badge: 'ไม่หักรอคิว QA',
+    tone: 'violet',
+  },
+  {
+    step: '04',
+    title: 'QA & DoD',
+    sub: 'ตรวจคุณภาพ 6 สายงาน',
+    badge: 'เครดิต QA 15–20%',
+    tone: 'cyan',
+  },
+  {
+    step: '05',
+    title: 'ดัชนีคะแนน',
+    sub: 'Man-day + AI Coach',
+    badge: 'เป็นธรรม 100%',
+    tone: 'emerald',
+  },
+];
+
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
     SfCheckboxComponent,
+    EcosystemHubComponent,
     FlashMessagesComponent,
+    BentoSpotlightDirective,
     RevealDirective,
     StaggerDirective,
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class LoginPage {
+export class LoginPage implements AfterViewInit {
   private readonly scorecard = inject(ScorecardService);
   private readonly api = inject(ApiClient);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly notice = inject(ShellNotice);
+  private readonly zone = inject(NgZone);
+  private readonly destroyRef = inject(DestroyRef);
+  protected readonly theme = inject(ThemeService);
+
+  @ViewChild('shellEl') private shellEl?: ElementRef<HTMLElement>;
 
   protected readonly session = currentSession;
   protected readonly viewer = currentViewer;
@@ -61,6 +129,38 @@ export class LoginPage {
   protected readonly message = signal('');
   protected readonly error = signal('');
   protected readonly busy = signal(false);
+
+  // Interactive Showcase State
+  protected readonly activeScene = signal<LoginShowcaseScene>('ecosystem');
+  protected readonly activeFlowStep = signal(2);
+  protected readonly showcasePaused = signal(false);
+  protected readonly flowStages = FLOW_STAGES;
+
+  protected readonly sceneMeta = computed(() => {
+    switch (this.activeScene()) {
+      case 'workflow':
+        return {
+          eyebrow: 'FAIR SCORING PIPELINE',
+          headline: 'โฟลว์งานไหลลื่น',
+          accent: 'วัดคะแนนอย่างเป็นธรรม',
+          subtitle: 'นับตรงเวลาทันทีเมื่อส่งเข้า Ready for QA พร้อม Auto-SLA วันทำการและ MD-Direct Auto-Shift อัตโนมัติ',
+        };
+      case 'bento':
+        return {
+          eyebrow: 'SMART BENTO WORKSPACE',
+          headline: 'เห็นภาพรวมทุกมิติ',
+          accent: 'พร้อม AI Coach ประจำตัว',
+          subtitle: 'ติดตาม Active WIP โควตา Man-day แนวโน้มดัชนี และแจ้งเตือนความเสี่ยงก่อนหลุดกำหนดในจอเดียว',
+        };
+      default:
+        return {
+          eyebrow: 'BENEFITS · UNIFIED WORKSPACE',
+          headline: 'รวมทุกเครื่องมือไว้ที่เดียว',
+          accent: 'ทีมของคุณเห็นภาพตรงกัน',
+          subtitle: 'myTask เชื่อม myProject, GitLab MR, MS Teams และเกณฑ์คะแนน Man-day ให้ไหลเวียนอัตโนมัติในพื้นที่เดียว',
+        };
+    }
+  });
 
   protected readonly canUseDevLogin = computed(
     () => !this.usingApi() || this.scorecard.devLoginEnabled(),
@@ -103,6 +203,71 @@ export class LoginPage {
         void this.loadDevRoster();
       }
     });
+  }
+
+  ngAfterViewInit(): void {
+    if (typeof window === 'undefined') return;
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+
+    // Gentle auto-cycle between showcase scenes & workflow stage pulse
+    const scenes: readonly LoginShowcaseScene[] = ['ecosystem', 'workflow', 'bento'];
+    const sceneTimer = setInterval(() => {
+      if (this.showcasePaused()) return;
+      const idx = scenes.indexOf(this.activeScene());
+      this.activeScene.set(scenes[(idx + 1) % scenes.length]!);
+    }, 8500);
+
+    const flowTimer = setInterval(() => {
+      if (this.activeScene() === 'workflow' && !this.showcasePaused()) {
+        this.activeFlowStep.update((n) => (n + 1) % FLOW_STAGES.length);
+      }
+    }, 2200);
+
+    // Subtle mouse-parallax nebula glow outside Angular zone
+    const el = this.shellEl?.nativeElement;
+    let rafId: number | null = null;
+    let targetX = 50;
+    let targetY = 50;
+
+    const flush = () => {
+      rafId = null;
+      if (!el) return;
+      el.style.setProperty('--px', `${targetX}%`);
+      el.style.setProperty('--py', `${targetY}%`);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return;
+      targetX = Math.round((e.clientX / Math.max(1, window.innerWidth)) * 100);
+      targetY = Math.round((e.clientY / Math.max(1, window.innerHeight)) * 100);
+      if (rafId === null) {
+        rafId = requestAnimationFrame(flush);
+      }
+    };
+
+    this.zone.runOutsideAngular(() => {
+      el?.addEventListener('pointermove', onPointerMove, { passive: true });
+    });
+
+    this.destroyRef.onDestroy(() => {
+      clearInterval(sceneTimer);
+      clearInterval(flowTimer);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      el?.removeEventListener('pointermove', onPointerMove);
+    });
+  }
+
+  protected selectScene(scene: LoginShowcaseScene): void {
+    this.activeScene.set(scene);
+  }
+
+  protected selectFlowStep(index: number): void {
+    this.activeFlowStep.set(index);
+  }
+
+  protected setShowcasePaused(paused: boolean): void {
+    this.showcasePaused.set(paused);
   }
 
   private async loadDevRoster(): Promise<void> {

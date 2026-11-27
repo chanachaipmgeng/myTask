@@ -23,26 +23,26 @@
    =================================================== */
 .bento-cockpit {
   container-type: inline-size;
-  /* Brisko-inspired nesting: outer 24 → inner 18 → tile 12 */
-  --bento-card-bg: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 16, 32, 0.94) 100%);
-  --bento-card-border: rgba(148, 163, 184, 0.14);
+  /* Obsidian Royal × Prism Bento tokens */
+  --bento-card-bg: linear-gradient(165deg, rgba(14, 17, 32, 0.92) 0%, rgba(8, 10, 20, 0.96) 100%);
+  --bento-card-border: rgba(139, 92, 246, 0.16);
   --bento-card-shadow: var(--shadow-card);
-  --bento-card-radius: 24px;
-  --bento-inner-radius: 18px;
+  --bento-card-radius: 20px;
+  --bento-inner-radius: 16px;
   --bento-tile-radius: 12px;
-  --bento-gap: 16px;
-  --bento-bar-bg: rgba(15, 23, 42, 0.6);
-  --bento-bar-border: rgba(148, 163, 184, 0.12);
+  --bento-gap: 14px;
+  --bento-bar-bg: rgba(12, 15, 28, 0.72);
+  --bento-bar-border: rgba(139, 92, 246, 0.14);
   --bento-item-bg: rgba(255, 255, 255, 0.03);
-  --bento-item-border: rgba(148, 163, 184, 0.1);
-  --bento-chip-color: #94a3b8;
-  --bento-chip-border: rgba(148, 163, 184, 0.2);
-  --bento-chip-hover: rgba(255, 255, 255, 0.08);
-  --bento-pace-bg: #0f1838;
+  --bento-item-border: rgba(148, 163, 255, 0.11);
+  --bento-chip-color: #9aa7c2;
+  --bento-chip-border: rgba(148, 163, 255, 0.2);
+  --bento-chip-hover: rgba(139, 92, 246, 0.14);
+  --bento-pace-bg: linear-gradient(155deg, #101638 0%, #1c1646 58%, #0d1022 100%);
   --bento-pace-ink: #f8fafc;
-  --bento-pace-muted: #94a3b8;
-  --bento-pace-track: rgba(255, 255, 255, 0.12);
-  --bento-pace-fill: #5f7ce3;
+  --bento-pace-muted: #a8b6d4;
+  --bento-pace-track: rgba(255, 255, 255, 0.1);
+  --bento-pace-fill: linear-gradient(90deg, #4f73f0 0%, #a855f7 100%);
 
   display: flex;
   flex-direction: column;
@@ -50,13 +50,13 @@
   width: 100%;
   box-sizing: border-box;
 
-  @media (min-width: 1200px) and (min-height: 850px) {
-    height: calc(100vh - 78px);
-    max-height: calc(100vh - 78px);
+  @media (min-width: 1200px) and (min-height: 740px) {
+    height: calc(100vh - 134px);
+    max-height: calc(100vh - 134px);
     overflow: hidden;
   }
 
-  @media (max-height: 849px) {
+  @media (max-height: 739px) {
     min-height: 100%;
     overflow-y: auto;
     padding-bottom: 24px;

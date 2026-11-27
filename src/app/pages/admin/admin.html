@@ -15,6 +15,18 @@
     </div>
   </app-page-head>
 
+  <app-workspace-asidebar
+    mode="left-nav"
+    asideTitle="ตั้งค่าระบบ"
+    asideSubtitle="เลือกหมวดที่ต้องการจัดการ"
+    asideWidth="224px"
+    chromeOffset="184px"
+    [navItems]="adminNavItems()"
+    [activeNavId]="adminSection()"
+    (activeNavChange)="setAdminSection($event)"
+  >
+  @if (adminSection() === 'cycles') {
+  <div class="tab-stage-in">
   <app-section-card
     title="เปิดรอบประเมิน (ปี / ช่วงวัน / ทีม)"
     subtitle="กำหนดรอบที่ใช้กรองทั้งระบบ — เลือกใช้บนแถบ Global Filter หรือกดเปิดเป็นรอบระบบ"
@@ -135,7 +147,11 @@
       }
     </div>
   </app-section-card>
+  </div>
+  }
 
+  @if (adminSection() === 'users') {
+  <div class="tab-stage-in">
   <app-section-card
     title="จัดการสิทธิ์และระดับเป้า MD ทีม"
     subtitle="กรองรายแผนก สายงาน หรือระดับสิทธิ์ เพื่อปรับ Access (Admin / Lead / Member) โควตา และขอบเขตทีมที่มองเห็นได้"
@@ -357,7 +373,11 @@
       }
     }
   </app-section-card>
+  </div>
+  }
 
+  @if (adminSection() === 'matrix') {
+  <div class="tab-stage-in">
   <app-section-card
     title="เมทริกซ์การแชร์ทีม (Team-to-Team Visibility Matrix)"
     subtitle="กำหนดสิทธิ์ข้ามแผนกโดยปริยาย — แถวคือทีมต้นทาง (ผู้ขอดู) และคอลัมน์คือทีมปลายทางที่อนุญาตให้มองเห็น"
@@ -427,7 +447,11 @@
       * หมายเหตุ: ทีมตนเองจะสามารถมองเห็นข้อมูลภายในทีมได้เสมอ สำหรับสมาชิกที่ต้องการสิทธิ์มองเห็นทีมอื่นๆ เพิ่มเติมรายบุคคล สามารถกำหนดได้ในตารางรายชื่อพนักงานด้านบน
     </p>
   </app-section-card>
+  </div>
+  }
 
+  @if (adminSection() === 'scoring') {
+  <div class="tab-stage-in flex flex-col gap-4">
   <div class="card-grid-2">
     <app-section-card
       title="โควต้ารายสัปดาห์"
@@ -572,7 +596,11 @@
       }
     </div>
   </app-section-card>
+  </div>
+  }
 
+  @if (adminSection() === 'audit') {
+  <div class="tab-stage-in">
   <app-section-card
     title="ประวัติการทำงานระบบ"
     subtitle="แก้ไขสิทธิ์ การตั้งค่า และการสั่งรันวิเคราะห์"
@@ -589,4 +617,7 @@
       [options]="auditGridOptions"
     />
   </app-section-card>
+  </div>
+  }
+  </app-workspace-asidebar>
 </section>

@@ -14,11 +14,14 @@ import { ShellNotice } from '../../core/shell-notice';
 import { todayInBangkok } from '../../core/workflow';
 import { TEAM_CONTEXT_2568 } from '../../data/team-context';
 import {
+  FilterChipOption,
+  FilterChipsComponent,
   FormFieldComponent,
   LoadingSkeletonComponent,
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
+  WorkspaceAsidebarComponent,
   prismChartPalette,
 } from '../../shared/ui';
 import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
@@ -46,11 +49,12 @@ const LIVE_MODE = 'live';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
+    FilterChipsComponent,
     PageHeadComponent,
     PersonAvatarComponent,
     SectionCardComponent,
     FormFieldComponent,
-    LoadingSkeletonComponent,
+    WorkspaceAsidebarComponent,
     SfChartComponent,
     SfDonutChartComponent,
     SfHeatmapComponent,
@@ -154,11 +158,70 @@ export class TeamDashboard {
       .slice(0, 6);
   }
 
+  protected readonly activeTeamTab = signal<'members' | 'charts' | 'heatmap'>('members');
+  protected readonly memberPage = signal<number>(1);
+  protected readonly memberPageSize = 12;
+  protected readonly previewMemberId = signal<string>('');
+
+  protected readonly teamTabOptions = computed<FilterChipOption[]>(() => [
+    { id: 'members', label: 'ทีม & สมาชิก', count: this.teamMembers().length },
+    { id: 'charts', label: 'กราฟแนวโน้ม & โควตา' },
+    { id: 'heatmap', label: 'Heatmap & Snapshot' },
+  ]);
+
+  protected readonly memberTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.teamMembers().length / this.memberPageSize)),
+  );
+  protected readonly pagedTeamMembers = computed(() => {
+    const page = Math.min(this.memberPage(), this.memberTotalPages());
+    const start = (page - 1) * this.memberPageSize;
+    return this.teamMembers().slice(start, start + this.memberPageSize);
+  });
+  protected readonly previewMember = computed(() => {
+    const list = this.teamMembers();
+    if (!list.length) return null;
+    const id = this.previewMemberId();
+    return list.find((m) => m.id === id) ?? list[0]!;
+  });
+
+  protected setTeamTab(id: string): void {
+    if (id === 'members' || id === 'charts' || id === 'heatmap') {
+      this.activeTeamTab.set(id);
+    }
+  }
+  protected setMemberPage(page: number): void {
+    if (page >= 1 && page <= this.memberTotalPages()) {
+      this.memberPage.set(page);
+    }
+  }
+  protected selectPreviewMember(personId: string): void {
+    this.previewMemberId.set(personId);
+  }
+
+  protected readonly managedTeamChipOptions = computed<FilterChipOption[]>(() => [
+    { id: 'all', label: 'ทุกทีม', count: this.managedTeamCards().length },
+    ...this.managedTeamCards().map((c) => ({
+      id: c.id,
+      label: c.name,
+      count: c.memberCount,
+    })),
+  ]);
+
+  protected onManagedTeamChip(id: string): void {
+    if (!id || id === 'all') {
+      this.clearManagedTeam();
+    } else {
+      this.selectManagedTeam(id);
+    }
+  }
+
   protected selectManagedTeam(teamId: string): void {
+    this.memberPage.set(1);
     this.workspace.setTeam(teamId);
   }
 
   protected clearManagedTeam(): void {
+    this.memberPage.set(1);
     this.workspace.setTeam('');
   }
 

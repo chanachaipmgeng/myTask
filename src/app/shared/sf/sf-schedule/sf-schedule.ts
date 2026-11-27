@@ -82,7 +82,7 @@ export interface SfScheduleOptions {
         [rowAutoHeight]="options().rowAutoHeight ?? true"
         [readonly]="options().readonly ?? true"
         [showQuickInfo]="options().showQuickInfo ?? true"
-        [group]="options().group ?? {}"
+        [group]="resources().length > 0 ? (options().group ?? {}) : {}"
         [eventSettings]="eventSettings()"
         (created)="created.emit()"
         (actionBegin)="actionBegin.emit($event)"
@@ -93,21 +93,19 @@ export interface SfScheduleOptions {
         (navigating)="navigating.emit($event)"
         (popupOpen)="popupOpen.emit($event)"
       >
-        @if (resources().length > 0) {
-          <e-resources>
-            @for (res of resources(); track res.name) {
-              <e-resource
-                [field]="res.field"
-                [title]="res.title"
-                [name]="res.name"
-                [dataSource]="res.dataSource"
-                [textField]="res.textField"
-                [idField]="res.idField"
-                [colorField]="res.colorField ?? 'Color'"
-              ></e-resource>
-            }
-          </e-resources>
-        }
+        <e-resources>
+          @for (res of resources(); track res.name) {
+            <e-resource
+              [field]="res.field"
+              [title]="res.title"
+              [name]="res.name"
+              [dataSource]="res.dataSource"
+              [textField]="res.textField"
+              [idField]="res.idField"
+              [colorField]="res.colorField ?? 'Color'"
+            ></e-resource>
+          }
+        </e-resources>
         @if (eventTemplate(); as evtTpl) {
           <ng-template #eventSettingsTemplate let-data>
             <ng-container *ngTemplateOutlet="evtTpl; context: { $implicit: data }"></ng-container>
@@ -194,7 +192,13 @@ export class SfScheduleComponent implements AfterViewInit, OnDestroy {
       this.resizeObserver = new ResizeObserver(() => {
         if (this.resizeTimer) clearTimeout(this.resizeTimer);
         this.resizeTimer = setTimeout(() => {
-          if (this.scheduleRef && !this.scheduleRef.isDestroyed) this.scheduleRef.refreshLayout();
+          try {
+            if (this.scheduleRef && !this.scheduleRef.isDestroyed) {
+              this.scheduleRef.refreshLayout();
+            }
+          } catch {
+            // ignore transient Syncfusion layout refresh during asidebar resize
+          }
         }, 180);
       });
       this.resizeObserver.observe(this.hostBox.nativeElement);

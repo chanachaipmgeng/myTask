@@ -1,29 +1,20 @@
-<div class="flex flex-col gap-4">
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <app-sf-message
-      class="grow"
-      [content]="roleBanner()"
-      [severity]="canEditPlanning() ? 'Info' : 'Warning'"
-    />
-    <app-form-field label="จัดกลุ่มบอร์ด (Swimlane)" variant="filter">
+<div class="flex flex-col gap-2.5">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex flex-wrap items-center gap-2 text-xs">
+      <app-status-badge [label]="'Velocity ' + velocityTotal() + ' pts'" tone="primary"></app-status-badge>
+      <app-status-badge [label]="'ส่งตรงเวลา ' + report().onTimePct + '%'" [tone]="report().onTimePct >= 80 ? 'success' : 'danger'"></app-status-badge>
+      <app-status-badge [label]="'First-time right ' + report().firstTimePct + '%'" [tone]="report().firstTimePct >= 85 ? 'teal' : 'warning'"></app-status-badge>
+      <span class="text-muted hidden xl:inline">{{ roleBanner() }}</span>
+    </div>
+    <app-form-field label="Swimlane" variant="filter">
       <app-sf-dropdown
         [items]="swimlaneOptions()"
         [value]="swimlaneMode()"
-        [options]="{ width: '220px' }"
+        [options]="{ width: '190px' }"
         (valueChange)="setSwimlane($event)"
       />
     </app-form-field>
   </div>
-
-  <app-hero-band
-    ariaLabel="ดัชนีบอร์ด"
-    [metrics]="[
-      { label: 'Velocity', value: velocityTotal(), unit: 'pts', hint: velocityHint() },
-      { label: 'ส่งตรงเวลา', value: report().onTimePct, unit: '%', hint: report().onTimePct >= 80 ? 'อยู่ในเกณฑ์' : 'ต้องเร่ง', tone: report().onTimePct >= 80 ? 'good' : 'bad' },
-      { label: 'First-time right', value: report().firstTimePct, unit: '%', hint: report().firstTimePct >= 85 ? 'ผ่านเป้า' : 'ต่ำกว่าเป้า', tone: report().firstTimePct >= 85 ? 'good' : 'bad' },
-      { label: 'หมวด', value: report().categories.length, unit: 'หมวด', hint: categoryHint() }
-    ]"
-  ></app-hero-band>
 
   <ng-template #kanbanCardTpl let-data>
     <div

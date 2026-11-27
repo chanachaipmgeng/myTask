@@ -39,12 +39,12 @@ import {
 })
 export class SnapshotCheckPage {
   protected readonly gridColumns: SfGridColumn[] = [
-    { field: 'nickname', headerText: 'พนักงาน', width: 175 },
-    { field: 'trackLabel', headerText: 'สายงาน', width: 145 },
-    { field: 'previousIndex', headerText: 'ดัชนีงวดก่อน', width: 130, textAlign: 'Right' },
-    { field: 'currentIndex', headerText: 'ดัชนีงวดนี้ (สด)', width: 145, textAlign: 'Right' },
-    { field: 'diff', headerText: 'ส่วนต่าง (Diff)', width: 130, textAlign: 'Right' },
-    { field: 'statusLabel', headerText: 'สถานะเทียบเป้า', width: 145, textAlign: 'Center' },
+    { field: 'nickname', headerText: 'พนักงาน', width: 175, cellType: 'person', personIdField: 'personId' },
+    { field: 'trackLabel', headerText: 'สายงาน', width: 145, cellType: 'badge' },
+    { field: 'previousIndex', headerText: 'ดัชนีงวดก่อน', width: 130, textAlign: 'Right', cellType: 'metric', format: 'N1' },
+    { field: 'currentIndex', headerText: 'ดัชนีงวดนี้ (สด)', width: 145, textAlign: 'Right', cellType: 'progress', format: 'N1' },
+    { field: 'diff', headerText: 'ส่วนต่าง (Diff)', width: 130, textAlign: 'Right', cellType: 'delta', format: 'N1' },
+    { field: 'statusLabel', headerText: 'สถานะเทียบเป้า', width: 145, textAlign: 'Center', cellType: 'badge' },
   ];
 
   protected readonly gridOptions: SfGridOptions = listGridOptions({

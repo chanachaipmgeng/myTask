@@ -1,253 +1,212 @@
-<section class="page team-dashboard flex flex-col gap-4">
+<section class="page team-dashboard flex flex-col gap-3">
   <app-page-head
     title="แดชบอร์ดทีม"
-    [description]="(filterHint() ? filterHint() + ' · ' : '') + 'ตัวเลขปี ' + context.yearLabel + ' เป็นบริบทของทีม ไม่ใช่คะแนนรายคน ตัวกรองสายเปลี่ยนโดนัทใบตัวอย่าง เส้นรายเดือน และแท่งโควตา เป้า ' + target + ' อยู่บนเส้นรายเดือน · คลิกโดนัท/ปุ่มด้านขวาเพื่อเจาะไปหน้างาน'"
+    [description]="(filterHint() ? filterHint() + ' · ' : '') + 'ภาพรวมทีมและสมาชิกปี ' + context.yearLabel + ' · เป้ามาตรฐาน ' + target + ' คะแนน'"
     [metrics]="[
-      { label: 'งานทั้งปี', value: tasksLabel, hint: 'งานในรายงาน ' + context.yearLabel },
-      { label: 'ส่งตรงเวลา', value: context.onTimePct, unit: '%', hint: 'ความน่าเชื่อถือของแผน ไม่ใช่ความเร็ว', tone: context.onTimePct >= 75 ? 'good' : 'bad' },
-      { label: 'ผ่าน QA รอบแรก', value: context.firstPassQaPct, unit: '%', hint: 'งานที่ส่งตรวจแล้วยังไม่พังเรื่อง security หรือ boundary' },
+      { label: 'งานทั้งปี', value: tasksLabel, hint: 'รายงาน ' + context.yearLabel },
+      { label: 'ส่งตรงเวลา', value: context.onTimePct, unit: '%', hint: 'ความน่าเชื่อถือแผน', tone: context.onTimePct >= 75 ? 'good' : 'bad' },
+      { label: 'ผ่าน QA รอบแรก', value: context.firstPassQaPct, unit: '%', hint: 'ไม่โดนตีกลับ' },
       { label: 'มาทำงาน', value: context.attendancePct, unit: '%', hint: 'attendance' }
     ]"
   >
-    <div actions class="flex flex-wrap items-end gap-3">
+    <div actions class="flex flex-wrap items-end gap-2">
       <app-form-field label="มุมมองคะแนน" variant="filter">
         <app-sf-dropdown
           [items]="periodOptions()"
           [value]="periodMode()"
-          [options]="{ width: '260px', allowFiltering: false }"
+          [options]="{ width: '210px', allowFiltering: false }"
           (valueChange)="setPeriodMode($event)"
         />
       </app-form-field>
+      <button ejs-button cssClass="e-outline e-small" type="button" (click)="drillToWork()">ดูงาน</button>
+      <button ejs-button cssClass="e-outline e-small" type="button" (click)="drillToTickets()">ดูใบงาน</button>
+      <button ejs-button cssClass="e-outline e-small" type="button" (click)="drillToPeople()">ดูคน</button>
+      @if (workspace.teamId()) {
+        <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearManagedTeam()">ล้างทีม</button>
+      }
     </div>
   </app-page-head>
 
-  <div class="flex flex-wrap gap-2">
-    <button ejs-button cssClass="e-outline" type="button" (click)="drillToWork()" title="ไปฮับงานพร้อมฟิลเตอร์ทีมปัจจุบัน">
-      ดูงาน
-    </button>
-    <button ejs-button cssClass="e-outline" type="button" (click)="drillToTickets()" title="ไปใบงานพร้อมฟิลเตอร์ทีม/สาย">
-      ดูใบงาน
-    </button>
-    <button ejs-button cssClass="e-outline" type="button" (click)="drillToPeople()" title="ไปรายชื่อพนักงานพร้อมฟิลเตอร์ทีม">
-      ดูคน
-    </button>
-    @if (workspace.teamId()) {
-      <button ejs-button cssClass="e-outline e-small" type="button" (click)="clearManagedTeam()">
-        ล้างทีมที่เลือก
-      </button>
-    }
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <app-filter-chips
+      [options]="teamTabOptions()"
+      [value]="activeTeamTab()"
+      (valueChange)="setTeamTab($event)"
+    ></app-filter-chips>
+    <span class="text-xs text-muted">{{ managedTeamCards().length }} ทีม · {{ teamMembers().length }} สมาชิก</span>
   </div>
 
-  <app-section-card
-    title="ทีมที่ดูแล"
-    subtitle="เลือกทีมเพื่อกรองรายชื่อสมาชิกด้านล่าง"
-    [badge]="managedTeamCards().length + ' ทีม'"
-    badgeTone="info"
-  >
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-      @for (card of managedTeamCards(); track card.id) {
-        <button
-          type="button"
-          class="team-dash-team-card text-left p-3.5 rounded-[var(--radius-nested,12px)] border border-[color:var(--line)] bg-[color:var(--card)] shadow-xs transition-shadow"
-          [class.is-selected]="workspace.teamId() === card.id"
-          (click)="selectManagedTeam(card.id)"
-          [attr.aria-label]="'กรองทีม ' + card.name"
-        >
-          <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
-              <p class="m-0 font-bold text-sm text-[color:var(--ink)] truncate">{{ card.name }}</p>
-              <p class="m-0 mt-1 text-xs text-[color:var(--muted)] truncate">{{ card.trackSummary }}</p>
+  @if (activeTeamTab() === 'members') {
+    <div class="tab-stage-in">
+      <app-workspace-asidebar
+        mode="right"
+        asideTitle="พรีวิวสมาชิก & ทีม"
+        [asideSubtitle]="previewMember()?.nickname || 'เลือกสมาชิกเพื่อดูสรุป'"
+        asideWidth="332px"
+        chromeOffset="260px"
+        [lockViewport]="true"
+      >
+        <div main class="flex flex-col gap-3 min-w-0">
+          <!-- Compact Horizontal Team Selector via app-filter-chips (theme-safe dark & light) -->
+          @if (managedTeamCards().length > 0) {
+            <app-filter-chips
+              [options]="managedTeamChipOptions()"
+              [value]="workspace.teamId() || 'all'"
+              (valueChange)="onManagedTeamChip($event)"
+            ></app-filter-chips>
+          }
+
+          <app-section-card
+            title="รายชื่อสมาชิกในทีม"
+            subtitle="คลิกเพื่อพรีวิวด้านขวา หรือกดปุ่มเปิดโปรไฟล์เต็ม · แบ่งหน้าละ 12 คน"
+            [badge]="teamMembers().length + ' คน'"
+            badgeTone="info"
+          >
+            @if (memberTotalPages() > 1) {
+              <div actions class="inline-flex items-center gap-1.5">
+                <button ejs-button cssClass="e-small e-outline" type="button" [disabled]="memberPage() <= 1" (click)="setMemberPage(memberPage() - 1)">«</button>
+                <span class="text-xs font-semibold tabular-nums px-1">หน้า {{ memberPage() }} / {{ memberTotalPages() }}</span>
+                <button ejs-button cssClass="e-small e-outline" type="button" [disabled]="memberPage() >= memberTotalPages()" (click)="setMemberPage(memberPage() + 1)">»</button>
+              </div>
+            }
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
+              @for (member of pagedTeamMembers(); track member.id) {
+                <button
+                  type="button"
+                  class="p-3 rounded-[var(--radius-nested,12px)] border bg-[color:var(--card)] flex items-center justify-between gap-2.5 text-left w-full cursor-pointer transition-colors"
+                  [class.border-\[var(--primary)\]]="previewMember()?.id === member.id"
+                  [class.border-\[color:var(--line)\]]="previewMember()?.id !== member.id"
+                  (click)="selectPreviewMember(member.id)"
+                  (dblclick)="member.canOpen && openMember(member.id)"
+                >
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <app-person-avatar [personId]="member.id" [name]="member.nickname" size="sm" />
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-bold text-xs text-[color:var(--ink)] truncate">{{ member.nickname }}</span>
+                      <span class="text-[11px] text-[color:var(--muted)] truncate">{{ member.role }}</span>
+                      <span class="text-[11px] font-medium text-[color:var(--primary)]">ถือ {{ member.activeTicketsCount }} ใบ · {{ member.quotaMd }} MD</span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col items-end flex-shrink-0">
+                    <span
+                      class="font-bold text-sm tabular-nums"
+                      [class.text-emerald-500]="member.index >= 75"
+                      [class.text-amber-500]="member.index > 0 && member.index < 75"
+                    >{{ member.index > 0 ? member.index.toFixed(1) : '—' }}</span>
+                  </div>
+                </button>
+              } @empty {
+                <p class="text-xs text-muted m-0">ไม่พบรายชื่อสมาชิกในทีมที่เลือก</p>
+              }
             </div>
-            <span class="text-xs font-semibold tabular-nums text-[color:var(--primary)] flex-shrink-0">
-              {{ card.memberCount }} คน
-            </span>
-          </div>
-          <div class="flex items-center gap-2 mt-2">
-            <app-person-avatar [personId]="card.leadId" [name]="card.leadName" [showName]="true" size="xs" />
-          </div>
-          @let preview = teamMembersPreview(card.id);
-          @if (preview.length) {
-            <div class="flex items-center -space-x-2 mt-2">
-              @for (m of preview; track m.id) {
-                <app-person-avatar [personId]="m.id" [name]="m.nickname" size="sm" />
+          </app-section-card>
+        </div>
+
+        <!-- RIGHT ASIDEBAR: Selected Member Preview + Quick Alerts -->
+        <div aside class="flex flex-col gap-3">
+          @if (previewMember(); as m) {
+            <div class="p-3 rounded-xl border border-[color:var(--line)] bg-[color:var(--card)] flex flex-col gap-2.5">
+              <div class="flex items-center gap-3">
+                <app-person-avatar [personId]="m.id" [name]="m.nickname" size="md" />
+                <div class="min-w-0">
+                  <div class="font-bold text-sm text-[color:var(--ink)] truncate">{{ m.nickname }}</div>
+                  <div class="text-xs text-muted truncate">{{ m.fullName }}</div>
+                  <div class="text-[11px] text-muted truncate">{{ m.role }}</div>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-2 pt-2 border-t border-[color:var(--line)] text-center">
+                <div>
+                  <div class="text-[10px] text-muted">ดัชนี</div>
+                  <div class="font-bold text-base tabular-nums" [class.text-emerald-500]="m.index >= 75" [class.text-amber-500]="m.index > 0 && m.index < 75">
+                    {{ m.index > 0 ? m.index.toFixed(1) : '—' }}
+                  </div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-muted">งานถือ</div>
+                  <div class="font-bold text-base tabular-nums text-[color:var(--ink)]">{{ m.activeTicketsCount }}</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-muted">โควตา</div>
+                  <div class="font-bold text-base tabular-nums text-[color:var(--primary)]">{{ m.quotaMd }}</div>
+                </div>
+              </div>
+              @if (m.canOpen) {
+                <button ejs-button cssClass="e-primary e-small w-full" type="button" (click)="openMember(m.id)">
+                  เปิดโปรไฟล์เต็ม →
+                </button>
               }
             </div>
           }
-        </button>
-      } @empty {
-        <p class="text-xs text-muted m-0">ยังไม่มีทีมในขอบเขตที่ดูแล</p>
-      }
-    </div>
-  </app-section-card>
 
-  @if (canCapture()) {
-    <app-section-card [showHead]="false">
-      <div class="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
-        <app-form-field label="จับ snapshot" variant="filter">
-          <app-sf-dropdown
-            [items]="captureTypeOptions"
-            [value]="captureType()"
-            [options]="{ width: '140px', allowFiltering: false }"
-            (valueChange)="setCaptureType($event)"
-          />
-        </app-form-field>
-        <div class="w-56">
-          <app-form-field label="รหัสช่วง" variant="filter">
-            <app-sf-textbox
-              [value]="captureKey()"
-              (valueChange)="onCaptureKey($event)"
-              placeholder="2025-10 หรือ 2025-Q3"
-              width="210px"
-            />
-          </app-form-field>
-        </div>
-        <button
-          ejs-button
-          [isPrimary]="true"
-          iconCss="e-icons e-save"
-          type="button"
-          [disabled]="capturing()"
-          (click)="captureSnapshot()"
-        >
-          จับ snapshot ช่วงนี้
-        </button>
-        @if (isExistingSnapshot()) {
-          <span class="e-badge e-badge-warning e-badge-pill" title="ช่วงเวลานี้เคยจับ snapshot ไปแล้ว การจับใหม่จะอัปเดตข้อมูลเป็นชุดล่าสุด">
-            ช่วงเวลานี้เคยบันทึกแล้ว (จับซ้ำเพื่ออัปเดต)
-          </span>
-        }
-      </div>
-    </app-section-card>
-  }
-
-  @if (snapshotMessage()) {
-    <app-sf-message [content]="snapshotMessage()" severity="Success" />
-  }
-  @if (snapshotError()) {
-    <app-sf-message [content]="snapshotError()" severity="Error" />
-  }
-
-  @if (!viewingLive()) {
-    <app-section-card title="ดัชนีแช่แข็งจาก snapshot" subtitle="แถวที่แช่แข็งตามเดือน/ไตรมาส — ไม่คำนวณย้อนจากใบปัจจุบัน">
-      @if (loadingSnapshot()) {
-        <div class="flex flex-col gap-3">
-          <app-loading-skeleton variant="cards" [rows]="2"></app-loading-skeleton>
-          <app-loading-skeleton variant="table" [rows]="5"></app-loading-skeleton>
-        </div>
-      } @else if (snapshotTableRows().length === 0) {
-        <p class="kpi-note m-0">ยังไม่มีแถวในช่วงนี้</p>
-      } @else {
-        <app-sf-grid
-          [data]="snapshotTableRows()"
-          [columns]="snapshotColumns"
-          [options]="snapshotGridOptions"
-        />
-      }
-    </app-section-card>
-  }
-
-  <app-section-card
-    title="รายชื่อสมาชิกในทีม"
-    subtitle="คลิกเพื่อเปิดรายละเอียดพนักงานที่ดูแล (สมาชิกเปิดได้เฉพาะตัวเอง)"
-    [badge]="teamMembers().length + ' คน'"
-    badgeTone="info"
-  >
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-      @for (member of teamMembers(); track member.id) {
-        @if (member.canOpen) {
-          <button
-            type="button"
-            class="p-3.5 rounded-[var(--radius-nested,12px)] border border-[color:var(--line)] bg-[color:var(--card)] flex items-center justify-between gap-3 shadow-xs text-left w-full cursor-pointer hover:shadow-[var(--shadow-card-hover)] transition-shadow"
-            (click)="openMember(member.id)"
-            [attr.aria-label]="'เปิดรายละเอียด ' + member.nickname"
-          >
-            <div class="flex items-center gap-3 min-w-0">
-              <app-person-avatar [personId]="member.id" [name]="member.nickname" size="md" />
-              <div class="flex flex-col min-w-0">
-                <span class="font-bold text-sm text-[color:var(--ink)] truncate">{{ member.nickname }} ({{ member.fullName }})</span>
-                <span class="text-xs text-[color:var(--muted)] truncate">{{ member.role }}</span>
-                <span class="text-xs font-medium text-[color:var(--primary)] mt-0.5">งานที่ถือ: {{ member.activeTicketsCount }} ใบ · โควตา {{ member.quotaMd }} MD</span>
+          <div class="p-3 rounded-xl border border-[color:var(--line)] bg-[color:var(--card)]">
+            <div class="text-xs font-bold text-[color:var(--ink)] mb-2">แจ้งเตือนใบงานเปิด ({{ alerts().length }})</div>
+            @if (alerts().length === 0) {
+              <p class="text-xs text-muted m-0">ไม่มีใบงานเสี่ยงหลุดสัปดาห์</p>
+            } @else {
+              <div class="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto">
+                @for (alert of alerts().slice(0, 8); track alert.id) {
+                  <p class="m-0 text-xs text-muted leading-snug pb-1.5 border-b border-[color:var(--line)] last:border-0">{{ alert.message }}</p>
+                }
               </div>
-            </div>
-            <div class="flex flex-col items-end flex-shrink-0">
-              <span class="text-xs text-[color:var(--muted)]">ดัชนี</span>
-              <span
-                class="font-bold text-base tabular-nums"
-                [class.text-emerald-500]="member.index >= 75"
-                [class.text-amber-500]="member.index < 75"
-              >{{ member.index > 0 ? member.index.toFixed(1) : '—' }}</span>
-            </div>
-          </button>
-        } @else {
-          <div class="p-3.5 rounded-[var(--radius-nested,12px)] border border-[color:var(--line)] bg-[color:var(--card)] flex items-center justify-between gap-3 shadow-xs">
-            <div class="flex items-center gap-3 min-w-0">
-              <app-person-avatar [personId]="member.id" [name]="member.nickname" size="md" />
-              <div class="flex flex-col min-w-0">
-                <span class="font-bold text-sm text-[color:var(--ink)] truncate">{{ member.nickname }} ({{ member.fullName }})</span>
-                <span class="text-xs text-[color:var(--muted)] truncate">{{ member.role }}</span>
-                <span class="text-xs font-medium text-[color:var(--primary)] mt-0.5">งานที่ถือ: {{ member.activeTicketsCount }} ใบ · โควตา {{ member.quotaMd }} MD</span>
-              </div>
-            </div>
-            <div class="flex flex-col items-end flex-shrink-0">
-              <span class="text-xs text-[color:var(--muted)]">ดัชนี</span>
-              <span
-                class="font-bold text-base tabular-nums"
-                [class.text-emerald-500]="member.index >= 75"
-                [class.text-amber-500]="member.index < 75"
-              >{{ member.index > 0 ? member.index.toFixed(1) : '—' }}</span>
-            </div>
+            }
           </div>
-        }
-      } @empty {
-        <p class="text-xs text-muted m-0">ไม่พบรายชื่อสมาชิกในทีมที่เลือก</p>
+        </div>
+      </app-workspace-asidebar>
+    </div>
+  } @else if (activeTeamTab() === 'charts') {
+    <div class="tab-stage-in card-grid-2">
+      <app-section-card [title]="'สัดส่วนงานทีม ' + context.yearLabel" subtitle="ภาพรวมภาระงานทั้งปีแบ่งตามประเภท">
+        <app-sf-donut-chart [data]="context.workload" xName="x" yName="y" [options]="workloadDonutOptions()" />
+      </app-section-card>
+
+      <app-section-card title="Bug / Custom / Enhancement แยกสาย" [subtitle]="sampleSummary()">
+        <app-sf-donut-chart [data]="samplePoints()" xName="x" yName="y" [options]="sampleDonutOptions()" (pointClick)="onSamplePointClick($event)" />
+      </app-section-card>
+
+      @if (viewingLive()) {
+        <app-section-card title="เส้นรายเดือน" [subtitle]="'ปิดตามแผน ความแม่น และ rework · เส้นประคือเป้า ' + target">
+          <app-sf-chart [series]="monthlySeries()" [primaryXAxis]="categoryAxis" [primaryYAxis]="percentAxis" [options]="monthlyChartOptions" />
+        </app-section-card>
+
+        <app-section-card title="โควตาที่ใช้กับที่ว่าง" subtitle="ใช้แล้วคือ MD ใบที่ยังไม่ปิด · ว่างคือโควตาที่เหลือ (กัน 1 MD)">
+          <app-sf-chart [series]="quotaSeries()" [primaryXAxis]="categoryAxis" [primaryYAxis]="quotaAxis" [options]="quotaChartOptions" />
+        </app-section-card>
+
+        <div class="card-grid-2__full">
+          <app-section-card title="สัดส่วนภาระงานรายเดือน: ตามแผน นอกแผน และงานด่วน MD" subtitle="แนวโน้มสัดส่วน Man-day จริงรายเดือนตามหมวดงาน">
+            <app-sf-chart [series]="mdCompSeries()" [primaryXAxis]="categoryAxis" [primaryYAxis]="quotaAxis" [options]="mdCompChartOptions" />
+          </app-section-card>
+        </div>
       }
     </div>
-  </app-section-card>
+  } @else {
+    <div class="tab-stage-in flex flex-col gap-3">
+      @if (canCapture()) {
+        <app-section-card [showHead]="false">
+          <div class="flex flex-wrap items-end gap-3">
+            <app-form-field label="จับ snapshot" variant="filter">
+              <app-sf-dropdown [items]="captureTypeOptions" [value]="captureType()" [options]="{ width: '130px', allowFiltering: false }" (valueChange)="setCaptureType($event)" />
+            </app-form-field>
+            <app-form-field label="รหัสช่วง" variant="filter">
+              <app-sf-textbox [value]="captureKey()" (valueChange)="onCaptureKey($event)" placeholder="2025-10 หรือ 2025-Q3" width="190px" />
+            </app-form-field>
+            <button ejs-button [isPrimary]="true" iconCss="e-icons e-save" type="button" [disabled]="capturing()" (click)="captureSnapshot()">
+              จับ snapshot ช่วงนี้
+            </button>
+            @if (isExistingSnapshot()) {
+              <span class="e-badge e-badge-warning e-badge-pill">ช่วงเวลานี้เคยบันทึกแล้ว (จับซ้ำเพื่ออัปเดต)</span>
+            }
+          </div>
+        </app-section-card>
+      }
 
-  <div class="card-grid-2">
-    <app-section-card [title]="'สัดส่วนงานทีม ' + context.yearLabel" subtitle="ภาพรวมภาระงานทั้งปีแบ่งตามประเภท">
-      <app-sf-donut-chart
-        [data]="context.workload"
-        xName="x"
-        yName="y"
-        [options]="workloadDonutOptions()"
-      />
-    </app-section-card>
-
-    <app-section-card title="Bug / Custom / Enhancement แยกสาย" [subtitle]="sampleSummary() + ' · คลิกชิ้นโดนัทเพื่อไปใบงานตามสาย'">
-      <app-sf-donut-chart
-        [data]="samplePoints()"
-        xName="x"
-        yName="y"
-        [options]="sampleDonutOptions()"
-        (pointClick)="onSamplePointClick($event)"
-      />
-    </app-section-card>
-
-    @if (viewingLive()) {
-      <app-section-card title="เส้นรายเดือน" [subtitle]="'ปิดตามแผน ความแม่น และ rework ของใบที่ปิดในเดือนนั้น · เส้นประคือเป้า ' + target">
-        <app-sf-chart
-          [series]="monthlySeries()"
-          [primaryXAxis]="categoryAxis"
-          [primaryYAxis]="percentAxis"
-          [options]="monthlyChartOptions"
-        />
-      </app-section-card>
-
-      <app-section-card title="โควตาที่ใช้กับที่ว่าง" subtitle="แท่งซ้อน = โควตาสัปดาห์ · ใช้แล้วคือ MD ใบที่ยังไม่ปิด · ว่างคือโควตาที่เหลือ (กัน 1 MD)">
-        <app-sf-chart
-          [series]="quotaSeries()"
-          [primaryXAxis]="categoryAxis"
-          [primaryYAxis]="quotaAxis"
-          [options]="quotaChartOptions"
-        />
-      </app-section-card>
-
-      <div class="card-grid-2__full">
-        <app-section-card
-          title="ดัชนีรายคนรายเดือน"
-          subtitle="สีเทียบเป้า 75 · ช่องว่างคือเดือนที่คนนั้นยังไม่มีใบปิด · ใช้ดัชนีพัฒนาการชุดเดียวกับโปรไฟล์คน"
-        >
+      @if (!viewingLive()) {
+        <app-section-card title="ตารางคะแนน Snapshot" [badge]="snapshotTableRows().length + ' คน'" badgeTone="info">
+          <app-sf-grid [data]="snapshotTableRows()" [columns]="snapshotColumns" [options]="snapshotGridOptions" />
+        </app-section-card>
+      } @else {
+        <app-section-card title="ดัชนีรายคนรายเดือน (Heatmap)" subtitle="สีเทียบเป้า 75 · คลิกช่องเพื่อเปิดโปรไฟล์คนนั้น">
           @if (indexHeatmap().cells.length === 0) {
             <app-sf-message content="ยังไม่มีใบที่ปิดในช่วงนี้สำหรับวาดตารางดัชนี" severity="Info" />
           } @else {
@@ -262,53 +221,7 @@
             </div>
           }
         </app-section-card>
-      </div>
-
-      <app-section-card title="แจ้งเตือนใบที่เปิดอยู่" subtitle="รายการที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate">
-        <div class="max-h-[260px] overflow-y-auto pr-1">
-          @if (alerts().length === 0) {
-            <p class="kpi-note m-0">ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate</p>
-          } @else {
-            <div class="grid grid-cols-1 gap-2">
-              @for (alert of alerts(); track alert.id) {
-                <app-section-card variant="nested" [showHead]="false">
-                  <p class="m-0 text-sm">{{ alert.message }}</p>
-                </app-section-card>
-              }
-            </div>
-          }
-        </div>
-      </app-section-card>
-
-      <app-section-card title="ความหมายของ KPI จากใบในกระดาน" subtitle="คำอธิบายเกณฑ์การวัดผลของแต่ละดัชนี">
-        <div class="max-h-[260px] overflow-y-auto pr-1">
-          <div class="grid grid-cols-1 gap-2">
-            @for (item of explanations(); track item.id) {
-              <app-section-card
-                variant="nested"
-                [title]="item.value + ' ' + item.label"
-                [subtitle]="item.criterion"
-              >
-                <p class="m-0 text-sm">{{ item.meaning }}</p>
-              </app-section-card>
-            }
-          </div>
-        </div>
-      </app-section-card>
-
-      <div class="card-grid-2__full">
-        <app-section-card
-          title="สัดส่วนภาระงานรายเดือน: ตามแผน นอกแผน และงานด่วน MD"
-          subtitle="กราฟพื้นที่ซ้อน (Stacked Area) แสดงแนวโน้มสัดส่วน Man-day จริงรายเดือนตามหมวดงาน เพื่อดูผลกระทบต่องานตามแผนต่อเนื่อง"
-        >
-          <app-sf-chart
-            [series]="mdCompSeries()"
-            [primaryXAxis]="categoryAxis"
-            [primaryYAxis]="quotaAxis"
-            [options]="mdCompChartOptions"
-          />
-        </app-section-card>
-      </div>
-    }
-  </div>
+      }
+    </div>
+  }
 </section>

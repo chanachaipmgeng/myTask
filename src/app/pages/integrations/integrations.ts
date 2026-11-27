@@ -20,10 +20,14 @@ import {
   DuePriorityKey,
 } from '../../../../shared/domain/policy-sla';
 import {
+  AsideNavItem,
   DateTimePipe,
+  EcosystemHubComponent,
+  EcosystemHubNode,
   LoadingSkeletonComponent,
   PageHeadComponent,
   SectionCardComponent,
+  WorkspaceAsidebarComponent,
 } from '../../shared/ui';
 import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
 import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
@@ -112,16 +116,17 @@ function emptyCustomFields(): Record<CustomFieldKey, string> {
   imports: [
     ButtonModule,
     DateTimePipe,
+    EcosystemHubComponent,
     PageHeadComponent,
     SectionCardComponent,
     LoadingSkeletonComponent,
+    WorkspaceAsidebarComponent,
     SfCheckboxComponent,
     SfDropdownComponent,
     SfGridComponent,
     SfMessageComponent,
     SfMultiSelectComponent,
     SfNumberComponent,
-    SfTabsComponent,
     SfTextBoxComponent,
   ],
   templateUrl: './integrations.html',
@@ -130,6 +135,93 @@ export class IntegrationsPage {
   private readonly api = inject(ApiClient);
   private readonly scorecard = inject(ScorecardService);
   private readonly notice = inject(ShellNotice);
+
+  protected readonly intSection = signal<'op-conn' | 'op-audit' | 'op-sla' | 'op-logs' | 'gitlab' | 'teams'>('op-conn');
+  protected readonly hubNodes = computed<EcosystemHubNode[]>(() => {
+    const syncing = this.saving();
+    const runs = this.data()?.lastRuns?.length ?? 0;
+    return [
+      {
+        id: 'op-conn',
+        label: 'myProject',
+        sublabel: 'OpenProject API v3',
+        tone: 'primary',
+        side: 'left',
+        slot: 0,
+        icon: 'myproject',
+        status: syncing ? 'syncing' : this.enabled() ? 'connected' : 'pending',
+        statusText: syncing ? 'กำลังซิงก์' : this.enabled() ? 'เชื่อมต่อแล้ว' : 'ปิดใช้งาน',
+      },
+      {
+        id: 'gitlab',
+        label: 'GitLab MR',
+        sublabel: 'Merge Requests & CI',
+        tone: 'coral',
+        side: 'left',
+        slot: 1,
+        icon: 'gitlab',
+        status: this.gitlabEnabled() ? 'connected' : 'pending',
+        statusText: this.gitlabEnabled() ? 'เปิดใช้งาน' : 'ปิดใช้งาน',
+      },
+      {
+        id: 'teams',
+        label: 'MS Teams',
+        sublabel: 'Webhook & SLA Alerts',
+        tone: 'violet',
+        side: 'left',
+        slot: 2,
+        icon: 'teams',
+        status: this.teamsEnabled() ? 'connected' : 'pending',
+        statusText: this.teamsEnabled() ? 'พร้อมส่งแจ้งเตือน' : 'ยังไม่เปิดใช้',
+      },
+      {
+        id: 'op-sla',
+        label: 'Policy & SLA',
+        sublabel: 'Custom Fields · Auto-SLA',
+        tone: 'cyan',
+        side: 'right',
+        slot: 0,
+        icon: 'ai',
+        status: 'connected',
+        statusText: 'ตั้งค่า SLA',
+      },
+      {
+        id: 'op-audit',
+        label: 'แมปสถานะ & คน',
+        sublabel: 'Status · Types · Users',
+        tone: 'emerald',
+        side: 'right',
+        slot: 1,
+        icon: 'calendar',
+        status: 'connected',
+        statusText: 'Sync Audit',
+      },
+      {
+        id: 'op-logs',
+        label: 'ประวัติซิงก์',
+        sublabel: 'บันทึกรอบดึงข้อมูล',
+        tone: 'amber',
+        side: 'right',
+        slot: 2,
+        icon: 'qa',
+        status: runs > 0 ? 'connected' : 'pending',
+        statusText: runs > 0 ? `${runs} รอบล่าสุด` : 'ยังไม่มีรอบซิงก์',
+      },
+    ];
+  });
+  protected readonly intNavItems = computed<AsideNavItem[]>(() => [
+    { id: 'op-conn', label: 'เชื่อมต่อ myProject', description: 'URL · Token · โปรเจกต์', icon: 'e-icons e-link', badge: this.enabled() ? 'ON' : 'OFF', badgeTone: this.enabled() ? 'success' : 'secondary' },
+    { id: 'op-audit', label: 'แมปสถานะ & ผู้ใช้', description: 'Sync Audit · Status/Type · Users', icon: 'e-icons e-list-unordered' },
+    { id: 'op-sla', label: 'Custom Fields & SLA', description: 'Policy/Receipt/Reply · Auto-SLA', icon: 'e-icons e-clock' },
+    { id: 'op-logs', label: 'ประวัติซิงก์ OP', description: 'บันทึกการดึงข้อมูลล่าสุด', icon: 'e-icons e-table', badge: this.data()?.lastRuns?.length || null },
+    { id: 'gitlab', label: 'GitLab / mygit MR', description: 'API v4 · Repo · ประวัติซิงก์', icon: 'e-icons e-timeline-work-week', badge: this.gitlabEnabled() ? 'ON' : 'OFF', badgeTone: this.gitlabEnabled() ? 'success' : 'secondary' },
+    { id: 'teams', label: 'Microsoft Teams', description: 'Incoming Webhook & Alerts', icon: 'e-icons e-comment-show', badge: this.teamsEnabled() ? 'ON' : 'OFF', badgeTone: this.teamsEnabled() ? 'success' : 'secondary' },
+  ]);
+  protected setIntSection(id: string): void {
+    if (id === 'op-conn' || id === 'op-audit' || id === 'op-sla' || id === 'op-logs' || id === 'gitlab' || id === 'teams') {
+      this.intSection.set(id);
+    }
+  }
 
   protected readonly canEdit = canEditAdmin;
   protected readonly loading = signal(true);
@@ -287,25 +379,25 @@ export class IntegrationsPage {
     { id: 'teams', header: 'Microsoft Teams' },
   ];
   protected readonly opRunColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'ID', width: 80 },
-    { field: 'status', headerText: 'สถานะ', width: 100 },
-    { field: 'started_at', headerText: 'เริ่ม', width: 180 },
-    { field: 'added', headerText: 'เพิ่ม', width: 80 },
-    { field: 'updated', headerText: 'อัปเดต', width: 80 },
-    { field: 'unchanged', headerText: 'ไม่เปลี่ยน', width: 100 },
+    { field: 'id', headerText: 'ID', width: 78, cellType: 'code' },
+    { field: 'status', headerText: 'สถานะ', width: 110, cellType: 'badge' },
+    { field: 'started_at', headerText: 'เริ่ม', width: 170, cellType: 'datetime' },
+    { field: 'added', headerText: 'เพิ่ม', width: 85, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'updated', headerText: 'อัปเดต', width: 85, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'unchanged', headerText: 'ไม่เปลี่ยน', width: 100, textAlign: 'Right', cellType: 'metric', format: 'N0' },
   ];
   protected readonly gitlabRunColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'ID', width: 80 },
-    { field: 'status', headerText: 'สถานะ', width: 100 },
-    { field: 'started_at', headerText: 'เริ่ม', width: 180 },
-    { field: 'updated', headerText: 'จับคู่ใบงาน', width: 110 },
-    { field: 'unchanged', headerText: 'ไม่ตรงรหัส', width: 110 },
+    { field: 'id', headerText: 'ID', width: 78, cellType: 'code' },
+    { field: 'status', headerText: 'สถานะ', width: 110, cellType: 'badge' },
+    { field: 'started_at', headerText: 'เริ่ม', width: 170, cellType: 'datetime' },
+    { field: 'updated', headerText: 'จับคู่ใบงาน', width: 110, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'unchanged', headerText: 'ไม่ตรงรหัส', width: 110, textAlign: 'Right', cellType: 'metric', format: 'N0' },
   ];
   protected readonly teamsRunColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'ID', width: 80 },
-    { field: 'status', headerText: 'สถานะ', width: 100 },
-    { field: 'started_at', headerText: 'เวลาส่ง', width: 180 },
-    { field: 'added', headerText: 'จำนวนข้อความ', width: 130 },
+    { field: 'id', headerText: 'ID', width: 78, cellType: 'code' },
+    { field: 'status', headerText: 'สถานะ', width: 110, cellType: 'badge' },
+    { field: 'started_at', headerText: 'เวลาส่ง', width: 170, cellType: 'datetime' },
+    { field: 'added', headerText: 'จำนวนข้อความ', width: 130, textAlign: 'Right', cellType: 'metric', format: 'N0' },
   ];
   protected readonly runGridOptions: SfGridOptions = listGridOptions({ pageSize: 8 });
 

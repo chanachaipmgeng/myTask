@@ -13,8 +13,11 @@ import {
   setWorkspaceMode,
   teamStagingMode,
   toggleViewAsMember,
+  trackWeights,
   viewAsRole,
+  weeklyQuotas,
 } from './core/admin-settings';
+import { personDashboard } from './core/person-dashboard';
 import { AccessRole } from './core/models';
 import { ApiClient, registerUnauthorizedHandler } from './core/api-client';
 import { ShellNotice, shellNoticeCssClass, shellNoticeTitle } from './core/shell-notice';
@@ -286,6 +289,7 @@ export class App implements AfterViewInit {
   protected readonly extraFilterCount = computed(() => {
     let count = 0;
     if (this.workspaceFilter.statusScope() !== 'unclosed') count++;
+    if (this.workspaceFilter.cycleId()) count++;
     if (this.workspaceFilter.yearCe() != null) count++;
     if (this.workspaceFilter.fromDate() || this.workspaceFilter.toDate()) count++;
     if (this.workspaceFilter.opProject()) count++;
@@ -573,6 +577,63 @@ export class App implements AfterViewInit {
     return [SHARED_WORKSPACE_SECTION, MANAGER_SIDEBAR_SECTION];
   });
 
+  /** Live numeric pills for Sidebar menu items (inspired by Agent Desk) */
+  protected readonly sidebarCounts = computed<Record<string, number>>(() => {
+    const meId = this.activePersonId();
+    const tickets = this.scorecard.tickets();
+    const allowed = this.scorecard.effectiveAllowedTeams();
+    const allowedSet = allowed ? new Set(allowed) : null;
+    const allowedPeopleIds = allowedSet
+      ? new Set(
+          this.scorecard
+            .roster()
+            .filter((p) => allowedSet.has(resolvePersonTeamId(p)))
+            .map((p) => p.id),
+        )
+      : null;
+
+    let myOpen = 0;
+    let scopeOpen = 0;
+    let pendingMr = 0;
+
+    for (const t of tickets) {
+      if (t.closed) continue;
+      const inScope = !allowedPeopleIds || !t.assigneeId || allowedPeopleIds.has(t.assigneeId);
+      if (inScope) scopeOpen++;
+      if (t.assigneeId === meId) {
+        myOpen++;
+      }
+      if (inScope && (t.workflowStatus === 'Code Review' || (t.mrLink && t.workflowStatus !== 'Done'))) {
+        pendingMr++;
+      }
+    }
+
+    const counts: Record<string, number> = {};
+    if (myOpen > 0) counts['hub-home'] = myOpen;
+    if (scopeOpen > 0) counts['hub-work'] = scopeOpen;
+    if (pendingMr > 0) counts['hub-git'] = pendingMr;
+    return counts;
+  });
+
+  /** Compact personal Scorecard pulse card above Sidebar footer */
+  protected readonly sidebarScoreSummary = computed(() => {
+    const person = this.currentPerson();
+    if (!person) return null;
+    const quota = weeklyQuotas()[person.level];
+    const dash = personDashboard(person, this.scorecard.tickets(), {
+      weights: trackWeights(),
+      quota,
+    });
+    const openMd = dash.openWork.reduce((sum, item) => sum + item.estimateMd, 0);
+    const freeMd = Math.max(0, quota - openMd - 1).toFixed(1);
+    return {
+      indexLabel: dash.indexLabel,
+      passed: dash.index >= dash.target,
+      freeMd,
+      openCount: dash.openCount,
+    };
+  });
+
   protected readonly contextualTabs = computed<ContextualTab[]>(() =>
     buildContextualTabs(this.url(), this.role()),
   );
@@ -854,6 +915,10 @@ export class App implements AfterViewInit {
     });
 
     if (typeof window !== 'undefined') {
+      if (typeof ResizeObserver !== 'undefined' && this.saasNav?.nativeElement) {
+        const navObserver = new ResizeObserver(() => this.syncActivePill());
+        navObserver.observe(this.saasNav.nativeElement);
+      }
       this.zone.runOutsideAngular(() => {
         let ticking = false;
         const onScroll = () => {
@@ -884,11 +949,18 @@ export class App implements AfterViewInit {
     }
   }
 
+  private pillSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
   private scheduleSyncActivePill(): void {
     if (typeof requestAnimationFrame === 'undefined') return;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => this.syncActivePill());
     });
+    if (this.pillSyncTimer) clearTimeout(this.pillSyncTimer);
+    this.pillSyncTimer = setTimeout(() => {
+      this.pillSyncTimer = null;
+      this.syncActivePill();
+    }, 350);
   }
 
   private syncActivePill(): void {

@@ -37,37 +37,37 @@ export class MockupPage {
     { field: 'id', headerText: 'ใบ', width: 140 },
     { field: 'title', headerText: 'เรื่อง', width: 200 },
     { field: 'size', headerText: 'ขนาด', width: 80 },
-    { field: 'estimateMd', headerText: 'Est MD', width: 90, textAlign: 'Right', format: 'N2' },
-    { field: 'rubricTotal', headerText: 'รูบริก', width: 90, textAlign: 'Right' },
-    { field: 'late', headerText: 'แผน', width: 90 },
+    { field: 'estimateMd', headerText: 'Est MD', width: 90, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'rubricTotal', headerText: 'รูบริก', width: 90, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'late', headerText: 'แผน', width: 100, cellType: 'badge' },
     { field: 'note', headerText: 'หมายเหตุ', width: 180 },
   ];
   protected readonly capacityColumns: SfGridColumn[] = [
-    { field: 'personLabel', headerText: 'คน', width: 180 },
-    { field: 'trackLabel', headerText: 'สาย', width: 110 },
-    { field: 'quota', headerText: 'โควต้า', width: 90, textAlign: 'Right', format: 'N1' },
-    { field: 'openMd', headerText: 'เปิดอยู่', width: 100, textAlign: 'Right', format: 'N2' },
-    { field: 'freeMd', headerText: 'ว่าง', width: 90, textAlign: 'Right', format: 'N2' },
-    { field: 'wipLabel', headerText: 'WIP', width: 80 },
-    { field: 'status', headerText: 'สถานะ', width: 90 },
+    { field: 'personLabel', headerText: 'คน', width: 180, cellType: 'person' },
+    { field: 'trackLabel', headerText: 'สาย', width: 110, cellType: 'badge' },
+    { field: 'quota', headerText: 'โควต้า', width: 90, textAlign: 'Right', cellType: 'metric', format: 'N1' },
+    { field: 'openMd', headerText: 'เปิดอยู่', width: 100, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'freeMd', headerText: 'ว่าง', width: 90, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'wipLabel', headerText: 'WIP', width: 85, cellType: 'code' },
+    { field: 'status', headerText: 'สถานะ', width: 105, cellType: 'badge' },
   ];
   protected readonly scoreColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'ใบ', width: 140 },
+    { field: 'id', headerText: 'ใบ', width: 135, cellType: 'ticket-link' },
     { field: 'title', headerText: 'เรื่อง', width: 180 },
-    { field: 'assignee', headerText: 'ผู้รับ', width: 110 },
-    { field: 'size', headerText: 'ขนาด', width: 80 },
-    { field: 'estimateMd', headerText: 'Est', width: 80, textAlign: 'Right', format: 'N2' },
-    { field: 'actualMd', headerText: 'Actual', width: 90, textAlign: 'Right', format: 'N2' },
-    { field: 'weekOffset', headerText: 'เลื่อน', width: 80, textAlign: 'Right' },
-    { field: 'score', headerText: 'คะแนน', width: 90, textAlign: 'Right' },
-    { field: 'spikeScore', headerText: 'Spike', width: 80, textAlign: 'Right' },
+    { field: 'assignee', headerText: 'ผู้รับ', width: 130, cellType: 'person' },
+    { field: 'size', headerText: 'ขนาด', width: 80, cellType: 'badge' },
+    { field: 'estimateMd', headerText: 'Est', width: 80, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'actualMd', headerText: 'Actual', width: 90, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'weekOffset', headerText: 'เลื่อน', width: 80, textAlign: 'Right', cellType: 'delta' },
+    { field: 'score', headerText: 'คะแนน', width: 90, textAlign: 'Right', cellType: 'score' },
+    { field: 'spikeScore', headerText: 'Spike', width: 85, textAlign: 'Right', cellType: 'metric', format: 'N1' },
   ];
   protected readonly personIndexColumns: SfGridColumn[] = [
-    { field: 'name', headerText: 'คน', width: 140 },
-    { field: 'index', headerText: 'ดัชนี', width: 100, textAlign: 'Right', format: 'N1' },
+    { field: 'name', headerText: 'คน', width: 160, cellType: 'person' },
+    { field: 'index', headerText: 'ดัชนี', width: 100, textAlign: 'Right', cellType: 'score' },
   ];
   protected readonly logColumns: SfGridColumn[] = [
-    { field: 'stepNo', headerText: 'ลำดับ', width: 90, textAlign: 'Right' },
+    { field: 'stepNo', headerText: 'ลำดับ', width: 90, textAlign: 'Right', cellType: 'metric', format: 'N0' },
     { field: 'entry', headerText: 'รายละเอียดขั้นที่จำลอง', width: 520 },
   ];
   protected readonly pagedGridOptions: SfGridOptions = { paging: true, pageSize: 8, sorting: true, resizable: true, height: '260' };

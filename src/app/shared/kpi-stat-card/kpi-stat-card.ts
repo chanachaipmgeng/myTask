@@ -25,6 +25,7 @@ import {
   MotionInput,
   MotionWrapperComponent,
 } from '../motion/motion-wrapper';
+import { BentoSpotlightDirective } from '../motion/bento-spotlight.directive';
 import { BadgeTone, badgeToneClass } from '../ui/badge';
 import { CountUpDirective } from '../ui/count-up';
 
@@ -52,7 +53,7 @@ let nextKpiSparkUid = 1;
 @Component({
   selector: 'app-kpi-stat',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ProgressBarModule, SparklineModule, CountUpDirective, MotionWrapperComponent],
+  imports: [ProgressBarModule, SparklineModule, CountUpDirective, MotionWrapperComponent, BentoSpotlightDirective],
   providers: [SparklineTooltipService],
   templateUrl: './kpi-stat-card.html',
   styleUrl: './kpi-stat-card.scss',

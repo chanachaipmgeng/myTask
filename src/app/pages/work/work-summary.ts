@@ -1,11 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { openprojectProjectCatalog } from '../../core/admin-settings';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { groupOpenWorkByDueBucket, workSummaryStats } from '../../core/work-views';
 import {
+  FilterChipOption,
+  FilterChipsComponent,
   HeroBandComponent,
   HeroBandMetric,
   SectionCardComponent,
@@ -26,6 +29,7 @@ import { WorkHubFilter } from './work-hub-filter';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
+    FilterChipsComponent,
     HeroBandComponent,
     SectionCardComponent,
     ButtonModule,
@@ -46,6 +50,16 @@ export class WorkSummary {
 
   protected readonly palette = ['#4c68e5', '#3ec6e0', '#f0b429', '#7465e8', '#e35d6a', '#8fd0c6', '#94a3b8'];
 
+  protected readonly summaryTab = signal<'buckets' | 'charts'>('buckets');
+  protected readonly selectedBucket = signal<string>('');
+  protected readonly projectPage = signal<number>(1);
+  protected readonly projectPageSize = 6;
+
+  protected readonly summaryTabOptions = computed<FilterChipOption[]>(() => [
+    { id: 'buckets', label: 'งานค้างตามวันส่ง', count: this.openGrouped().totalOpen },
+    { id: 'charts', label: 'กราฟสถานะ · สายงาน · WIP' },
+  ]);
+
   protected readonly view = computed(() =>
     workSummaryStats(
       this.scorecard.tickets(),
@@ -61,6 +75,68 @@ export class WorkSummary {
       this.hub.filterOptions(this.scorecard.people()),
     ),
   );
+
+  private readonly projectNameMap = computed(() => {
+    const map = new Map<string, string>();
+    for (const p of openprojectProjectCatalog()) {
+      if (p.id != null) map.set(String(p.id), p.name || p.identifier);
+      if (p.identifier) map.set(p.identifier.toLowerCase(), p.name || p.identifier);
+    }
+    return map;
+  });
+
+  protected resolveProjectTitle(projectKey: string, fallback: string): string {
+    const map = this.projectNameMap();
+    return (
+      map.get(projectKey) ??
+      map.get(projectKey.toLowerCase()) ??
+      map.get(fallback) ??
+      map.get(fallback.toLowerCase()) ??
+      fallback
+    );
+  }
+
+  protected readonly bucketChipOptions = computed<FilterChipOption[]>(() =>
+    this.openGrouped().buckets.map((b) => ({
+      id: b.bucket,
+      label: b.label,
+      count: b.count,
+    })),
+  );
+
+  protected readonly activeBucket = computed(() => {
+    const buckets = this.openGrouped().buckets;
+    if (buckets.length === 0) return null;
+    const chosen = this.selectedBucket();
+    return buckets.find((b) => b.bucket === chosen) ?? buckets[0]!;
+  });
+
+  protected readonly projectTotalPages = computed(() => {
+    const total = this.activeBucket()?.projects.length ?? 0;
+    return Math.max(1, Math.ceil(total / this.projectPageSize));
+  });
+
+  protected readonly pagedProjects = computed(() => {
+    const projects = this.activeBucket()?.projects ?? [];
+    const page = Math.min(this.projectPage(), this.projectTotalPages());
+    const start = (page - 1) * this.projectPageSize;
+    return projects.slice(start, start + this.projectPageSize);
+  });
+
+  protected setSummaryTab(id: string): void {
+    this.summaryTab.set(id === 'charts' ? 'charts' : 'buckets');
+  }
+
+  protected setBucket(id: string): void {
+    this.selectedBucket.set(id);
+    this.projectPage.set(1);
+  }
+
+  protected setProjectPage(page: number): void {
+    if (page >= 1 && page <= this.projectTotalPages()) {
+      this.projectPage.set(page);
+    }
+  }
 
   protected readonly summaryMetrics = computed((): HeroBandMetric[] =>
     this.view().cards.map((card) => ({
@@ -83,7 +159,7 @@ export class WorkSummary {
       ? share.map((row) => workflowStageHexColor(row.x, dark))
       : prismChartPalette(dark);
     return {
-      height: '270px',
+      height: '250px',
       innerRadius: '62%',
       radius: '82%',
       centerLabel: `${total}<br>ใบ`,
@@ -102,7 +178,7 @@ export class WorkSummary {
       ? share.map((row) => trackHexColor(row.x, dark))
       : prismChartPalette(dark);
     return {
-      height: '270px',
+      height: '250px',
       innerRadius: '62%',
       radius: '82%',
       centerLabel: `${total}<br>ใบ`,
@@ -142,7 +218,7 @@ export class WorkSummary {
   };
 
   protected readonly wipChartOptions: SfChartOptions = {
-    height: '280px',
+    height: '250px',
     exportable: true,
     fullscreenable: true,
     exportFileName: 'work-wip-by-person',

@@ -10,11 +10,14 @@ import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import {
   ConfirmDialogComponent,
+  FilterChipOption,
+  FilterChipsComponent,
   FlashMessagesComponent,
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
   StatusBadgeComponent,
+  WorkspaceAsidebarComponent,
 } from '../../shared/ui';
 import {
   SfGridColumn,
@@ -29,12 +32,13 @@ import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    PageHeadComponent,
+    FilterChipsComponent,
     PersonAvatarComponent,
     SectionCardComponent,
     StatusBadgeComponent,
     FlashMessagesComponent,
     ConfirmDialogComponent,
+    WorkspaceAsidebarComponent,
     SfGridComponent,
     SfMessageComponent,
   ],
@@ -148,23 +152,54 @@ export class QueuePage {
       .slice(0, 150);
   });
 
+  protected readonly activeQueueTab = signal<'proposals' | 'implement' | 'research' | 'capacity'>('proposals');
+  protected readonly planPage = signal<number>(1);
+  protected readonly planPageSize = 10;
+
+  protected readonly queueTabOptions = computed<FilterChipOption[]>(() => [
+    { id: 'proposals', label: 'ข้อเสนอจ่ายงาน', count: this.allOrderedPlans().length },
+    { id: 'implement', label: 'คิว Implement', count: this.implementQueue().length },
+    { id: 'research', label: 'คิว R&D', count: this.researchQueue().length },
+    { id: 'capacity', label: 'ตารางกำลังคน', count: this.plan().rows.length },
+  ]);
+
   protected readonly actionablePlans = computed(() =>
     this.plan().plans.filter((p) => p.personId != null),
   );
   protected readonly backlogPlans = computed(() =>
     this.plan().plans.filter((p) => p.personId == null),
   );
-  protected readonly displayPlans = computed(() => {
-    const actionable = this.actionablePlans();
-    const backlog = this.backlogPlans().slice(0, this.planLimit());
-    return [...actionable, ...backlog];
+  protected readonly allOrderedPlans = computed(() => [
+    ...this.actionablePlans(),
+    ...this.backlogPlans(),
+  ]);
+  protected readonly planTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.allOrderedPlans().length / this.planPageSize)),
+  );
+  protected readonly pagedPlans = computed(() => {
+    const page = Math.min(this.planPage(), this.planTotalPages());
+    const start = (page - 1) * this.planPageSize;
+    return this.allOrderedPlans().slice(start, start + this.planPageSize);
   });
+  protected readonly displayPlans = computed(() => this.pagedPlans());
   protected readonly hasMoreBacklog = computed(
-    () => this.backlogPlans().length > this.planLimit(),
+    () => this.planPage() < this.planTotalPages(),
   );
 
+  protected setQueueTab(id: string): void {
+    if (id === 'proposals' || id === 'implement' || id === 'research' || id === 'capacity') {
+      this.activeQueueTab.set(id);
+    }
+  }
+
+  protected setPlanPage(page: number): void {
+    if (page >= 1 && page <= this.planTotalPages()) {
+      this.planPage.set(page);
+    }
+  }
+
   protected loadMorePlans(): void {
-    this.planLimit.update((v) => v + 30);
+    this.setPlanPage(this.planPage() + 1);
   }
 
   constructor() {

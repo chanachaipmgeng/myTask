@@ -283,30 +283,30 @@ export class PersonDashboard {
   });
 
   protected readonly openWorkColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'ใบ', width: 110 },
-    { field: 'title', headerText: 'เรื่อง', width: 180 },
-    { field: 'type', headerText: 'ประเภท', width: 100 },
-    { field: 'size', headerText: 'ขนาด', width: 75 },
-    { field: 'status', headerText: 'สถานะ', width: 110 },
-    { field: 'estimateMd', headerText: 'Est', width: 75, textAlign: 'Right', format: 'N2' },
-    { field: 'dueOnLabel', headerText: 'วันส่ง', width: 105 },
-    { field: 'unplannedLabel', headerText: 'แผน', width: 85 },
+    { field: 'id', headerText: 'ใบ', width: 110, cellType: 'ticket-link' },
+    { field: 'title', headerText: 'เรื่อง', width: 190 },
+    { field: 'type', headerText: 'ประเภท', width: 100, cellType: 'badge' },
+    { field: 'size', headerText: 'ขนาด', width: 75, cellType: 'badge' },
+    { field: 'status', headerText: 'สถานะ', width: 120, cellType: 'badge' },
+    { field: 'estimateMd', headerText: 'Est', width: 75, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'dueOnLabel', headerText: 'วันส่ง', width: 105, cellType: 'date' },
+    { field: 'unplannedLabel', headerText: 'แผน', width: 95, cellType: 'badge' },
   ];
   protected readonly openWorkAggregates: SfGridAggregate[] = [
     { field: 'id', type: 'Count', prefix: 'รวม ', suffix: ' ใบ' },
     { field: 'estimateMd', type: 'Sum', format: 'N2', prefix: 'รวม ', suffix: ' MD' },
   ];
   protected readonly closedWorkColumns: SfGridColumn[] = [
-    { field: 'id', headerText: 'ใบ', width: 110 },
-    { field: 'title', headerText: 'เรื่อง', width: 170 },
-    { field: 'type', headerText: 'ประเภท', width: 100 },
-    { field: 'size', headerText: 'ขนาด', width: 75 },
-    { field: 'estimateMd', headerText: 'Est', width: 75, textAlign: 'Right', format: 'N2' },
-    { field: 'actualMd', headerText: 'Actual', width: 80, textAlign: 'Right', format: 'N2' },
-    { field: 'weekOffsetLabel', headerText: 'สัปดาห์', width: 100 },
-    { field: 'reviewRounds', headerText: 'รีวิว', width: 75, textAlign: 'Right' },
-    { field: 'reopenCount', headerText: 'Reopen', width: 75, textAlign: 'Right' },
-    { field: 'score', headerText: 'คะแนน', width: 75, textAlign: 'Right' },
+    { field: 'id', headerText: 'ใบ', width: 110, cellType: 'ticket-link' },
+    { field: 'title', headerText: 'เรื่อง', width: 180 },
+    { field: 'type', headerText: 'ประเภท', width: 100, cellType: 'badge' },
+    { field: 'size', headerText: 'ขนาด', width: 75, cellType: 'badge' },
+    { field: 'estimateMd', headerText: 'Est', width: 75, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'actualMd', headerText: 'Actual', width: 80, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'weekOffsetLabel', headerText: 'สัปดาห์', width: 105, cellType: 'badge' },
+    { field: 'reviewRounds', headerText: 'รีวิว', width: 75, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'reopenCount', headerText: 'Reopen', width: 75, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'score', headerText: 'คะแนน', width: 85, textAlign: 'Right', cellType: 'score' },
   ];
   protected readonly closedWorkAggregates: SfGridAggregate[] = [
     { field: 'id', type: 'Count', prefix: 'รวม ', suffix: ' ใบ' },

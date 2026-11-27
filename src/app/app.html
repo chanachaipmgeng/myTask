@@ -68,8 +68,9 @@
             title="myTask — กลับหน้าหลัก"
           >
             <span class="sidebar-brand__mark">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="20 6 9 17 4 12"></polyline>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3l1.9 5.3L19 10.2l-5.1 1.9L12 17.5l-1.9-5.4L5 10.2l5.1-1.9L12 3z" fill="currentColor" fill-opacity="0.22"></path>
+                <path d="M19 3v3M20.5 4.5h-3"></path>
               </svg>
             </span>
             @if (narrow() || !collapsed()) {
@@ -82,10 +83,20 @@
               type="button"
               class="sidebar-collapse-btn"
               (click)="toggleNav()"
-              title="พับแถบเมนูด้านข้าง"
+              title="พับแถบเมนูด้านข้าง (Ctrl+B)"
               aria-label="พับแถบเมนูด้านข้าง"
             >
               <span class="e-icons e-chevron-left"></span>
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="sidebar-collapse-btn sidebar-collapse-btn--expand"
+              (click)="toggleNav()"
+              title="ขยายแถบเมนูด้านข้าง (Ctrl+B)"
+              aria-label="ขยายแถบเมนูด้านข้าง"
+            >
+              <span class="e-icons e-chevron-right"></span>
             </button>
           }
         </div>
@@ -118,12 +129,39 @@
                   <span class="saas-nav__icon"><span [class]="item.iconCss"></span></span>
                   @if (narrow() || !collapsed()) {
                     <span class="saas-nav__text">{{ item.text }}</span>
+                    @if (sidebarCounts()[item.id]; as badgeCount) {
+                      <span class="saas-nav__count tabular-nums">{{ badgeCount > 99 ? '99+' : badgeCount }}</span>
+                    }
                   }
                 </a>
               }
             </div>
           }
         </nav>
+
+        <!-- 3. Compact Glowing My Scorecard Pulse Card -->
+        @if ((narrow() || !collapsed()) && sidebarScoreSummary(); as sc) {
+          <a
+            class="sidebar-score-card cosmic-border-beam"
+            routerLink="/quality"
+            title="ดูคะแนนและวิเคราะห์เชิงลึก"
+          >
+            <div class="sidebar-score-card__top">
+              <span class="sidebar-score-card__label">ดัชนีคะแนนฉัน</span>
+              <span class="sidebar-score-card__pill" [class.is-good]="sc.passed">
+                {{ sc.passed ? 'ผ่านเกณฑ์' : 'เร่งสปีด' }}
+              </span>
+            </div>
+            <div class="sidebar-score-card__metric">
+              <span class="sidebar-score-card__val tabular-nums">{{ sc.indexLabel }}</span>
+              <span class="sidebar-score-card__sub">เหลือ {{ sc.freeMd }} MD · เปิด {{ sc.openCount }} ใบ</span>
+            </div>
+            <span class="sidebar-score-card__cta">
+              <span>ดูคะแนน & AI Coach</span>
+              <span class="e-icons e-chevron-right"></span>
+            </span>
+          </a>
+        }
 
         <!-- 4. Sidebar Footer Profile -->
         <div class="sidebar-footer" [attr.data-role]="role()">
@@ -390,33 +428,13 @@
             }
 
             <div class="workspace-filter-bar__desktop">
-              <label class="workspace-filter-field workspace-filter-field--inline">
-                <span>สถานะ</span>
-                <app-sf-dropdown
-                  [items]="statusScopeOptions"
-                  [value]="workspaceFilter.statusScope()"
-                  [options]="{ placeholder: 'สถานะงาน', width: '190px', cssClass: 'e-outline' }"
-                  (valueChange)="onWorkspaceStatusScope($event)"
-                />
-              </label>
-
-              <label class="workspace-filter-field workspace-filter-field--inline">
-                <span>รอบ</span>
-                <app-sf-dropdown
-                  [items]="workspaceFilter.cycleOptions()"
-                  [value]="workspaceFilter.cycleId()"
-                  [options]="{ placeholder: 'รอบระบบ', width: '168px', cssClass: 'e-outline' }"
-                  (valueChange)="onWorkspaceCycle($event)"
-                />
-              </label>
-
               @if (role() !== 'member') {
                 <label class="workspace-filter-field workspace-filter-field--inline">
                   <span>ทีม</span>
                   <app-sf-dropdown
                     [items]="workspaceFilter.teamOptions()"
                     [value]="workspaceFilter.teamId()"
-                    [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาทีมจาก myProject...', placeholder: 'ทุกทีม', width: '185px', cssClass: 'e-outline' }"
+                    [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาทีม...', placeholder: 'ทุกทีม', width: '160px', cssClass: 'e-outline' }"
                     (valueChange)="onWorkspaceTeam($event)"
                   />
                 </label>
@@ -426,7 +444,7 @@
                   <app-sf-dropdown
                     [items]="workspaceFilter.personOptions()"
                     [value]="workspaceFilter.personId()"
-                    [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชื่อพนักงาน...', placeholder: 'ทุกพนักงาน', width: '205px', cssClass: 'e-outline' }"
+                    [options]="{ allowFiltering: true, filterBarPlaceholder: 'ค้นหาชื่อ...', placeholder: 'ทุกพนักงาน', width: '168px', cssClass: 'e-outline' }"
                     (valueChange)="onWorkspacePerson($event)"
                   />
                 </label>
@@ -464,24 +482,6 @@
               @if (filterPopoverOpen()) {
                 <div class="filter-popover" role="dialog" aria-label="ตัวกรอง">
                   <div class="filter-popover__primary">
-                    <label class="workspace-filter-field">
-                      <span>สถานะ</span>
-                      <app-sf-dropdown
-                        [items]="statusScopeOptions"
-                        [value]="workspaceFilter.statusScope()"
-                        [options]="{ placeholder: 'สถานะงาน', width: '100%', cssClass: 'e-outline' }"
-                        (valueChange)="onWorkspaceStatusScope($event)"
-                      />
-                    </label>
-                    <label class="workspace-filter-field">
-                      <span>รอบ</span>
-                      <app-sf-dropdown
-                        [items]="workspaceFilter.cycleOptions()"
-                        [value]="workspaceFilter.cycleId()"
-                        [options]="{ placeholder: 'รอบระบบ', width: '100%', cssClass: 'e-outline' }"
-                        (valueChange)="onWorkspaceCycle($event)"
-                      />
-                    </label>
                     @if (role() !== 'member') {
                       <label class="workspace-filter-field">
                         <span>ทีม</span>
@@ -514,6 +514,24 @@
                     }
                   </div>
                   <div class="filter-popover__grid">
+                    <label class="workspace-filter-field">
+                      <span>สถานะ</span>
+                      <app-sf-dropdown
+                        [items]="statusScopeOptions"
+                        [value]="workspaceFilter.statusScope()"
+                        [options]="{ placeholder: 'สถานะงาน', width: '100%', cssClass: 'e-outline' }"
+                        (valueChange)="onWorkspaceStatusScope($event)"
+                      />
+                    </label>
+                    <label class="workspace-filter-field">
+                      <span>รอบประเมิน</span>
+                      <app-sf-dropdown
+                        [items]="workspaceFilter.cycleOptions()"
+                        [value]="workspaceFilter.cycleId()"
+                        [options]="{ placeholder: 'รอบระบบ', width: '100%', cssClass: 'e-outline' }"
+                        (valueChange)="onWorkspaceCycle($event)"
+                      />
+                    </label>
                     <label class="workspace-filter-field">
                       <span>ปี</span>
                       <app-sf-dropdown

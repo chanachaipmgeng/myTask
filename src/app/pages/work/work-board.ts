@@ -10,7 +10,6 @@ import { TicketDetailService } from '../../core/ticket-detail.service';
 import {
   ConfirmDialogComponent,
   FormFieldComponent,
-  HeroBandComponent,
   PersonAvatarComponent,
   SectionCardComponent,
   StatusBadgeComponent,
@@ -66,8 +65,7 @@ type SwimlaneMode = 'none' | 'assignee' | 'track' | 'project';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
-    HeroBandComponent,
-    ConfirmDialogComponent,
+      ConfirmDialogComponent,
     FormFieldComponent,
     PersonAvatarComponent,
     SectionCardComponent,

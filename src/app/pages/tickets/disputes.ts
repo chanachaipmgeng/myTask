@@ -101,12 +101,12 @@ export class DisputesPage implements OnInit {
     separatorSize: 5,
   }));
   protected readonly disputeColumns: SfGridColumn[] = [
-    { field: 'disputeCode', headerText: 'รหัสคำขอ', width: 105 },
-    { field: 'ticketId', headerText: 'ใบงาน', width: 90 },
-    { field: 'requesterId', headerText: 'ผู้ยื่น', width: 95 },
-    { field: 'requestedFlag', headerText: 'ประเภท', width: 105 },
+    { field: 'disputeCode', headerText: 'รหัสคำขอ', width: 110, cellType: 'code' },
+    { field: 'ticketId', headerText: 'ใบงาน', width: 95, cellType: 'ticket-link' },
+    { field: 'requesterId', headerText: 'ผู้ยื่น', width: 115, cellType: 'person' },
+    { field: 'requestedFlag', headerText: 'ประเภท', width: 100, cellType: 'badge' },
     { field: 'scoreDiff', headerText: 'คะแนนเดิม > ใหม่', width: 120, textAlign: 'Right' },
-    { field: 'status', headerText: 'สถานะ', width: 110 },
+    { field: 'status', headerText: 'สถานะ', width: 110, cellType: 'badge' },
   ];
   protected readonly disputeGridOptions: SfGridOptions = listGridOptions({
     id: 'disputes-list-grid-v2',

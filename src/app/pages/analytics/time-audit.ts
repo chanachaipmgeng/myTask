@@ -57,14 +57,14 @@ export class TimeAuditPage {
   private readonly ticketDetail = inject(TicketDetailService);
 
   protected readonly gridColumns: SfGridColumn[] = [
-    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 115 },
-    { field: 'title', headerText: 'ชื่องาน', width: 185 },
-    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 145 },
-    { field: 'estimateMd', headerText: 'Est (1)', width: 100, textAlign: 'Right' },
-    { field: 'openProjectActualMd', headerText: 'OP Act (2)', width: 100, textAlign: 'Right' },
-    { field: 'gitlabSpanMd', headerText: 'GitLab Span (3)', width: 145, textAlign: 'Right' },
-    { field: 'ratio', headerText: 'สัดส่วน', width: 85, textAlign: 'Right' },
-    { field: 'anomalyLabel', headerText: 'ความผิดปกติ', width: 165 },
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 115, cellType: 'ticket-link' },
+    { field: 'title', headerText: 'ชื่องาน', width: 195 },
+    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 150, cellType: 'person' },
+    { field: 'estimateMd', headerText: 'Est (1)', width: 95, textAlign: 'Right', cellType: 'metric', format: 'N2', suffix: ' MD' },
+    { field: 'openProjectActualMd', headerText: 'OP Act (2)', width: 100, textAlign: 'Right', cellType: 'metric', format: 'N2', suffix: ' MD' },
+    { field: 'gitlabSpanMd', headerText: 'GitLab (3)', width: 110, textAlign: 'Right', cellType: 'metric', format: 'N2', suffix: ' MD' },
+    { field: 'ratio', headerText: 'สัดส่วน', width: 85, textAlign: 'Right', cellType: 'metric', format: 'N2', suffix: 'x' },
+    { field: 'anomalyLabel', headerText: 'ความผิดปกติ', width: 165, cellType: 'badge' },
   ];
 
   protected readonly gridOptions: SfGridOptions = listGridOptions({

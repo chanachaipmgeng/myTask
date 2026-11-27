@@ -135,7 +135,7 @@ export class SfDonutChartComponent implements AfterViewInit, OnDestroy {
   protected readonly defaultPalettes = computed(() => prismChartPalette(this.theme.isDark()));
   protected readonly sliceBorder = computed(() => ({
     width: 2.5,
-    color: this.theme.isDark() ? '#0f1838' : '#ffffff',
+    color: this.theme.isDark() ? '#0c0f1c' : '#ffffff',
   }));
   protected readonly dataLabel = { visible: true, position: 'Inside', font: { fontWeight: '600', size: '12px', color: '#ffffff' } };
 

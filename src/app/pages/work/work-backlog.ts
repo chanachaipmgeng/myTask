@@ -36,14 +36,14 @@ export class WorkBacklog {
   );
 
   protected readonly columns = computed<SfGridColumn[]>(() => [
-    { field: 'id', headerText: 'รหัส', width: 120 },
+    { field: 'id', headerText: 'รหัส', width: 120, cellType: 'ticket-link' },
     { field: 'title', headerText: 'ชื่องาน', width: 280 },
-    { field: 'trackLabel', headerText: 'สาย', width: 110 },
-    { field: 'type', headerText: 'ประเภท', width: 130 },
-    { field: 'size', headerText: 'ขนาด', width: 80 },
-    { field: 'estimateMd', headerText: 'Estimate MD', width: 120, textAlign: 'Right', format: 'N2' },
-    { field: 'assignee', headerText: 'ผู้รับ', width: 140, visible: !this.isMine() },
-    { field: 'status', headerText: 'สถานะ', width: 120 },
+    { field: 'trackLabel', headerText: 'สาย', width: 125, cellType: 'badge' },
+    { field: 'type', headerText: 'ประเภท', width: 125, cellType: 'badge' },
+    { field: 'size', headerText: 'ขนาด', width: 80, cellType: 'badge', textAlign: 'Center' },
+    { field: 'estimateMd', headerText: 'Estimate MD', width: 120, textAlign: 'Right', format: 'N2', cellType: 'metric', suffix: ' MD' },
+    { field: 'assignee', headerText: 'ผู้รับ', width: 150, visible: !this.isMine(), cellType: 'person', personIdField: 'assigneeId' },
+    { field: 'status', headerText: 'สถานะ', width: 125, cellType: 'badge' },
   ]);
 
   protected readonly aggregates: SfGridAggregate[] = [

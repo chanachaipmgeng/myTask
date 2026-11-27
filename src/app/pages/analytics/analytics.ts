@@ -66,12 +66,12 @@ export class AnalyticsPage {
   ]);
 
   protected readonly hygieneColumns: SfGridColumn[] = [
-    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 120 },
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 120, cellType: 'ticket-link' },
     { field: 'title', headerText: 'ชื่องาน / โมดูล', width: 200 },
-    { field: 'trackLabel', headerText: 'สายงาน', width: 110 },
-    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 180 },
-    { field: 'severity', headerText: 'ระดับความสำคัญ', width: 130 },
-    { field: 'issueType', headerText: 'ชนิดประเด็น', width: 160 },
+    { field: 'trackLabel', headerText: 'สายงาน', width: 110, cellType: 'badge' },
+    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 180, cellType: 'person' },
+    { field: 'severity', headerText: 'ระดับความสำคัญ', width: 130, cellType: 'badge' },
+    { field: 'issueType', headerText: 'ชนิดประเด็น', width: 160, cellType: 'badge' },
     { field: 'detail', headerText: 'รายละเอียดสิ่งที่ตรวจพบ', width: 360 },
   ];
   protected readonly hygieneGridOptions: SfGridOptions = listGridOptions({
@@ -85,14 +85,14 @@ export class AnalyticsPage {
   });
 
   protected readonly riskColumns: SfGridColumn[] = [
-    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 120 },
+    { field: 'ticketId', headerText: 'รหัสใบงาน', width: 120, cellType: 'ticket-link' },
     { field: 'title', headerText: 'เรื่อง', width: 200 },
-    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 130 },
-    { field: 'status', headerText: 'สถานะ', width: 130 },
-    { field: 'estimateMd', headerText: 'Est MD', width: 95, textAlign: 'Right', format: 'N2' },
-    { field: 'actualMd', headerText: 'Actual MD', width: 105, textAlign: 'Right', format: 'N2' },
-    { field: 'riskScore', headerText: 'Risk Score', width: 110, textAlign: 'Right' },
-    { field: 'riskLevel', headerText: 'ระดับความเสี่ยง', width: 130 },
+    { field: 'assignee', headerText: 'ผู้รับผิดชอบ', width: 150, cellType: 'person' },
+    { field: 'status', headerText: 'สถานะ', width: 135, cellType: 'badge' },
+    { field: 'estimateMd', headerText: 'Est MD', width: 95, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'actualMd', headerText: 'Actual MD', width: 105, textAlign: 'Right', cellType: 'metric', format: 'N2' },
+    { field: 'riskScore', headerText: 'Risk Score', width: 110, textAlign: 'Right', cellType: 'metric', format: 'N0' },
+    { field: 'riskLevel', headerText: 'ระดับความเสี่ยง', width: 135, cellType: 'badge' },
   ];
   protected readonly riskGridOptions: SfGridOptions = listGridOptions({
     id: 'delivery-risk-grid',

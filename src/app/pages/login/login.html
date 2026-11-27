@@ -1,141 +1,382 @@
-<div class="login-shell">
-  <div class="login-shell__ambient" aria-hidden="true">
+<div #shellEl class="login-shell">
+  <!-- Full-Viewport Cosmic Space Backdrop (Nebula + Sweeping Orbits + Twinkling Stars + Mouse Aura) -->
+  <div class="login-cosmos" aria-hidden="true">
+    <span class="login-cosmos__cursor-aura"></span>
     <span class="login-orb login-orb--a"></span>
     <span class="login-orb login-orb--b"></span>
     <span class="login-orb login-orb--c"></span>
+    <span class="login-cosmos__stars login-cosmos__stars--far"></span>
+    <span class="login-cosmos__stars login-cosmos__stars--near"></span>
+    <svg class="login-cosmos__arcs" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="loginArcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3154cc" stop-opacity="0.06" />
+          <stop offset="50%" stop-color="#a855f7" stop-opacity="0.28" />
+          <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.05" />
+        </linearGradient>
+      </defs>
+      <g transform="rotate(-14 640 440)">
+        <ellipse cx="640" cy="440" rx="680" ry="260" fill="none" stroke="url(#loginArcGrad)" stroke-width="1" />
+        <ellipse cx="640" cy="440" rx="510" ry="190" fill="none" stroke="rgba(167,139,250,0.12)" stroke-width="1" stroke-dasharray="4 8" />
+      </g>
+    </svg>
   </div>
 
-  <aside class="login-brand" appReveal="slide-right" [revealDuration]="480">
-    <div class="login-brand__mark" aria-hidden="true">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
+  <!-- Minimal Floating Top Bar (Agent Desk Inspired) -->
+  <header class="login-topbar">
+    <div class="login-topbar__brand">
+      <span class="login-topbar__mark" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 3l2.2 6.1L20 11.3l-5.8 2.2L12 19.6l-2.2-6.1L4 11.3l5.8-2.2L12 3z" fill="currentColor" />
+        </svg>
+      </span>
+      <span class="login-topbar__name">myTask</span>
+      <span class="login-topbar__tag">MyHR Plus</span>
     </div>
-    <p class="login-brand__eyebrow">MyHR Plus</p>
-    <h1 class="login-brand__title">myTask</h1>
-    <p class="login-brand__tagline">ประเมินผลงานส่งมอบด้วย Man-day อย่างเป็นธรรม</p>
-  </aside>
 
-  <main class="login-panel">
-    <div
-      class="login-card"
-      appReveal="scale-soft"
-      [revealDelay]="120"
-      [revealDuration]="420"
+    <nav class="login-scene-tabs" aria-label="ดูความสามารถของระบบ">
+      <button
+        type="button"
+        class="login-scene-tab"
+        [class.is-active]="activeScene() === 'ecosystem'"
+        (click)="selectScene('ecosystem')"
+      >
+        <span class="login-scene-tab__dot"></span>
+        <span>ศูนย์รวมเครื่องมือ</span>
+      </button>
+      <button
+        type="button"
+        class="login-scene-tab"
+        [class.is-active]="activeScene() === 'workflow'"
+        (click)="selectScene('workflow')"
+      >
+        <span class="login-scene-tab__dot"></span>
+        <span>โฟลว์ส่งมอบ & คะแนน</span>
+      </button>
+      <button
+        type="button"
+        class="login-scene-tab"
+        [class.is-active]="activeScene() === 'bento'"
+        (click)="selectScene('bento')"
+      >
+        <span class="login-scene-tab__dot"></span>
+        <span>พรีวิว Bento AI</span>
+      </button>
+    </nav>
+
+    <div class="login-topbar__right">
+      <span class="login-live-pill">
+        <span class="login-live-pill__dot"></span>
+        <span>{{ usingApi() ? 'API Online' : 'Demo Mode' }}</span>
+      </span>
+      <button
+        type="button"
+        class="login-theme-btn"
+        (click)="theme.toggleTheme()"
+        [title]="theme.isDark() ? 'สลับเป็นโหมดสว่าง' : 'สลับเป็นโหมดมืด Obsidian'"
+        aria-label="สลับโหมดสี"
+      >
+        <span class="e-icons" [class.e-brightness]="theme.isDark()" [class.e-contrast]="!theme.isDark()"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main 2-Column Content Stage -->
+  <div class="login-stage">
+    <!-- LEFT: Interactive 3-Scene Feature & Flow Showcase -->
+    <aside
+      class="login-showcase"
+      appReveal="slide-right"
+      [revealDuration]="460"
+      (mouseenter)="setShowcasePaused(true)"
+      (mouseleave)="setShowcasePaused(false)"
     >
-      <header class="login-card__head">
-        <h2 class="login-card__title">เข้าสู่ระบบ</h2>
-        <p class="login-card__sub">ใช้บัญชีองค์กร หรือ GitLab SSO</p>
-      </header>
+      <div class="login-showcase__head">
+        <span class="login-showcase__eyebrow">
+          <span class="login-showcase__eyebrow-dot"></span>
+          <span>{{ sceneMeta().eyebrow }}</span>
+        </span>
+        <h1 class="login-showcase__title">
+          <span>{{ sceneMeta().headline }}</span>
+          <span class="login-showcase__title-accent">{{ sceneMeta().accent }}</span>
+        </h1>
+        <p class="login-showcase__sub">{{ sceneMeta().subtitle }}</p>
+      </div>
 
-      <app-flash-messages [success]="message() || null" [error]="error() || null"></app-flash-messages>
-
-      <form class="login-form" appStagger [staggerStep]="55" (submit)="submitLogin($event)">
-        <div class="login-field">
-          <label class="login-label" for="login-username">ชื่อผู้ใช้หรืออีเมล</label>
-          <div class="login-input-wrap">
-            <span class="e-icons e-user login-input-icon" aria-hidden="true"></span>
-            <input
-              id="login-username"
-              type="text"
-              class="login-input"
-              placeholder="paweena หรือ paweena@myhr.co.th"
-              [value]="username()"
-              (input)="onUsernameInput($event)"
-              autocomplete="username"
-              required
-            />
+      <!-- Dynamic Visual Scene Stage -->
+      <div class="login-showcase__viewport">
+        @if (activeScene() === 'ecosystem') {
+          <div class="login-scene-frame">
+            <app-ecosystem-hub
+              mode="showcase"
+              [frameless]="true"
+              [showHeader]="false"
+              [showPillars]="false"
+              centerLabel="ศูนย์รวมการทำงาน"
+              centerBrand="myTask Hub"
+            ></app-ecosystem-hub>
           </div>
-        </div>
-
-        <div class="login-field">
-          <div class="login-label-row">
-            <label class="login-label" for="login-password">รหัสผ่าน</label>
-            <button type="button" class="login-text-btn" (click)="onForgotPassword()">ลืมรหัสผ่าน?</button>
-          </div>
-          <div class="login-input-wrap">
-            <span class="e-icons e-lock login-input-icon" aria-hidden="true"></span>
-            <input
-              id="login-password"
-              [type]="showPassword() ? 'text' : 'password'"
-              class="login-input"
-              placeholder="••••••••"
-              [value]="password()"
-              (input)="onPasswordInput($event)"
-              autocomplete="current-password"
-            />
-            <button
-              type="button"
-              class="login-eye"
-              (click)="togglePassword()"
-              [attr.aria-label]="showPassword() ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'"
-            >
-              <span class="e-icons" [class.e-eye]="!showPassword()" [class.e-eye-slash]="showPassword()"></span>
-            </button>
-          </div>
-        </div>
-
-        <div class="login-options">
-          <app-sf-checkbox
-            label="จดจำฉัน 30 วัน"
-            [checked]="rememberMe()"
-            (checkedChange)="rememberMe.set($event)"
-          />
-        </div>
-
-        <button
-          ejs-button
-          cssClass="e-primary login-submit"
-          type="submit"
-          [disabled]="busy()"
-        >
-          @if (busy()) {
-            <span class="e-icons e-spinner e-spin" aria-hidden="true"></span>
-            <span>กำลังเข้าสู่ระบบ…</span>
-          } @else {
-            <span>เข้าสู่ระบบ</span>
-          }
-        </button>
-
-        <div class="login-divider" aria-hidden="true"><span>หรือ</span></div>
-
-        <button
-          ejs-button
-          cssClass="e-outline login-sso"
-          type="button"
-          (click)="startGitLabSso()"
-        >
-          <svg class="login-sso__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path fill="#FC6D26" d="M22.65 14.39L20.61 8.12a.66.66 0 0 0-.25-.33.64.64 0 0 0-.41-.12.63.63 0 0 0-.4.14.65.65 0 0 0-.23.34L17.5 13.9H6.5L4.68 8.15a.65.65 0 0 0-.23-.34.63.63 0 0 0-.4-.14.64.64 0 0 0-.41.12.66.66 0 0 0-.25.33l-2.04 6.27a.88.88 0 0 0 .32 1l9.88 7.18a.65.65 0 0 0 .76 0l9.88-7.18a.88.88 0 0 0 .32-1z"/>
-          </svg>
-          <span>GitLab SSO</span>
-        </button>
-
-        @if (canUseDevLogin() && quickLoginChips().length) {
-          <div class="login-demo">
-            <p class="login-demo__label">ทดสอบด่วน</p>
-            <div class="login-demo__chips">
-              @for (chip of quickLoginChips(); track chip.id) {
-                <button type="button" class="login-chip" [disabled]="busy()" (click)="quickLogin(chip.id)">
-                  @if (busy()) { <span class="e-icons e-spinner e-spin mr-1"></span> }
-                  {{ chip.label }}
+        } @else if (activeScene() === 'workflow') {
+          <div class="login-scene-frame login-flow-stage">
+            <div class="login-flow-track">
+              <div class="login-flow-beam" aria-hidden="true"></div>
+              @for (st of flowStages; track st.step; let i = $index) {
+                <button
+                  type="button"
+                  class="login-flow-node"
+                  [attr.data-tone]="st.tone"
+                  [class.is-active]="activeFlowStep() === i"
+                  [class.is-passed]="i < activeFlowStep()"
+                  (click)="selectFlowStep(i)"
+                >
+                  <span class="login-flow-node__ring" aria-hidden="true"></span>
+                  <span class="login-flow-node__step tabular-nums">{{ st.step }}</span>
+                  <strong class="login-flow-node__title">{{ st.title }}</strong>
+                  <span class="login-flow-node__sub">{{ st.sub }}</span>
+                  <span class="login-flow-node__badge">{{ st.badge }}</span>
                 </button>
               }
             </div>
+
+            <div class="login-flow-detail">
+              <div class="login-flow-detail__badge">
+                <span>ขั้นตอนที่ {{ flowStages[activeFlowStep()].step }}</span>
+                <span>·</span>
+                <strong>{{ flowStages[activeFlowStep()].title }}</strong>
+              </div>
+              <p class="login-flow-detail__copy">
+                @switch (activeFlowStep()) {
+                  @case (0) {
+                    ดึงใบงานจาก myProject อัตโนมัติ พร้อมคำนวณกำหนดส่ง Auto-SLA ข้ามวันหยุดเสาร์-อาทิตย์ และล็อกวันส่งแรก (`firstDueOn`)
+                  }
+                  @case (1) {
+                    เชื่อมสาขา GitLab & Merge Request เข้ากับใบงานอัตโนมัติ มอบเครดิตผู้รีวิวโค้ด 10–15% ของ Man-day
+                  }
+                  @case (2) {
+                    Fair Cutoff Rule: วัดความตรงเวลาของ Dev ทันทีที่การ์ดเข้า Ready for QA ไม่หักคะแนนจากเวลารอคิวทดสอบ
+                  }
+                  @case (3) {
+                    ตรวจเกณฑ์ DoD Gate และ Pareto Reopen พร้อมมอบเครดิต QA 15–20% และรองรับการแตกสัดส่วนงานร่วมกัน
+                  }
+                  @default {
+                    สรุปดัชนีคะแนน 6 สายงานแบบ Tiered Tolerance Accuracy พร้อม MD-Direct Auto-Shift และ AI Coach แนะแนวสปรินต์ถัดไป
+                  }
+                }
+              </p>
+            </div>
+          </div>
+        } @else {
+          <!-- Live Animated Mini Bento Preview -->
+          <div class="login-scene-frame login-bento-preview">
+            <div class="mini-bento-kpis">
+              <div class="mini-kpi" data-tone="violet">
+                <span class="mini-kpi__label">ดัชนีคะแนนทีม</span>
+                <strong class="mini-kpi__val tabular-nums">92.4</strong>
+                <span class="mini-kpi__delta is-good">↑ 6.8% รอบนี้</span>
+              </div>
+              <div class="mini-kpi" data-tone="emerald">
+                <span class="mini-kpi__label">ส่งมอบตรงเวลา</span>
+                <strong class="mini-kpi__val tabular-nums">94%</strong>
+                <span class="mini-kpi__delta is-good">Fair Cutoff</span>
+              </div>
+              <div class="mini-kpi" data-tone="cyan">
+                <span class="mini-kpi__label">Active WIP</span>
+                <strong class="mini-kpi__val tabular-nums">1.8 ใบ</strong>
+                <span class="mini-kpi__delta">สมดุลโควตา</span>
+              </div>
+            </div>
+
+            <div class="mini-bento-body">
+              <div class="mini-bento-card">
+                <span class="mini-bento-card__title">สัดส่วนสถานะงาน</span>
+                <div class="mini-donut-row">
+                  <svg class="mini-donut-svg" viewBox="0 0 100 100" aria-hidden="true">
+                    <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="11" />
+                    <circle cx="50" cy="50" r="36" fill="none" stroke="#22c55e" stroke-width="11" stroke-dasharray="128 226" stroke-linecap="round" transform="rotate(-90 50 50)" />
+                    <circle cx="50" cy="50" r="36" fill="none" stroke="#a855f7" stroke-width="11" stroke-dasharray="58 226" stroke-dashoffset="-136" stroke-linecap="round" transform="rotate(-90 50 50)" />
+                    <circle cx="50" cy="50" r="36" fill="none" stroke="#38bdf8" stroke-width="11" stroke-dasharray="26 226" stroke-dashoffset="-200" stroke-linecap="round" transform="rotate(-90 50 50)" />
+                  </svg>
+                  <div class="mini-donut-legend">
+                    <span><i style="background:#22c55e"></i> ปิดสมบูรณ์ <b>58%</b></span>
+                    <span><i style="background:#a855f7"></i> กำลังพัฒนา <b>26%</b></span>
+                    <span><i style="background:#38bdf8"></i> รอตรวจ QA <b>16%</b></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mini-bento-card mini-bento-card--ai cosmic-border-beam">
+                <span class="mini-bento-card__title">✦ myTask AI Coach</span>
+                <div class="mini-ai-item">
+                  <span class="mini-ai-dot" style="background:#34d399"></span>
+                  <span>First-Time Right สูงกว่าเป้าทีม +11%</span>
+                </div>
+                <div class="mini-ai-item">
+                  <span class="mini-ai-dot" style="background:#a855f7"></span>
+                  <span>Auto-Shift เลื่อนกำหนดส่งให้อัตโนมัติเมื่อรับงานด่วน MD</span>
+                </div>
+                <div class="mini-ai-prompt">
+                  <span>✦ ถาม: งานไหนใกล้ครบกำหนดวันนี้?</span>
+                  <span class="mini-ai-send">→</span>
+                </div>
+              </div>
+            </div>
           </div>
         }
+      </div>
 
-        @if (isSignedInAdmin()) {
+      <!-- Bottom 4-Pillar Agent Desk Glass Dock (Interactive) -->
+      <div class="login-pillars">
+        <button type="button" class="login-pillar" [class.is-lit]="activeScene() === 'ecosystem'" (click)="selectScene('ecosystem')">
+          <span class="login-pillar__icon login-pillar__icon--violet e-icons e-people" aria-hidden="true"></span>
+          <strong class="login-pillar__title">รวมศูนย์ทุกงาน</strong>
+          <span class="login-pillar__desc">ใบงาน โค้ด และคะแนนในที่เดียว</span>
+        </button>
+        <button type="button" class="login-pillar" [class.is-lit]="activeScene() === 'workflow'" (click)="selectScene('workflow')">
+          <span class="login-pillar__icon login-pillar__icon--coral e-icons e-refresh" aria-hidden="true"></span>
+          <strong class="login-pillar__title">ซิงก์เรียลไทม์</strong>
+          <span class="login-pillar__desc">เชื่อม myProject & GitLab อัตโนมัติ</span>
+        </button>
+        <button type="button" class="login-pillar" [class.is-lit]="activeScene() === 'workflow'" (click)="selectScene('workflow')">
+          <span class="login-pillar__icon login-pillar__icon--rose e-icons e-lock" aria-hidden="true"></span>
+          <strong class="login-pillar__title">ปลอดภัยตามสิทธิ์</strong>
+          <span class="login-pillar__desc">แยกการมองเห็นข้ามแผนก 2 ชั้น</span>
+        </button>
+        <button type="button" class="login-pillar" [class.is-lit]="activeScene() === 'bento'" (click)="selectScene('bento')">
+          <span class="login-pillar__icon login-pillar__icon--cyan e-icons e-chart" aria-hidden="true"></span>
+          <strong class="login-pillar__title">วิเคราะห์อัจฉริยะ</strong>
+          <span class="login-pillar__desc">AI Coach & พยากรณ์ความเสี่ยง</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- RIGHT: Elevated Obsidian Frosted-Glass Login Card -->
+    <main class="login-panel">
+      <div
+        class="login-card cosmic-border-beam"
+        appBentoSpotlight="rgba(168, 85, 247, 0.24)"
+        appReveal="scale-soft"
+        [revealDelay]="100"
+        [revealDuration]="420"
+      >
+        <header class="login-card__head">
+          <div class="login-card__brand-badge">
+            <span class="login-card__spark" aria-hidden="true">✦</span>
+            <span>เข้าสู่พื้นที่ทำงาน</span>
+          </div>
+          <h2 class="login-card__title">ยินดีต้อนรับกลับ</h2>
+          <p class="login-card__sub">ใช้บัญชีองค์กร MyHR หรือเข้าสู่ระบบด้วย GitLab SSO</p>
+        </header>
+
+        <app-flash-messages [success]="message() || null" [error]="error() || null"></app-flash-messages>
+
+        <form class="login-form" appStagger [staggerStep]="50" (submit)="submitLogin($event)">
+          <div class="login-field">
+            <label class="login-label" for="login-username">ชื่อผู้ใช้หรืออีเมลองค์กร</label>
+            <div class="login-input-wrap">
+              <span class="e-icons e-user login-input-icon" aria-hidden="true"></span>
+              <input
+                id="login-username"
+                type="text"
+                class="login-input"
+                placeholder="paweena หรือ paweena@myhr.co.th"
+                [value]="username()"
+                (input)="onUsernameInput($event)"
+                autocomplete="username"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="login-field">
+            <div class="login-label-row">
+              <label class="login-label" for="login-password">รหัสผ่าน</label>
+              <button type="button" class="login-text-btn" (click)="onForgotPassword()">ลืมรหัสผ่าน?</button>
+            </div>
+            <div class="login-input-wrap">
+              <span class="e-icons e-lock login-input-icon" aria-hidden="true"></span>
+              <input
+                id="login-password"
+                [type]="showPassword() ? 'text' : 'password'"
+                class="login-input"
+                placeholder="••••••••"
+                [value]="password()"
+                (input)="onPasswordInput($event)"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="login-eye"
+                (click)="togglePassword()"
+                [attr.aria-label]="showPassword() ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'"
+              >
+                <span class="e-icons" [class.e-eye]="!showPassword()" [class.e-eye-slash]="showPassword()"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="login-options">
+            <app-sf-checkbox
+              label="จดจำการเข้าสู่ระบบ 30 วัน"
+              [checked]="rememberMe()"
+              (checkedChange)="rememberMe.set($event)"
+            />
+          </div>
+
           <button
-            type="button"
-            class="login-sync"
+            ejs-button
+            cssClass="e-primary login-submit"
+            type="submit"
             [disabled]="busy()"
-            (click)="syncMyProjectUsers()"
           >
-            {{ busy() ? 'กำลังซิงค์…' : 'ซิงค์รายชื่อจาก myProject' }}
+            @if (busy()) {
+              <span class="e-icons e-spinner e-spin" aria-hidden="true"></span>
+              <span>กำลังเข้าสู่ระบบ…</span>
+            } @else {
+              <span>เข้าสู่ระบบ</span>
+              <span class="e-icons e-chevron-right login-submit__arrow" aria-hidden="true"></span>
+            }
           </button>
-        }
-      </form>
-    </div>
-  </main>
+
+          <div class="login-divider" aria-hidden="true"><span>หรือเชื่อมต่อผ่านองค์กร</span></div>
+
+          <button
+            ejs-button
+            cssClass="e-outline login-sso"
+            type="button"
+            (click)="startGitLabSso()"
+          >
+            <svg class="login-sso__icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <path fill="#FC6D26" d="M22.65 14.39L20.61 8.12a.66.66 0 0 0-.25-.33.64.64 0 0 0-.41-.12.63.63 0 0 0-.4.14.65.65 0 0 0-.23.34L17.5 13.9H6.5L4.68 8.15a.65.65 0 0 0-.23-.34.63.63 0 0 0-.4-.14.64.64 0 0 0-.41.12.66.66 0 0 0-.25.33l-2.04 6.27a.88.88 0 0 0 .32 1l9.88 7.18a.65.65 0 0 0 .76 0l9.88-7.18a.88.88 0 0 0 .32-1z"/>
+            </svg>
+            <span>เข้าสู่ระบบด้วย GitLab SSO</span>
+          </button>
+
+          @if (canUseDevLogin() && quickLoginChips().length) {
+            <div class="login-demo">
+              <p class="login-demo__label">ทดสอบด่วน (เลือกบทบาท)</p>
+              <div class="login-demo__chips">
+                @for (chip of quickLoginChips(); track chip.id) {
+                  <button type="button" class="login-chip" [disabled]="busy()" (click)="quickLogin(chip.id)">
+                    @if (busy()) { <span class="e-icons e-spinner e-spin mr-1"></span> }
+                    {{ chip.label }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (isSignedInAdmin()) {
+            <button
+              type="button"
+              class="login-sync"
+              [disabled]="busy()"
+              (click)="syncMyProjectUsers()"
+            >
+              {{ busy() ? 'กำลังซิงค์…' : 'ซิงค์รายชื่อพนักงานจาก myProject' }}
+            </button>
+          }
+        </form>
+      </div>
+    </main>
+  </div>
 </div>
