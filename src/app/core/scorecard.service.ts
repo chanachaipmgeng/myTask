@@ -212,6 +212,7 @@ export class ScorecardService {
   private readonly mockModeState = signal(false);
   private snapshot: LocalSnapshot | null = null;
   private readyPromise: Promise<void> | null = null;
+  private reloadInFlight: Promise<boolean> | null = null;
   private resolveReadyWaiters: (() => void)[] = [];
 
   /** Memo scoreTicket ต่อใบ — ลดงาน computed ระดับรากเมื่อ tickets ไม่เปลี่ยนฟิลด์คะแนน */
@@ -352,6 +353,19 @@ export class ScorecardService {
   }
 
   async reloadFromApi(): Promise<boolean> {
+    if (this.reloadInFlight) {
+      return this.reloadInFlight;
+    }
+    const run = this.executeReloadFromApi().finally(() => {
+      if (this.reloadInFlight === run) {
+        this.reloadInFlight = null;
+      }
+    });
+    this.reloadInFlight = run;
+    return run;
+  }
+
+  private async executeReloadFromApi(): Promise<boolean> {
     if (this.mockModeState()) {
       this.bootstrapStateSig.set('ready');
       this.markReady();

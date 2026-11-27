@@ -182,12 +182,13 @@ export class BootstrapController {
     };
   }
 
-  /** Workspace ticket slice สำหรับ Scorecard hubs (SQL filter ไม่ SELECT *) */
+  /** Workspace ticket slice สำหรับ Scorecard hubs (SQL filter ไม่ SELECT * ทั้งตาราง) */
   @Get('bootstrap/tickets')
   async bootstrapTickets(@Req() req: AuthedRequest) {
-    const [rawPeople, visibility] = await Promise.all([
+    const [rawPeople, visibility, settings] = await Promise.all([
       listPeople(this.db),
       getVisibilityConfig(this.db),
+      getSettings(this.db),
     ]);
     const staging = this.config.openproject.teamStaging === 'rd' ? 'rd' : 'all';
     const activePeopleIds = rawPeople.map((p) => p.id);
@@ -204,17 +205,27 @@ export class BootstrapController {
       allowedAssigneeIds = scopedPeople.map((p) => p.id);
     }
 
-    const tickets = await listWorkItemsForWorkspace(this.db, {
+    const inactiveProjectKeys = (settings.openprojectProjectCatalog ?? [])
+      .filter((p) => p.active === false)
+      .flatMap((p) => [p.name, p.identifier])
+      .map((s) => (s ?? '').trim())
+      .filter(Boolean);
+
+    const { tickets, truncated } = await listWorkItemsForWorkspace(this.db, {
       mode: staging,
       activePeopleIds,
       allowedAssigneeIds,
-      closedWithinDays: 120,
+      inactiveProjectKeys,
+      closedWithinDays: 180,
+      openWithinDays: 365,
+      maxRows: 2_500,
     });
 
     return {
       tickets,
       source: 'workspace' as const,
       count: tickets.length,
+      truncated,
     };
   }
 }

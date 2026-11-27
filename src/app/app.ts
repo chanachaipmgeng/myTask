@@ -437,6 +437,8 @@ export class App implements AfterViewInit {
   protected readonly narrow = signal(false);
   protected readonly navOpen = signal(true);
   protected readonly collapsed = signal(false);
+  protected readonly alertsOpen = signal(false);
+  protected readonly alertRenderLimit = signal(50);
   protected readonly alertSearch = signal('');
   protected readonly alerts = this.scorecard.alerts;
   protected readonly alertsBadge = computed(() => {
@@ -459,6 +461,9 @@ export class App implements AfterViewInit {
         a.shortLabel.toLowerCase().includes(query),
     );
   });
+  protected readonly visibleAlerts = computed(() =>
+    this.filteredAlerts().slice(0, this.alertRenderLimit()),
+  );
   protected readonly mockMode = this.scorecard.mockMode;
   protected readonly usingApi = this.scorecard.usingApi;
   protected readonly bootstrapState = this.scorecard.bootstrapState;
@@ -710,7 +715,12 @@ export class App implements AfterViewInit {
   }
 
   protected onAlertSearch(value: string): void {
+    this.alertRenderLimit.set(50);
     this.alertSearch.set(value ?? '');
+  }
+
+  protected showMoreAlerts(): void {
+    this.alertRenderLimit.update((n) => n + 50);
   }
 
   protected onNavClose(): void {
@@ -720,19 +730,24 @@ export class App implements AfterViewInit {
   }
 
   protected openAlerts(): void {
+    this.alertRenderLimit.set(50);
+    this.alertsOpen.set(true);
     this.alertDialog?.open();
   }
 
   protected closeAlerts(): void {
+    this.alertsOpen.set(false);
     this.alertDialog?.close();
   }
 
   protected goToTicketBoard(): void {
+    this.alertsOpen.set(false);
     this.alertDialog?.close();
     void this.router.navigate(['/work/board']);
   }
 
   protected goToTicketScores(): void {
+    this.alertsOpen.set(false);
     this.alertDialog?.close();
     void this.router.navigate(['/quality/tickets']);
   }

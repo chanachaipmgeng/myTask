@@ -54,7 +54,7 @@ export class WorkTimeline {
     viewType: this.ganttViewType(),
     renderBaseline: this.viewMode() === 'project',
     allowSelection: true,
-    enableVirtualization: this.tasks().length > WorkTimeline.VIRTUALIZE_THRESHOLD,
+    enableVirtualization: false,
     allowExcelExport: true,
     treeColumnIndex: 1,
     gridLines: 'Horizontal',
@@ -165,7 +165,13 @@ export class WorkTimeline {
   protected readonly isTruncated = this.isVirtualized;
 
   protected readonly ganttTasks = computed(() => {
-    const list = this.tasks();
+    const raw = this.tasks();
+    // Cap ที่ 150 รายการแรกเพื่อไม่ให้ Syncfusion Gantt ค้างเมื่อมีใบงานจำนวนมาก
+    const list =
+      raw.length > WorkTimeline.VIRTUALIZE_THRESHOLD
+        ? raw.slice(0, WorkTimeline.VIRTUALIZE_THRESHOLD)
+        : raw;
+    const includedIds = new Set(list.map((t) => t.TaskID));
     const known = new Map(this.resources().map((r) => [r.resourceId, r.resourceName]));
     const resourceMode = this.viewMode() === 'resource';
     return list.map((task) => {
@@ -176,9 +182,11 @@ export class WorkTimeline {
           resourceId,
           resourceName: known.get(resourceId) ?? resourceId,
         }));
+      const safeParentId =
+        resourceMode || !task.ParentID || !includedIds.has(task.ParentID) ? null : task.ParentID;
       return {
         ...task,
-        ParentID: resourceMode ? null : task.ParentID,
+        ParentID: safeParentId,
         ResourceInfo: resourceInfo,
       };
     });
@@ -190,7 +198,9 @@ export class WorkTimeline {
       .map((t) => (t.StartDate ? new Date(t.StartDate).getTime() : NaN))
       .filter((n) => !isNaN(n));
     if (timestamps.length === 0) return undefined;
-    const earliest = new Date(Math.min(...timestamps));
+    const minCutoff = Date.now() - 90 * 86_400_000;
+    const earliestMs = Math.max(Math.min(...timestamps), minCutoff);
+    const earliest = new Date(earliestMs);
     earliest.setDate(earliest.getDate() - 3);
     return earliest;
   });

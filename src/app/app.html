@@ -669,46 +669,61 @@
   [options]="{ width: '560px', isModal: true, showCloseIcon: true, animationEffect: 'Fade' }"
   (closed)="closeAlerts()"
 >
-  @if (alerts().length === 0) {
-    <app-sf-message
-      content="ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate"
-      severity="Success"
-    />
-  } @else {
-    <div class="flex flex-col gap-3">
-      <app-sf-textbox
-        placeholder="ค้นหารหัสใบงาน หรือข้อความแจ้งเตือน..."
-        [value]="alertSearch()"
-        [clearButton]="true"
-        (valueChange)="onAlertSearch($event)"
+  @if (alertsOpen()) {
+    @if (alerts().length === 0) {
+      <app-sf-message
+        content="ไม่มีใบที่ใกล้หมดสัปดาห์หรือมีแนวโน้มเกิน estimate"
+        severity="Success"
       />
-      @if (filteredAlerts().length === 0) {
-        <p class="fine m-0 text-center py-4">ไม่พบรายการแจ้งเตือนที่ตรงกับคำค้นหา</p>
-      } @else {
-        @for (alert of filteredAlerts(); track alert.id) {
-          <app-section-card
-            variant="nested"
-            [title]="alert.ticketId"
-            [badge]="alert.shortLabel"
-            [badgeTone]="alert.kind === 'policy-breach' ? 'danger' : 'warning'"
-          >
-            <p class="m-0 text-sm">{{ alert.message }}</p>
-            @if (alert.ticketId) {
-              <div class="mt-2">
-                <button
-                  ejs-button
-                  cssClass="e-primary e-small"
-                  type="button"
-                  (click)="openTicketFromAlert(alert.ticketId)"
-                >
-                  ดูรายละเอียด
-                </button>
-              </div>
-            }
-          </app-section-card>
+    } @else {
+      <div class="flex flex-col gap-3">
+        <app-sf-textbox
+          placeholder="ค้นหารหัสใบงาน หรือข้อความแจ้งเตือน..."
+          [value]="alertSearch()"
+          [clearButton]="true"
+          (valueChange)="onAlertSearch($event)"
+        />
+        @if (filteredAlerts().length === 0) {
+          <p class="fine m-0 text-center py-4">ไม่พบรายการแจ้งเตือนที่ตรงกับคำค้นหา</p>
+        } @else {
+          <p class="fine m-0 text-xs">
+            แสดง {{ visibleAlerts().length }} จาก {{ filteredAlerts().length }} รายการ
+          </p>
+          @for (alert of visibleAlerts(); track alert.id) {
+            <app-section-card
+              variant="nested"
+              [title]="alert.ticketId"
+              [badge]="alert.shortLabel"
+              [badgeTone]="alert.kind === 'policy-breach' ? 'danger' : 'warning'"
+            >
+              <p class="m-0 text-sm">{{ alert.message }}</p>
+              @if (alert.ticketId) {
+                <div class="mt-2">
+                  <button
+                    ejs-button
+                    cssClass="e-primary e-small"
+                    type="button"
+                    (click)="openTicketFromAlert(alert.ticketId)"
+                  >
+                    ดูรายละเอียด
+                  </button>
+                </div>
+              }
+            </app-section-card>
+          }
+          @if (filteredAlerts().length > visibleAlerts().length) {
+            <button
+              ejs-button
+              cssClass="e-outline e-small"
+              type="button"
+              (click)="showMoreAlerts()"
+            >
+              แสดงเพิ่มอีก 50 รายการ (เหลืออีก {{ filteredAlerts().length - visibleAlerts().length }})
+            </button>
+          }
         }
-      }
-    </div>
+      </div>
+    }
   }
   <div sf-dialog-footer>
     <button ejs-button cssClass="e-outline" type="button" (click)="goToTicketScores()">ดูตารางคะแนน</button>

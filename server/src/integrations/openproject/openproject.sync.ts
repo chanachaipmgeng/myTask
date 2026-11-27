@@ -216,16 +216,33 @@ export class OpenProjectSyncService implements OnModuleInit {
           // Safe if table not populated or absent in minimal setups
         }
 
-        if (!mapping.projects?.length) {
-          this.log.warn(
-            'OpenProject sync: mapping.projects is empty — syncing every project the token can see. Set project identifiers on /integrations to narrow scope.',
-          );
+        let syncProjects = mapping.projects ?? [];
+        if (syncProjects.length === 0) {
+          const catalog = settings.openprojectProjectCatalog ?? [];
+          const hasInactive = catalog.some((p) => p.active === false);
+          if (hasInactive) {
+            syncProjects = catalog
+              .filter((p) => p.active !== false && p.identifier?.trim())
+              .map((p) => p.identifier.trim());
+            this.log.log(
+              `OpenProject sync: narrowing to ${syncProjects.length} active catalog projects (skipping disabled projects).`,
+            );
+          } else {
+            this.log.warn(
+              'OpenProject sync: mapping.projects is empty — syncing every project the token can see. Set project identifiers on /integrations to narrow scope.',
+            );
+          }
         }
 
-        const updatedSince = since ? since.toISOString() : null;
+        const windowDays = mapping.syncUpdatedWithinDays ?? 365;
+        const updatedSince = since
+          ? since.toISOString()
+          : windowDays > 0
+            ? new Date(Date.now() - windowDays * 86_400_000).toISOString()
+            : null;
         for await (const wp of client.paginateWorkPackages({
           updatedSince,
-          projects: mapping.projects,
+          projects: syncProjects,
         })) {
           try {
             const assigneeUser = idFromHref(singleLink(wp._links?.['assignee'])?.href);

@@ -11,10 +11,11 @@ export async function listWorkItems(db: Queryable): Promise<Ticket[]> {
 export type WorkspaceTicketMode = 'all' | 'rd';
 
 /**
- * Bootstrap / hub slice — ไม่ SELECT * ทั้งตาราง
- * - closed = false หรือปิดไม่เกิน closedWithinDays
- * - หรือ assignee อยู่ใน activePeopleIds
- * - โหมด rd: จำกัด RD หรือ assignee ที่ active
+ * Bootstrap / hub slice — กรองตามช่วงเวลาและไม่ SELECT * ทั้งตาราง
+ * - ใบปิด: เฉพาะที่ปิดภายใน closedWithinDays (ค่าเริ่ม 180 วัน)
+ * - ใบเปิด: เฉพาะที่มีความเคลื่อนไหว/กำหนดส่งภายใน openWithinDays (ค่าเริ่ม 365 วัน) หรือ local
+ * - ตัดใบงานจากโปรเจกต์ที่ถูกปิดใช้งานในแคตตาล็อก (inactiveProjectKeys)
+ * - จำกัดจำนวนแถวสูงสุด (maxRows, ค่าเริ่ม 2,500) และตัด note ยาวออกเพื่อลดขนาด JSON payload
  */
 export async function listWorkItemsForWorkspace(
   db: Queryable,
@@ -22,34 +23,41 @@ export async function listWorkItemsForWorkspace(
     mode: WorkspaceTicketMode;
     activePeopleIds: readonly string[];
     allowedAssigneeIds?: readonly string[] | null;
+    inactiveProjectKeys?: readonly string[];
     closedWithinDays?: number;
+    openWithinDays?: number;
+    maxRows?: number;
   },
-): Promise<Ticket[]> {
-  const days = Math.max(30, opts.closedWithinDays ?? 120);
-  const params: unknown[] = [days];
-  const where: string[] = [];
+): Promise<{ tickets: Ticket[]; truncated: boolean }> {
+  const closedDays = Math.max(30, opts.closedWithinDays ?? 180);
+  const openDays = Math.max(60, opts.openWithinDays ?? 365);
+  const maxRows = Math.max(100, Math.min(10_000, opts.maxRows ?? 2_500));
+  const params: unknown[] = [closedDays, openDays];
+  const where: string[] = [
+    `(
+      (closed = true AND closed_on >= (CURRENT_DATE - ($1::int * INTERVAL '1 day')))
+      OR (
+        closed = false
+        AND (
+          source = 'local'
+          OR updated_at >= (CURRENT_DATE - ($2::int * INTERVAL '1 day'))
+          OR COALESCE(data->>'dueOn','') >= to_char(CURRENT_DATE - ($2::int * INTERVAL '1 day'), 'YYYY-MM-DD')
+          OR COALESCE(data->>'firstDueOn','') >= to_char(CURRENT_DATE - ($2::int * INTERVAL '1 day'), 'YYYY-MM-DD')
+        )
+      )
+    )`,
+  ];
 
   if (opts.mode === 'rd') {
     params.push(opts.activePeopleIds);
     where.push(
       `(data->>'track' = 'RD' OR (assignee_id <> '' AND assignee_id = ANY($${params.length}::text[])))`,
     );
-  } else {
-    params.push(opts.activePeopleIds);
-    where.push(
-      `(closed = false
-        OR closed_on >= (CURRENT_DATE - ($1::int * INTERVAL '1 day'))
-        OR data->>'track' = 'RD'
-        OR (assignee_id <> '' AND assignee_id = ANY($${params.length}::text[]))
-        OR COALESCE(data->>'dueOn','') <> ''
-        OR COALESCE(data->>'firstDueOn','') <> ''
-        OR COALESCE(data->>'actualStartOn','') <> '')`,
-    );
   }
 
   if (opts.allowedAssigneeIds != null) {
     if (opts.allowedAssigneeIds.length === 0) {
-      return [];
+      return { tickets: [], truncated: false };
     }
     params.push(opts.allowedAssigneeIds);
     where.push(
@@ -57,9 +65,32 @@ export async function listWorkItemsForWorkspace(
     );
   }
 
-  const sql = `SELECT * FROM work_items WHERE ${where.join(' AND ')} ORDER BY id`;
+  const inactive = (opts.inactiveProjectKeys ?? []).map((s) => s.trim()).filter(Boolean);
+  if (inactive.length > 0) {
+    params.push(inactive);
+    where.push(`NOT (COALESCE(data->>'opProject','') = ANY($${params.length}::text[]))`);
+  }
+
+  params.push(maxRows + 1);
+  const sql = `SELECT * FROM work_items
+    WHERE ${where.join(' AND ')}
+    ORDER BY closed ASC, updated_at DESC, id ASC
+    LIMIT $${params.length}`;
   const rows = await db.query<WorkItemRow>(sql, params);
-  return rows.map(ticketFromRow);
+  const truncated = rows.length > maxRows;
+  const sliced = truncated ? rows.slice(0, maxRows) : rows;
+  const tickets = sliced.map((row) => slimTicketForWorkspace(ticketFromRow(row)));
+  return { tickets, truncated };
+}
+
+function slimTicketForWorkspace(ticket: Ticket): Ticket {
+  if (!ticket.note || ticket.note.length <= 240) {
+    return ticket;
+  }
+  return {
+    ...ticket,
+    note: `${ticket.note.slice(0, 237)}...`,
+  };
 }
 
 const SORT_SQL: Record<string, string> = {

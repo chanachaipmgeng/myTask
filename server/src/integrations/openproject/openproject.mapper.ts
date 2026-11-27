@@ -53,8 +53,10 @@ export function coerceTrack(value: string | null | undefined): Track | null {
 
 /** Admin-editable mapping from an OpenProject instance to the scorecard model. */
 export interface OpenProjectMapping {
-  /** Project identifiers to sync. Empty = every project the token can see. */
+  /** Project identifiers to sync. Empty = every active project the token can see. */
   projects: string[];
+  /** On initial/full sync (when no prior sync timestamp), only pull WPs updated within N days (default 365, 0 = all). */
+  syncUpdatedWithinDays?: number;
   /** OpenProject status name -> pipeline column. Matching ignores case. */
   statusMap: Record<string, WorkflowStatus>;
   /** OpenProject type name -> scorecard type. */
