@@ -31,7 +31,7 @@ export async function upsertPerson(
   db: Queryable,
   person: Person & { access?: AccessRole; active?: boolean },
 ): Promise<Person> {
-  await db.query(
+  const rows = await db.query<PersonRow>(
     `INSERT INTO people (
        id, nickname, full_name, role_title, level, track, planned_md, team_id, access,
        email, gitlab_username, openproject_user_id, active, avatar_url, department, unit, job_title
@@ -52,7 +52,8 @@ export async function upsertPerson(
        avatar_url = COALESCE(EXCLUDED.avatar_url, people.avatar_url),
        department = COALESCE(EXCLUDED.department, people.department),
        unit = COALESCE(EXCLUDED.unit, people.unit),
-       job_title = COALESCE(EXCLUDED.job_title, people.job_title)`,
+       job_title = COALESCE(EXCLUDED.job_title, people.job_title)
+     RETURNING *`,
     [
       person.id,
       person.nickname,
@@ -73,11 +74,10 @@ export async function upsertPerson(
       person.jobTitle ?? null,
     ],
   );
-  const saved = await getPerson(db, person.id);
-  if (!saved) {
+  if (!rows[0]) {
     throw new Error(`failed to upsert person ${person.id}`);
   }
-  return saved;
+  return personFromRow(rows[0]);
 }
 
 export async function setPersonOpenProjectUser(
@@ -112,7 +112,7 @@ export async function upsertTeam(db: Queryable, team: Team): Promise<void> {
      ON CONFLICT (id) DO UPDATE SET
        department_id = EXCLUDED.department_id,
        name = EXCLUDED.name,
-       lead_id = EXCLUDED.lead_id`,
+       lead_id = COALESCE(EXCLUDED.lead_id, teams.lead_id)`,
     [team.id, team.departmentId, team.name, team.leadId],
   );
 }

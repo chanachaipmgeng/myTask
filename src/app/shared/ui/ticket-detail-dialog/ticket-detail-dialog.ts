@@ -73,7 +73,7 @@ export class TicketDetailDialogComponent {
   protected readonly loading = signal(false);
   protected readonly data = signal<TicketDetailResponse | null>(null);
   protected readonly logHours = signal(1);
-  protected readonly logDate = signal(new Date().toISOString().slice(0, 10));
+  protected readonly logDate = signal(todayInBangkok());
   protected readonly logComment = signal('');
   protected readonly replyComment = signal('');
   protected readonly workflowStatusToneMap = workflowStatusToneMap;
@@ -87,6 +87,7 @@ export class TicketDetailDialogComponent {
   protected readonly ticketGitEvents = signal<GitActivityRow[]>([]);
   protected readonly loadingTicketGit = signal(false);
   private ticketGitLoadedFor = '';
+  private loadSeq = 0;
   private static gitlabProjectsCache: { text: string; value: string }[] | null = null;
 
   protected readonly canCreateBranch = computed(() => {
@@ -302,12 +303,14 @@ export class TicketDetailDialogComponent {
   }
 
   private async load(id: string): Promise<void> {
+    const seq = ++this.loadSeq;
     this.loading.set(true);
     this.createdBranchUrl.set(null);
     this.ticketGitEvents.set([]);
     try {
       if (this.scorecard.usingApi()) {
         const res = await this.api.getWorkItemDetail(id);
+        if (seq !== this.loadSeq) return;
         this.data.set(res);
         if (!res.ok) {
           const local = this.offlineDetail(id);
@@ -332,6 +335,7 @@ export class TicketDetailDialogComponent {
       this.ticketGitLoadedFor = '';
       // Git projects + activity โหลดเมื่อเข้าแท็บ「โค้ด & MR」เท่านั้น
     } catch {
+      if (seq !== this.loadSeq) return;
       const local = this.offlineDetail(id);
       this.data.set(
         local ?? {
@@ -345,7 +349,9 @@ export class TicketDetailDialogComponent {
       this.ticketGitEvents.set([]);
       this.ticketGitLoadedFor = '';
     } finally {
-      this.loading.set(false);
+      if (seq === this.loadSeq) {
+        this.loading.set(false);
+      }
     }
   }
 

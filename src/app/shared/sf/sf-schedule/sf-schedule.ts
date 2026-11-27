@@ -193,7 +193,9 @@ export class SfScheduleComponent implements AfterViewInit, OnDestroy {
     if (typeof ResizeObserver !== 'undefined' && this.hostBox?.nativeElement) {
       this.resizeObserver = new ResizeObserver(() => {
         if (this.resizeTimer) clearTimeout(this.resizeTimer);
-        this.resizeTimer = setTimeout(() => this.scheduleRef?.refreshLayout(), 180);
+        this.resizeTimer = setTimeout(() => {
+          if (this.scheduleRef && !this.scheduleRef.isDestroyed) this.scheduleRef.refreshLayout();
+        }, 180);
       });
       this.resizeObserver.observe(this.hostBox.nativeElement);
     }

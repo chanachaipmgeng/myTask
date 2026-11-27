@@ -8,7 +8,7 @@ import { WorkspaceFilter } from '../../core/workspace-filter';
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { PersonAvatarComponent } from '../../shared/ui/person-avatar/person-avatar';
 import { SectionCardComponent } from '../../shared/ui/section-card/section-card';
-import { SfTextBoxComponent } from '../../shared/ui';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 
 @Component({
   selector: 'app-org-teams-hub',

@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { effectiveRole } from './core/admin-settings';
 import { requireRoles, requireSelfOrManager } from './core/role.guard';
 
 const workChildren = [
@@ -297,5 +296,9 @@ export const routes: Routes = [
     path: 'mockup',
     redirectTo: 'quality/mockup',
     pathMatch: 'full',
+  },
+  {
+    path: '**',
+    redirectTo: 'me',
   },
 ];

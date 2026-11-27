@@ -32,19 +32,19 @@ import {
   FormFieldComponent,
   PageHeadComponent,
   SectionCardComponent,
-  SfDialogComponent,
-  SfDropdownComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
+import { SfDialogComponent } from '../../shared/sf/sf-dialog/sf-dialog';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  SfSplitterComponent,
-  SfSplitterOptions,
-  SfSplitterPane,
-  SfTextBoxComponent,
-  StatusBadgeComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfSplitterComponent, SfSplitterOptions, SfSplitterPane } from '../../shared/sf/sf-splitter/sf-splitter';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 
 @Component({
   selector: 'app-disputes',
@@ -252,7 +252,7 @@ export class DisputesPage implements OnInit {
   }
 
   protected openCreateDialog(): void {
-    const firstTicket = this.scorecard.tickets()[0]?.id ?? '';
+    const firstTicket = this.ticketOptions()[0]?.value ?? '';
     this.newTicketId.set(firstTicket);
     this.newRequestedFlag.set('BLK');
     this.newReason.set('');

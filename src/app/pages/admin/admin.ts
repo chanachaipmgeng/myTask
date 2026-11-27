@@ -38,20 +38,22 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfCheckboxComponent,
-  SfDatePickerComponent,
-  SfDropdownComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
+import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
+import { SfDatePickerComponent } from '../../shared/sf/sf-datepicker/sf-datepicker';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  SfMultiSelectComponent,
-  SfNumberComponent,
-  SfProgressComponent,
-  SfTextBoxComponent,
-  StatusBadgeComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfMultiSelectComponent } from '../../shared/sf/sf-multiselect/sf-multiselect';
+import { SfNumberComponent } from '../../shared/sf/sf-number/sf-number';
+import { SfProgressComponent } from '../../shared/sf/sf-progress/sf-progress';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 
 @Component({
   selector: 'app-admin',
@@ -388,7 +390,7 @@ export class AdminPage {
   });
 
   constructor() {
-    void this.loadAuditLogs();
+    void this.scorecard.whenReady().then(() => this.loadAuditLogs());
     effect(() => {
       const v = this.scorecard.visibility();
       if (!this.matrixInitialized() && v.matrix) {
@@ -566,19 +568,23 @@ export class AdminPage {
     if (val !== 'admin' && val !== 'lead' && val !== 'member') {
       return;
     }
+    if (this.usingApi()) {
+      try {
+        await this.api.updatePersonAccess(personId, { access: val });
+        setPersonAccess(personId, val);
+        this.appendLocalAudit('person.update_access', personId, `access=${val}`);
+        this.status.set(`อัปเดตสิทธิ์ของ ${personId} เป็น ${val} แล้ว`);
+        await this.loadAuditLogs();
+      } catch (err) {
+        this.status.set(`อัปเดตสิทธิ์ของ ${personId} ไม่สำเร็จ: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      return;
+    }
     if (!setPersonAccess(personId, val)) {
       return;
     }
     this.appendLocalAudit('person.update_access', personId, `access=${val}`);
     this.status.set(`อัปเดตสิทธิ์ของ ${personId} เป็น ${val} แล้ว`);
-    if (this.usingApi()) {
-      try {
-        await this.api.updatePersonAccess(personId, { access: val });
-        await this.loadAuditLogs();
-      } catch {
-        // Keep local override
-      }
-    }
   }
 
   protected onWeight(key: WeightKey, raw: number): void {

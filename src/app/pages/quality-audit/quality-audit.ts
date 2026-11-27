@@ -8,21 +8,16 @@ import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { PageHeadComponent, SectionCardComponent, StatusBadgeComponent } from '../../shared/ui';
+import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
 import {
-  PageHeadComponent,
-  SectionCardComponent,
-  SfChartComponent,
-  SfChartOptions,
-  SfChartSeriesConfig,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  SfTabItem,
-  SfTabsComponent,
-  StatusBadgeComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfTabItem, SfTabsComponent } from '../../shared/sf/sf-tabs/sf-tabs';
 
 export interface ParetoCausePoint {
   cause: string;
@@ -87,16 +82,17 @@ export class QualityAuditPage {
     const map = new Map<string, number>();
 
     if (list.length === 0) {
-      map.set('Requirement คลุมเครือ/เปลี่ยนสเปก', 8);
-      map.set('Logic Bug & ขาด Edge Case', 6);
-      map.set('Environment & CI/CD Config', 4);
-      map.set('Regression จากโค้ดส่วนอื่น', 2);
-      map.set('DoD ไม่ครบ / ขาด Unit Test', 1);
-    } else {
-      for (const item of list) {
-        const cause = item.bugCause?.trim() || 'ไม่ระบุสาเหตุ';
-        map.set(cause, (map.get(cause) ?? 0) + (item.reopenCount || 1));
-      }
+      return {
+        points: [] as ParetoCausePoint[],
+        total: 0,
+        vitalFewCount: 0,
+        insight: 'ยังไม่มีข้อมูลการ Reopen / Bug Escape ในช่วงที่เลือก',
+      };
+    }
+
+    for (const item of list) {
+      const cause = item.bugCause?.trim() || 'ไม่ระบุสาเหตุ';
+      map.set(cause, (map.get(cause) ?? 0) + (item.reopenCount || 1));
     }
 
     const sorted = Array.from(map.entries())
@@ -268,7 +264,7 @@ export class QualityAuditPage {
     }
     const updated = {
       ...ticket,
-      workflowStatus: 'In Progress' as const,
+      workflowStatus: 'Reopened' as const,
       closed: false,
       closedOn: null,
       reopenCount: (ticket.reopenCount ?? 0) + 1,

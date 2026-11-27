@@ -32,6 +32,9 @@ export class AuthGuard implements CanActivate {
       context.getClass(),
     ]);
     const req = context.switchToHttp().getRequest<AuthedRequest>();
+    if (isPublic && (req.path === '/api/health/live' || req.path === '/api/health')) {
+      return true;
+    }
     const token = readSession(req);
     const user = await this.auth.userFromRequest(token);
     if (user) {

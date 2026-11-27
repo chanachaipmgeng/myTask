@@ -30,6 +30,7 @@ import { TicketDetailService } from '../../core/ticket-detail.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { Person, Ticket, WorkflowStatus, normalizeTrack, trackDisplayLabel } from '../../core/models';
 import { workflowStatusOf } from '../../core/workflow';
+import { resolvePersonTeamId } from '../../core/work-views';
 import {
   BadgeTone,
   FilterChipOption,
@@ -39,20 +40,16 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfCalendarComponent,
-  SfChartComponent,
-  SfChartOptions,
-  SfChartSeriesConfig,
-  SfDialogComponent,
-  SfDropdownComponent,
-  SfMessageComponent,
-  SfScheduleComponent,
-  SfScheduleOptions,
-  SfScheduleResource,
   StaggerDirective,
   StatusBadgeComponent,
   workflowStatusToneMap,
 } from '../../shared/ui';
+import { SfCalendarComponent } from '../../shared/sf/sf-calendar/sf-calendar';
+import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
+import { SfDialogComponent } from '../../shared/sf/sf-dialog/sf-dialog';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfScheduleComponent, SfScheduleOptions, SfScheduleResource } from '../../shared/sf/sf-schedule/sf-schedule';
 import { listOrgTeamOptions, type WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
 interface LoadChartRow {
@@ -286,7 +283,7 @@ export class SchedulePage {
     return this.scopedPeople().filter(
       (person) =>
         (track === 'All' || normalizeTrack(person.track) === normalizeTrack(track)) &&
-        (team === 'All' || person.teamId === team),
+        (team === 'All' || resolvePersonTeamId(person) === team),
     ).length;
   });
 
@@ -322,7 +319,7 @@ export class SchedulePage {
       .filter(
         (person) =>
           (track === 'All' || normalizeTrack(person.track) === normalizeTrack(track)) &&
-          (team === 'All' || person.teamId === team),
+          (team === 'All' || resolvePersonTeamId(person) === team),
       )
       .slice()
       .sort((a, b) => a.nickname.localeCompare(b.nickname, 'th'));
@@ -409,10 +406,10 @@ export class SchedulePage {
     effect(() => {
       const ready = this.scorecard.apiReady();
       const board = this.board()?.instance();
-      const events = buildTeamSchedule(this.scopedPeople(), this.scopedTickets(), 'All', 'All').events;
       if (!ready || !board || this.pinned) {
         return;
       }
+      const events = buildTeamSchedule(this.scopedPeople(), this.scopedTickets(), 'All', 'All').events;
       this.pinned = true;
       const focused = focusDate(events);
       this.selectedDay.set(focused);
@@ -671,7 +668,7 @@ function buildTeamSchedule(
   const byTrackAndTeam = people.filter(
     (person) =>
       (track === 'All' || normalizeTrack(person.track) === normalizeTrack(track)) &&
-      (teamId === 'All' || person.teamId === teamId),
+      (teamId === 'All' || resolvePersonTeamId(person) === teamId),
   );
   let visiblePeople: readonly Person[];
   if (personId !== 'All') {
@@ -728,7 +725,7 @@ function buildTeamSchedule(
   return {
     people: visiblePeople.map((person) => ({
       Id: person.id,
-      Text: `${person.nickname} · ${person.track === 'RD' ? 'R&D' : 'Implement'}`,
+      Text: `${person.nickname} · ${trackDisplayLabel(person.track)}`,
       Color: colorFor(person.id),
     })),
     events,

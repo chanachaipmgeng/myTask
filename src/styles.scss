@@ -1689,7 +1689,4 @@ textarea:focus-visible,
   outline-offset: 2px;
 }
 
-/* ==========================================================================
-   Syncfusion point overrides (หลัง tokens + layout) — จุดกลาง
-   ========================================================================== */
-@import './styles/sf/index';
+/* Syncfusion point overrides โหลดต่อท้ายผ่าน angular.json (src/styles/sf/index.scss) */

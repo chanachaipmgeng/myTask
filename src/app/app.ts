@@ -543,7 +543,12 @@ export class App implements AfterViewInit {
   protected readonly userTrackLevel = computed(() => {
     const person = this.currentPerson();
     if (!person) return '';
-    const track = person.track === 'RD' ? 'R&D' : 'IMP';
+    const track =
+      person.track === 'RD' || person.track === 'RND'
+        ? 'R&D'
+        : person.track === 'Implement' || person.track === 'IMP'
+          ? 'IMP'
+          : person.track;
     const roleOrLevel = person.jobTitle || `${track} · ${person.level ?? ''}`;
     return roleOrLevel;
   });

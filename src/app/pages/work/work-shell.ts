@@ -15,7 +15,7 @@ import {
 import { PageHeadComponent } from '../../shared/ui/page-head/page-head';
 import { FilterChipOption, FilterChipsComponent } from '../../shared/ui/filter-chips/filter-chips';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field';
-import { SfTextBoxComponent } from '../../shared/sf';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { listOrgTeamOptions } from '../../../../shared/domain/workspace-scope';
 import { WorkHubFilter, WorkHubScope } from './work-hub-filter';
@@ -183,7 +183,7 @@ export class WorkShell {
     const withoutProject = filterWorkTickets(this.scorecard.tickets(), { ...base, opProject: undefined });
     const fromTickets = listWorkProjectOptions(withoutProject);
     const catalog = openprojectProjectCatalog();
-    const isAdmin = currentViewer().access === 'admin';
+    const isAdmin = effectiveRole() === 'admin';
     const allowedTeams = this.scorecard.effectiveAllowedTeams();
 
     const catalogMap = new Map<string, (typeof catalog)[number]>();

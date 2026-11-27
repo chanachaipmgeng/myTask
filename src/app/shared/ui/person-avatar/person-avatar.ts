@@ -88,15 +88,14 @@ export class PersonAvatarComponent {
   protected readonly imgStage = signal<0 | 1 | 2>(0);
 
   protected readonly resolvedPerson = computed<Person | null>(() => {
-    const roster = this.scorecard.roster();
+    const byId = this.scorecard.peopleById();
     const id = this.personId()?.trim();
     if (id) {
-      const hit = roster.find((p) => p.id === id);
+      const hit = byId.get(id);
       if (hit) return hit;
       const opMatch = /^op:(\d+)$/i.exec(id);
       if (opMatch) {
-        const opId = Number(opMatch[1]);
-        const opHit = roster.find((p) => p.openprojectUserId === opId);
+        const opHit = byId.get(`op:${opMatch[1]}`);
         if (opHit) return opHit;
       }
     }
@@ -104,10 +103,10 @@ export class PersonAvatarComponent {
     if (rawName && rawName !== '-' && rawName !== 'ยังไม่ระบุ') {
       const opMatch = /^op:(\d+)$/i.exec(rawName);
       if (opMatch) {
-        const opId = Number(opMatch[1]);
-        const opHit = roster.find((p) => p.openprojectUserId === opId);
+        const opHit = byId.get(`op:${opMatch[1]}`);
         if (opHit) return opHit;
       }
+      const roster = this.scorecard.roster();
       const lower = rawName.toLowerCase();
       return (
         roster.find(

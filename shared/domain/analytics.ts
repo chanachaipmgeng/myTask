@@ -1,5 +1,5 @@
-import { Person, Size, Ticket } from './models';
-import { scorePerson } from './scoring';
+import { Person, Size, Ticket, trackDisplayLabel } from './models';
+import { scorePerson, scoreTicket } from './scoring';
 import { workflowStatusOf } from './workflow';
 
 export type HygieneIssueType =
@@ -372,11 +372,7 @@ export function buildAnalyticsReport(
     const closed = tickets.filter((t) => t.assigneeId === person.id && t.closed);
     const openWip = openCountByPerson.get(person.id) ?? 0;
 
-    const accurateCount = closed.filter((t) => {
-      if (t.estimateMd <= 0) return false;
-      const r = t.actualMd / t.estimateMd;
-      return r >= 0.8 && r <= 1.5;
-    }).length;
+    const accurateCount = closed.filter((t) => scoreTicket(t).accuracyInBand).length;
     const onTimeCount = closed.filter((t) => t.weekOffset === 0 || ['REQ', 'BLK', 'ENV'].includes(t.varianceCode)).length;
     const firstPassCount = closed.filter((t) => t.reviewRounds <= 2 && !t.blocker && t.reopenCount === 0).length;
 
@@ -385,8 +381,16 @@ export function buildAnalyticsReport(
     const onTimePct = round1((onTimeCount / denom) * 100);
     const firstPassPct = round1((firstPassCount / denom) * 100);
 
-    // Monthly OLS slope
-    const months = ['2025-08', '2025-09', '2025-10'];
+    // Dynamic monthly OLS slope across up to last 6 active closed months
+    const monthSet = new Set<string>();
+    for (const t of closed) {
+      const raw = t.closedOn as unknown;
+      const d = raw instanceof Date ? raw.toISOString().slice(0, 10) : String(raw ?? '');
+      if (/^\d{4}-\d{2}/.test(d)) {
+        monthSet.add(d.slice(0, 7));
+      }
+    }
+    const months = [...monthSet].sort().slice(-6);
     const yValues: number[] = [];
     for (const m of months) {
       const mTickets = closed.filter((t) => {
@@ -424,7 +428,7 @@ export function buildAnalyticsReport(
       personId: person.id,
       nickname: person.nickname,
       role: person.role,
-      trackLabel: person.track === 'RD' ? 'R&D' : 'Implement',
+      trackLabel: trackDisplayLabel(person.track),
       developmentIndex: personScore.developmentIndex !== null ? round1(personScore.developmentIndex) : null,
       trendSlope: round2(slope),
       trendLabel,

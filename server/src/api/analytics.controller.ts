@@ -49,28 +49,42 @@ export class AnalyticsController {
   }
 }
 
-export async function runPythonAnalyticsOrFallback(
-  people: readonly Person[],
-  tickets: readonly Ticket[],
-): Promise<AnalyticsReport> {
+let cachedPythonCmd: string | null | undefined;
+let cachedScriptPath: string | null | undefined;
+
+function resolveScriptPath(): string | null {
+  if (cachedScriptPath !== undefined) return cachedScriptPath;
   const candidates = [
     resolve(process.cwd(), 'scripts/analytics_engine.py'),
     resolve(process.cwd(), '../scripts/analytics_engine.py'),
   ];
-  const scriptPath = candidates.find((p) => existsSync(p));
-  if (!scriptPath) {
+  cachedScriptPath = candidates.find((p) => existsSync(p)) ?? null;
+  return cachedScriptPath;
+}
+
+export async function runPythonAnalyticsOrFallback(
+  people: readonly Person[],
+  tickets: readonly Ticket[],
+): Promise<AnalyticsReport> {
+  const scriptPath = resolveScriptPath();
+  if (!scriptPath || cachedPythonCmd === null) {
     return buildAnalyticsReport(people, tickets, 'typescript-fallback');
   }
 
-  for (const cmd of ['python', 'python3', 'py']) {
+  const cmds = cachedPythonCmd ? [cachedPythonCmd] : ['python', 'python3', 'py'];
+  for (const cmd of cmds) {
     try {
       const report = await invokePythonScript(cmd, scriptPath, { people, tickets });
       if (report && report.syncHygiene) {
+        cachedPythonCmd = cmd;
         return report;
       }
     } catch {
       // Try next python binary candidate
     }
+  }
+  if (!cachedPythonCmd) {
+    cachedPythonCmd = null;
   }
   return buildAnalyticsReport(people, tickets, 'typescript-fallback');
 }

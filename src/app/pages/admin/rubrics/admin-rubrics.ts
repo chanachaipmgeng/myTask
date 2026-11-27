@@ -1,20 +1,21 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ApiClient } from '../../../core/api-client';
 import { DEFAULT_RUBRICS, RubricDefinition } from '../../../core/rubrics';
 import { ScorecardService } from '../../../core/scorecard.service';
+import { ShellNotice } from '../../../core/shell-notice';
 import { ThemeService } from '../../../core/theme.service';
+import { PageHeadComponent } from '../../../shared/ui/page-head/page-head';
+import { SectionCardComponent } from '../../../shared/ui/section-card/section-card';
+import { FlashMessagesComponent } from '../../../shared/ui/flash-messages/flash-messages';
+import { KpiStatCardComponent } from '../../../shared/kpi-stat-card/kpi-stat-card';
 import {
-  FlashMessagesComponent,
-  KpiStatCardComponent,
-  PageHeadComponent,
-  SectionCardComponent,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-} from '../../../shared/ui';
+} from '../../../shared/sf/sf-grid/sf-grid';
 
 interface RubricGridRow {
   rubric_id: string;
@@ -44,11 +45,20 @@ interface RubricGridRow {
 export class AdminRubricsPage implements OnInit {
   private readonly api = inject(ApiClient);
   private readonly scorecard = inject(ScorecardService);
+  private readonly notice = inject(ShellNotice);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly theme = inject(ThemeService);
 
   protected readonly rubrics = signal<RubricGridRow[]>([]);
   protected readonly loading = signal(true);
   protected readonly saveNotice = signal<string | null>(null);
+  private noticeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.noticeTimer) clearTimeout(this.noticeTimer);
+    });
+  }
 
   protected readonly columns: SfGridColumn[] = [
     { field: 'rubric_id', headerText: 'รหัส Rubric', width: 120, isPrimaryKey: true },
@@ -62,7 +72,8 @@ export class AdminRubricsPage implements OnInit {
 
   protected readonly gridOptions: SfGridOptions = listGridOptions({
     id: 'admin-rubrics-grid',
-    paging: false,
+    paging: true,
+    pageSize: 20,
     allowTextWrap: true,
     excelExport: true,
     gridLines: 'Both',
@@ -122,23 +133,35 @@ export class AdminRubricsPage implements OnInit {
   protected async onActionComplete(args: any): Promise<void> {
     if (args.requestType === 'save') {
       const row = args.data as RubricGridRow;
-      let parsedParams = {};
+      let parsedParams: unknown;
       try {
         parsedParams = JSON.parse(row.paramsJson);
-      } catch {
-        parsedParams = {};
+      } catch (parseErr: any) {
+        const msg = `รูปแบบ JSON ของ ${row.rubric_id} ไม่ถูกต้อง (${parseErr?.message || 'Syntax Error'}) — ยกเลิกการบันทึกเพื่อป้องกันพารามิเตอร์สูญหาย`;
+        this.saveNotice.set(msg);
+        this.notice.error(msg, 'JSON ไม่ถูกต้อง');
+        await this.loadRubrics();
+        return;
+      }
+      if (!parsedParams || typeof parsedParams !== 'object' || Array.isArray(parsedParams)) {
+        const msg = `พารามิเตอร์ JSON ของ ${row.rubric_id} ต้องเป็น JSON Object ({ ... }) เท่านั้น`;
+        this.saveNotice.set(msg);
+        this.notice.error(msg, 'JSON ไม่ถูกต้อง');
+        await this.loadRubrics();
+        return;
       }
       try {
         const patch: Partial<RubricDefinition> = {
           title: row.title,
           description: row.description,
           is_active: row.is_active,
-          params: parsedParams,
+          params: parsedParams as Record<string, unknown>,
         };
         const res = await this.api.updateRubric(row.rubric_id, patch);
         if (res.ok) {
           this.saveNotice.set(`บันทึกเกณฑ์ ${row.rubric_id} (${row.title}) เรียบร้อยแล้ว`);
-          setTimeout(() => this.saveNotice.set(null), 4000);
+          if (this.noticeTimer) clearTimeout(this.noticeTimer);
+          this.noticeTimer = setTimeout(() => this.saveNotice.set(null), 4000);
           await this.loadRubrics();
         }
       } catch (err: any) {

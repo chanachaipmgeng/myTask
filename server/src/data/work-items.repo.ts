@@ -246,8 +246,9 @@ function buildWorkItemWhere(query: WorkItemPageQuery): { whereSql: string; param
   if (query.q) {
     params.push(`%${query.q}%`);
     const p = params.length;
+    // Match GIN trigram index work_items_search_trgm_idx expression directly
     clauses.push(
-      `(id ILIKE $${p} OR COALESCE(data->>'title','') ILIKE $${p} OR COALESCE(data->>'module','') ILIKE $${p} OR assignee_id ILIKE $${p})`,
+      `((id || ' ' || COALESCE(data->>'title', '') || ' ' || COALESCE(data->>'module', '')) ILIKE $${p} OR assignee_id ILIKE $${p})`,
     );
   }
 
@@ -299,7 +300,7 @@ export async function queryWorkItemsPage(
   };
 }
 
-/** Lightweight local search — capped, SQL ILIKE (ไม่โหลดทั้งตาราง) */
+/** Lightweight local search — matches work_items_search_trgm_idx GIN trigram index */
 export async function searchWorkItemsLocal(
   db: Queryable,
   q: string,
@@ -309,12 +310,18 @@ export async function searchWorkItemsLocal(
   if (!q.trim()) return [];
   const rows = await db.query<WorkItemRow>(
     `SELECT * FROM work_items
-     WHERE id ILIKE $1
-        OR COALESCE(data->>'title','') ILIKE $1
-        OR COALESCE(data->>'module','') ILIKE $1
+     WHERE (id || ' ' || COALESCE(data->>'title', '') || ' ' || COALESCE(data->>'module', '')) ILIKE $1
      ORDER BY closed ASC, updated_at DESC NULLS LAST
      LIMIT $2`,
     [needle, limit],
+  );
+  return rows.map(ticketFromRow);
+}
+
+export async function listOpenWorkItemsByAssignee(db: Queryable, assigneeId: string): Promise<Ticket[]> {
+  const rows = await db.query<WorkItemRow>(
+    `SELECT * FROM work_items WHERE assignee_id = $1 AND closed = false ORDER BY id`,
+    [assigneeId],
   );
   return rows.map(ticketFromRow);
 }
@@ -331,7 +338,7 @@ export async function getWorkItemByOpId(db: Queryable, opId: number): Promise<Ti
 
 export async function upsertWorkItem(db: Queryable, ticket: Ticket, syncedAt: Date | null = null): Promise<Ticket> {
   const source = ticket.source ?? 'local';
-  await db.query(
+  const rows = await db.query<WorkItemRow>(
     `INSERT INTO work_items (id, source, op_id, assignee_id, closed, closed_on, data, synced_at, updated_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, now())
      ON CONFLICT (id) DO UPDATE SET
@@ -342,7 +349,8 @@ export async function upsertWorkItem(db: Queryable, ticket: Ticket, syncedAt: Da
        closed_on = EXCLUDED.closed_on,
        data = EXCLUDED.data,
        synced_at = COALESCE(EXCLUDED.synced_at, work_items.synced_at),
-       updated_at = now()`,
+       updated_at = now()
+     RETURNING *`,
     [
       ticket.id,
       source,
@@ -354,22 +362,43 @@ export async function upsertWorkItem(db: Queryable, ticket: Ticket, syncedAt: Da
       syncedAt,
     ],
   );
-  const saved = await getWorkItem(db, ticket.id);
-  if (!saved) {
+  if (!rows[0]) {
     throw new Error(`failed to upsert work item ${ticket.id}`);
   }
-  return saved;
+  return ticketFromRow(rows[0]);
 }
 
 export async function insertWorkItems(db: Queryable, tickets: readonly Ticket[]): Promise<string[]> {
+  if (tickets.length === 0) return [];
   const added: string[] = [];
-  for (const ticket of tickets) {
-    const existing = await getWorkItem(db, ticket.id);
-    if (existing) {
-      continue;
+  const chunkSize = 200;
+  for (let i = 0; i < tickets.length; i += chunkSize) {
+    const chunk = tickets.slice(i, i + chunkSize);
+    const values: string[] = [];
+    const params: unknown[] = [];
+    chunk.forEach((ticket, idx) => {
+      const base = idx * 7;
+      values.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}::jsonb, NULL, now())`);
+      params.push(
+        ticket.id,
+        ticket.source ?? 'local',
+        ticket.opId ?? null,
+        ticket.assigneeId,
+        ticket.closed,
+        ticket.closedOn,
+        JSON.stringify(ticket),
+      );
+    });
+    const rows = await db.query<{ id: string }>(
+      `INSERT INTO work_items (id, source, op_id, assignee_id, closed, closed_on, data, synced_at, updated_at)
+       VALUES ${values.join(', ')}
+       ON CONFLICT (id) DO NOTHING
+       RETURNING id`,
+      params,
+    );
+    for (const r of rows) {
+      added.push(r.id);
     }
-    await upsertWorkItem(db, ticket);
-    added.push(ticket.id);
   }
   return added;
 }

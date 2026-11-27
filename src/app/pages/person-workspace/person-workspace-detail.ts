@@ -24,17 +24,19 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfDropdownComponent,
-  SfGridColumn,
-  SfGridComponent,
-  SfGridOptions,
-  SfProgressComponent,
   StaggerDirective,
   StatusBadgeComponent,
   TicketCreateDialogComponent,
-  listGridOptions,
   workflowStatusToneMap,
 } from '../../shared/ui';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import {
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  listGridOptions,
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfProgressComponent } from '../../shared/sf/sf-progress/sf-progress';
 
 type PersonWsTab = 'overview' | 'work' | 'tickets' | 'schedule' | 'analytics' | 'git';
 

@@ -19,26 +19,23 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfChartComponent,
-  SfChartOptions,
-  SfChartSeriesConfig,
-  SfDonutChartComponent,
-  SfHeatmapCell,
-  SfHeatmapComponent,
-  SfHeatmapOptions,
-  SfDonutChartOptions,
-  SfDropdownComponent,
+  prismChartPalette,
+} from '../../shared/ui';
+import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
+import { SfDonutChartComponent, SfDonutChartOptions } from '../../shared/sf/sf-donut-chart/sf-donut-chart';
+import { SfHeatmapCell, SfHeatmapComponent, SfHeatmapOptions } from '../../shared/sf/sf-heatmap/sf-heatmap';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  SfTextBoxComponent,
-  prismChartPalette,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 import { listTeamWorkspaceCards, type WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 import { resolvePersonTeamId } from '../../../../shared/domain/work-views';
-import type { Person } from '../../core/models';
+import { trackDisplayLabel, type Person } from '../../core/models';
 
 type TrackFilter = WorkspaceTrackFilter;
 
@@ -192,7 +189,7 @@ export class TeamDashboard {
   protected readonly snapshotError = signal('');
   protected readonly loadingSnapshot = signal(false);
 
-  protected readonly palette = prismChartPalette(false);
+  protected readonly palette = computed(() => prismChartPalette(this.theme.isDark()));
   protected readonly target = INDEX_TARGET;
   protected readonly axisFont = { fontFamily: 'Sarabun, Tahoma, sans-serif', size: '12px' };
   protected readonly categoryAxis = {
@@ -237,18 +234,18 @@ export class TeamDashboard {
     exportFileName: 'team-kpi-snapshot',
   });
 
-  protected readonly workloadDonutOptions: SfDonutChartOptions = {
+  protected readonly workloadDonutOptions = computed<SfDonutChartOptions>(() => ({
     height: '260px',
     innerRadius: '64%',
     radius: '84%',
     centerLabel: TEAM_CONTEXT_2568.tasks.toLocaleString('en-US'),
     centerSubLabel: 'ใบงานทั้งปี',
-    palettes: this.palette,
+    palettes: this.palette(),
     legend: { visible: true, position: 'Bottom', alignment: 'Center' },
     tooltip: { enable: true, format: '${point.x}: <b>${point.y}%</b>' },
     exportable: true,
     exportFileName: 'team-workload-donut',
-  };
+  }));
 
   protected readonly sampleDonutOptions = computed<SfDonutChartOptions>(() => {
     const md = this.samplePoints().reduce((sum, point) => sum + point.y, 0);
@@ -258,7 +255,7 @@ export class TeamDashboard {
       radius: '84%',
       centerLabel: formatMd(md),
       centerSubLabel: 'MD รวม',
-      palettes: this.palette,
+      palettes: this.palette(),
       legend: { visible: true, position: 'Bottom', alignment: 'Center' },
       tooltip: { enable: true, format: '${point.x}: <b>${point.y}</b> MD' },
       exportable: true,
@@ -384,8 +381,9 @@ export class TeamDashboard {
     return this.snapshotRows()
       .filter((row) => track === 'All' || row.track === track)
       .map((row) => ({
+        personId: row.personId,
         nickname: row.nickname,
-        trackLabel: row.track === 'RD' ? 'R&D' : 'Implement',
+        trackLabel: trackDisplayLabel(row.track),
         index: round1(row.score.developmentIndex),
         closedCount: row.score.closedCount,
         closedMd: row.score.closedMd,
@@ -397,7 +395,7 @@ export class TeamDashboard {
   protected readonly tasksLabel = TEAM_CONTEXT_2568.tasks.toLocaleString('en-US');
 
   constructor() {
-    void this.reloadPeriods();
+    void this.scorecard.whenReady().then(() => this.reloadPeriods());
   }
 
   protected setTrackChip(value: string): void {

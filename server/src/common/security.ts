@@ -40,6 +40,13 @@ export function originCsrfMiddleware(allowedOrigins: ReadonlySet<string>, produc
       if (hostHeader) {
         try {
           const parsed = new URL(candidate);
+          const reqProto =
+            typeof req.headers['x-forwarded-proto'] === 'string'
+              ? req.headers['x-forwarded-proto'].split(',')[0]?.trim().toLowerCase()
+              : req.protocol?.toLowerCase();
+          if (production && reqProto === 'https' && parsed.protocol !== 'https:') {
+            return false;
+          }
           if (parsed.host === hostHeader) {
             return true;
           }
@@ -70,6 +77,9 @@ export function originCsrfMiddleware(allowedOrigins: ReadonlySet<string>, produc
         res.status(403).json({ statusCode: 403, message: 'Invalid referer header' });
         return;
       }
+    } else if (production && !refererHeader && typeof req.headers.cookie === 'string' && req.headers.cookie.trim()) {
+      res.status(403).json({ statusCode: 403, message: 'Missing Origin or Referer header' });
+      return;
     }
 
     next();
@@ -80,6 +90,8 @@ interface RateBucket {
   count: number;
   resetAt: number;
 }
+
+const MAX_RATE_BUCKETS = 10_000;
 
 export function createRateLimiterMiddleware() {
   const buckets = new Map<string, RateBucket>();
@@ -104,7 +116,7 @@ export function createRateLimiterMiddleware() {
 
     let bucketName = 'default';
     let limit = 300;
-    if (path.startsWith('/api/auth/')) {
+    if (path.startsWith('/api/auth/') && path !== '/api/auth/me') {
       bucketName = 'auth';
       limit = 30;
     } else if (path.startsWith('/api/ai/') || path.startsWith('/api/analytics/')) {
@@ -123,6 +135,12 @@ export function createRateLimiterMiddleware() {
     const now = Date.now();
     let entry = buckets.get(key);
     if (!entry || entry.resetAt <= now) {
+      if (!entry && buckets.size >= MAX_RATE_BUCKETS) {
+        const oldestKey = buckets.keys().next().value;
+        if (oldestKey !== undefined) {
+          buckets.delete(oldestKey);
+        }
+      }
       entry = { count: 0, resetAt: now + windowMs };
       buckets.set(key, entry);
     }
@@ -148,6 +166,27 @@ const BLOCKED_HOSTS = new Set([
   'metadata.google.internal',
   'metadata',
 ]);
+
+function isLoopbackHost(host: string): boolean {
+  return (
+    host === 'localhost' ||
+    host === '::1' ||
+    host.startsWith('127.') ||
+    host.startsWith('::ffff:127.') ||
+    /^::ffff:7f[0-9a-f]{2}:/i.test(host)
+  );
+}
+
+function isLinkLocalOrUnspecified(host: string): boolean {
+  return (
+    BLOCKED_HOSTS.has(host) ||
+    host.startsWith('169.254.') ||
+    host.startsWith('fe80:') ||
+    host === '::' ||
+    host === '::ffff:0:0' ||
+    /^::ffff:a9fe:/i.test(host)
+  );
+}
 
 export function validateExternalUrl(
   raw: string,
@@ -175,10 +214,10 @@ export function validateExternalUrl(
   }
 
   const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  if (!host || BLOCKED_HOSTS.has(host) || host.startsWith('169.254.') || host.startsWith('fe80:')) {
+  if (!host || isLinkLocalOrUnspecified(host)) {
     throw new BadRequestException('Disallowed target host');
   }
-  if (opts.production && (host === 'localhost' || host === '127.0.0.1' || host === '::1')) {
+  if (opts.production && isLoopbackHost(host)) {
     throw new BadRequestException('Loopback host is not allowed in production');
   }
 

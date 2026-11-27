@@ -5,16 +5,11 @@ import { MockSession, mockPersonIndexes } from '../../core/mock-session';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
-import {
-  PageHeadComponent,
-  SectionCardComponent,
-  SfGridColumn,
-  SfGridComponent,
-  SfGridOptions,
-  SfMessageComponent,
-  SfProgressComponent,
-  SfStepperComponent,
-} from '../../shared/ui';
+import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
+import { SfGridColumn, SfGridComponent, SfGridOptions } from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfProgressComponent } from '../../shared/sf/sf-progress/sf-progress';
+import { SfStepperComponent } from '../../shared/sf/sf-stepper/sf-stepper';
 
 @Component({
   selector: 'app-mockup',
@@ -76,7 +71,7 @@ export class MockupPage {
     { field: 'entry', headerText: 'รายละเอียดขั้นที่จำลอง', width: 520 },
   ];
   protected readonly pagedGridOptions: SfGridOptions = { paging: true, pageSize: 8, sorting: true, resizable: true, height: '260' };
-  protected readonly compactGridOptions: SfGridOptions = { paging: false, sorting: true, resizable: true, height: '220' };
+  protected readonly compactGridOptions: SfGridOptions = { paging: true, pageSize: 10, sorting: true, resizable: true, height: '220' };
   protected readonly active = this.session.active;
   protected readonly step = this.session.step;
   protected readonly steps = this.session.steps;

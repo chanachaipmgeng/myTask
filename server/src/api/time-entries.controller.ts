@@ -218,7 +218,8 @@ export class TimeEntriesController {
           const userMatch = /\/users\/(\d+)/.exec(userHref);
           const entryUserId = userMatch ? Number(userMatch[1]) : null;
           const matchedPerson =
-            people.find((p) => p.openprojectUserId === entryUserId) ?? person ?? null;
+            people.find((p) => p.openprojectUserId === entryUserId) ?? (personId ? person : null) ?? null;
+          if (!ctx.isAdmin && !matchedPerson) continue;
           if (personId && matchedPerson && matchedPerson.id !== personId) continue;
           items.push({
             id: entry.id ?? `${spentOn}-${items.length}`,

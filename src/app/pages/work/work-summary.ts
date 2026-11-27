@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ThemeService } from '../../core/theme.service';
@@ -8,12 +9,6 @@ import {
   HeroBandComponent,
   HeroBandMetric,
   SectionCardComponent,
-  SfChartComponent,
-  SfChartOptions,
-  SfChartSeriesConfig,
-  SfDonutChartComponent,
-  SfDonutChartOptions,
-  SfMessageComponent,
   StatusBadgeComponent,
   prismChartPalette,
   trackHexColor,
@@ -21,12 +16,16 @@ import {
   workflowStageHexColor,
   workflowStatusToneMap,
 } from '../../shared/ui';
+import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
+import { SfDonutChartComponent, SfDonutChartOptions } from '../../shared/sf/sf-donut-chart/sf-donut-chart';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({
   selector: 'app-work-summary',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    RouterLink,
     HeroBandComponent,
     SectionCardComponent,
     ButtonModule,

@@ -24,19 +24,20 @@ import {
   LoadingSkeletonComponent,
   PageHeadComponent,
   SectionCardComponent,
-  SfCheckboxComponent,
-  SfDropdownComponent,
+} from '../../shared/ui';
+import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  SfMultiSelectComponent,
-  SfNumberComponent,
-  SfTabItem,
-  SfTabsComponent,
-  SfTextBoxComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfMultiSelectComponent } from '../../shared/sf/sf-multiselect/sf-multiselect';
+import { SfNumberComponent } from '../../shared/sf/sf-number/sf-number';
+import { SfTabItem, SfTabsComponent } from '../../shared/sf/sf-tabs/sf-tabs';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 
 type CustomFieldKey =
   | 'receiptDate'

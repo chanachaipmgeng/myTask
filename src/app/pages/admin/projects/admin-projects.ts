@@ -24,25 +24,26 @@ import {
   FilterChipOption,
   FilterChipsComponent,
   KpiStatCardComponent,
-  LIST_PAGE_SIZES,
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfCheckboxComponent,
-  SfDropdownComponent,
+  StatusBadgeComponent,
+  totalPages,
+} from '../../../shared/ui';
+import {
+  LIST_PAGE_SIZES,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   SfGridRemoteData,
-  SfMultiSelectComponent,
-  SfPagerChange,
-  SfPagerComponent,
-  SfProgressComponent,
-  SfTextBoxComponent,
-  StatusBadgeComponent,
   listGridOptions,
-  totalPages,
-} from '../../../shared/ui';
+} from '../../../shared/sf/sf-grid/sf-grid';
+import { SfCheckboxComponent } from '../../../shared/sf/sf-checkbox/sf-checkbox';
+import { SfDropdownComponent } from '../../../shared/sf/sf-dropdown/sf-dropdown';
+import { SfMultiSelectComponent } from '../../../shared/sf/sf-multiselect/sf-multiselect';
+import { SfPagerChange, SfPagerComponent } from '../../../shared/sf/sf-pager/sf-pager';
+import { SfProgressComponent } from '../../../shared/sf/sf-progress/sf-progress';
+import { SfTextBoxComponent } from '../../../shared/sf/sf-textbox/sf-textbox';
 
 const DEFAULT_PAGE_SIZE = 12;
 
@@ -427,7 +428,7 @@ export class AdminProjectsComponent implements OnInit, OnDestroy {
 
   viewTickets(project: OpenProjectCatalogEntry): void {
     this.router.navigate(['/work/list'], {
-      queryParams: { opProject: project.identifier },
+      queryParams: { project: project.identifier },
     });
   }
 
@@ -448,7 +449,7 @@ export class AdminProjectsComponent implements OnInit, OnDestroy {
   }
 
   personName(personId: string): string {
-    const person = this.scorecard.people().find((p) => p.id === personId);
+    const person = this.scorecard.peopleById().get(personId);
     return person?.nickname || person?.fullName || personId;
   }
 

@@ -21,14 +21,9 @@ import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { workGanttTasks } from '../../core/work-views';
-import {
-  FilterChipOption,
-  FilterChipsComponent,
-  SectionCardComponent,
-  SfGanttComponent,
-  SfGanttOptions,
-  SfMessageComponent,
-} from '../../shared/ui';
+import { FilterChipOption, FilterChipsComponent, SectionCardComponent } from '../../shared/ui';
+import { SfGanttComponent, SfGanttOptions } from '../../shared/sf/sf-gantt/sf-gantt';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
 import { WorkHubFilter } from './work-hub-filter';
 
 type GanttViewMode = 'project' | 'resource';

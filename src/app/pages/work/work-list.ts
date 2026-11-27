@@ -20,11 +20,6 @@ import { workListRows, type WorkListRow } from '../../core/work-views';
 import {
   PersonAvatarComponent,
   SectionCardComponent,
-  SfGridColumn,
-  SfGridComponent,
-  SfGridOptions,
-  SfGridRemoteData,
-  listGridOptions,
   StatusBadgeComponent,
   planToneMap,
   toneForPriority,
@@ -33,6 +28,13 @@ import {
   workflowStatusToneMap,
   type BadgeTone,
 } from '../../shared/ui';
+import {
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfGridRemoteData,
+  listGridOptions,
+} from '../../shared/sf/sf-grid/sf-grid';
 import { WorkHubFilter } from './work-hub-filter';
 
 const WORK_LIST_REMOTE_SORT = new Set([

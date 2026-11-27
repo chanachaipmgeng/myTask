@@ -16,15 +16,17 @@ import {
   FilterChipsComponent,
   PageHeadComponent,
   SectionCardComponent,
-  SfCheckboxComponent,
+  StatusBadgeComponent,
+  TicketCreateDialogComponent,
+} from '../../shared/ui';
+import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
+import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  StatusBadgeComponent,
-  TicketCreateDialogComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
 
 @Component({
   selector: 'app-mygit',
@@ -191,12 +193,16 @@ export class MyGitPage {
   protected readonly synced = signal(false);
 
   constructor() {
-    void this.loadGitLabStatus();
-    void this.loadOpenMrs();
+    void this.scorecard.whenReady().then(() => {
+      void this.loadGitLabStatus();
+      void this.loadOpenMrs();
+    });
     effect(() => {
       this.isMine();
       this.workspace.personId();
-      void this.loadBranches();
+      if (this.scorecard.apiReady()) {
+        void this.loadBranches();
+      }
     });
   }
 
@@ -217,6 +223,10 @@ export class MyGitPage {
 
   protected async syncBranchesFromGitLab(): Promise<void> {
     if (!this.api || this.syncingBranches()) return;
+    if (effectiveRole() === 'member') {
+      this.notice.warning('เฉพาะ admin หรือ lead เท่านั้นที่สั่งซิงก์ GitLab ได้');
+      return;
+    }
     this.syncingBranches.set(true);
     try {
       const res = await this.api.syncGitBranches();
@@ -248,7 +258,7 @@ export class MyGitPage {
   }
 
   private async loadGitLabStatus(): Promise<void> {
-    if (!this.api || !this.scorecard.usingApi()) {
+    if (!this.api || !this.scorecard.usingApi() || effectiveRole() === 'member') {
       return;
     }
     try {

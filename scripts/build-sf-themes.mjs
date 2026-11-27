@@ -220,8 +220,8 @@ function stripDuplicateBlocks(css, seenFontFaces) {
 }
 
 if (!existsSync(LIGHT_THEME_ENTRY) || !existsSync(DARK_THEME_ENTRY)) {
-  console.warn('[build-sf-themes] Syncfusion theme packages not found; skipping theme build.');
-  process.exit(0);
+  console.error('[build-sf-themes] Syncfusion theme packages not found; aborting theme build.');
+  process.exit(1);
 }
 
 const lightTokens = extractThemeTokenHeader(LIGHT_THEME_ENTRY);

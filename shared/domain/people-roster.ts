@@ -1,5 +1,5 @@
 import { collectAlerts } from './alerts';
-import { Person, Ticket, Track } from './models';
+import { Person, Ticket, Track, normalizeTrack, trackDisplayLabel } from './models';
 import { trackHexColor } from './palette';
 import {
   INDEX_TARGET,
@@ -11,6 +11,7 @@ import {
   scorePerson,
   scoreTicket,
 } from './scoring';
+import { todayInBangkok } from './workflow';
 
 export interface PeopleRosterRow {
   id: string;
@@ -49,24 +50,32 @@ export function buildPeopleRoster(
 ): PeopleRosterRow[] {
   const quotas = options?.quotas ?? WEEKLY_QUOTA;
   const overrunLimit = options?.overrunLimit ?? 1.5;
+  const today = todayInBangkok();
+  const byAssignee = new Map<string, Ticket[]>();
+  for (const ticket of tickets) {
+    if (!ticket.assigneeId) continue;
+    const list = byAssignee.get(ticket.assigneeId);
+    if (list) list.push(ticket);
+    else byAssignee.set(ticket.assigneeId, [ticket]);
+  }
   return people.map((person) => {
     const score = scorePerson(person, tickets, options?.weights);
-    const own = tickets.filter((ticket) => ticket.assigneeId === person.id);
+    const own = byAssignee.get(person.id) ?? [];
     const open = own.filter((ticket) => !ticket.closed);
     const closed = own.filter((ticket) => ticket.closed);
-    const weighted = person.track === 'Implement' ? score.weightedScore : score.dodWeightedScore;
-    const sidePct = person.track === 'Implement' ? score.unplannedRatio * 100 : score.spikeRatio * 100;
-    const sideState =
-      person.track === 'Implement'
-        ? score.unplannedRatio <= UNPLANNED_TARGET
-          ? 'ตามเป้า'
-          : 'เกินเป้า'
-        : score.spikeInBand
-          ? 'ในช่วง'
-          : 'นอกช่วง';
+    const isRd = normalizeTrack(person.track) === 'RND';
+    const weighted = isRd ? score.dodWeightedScore : score.weightedScore;
+    const sidePct = isRd ? score.spikeRatio * 100 : score.unplannedRatio * 100;
+    const sideState = isRd
+      ? score.spikeInBand
+        ? 'ในช่วง'
+        : 'นอกช่วง'
+      : score.unplannedRatio <= UNPLANNED_TARGET
+        ? 'ตามเป้า'
+        : 'เกินเป้า';
     const planCap = score.planRawPct > 100 ? ' · ดัชนีใช้ 100' : '';
     const accuracyPct = round1(score.accuracyShare * 100);
-    const alerts = collectAlerts(open, overrunLimit);
+    const alerts = collectAlerts(open, overrunLimit, today);
     return {
       id: person.id,
       nickname: person.nickname,
@@ -75,7 +84,7 @@ export function buildPeopleRoster(
       level: person.level,
       levelLabel: person.level === 'FirstMonth' ? 'เดือนแรก' : person.level,
       track: person.track,
-      trackLabel: person.track === 'RD' ? 'R&D' : 'Implement',
+      trackLabel: trackDisplayLabel(person.track),
       quota: quotas[person.level],
       index: round1(score.developmentIndex),
       planRawPct: score.planRawPct,

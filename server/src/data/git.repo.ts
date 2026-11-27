@@ -150,6 +150,42 @@ export async function upsertGitBranch(
   );
 }
 
+export async function getGitBranchById(db: Queryable, branchId: number): Promise<GitBranchItem | null> {
+  const rows = await db.query<GitBranchRow>(
+    `SELECT b.*, p.nickname AS person_name, w.data->>'title' AS ticket_title
+     FROM git_branches b
+     LEFT JOIN people p ON p.id = b.person_id
+     LEFT JOIN work_items w ON w.id = b.ticket_id OR (w.op_id IS NOT NULL AND w.op_id::text = b.ticket_id)
+     WHERE b.id = $1`,
+    [branchId],
+  );
+  const r = rows[0];
+  if (!r) return null;
+  return {
+    id: Number(r.id),
+    projectId: Number(r.project_id),
+    projectName: r.project_name,
+    branchName: r.branch_name,
+    authorUsername: r.author_username,
+    personId: r.person_id,
+    personName: r.person_name ?? r.author_username,
+    ticketId: r.ticket_id,
+    ticketTitle: r.ticket_title ?? null,
+    webUrl: r.web_url,
+    lastCommitSha: r.last_commit_sha,
+    lastCommitTitle: r.last_commit_title,
+    lastCommitAt:
+      r.last_commit_at instanceof Date
+        ? r.last_commit_at.toISOString()
+        : r.last_commit_at
+          ? String(r.last_commit_at)
+          : null,
+    status: (r.status as 'active' | 'merged' | 'closed') || 'active',
+    createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+    updatedAt: r.updated_at instanceof Date ? r.updated_at.toISOString() : String(r.updated_at),
+  };
+}
+
 export async function linkGitBranchToTicket(
   db: Queryable,
   branchId: number,

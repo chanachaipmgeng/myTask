@@ -1,4 +1,13 @@
-import { Person, Ticket, Track, TrackCode, normalizeTrack, WORKFLOW_STATUSES, WorkflowStatus } from './models';
+import {
+  Person,
+  Ticket,
+  Track,
+  TrackCode,
+  normalizeTrack,
+  trackDisplayLabel,
+  WORKFLOW_STATUSES,
+  WorkflowStatus,
+} from './models';
 import { slugifyTeamName, teamLabelForId } from './op-team-staging';
 import { evaluatePolicySla, PolicySlaEvaluation } from './policy-sla';
 import { todayInBangkok, workflowStatusOf } from './workflow';
@@ -164,7 +173,11 @@ function parseDay(iso: string | null | undefined): Date | null {
   if (!iso) {
     return null;
   }
-  const t = Date.parse(`${iso.slice(0, 10)}T00:00:00+07:00`);
+  const dayStr = iso.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dayStr)) {
+    return null;
+  }
+  const t = Date.parse(`${dayStr}T00:00:00Z`);
   return Number.isNaN(t) ? null : new Date(t);
 }
 
@@ -174,7 +187,7 @@ function addDays(date: Date, days: number): Date {
   return next;
 }
 
-/** เลื่อนวันปฏิทินแบบ YYYY-MM-DD (โซน +07 สำหรับความเสถียรของสตริง) */
+/** เลื่อนวันปฏิทินแบบ YYYY-MM-DD (pure UTC calendar math ไม่เพี้ยนข้าม timezone) */
 export function shiftIsoDay(isoDay: string, days: number): string {
   const base = parseDay(isoDay.slice(0, 10)) ?? parseDay(todayInBangkok());
   if (!base) {
@@ -190,7 +203,6 @@ export function mondayOfWeek(isoDay?: string): string {
   if (!d) {
     return day;
   }
-  // getUTCDay: 0=Sun … ใช้ offset จากจ–อา
   const wd = d.getUTCDay();
   const offset = wd === 0 ? -6 : 1 - wd;
   return addDays(d, offset).toISOString().slice(0, 10);
@@ -200,22 +212,22 @@ export function fridayOfWeek(mondayIso: string): string {
   return shiftIsoDay(mondayIso.slice(0, 10), 4);
 }
 
-/** ทีมของผู้รับ — ใช้แผนกจริงจาก myProject (department) ก่อน แล้วค่อย fallback teamId / สายงาน */
+/** ทีมของผู้รับ — สอดคล้องกับ team-visibility.ts: ใช้ teamId ก่อน แล้วค่อย department / สายงาน */
 export function resolvePersonTeamId(person: Person | undefined, ticketTrack?: Track): string {
-  const dept = person?.department?.trim();
-  if (dept) {
-    return slugifyTeamName(dept);
-  }
   const raw = person?.teamId?.trim();
   if (raw) {
     return raw;
   }
-  const track = person?.track ?? ticketTrack;
-  if (track === 'RD') {
-    return 'rd';
+  const dept = person?.department?.trim();
+  if (dept) {
+    return slugifyTeamName(dept);
   }
-  if (track === 'Implement') {
-    return 'implement';
+  const track = person?.track ?? ticketTrack;
+  if (track) {
+    const code = normalizeTrack(track);
+    if (code === 'RND') return 'rd';
+    if (code === 'IMP') return 'implement';
+    return code.toLowerCase();
   }
   return 'unassigned';
 }
@@ -514,12 +526,14 @@ export function workSummaryStats(
     return { x: status, y, text: `${status} ${y}` };
   }).filter((point) => point.y > 0);
 
-  const implement = filtered.filter((ticket) => ticket.track === 'Implement').length;
-  const rd = filtered.filter((ticket) => ticket.track === 'RD').length;
-  const trackShare: WorkChartPoint[] = [
-    { x: 'Implement', y: implement, text: `Implement ${implement}` },
-    { x: 'R&D', y: rd, text: `R&D ${rd}` },
-  ].filter((point) => point.y > 0);
+  const trackCounts = new Map<string, number>();
+  for (const ticket of filtered) {
+    const label = trackDisplayLabel(ticket.track);
+    trackCounts.set(label, (trackCounts.get(label) ?? 0) + 1);
+  }
+  const trackShare: WorkChartPoint[] = [...trackCounts.entries()]
+    .map(([label, y]) => ({ x: label, y, text: `${label} ${y}` }))
+    .filter((point) => point.y > 0);
 
   const names = new Map(people.map((person) => [person.id, person.nickname]));
   const byPerson = new Map<string, { openCount: number; openMd: number }>();
@@ -662,7 +676,7 @@ export function workBacklogRows(
     .map((ticket) => ({
       id: ticket.id,
       title: ticket.title?.trim() || ticket.module || ticket.id,
-      trackLabel: ticket.track === 'RD' ? 'R&D' : 'Implement',
+      trackLabel: trackDisplayLabel(ticket.track),
       type: ticket.opType?.trim() || ticket.type,
       size: ticket.size,
       estimateMd: ticket.estimateMd,
@@ -717,24 +731,23 @@ function formatMd(value: number): string {
 }
 
 /**
- * Adds working days (Monday-Friday) to a YYYY-MM-DD date string.
+ * Adds working days (Monday-Friday) to a YYYY-MM-DD date string using pure UTC calendar math.
  * Saturdays and Sundays are skipped.
  */
 export function addWorkingDays(startDateStr: string | null | undefined, daysToAdd: number): string {
-  if (!startDateStr) {
-    const today = todayInBangkok();
-    if (daysToAdd <= 0) return today;
-    startDateStr = today;
+  const baseStr = (startDateStr ? String(startDateStr).slice(0, 10) : todayInBangkok());
+  const date = parseDay(baseStr);
+  if (!date) {
+    return baseStr;
   }
-  const date = new Date(startDateStr);
-  if (isNaN(date.getTime())) {
-    return startDateStr;
+  const steps = Math.trunc(daysToAdd);
+  if (steps <= 0) {
+    return date.toISOString().slice(0, 10);
   }
   let added = 0;
-  while (added < daysToAdd) {
-    date.setDate(date.getDate() + 1);
-    const day = date.getDay();
-    // 0 is Sunday, 6 is Saturday
+  while (added < steps) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    const day = date.getUTCDay();
     if (day !== 0 && day !== 6) {
       added++;
     }

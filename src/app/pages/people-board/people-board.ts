@@ -14,21 +14,21 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfChartComponent,
-  SfChartOptions,
-  SfChartSeriesConfig,
-  SfGridAggregate,
-  SfGridColumn,
-  SfGridComponent,
-  SfGridOptions,
-  listGridOptions,
-  SfProgressComponent,
-  SfTextBoxComponent,
   StatusBadgeComponent,
   toneForAlertLabel,
   trackToneMap,
   type BadgeTone,
 } from '../../shared/ui';
+import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
+import {
+  SfGridAggregate,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  listGridOptions,
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfProgressComponent } from '../../shared/sf/sf-progress/sf-progress';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 
 @Component({
   selector: 'app-people-board',

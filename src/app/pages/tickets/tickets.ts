@@ -19,31 +19,14 @@ import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { ViewportService } from '../../core/viewport.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
+import { todayInBangkok } from '../../core/workflow';
 import { REFERENCE_BUG_ID, REFERENCE_SPIKE_ID } from '../../data/seed';
 import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfAccordionComponent,
-  SfAccordionItem,
-  SfCheckboxComponent,
-  SfChipListComponent,
-  SfDatePickerComponent,
-  SfDialogComponent,
-  SfDropdownComponent,
   FilterChipOption,
   FilterChipsComponent,
-  SfGridAggregate,
-  SfGridColumn,
-  SfGridComponent,
-  SfGridOptions,
-  SfGridRemoteData,
-  listGridOptions,
-  SfMessageComponent,
-  SfNumberComponent,
-  SfTextBoxComponent,
-  SfToolbarComponent,
-  SfUploaderComponent,
   StatusBadgeComponent,
   blockerToneMap,
   closedToneMap,
@@ -56,6 +39,25 @@ import {
   workflowStatusToneMap,
   type BadgeTone,
 } from '../../shared/ui';
+import { SfAccordionComponent, SfAccordionItem } from '../../shared/sf/sf-accordion/sf-accordion';
+import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
+import { SfChipListComponent } from '../../shared/sf/sf-chiplist/sf-chiplist';
+import { SfDatePickerComponent } from '../../shared/sf/sf-datepicker/sf-datepicker';
+import { SfDialogComponent } from '../../shared/sf/sf-dialog/sf-dialog';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import {
+  SfGridAggregate,
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  SfGridRemoteData,
+  listGridOptions,
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfNumberComponent } from '../../shared/sf/sf-number/sf-number';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
+import { SfToolbarComponent } from '../../shared/sf/sf-toolbar/sf-toolbar';
+import { SfUploaderComponent } from '../../shared/sf/sf-uploader/sf-uploader';
 import type { WorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 import { listWorkspaceTrackChipOptions, parseWorkspaceTrackFilter } from '../../../../shared/domain/workspace-scope';
 
@@ -539,7 +541,7 @@ export class TicketsPage {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `work-items-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `work-items-${todayInBangkok()}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       this.notice.success('ส่งออกใบงานจากเซิร์ฟเวอร์แล้ว');
@@ -639,14 +641,16 @@ export class TicketsPage {
     const nextStatus = this.editWorkflowStatus();
     const isClosed = nextStatus === 'Done' ? true : existing.closed && this.isMine() ? true : false;
     const mrLink = this.editMrLink().trim();
+    const pocResult = this.editPocResult().trim();
+    const bugCause = this.editBugCause().trim();
     const next: Ticket = {
       ...existing,
       workflowStatus: nextStatus,
       closed: isClosed,
       actualMd: Math.max(0, Number(this.editActualMd() ?? existing.actualMd)),
-      mrLink: mrLink || existing.mrLink,
-      pocResult: this.editPocResult() || existing.pocResult,
-      bugCause: this.editBugCause() || existing.bugCause,
+      mrLink: mrLink || undefined,
+      pocResult: pocResult || undefined,
+      bugCause: bugCause || undefined,
       isPaused: this.editIsPaused(),
       blocker: this.editIsPaused() ? true : existing.blocker,
       pausedDays: Math.max(0, Number(this.editPausedDays() ?? 0)),
@@ -659,6 +663,9 @@ export class TicketsPage {
     };
 
     this.scorecard.replaceTicket(next);
+    if (this.useRemote()) {
+      void this.loadRemoteTickets();
+    }
     this.notice.success(`บันทึกการอัปเดตใบงาน ${id} เรียบร้อยแล้ว`);
     this.closeSelfUpdate();
   }

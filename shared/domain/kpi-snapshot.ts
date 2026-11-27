@@ -112,17 +112,14 @@ export function buildPeriodSnapshots(
 ): KpiSnapshotRow[] {
   const bounds = periodBounds(periodType, periodKey);
   const inPeriod = ticketsClosedInPeriod(tickets, bounds);
-  return people.map((person) => {
-    const own = inPeriod.filter((ticket) => ticket.assigneeId === person.id);
-    return {
-      personId: person.id,
-      nickname: person.nickname,
-      track: person.track,
-      periodType,
-      periodKey,
-      score: scorePerson(person, own, weights),
-    };
-  });
+  return people.map((person) => ({
+    personId: person.id,
+    nickname: person.nickname,
+    track: person.track,
+    periodType,
+    periodKey,
+    score: scorePerson(person, inPeriod, weights),
+  }));
 }
 
 function partsFromDate(asOf: string): { year: number; month: number } {

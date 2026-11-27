@@ -207,7 +207,7 @@ export class WorkspaceFilter {
     );
     const fromTickets = listWorkProjectOptions(scoped);
     const catalog = openprojectProjectCatalog();
-    const isAdmin = currentViewer().access === 'admin';
+    const isAdmin = effectiveRole() === 'admin';
     const allowedTeams = this.scorecard.effectiveAllowedTeams();
 
     const catalogMap = new Map<string, OpenProjectCatalogEntry>();
@@ -469,7 +469,9 @@ export class WorkspaceFilter {
         this.teamId.set(cycle.teamIds[0]!);
       }
     } else if (!id) {
-      // กลับไปไม่ผูกวันที่จากรอบ
+      this.fromDate.set('');
+      this.toDate.set('');
+      this.yearCe.set(null);
     }
   }
 
@@ -489,6 +491,9 @@ export class WorkspaceFilter {
       this.fromDate.set(`${year}-01-01`);
       this.toDate.set(`${year}-12-31`);
       this.cycleId.set('');
+    } else {
+      this.fromDate.set('');
+      this.toDate.set('');
     }
   }
 

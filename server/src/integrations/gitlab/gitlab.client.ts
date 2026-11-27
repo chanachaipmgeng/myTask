@@ -295,7 +295,9 @@ export class GitLabClient {
     if (params?.before) {
       query.set('before', params.before);
     }
-    return this.paginateAll<GitLabUserEvent>(`/api/v4/users/${userId}/events?${query.toString()}`);
+    return this.paginateAll<GitLabUserEvent>(
+      `/api/v4/users/${encodeURIComponent(String(userId))}/events?${query.toString()}`,
+    );
   }
 
   static commitSpan(commits: readonly GitLabCommit[]): MrCommitSpan {
@@ -396,6 +398,7 @@ export class GitLabClient {
     try {
       response = await this.fetchImpl(url, {
         method: 'POST',
+        redirect: 'manual',
         signal: AbortSignal.timeout(15_000),
         headers: {
           Accept: 'application/json',
@@ -428,6 +431,7 @@ export class GitLabClient {
     try {
       response = await this.fetchImpl(url, {
         method: 'GET',
+        redirect: 'manual',
         signal: AbortSignal.timeout(15_000),
         headers: {
           Accept: 'application/json',

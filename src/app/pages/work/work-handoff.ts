@@ -15,17 +15,17 @@ import {
   FormFieldComponent,
   PageHeadComponent,
   SectionCardComponent,
-  SfChartComponent,
-  SfChartOptions,
-  SfChartSeriesConfig,
-  SfDropdownComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
+import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  StatusBadgeComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
 
 @Component({
   selector: 'app-work-handoff',
@@ -210,7 +210,11 @@ export class WorkHandoffPage {
     void this.scorecard
       .pingHandoffRecipient(ticketId, targetName, `แจ้งเตือนการส่งต่องาน ${ticketId} เกิน SLA`)
       .then((result) => {
-        this.notice.success(result.message || `แจ้งเตือนใบงาน ${ticketId} ถึง ${targetName}`);
+        if (result.ok) {
+          this.notice.success(result.message || `แจ้งเตือนใบงาน ${ticketId} ถึง ${targetName}`);
+        } else {
+          this.notice.error(result.message || `ส่งแจ้งเตือนใบงาน ${ticketId} ไม่สำเร็จ`);
+        }
       });
   }
 }

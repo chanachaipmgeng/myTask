@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
+import { previousMonthKey } from '../../../../shared/domain/kpi-snapshot';
+import { todayInBangkok } from '../../../../shared/domain/workflow';
 import { ApiClient } from '../../core/api-client';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
@@ -10,13 +12,15 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfCheckboxComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
+import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
+import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  StatusBadgeComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
 
 @Component({
   selector: 'app-snapshot-check',
@@ -55,7 +59,7 @@ export class SnapshotCheckPage {
   private readonly notice = inject(ShellNotice);
   private readonly api = inject(ApiClient, { optional: true });
 
-  protected readonly periodKey = signal('2026-11');
+  protected readonly periodKey = signal(previousMonthKey(todayInBangkok()));
   protected readonly isConfirmed = signal(false);
   protected readonly isFreezing = signal(false);
 

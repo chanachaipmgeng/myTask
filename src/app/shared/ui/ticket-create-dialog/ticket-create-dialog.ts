@@ -19,12 +19,10 @@ import {
 import { ApiClient } from '../../../core/api-client';
 import { ScorecardService } from '../../../core/scorecard.service';
 import { ShellNotice } from '../../../core/shell-notice';
-import {
-  SfDialogComponent,
-  SfDropdownComponent,
-  SfNumberComponent,
-  SfTextBoxComponent,
-} from '../../sf';
+import { SfDialogComponent } from '../../sf/sf-dialog/sf-dialog';
+import { SfDropdownComponent } from '../../sf/sf-dropdown/sf-dropdown';
+import { SfNumberComponent } from '../../sf/sf-number/sf-number';
+import { SfTextBoxComponent } from '../../sf/sf-textbox/sf-textbox';
 import { FormFieldComponent } from '../form-field/form-field';
 
 @Component({

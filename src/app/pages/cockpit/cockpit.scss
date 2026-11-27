@@ -319,7 +319,7 @@
   }
 
   /* Radar / wide charts: scroll inside card, never stretch the page */
-  .bento-cockpit ::ng-deep .e-chart,
+  .bento-cockpit ::ng-deep .e-control.e-chart,
   .bento-cockpit ::ng-deep ejs-chart {
     min-width: 0 !important;
     max-width: 100% !important;

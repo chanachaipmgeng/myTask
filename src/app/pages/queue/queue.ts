@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { canAssignWork, weeklyQuotas } from '../../core/admin-settings';
+import { canAssignWork, effectiveRole, weeklyQuotas } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
 import { planNewWork, QueuePlan } from '../../core/capacity';
+import { normalizeTrack } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
@@ -13,13 +14,15 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
+import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  StatusBadgeComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
 
 @Component({
   selector: 'app-queue',
@@ -118,28 +121,29 @@ export class QueuePage {
     this.freePeople().map((person) => `${person.personLabel} ว่าง ${person.freeMd} MD`),
   );
   protected readonly implementQueue = computed(() => {
-    const tracks = new Set(this.scopedPeople().map((person) => person.track));
+    const tracks = new Set(this.scopedPeople().map((person) => normalizeTrack(person.track)));
     const teamScoped = !!this.workspace.teamId();
     return this.scorecard
       .ticketRows()
       .filter((row) => {
-        if (!row.unassigned || row.track !== 'Implement') {
+        const canonical = normalizeTrack(row.track);
+        if (!row.unassigned || canonical === 'RND') {
           return false;
         }
-        return !teamScoped || tracks.has('Implement') || tracks.has('IMP');
+        return !teamScoped || tracks.has(canonical);
       })
       .slice(0, 150);
   });
   protected readonly researchQueue = computed(() => {
-    const tracks = new Set(this.scopedPeople().map((person) => person.track));
+    const tracks = new Set(this.scopedPeople().map((person) => normalizeTrack(person.track)));
     const teamScoped = !!this.workspace.teamId();
     return this.scorecard
       .ticketRows()
       .filter((row) => {
-        if (!row.unassigned || row.track !== 'RD') {
+        if (!row.unassigned || normalizeTrack(row.track) !== 'RND') {
           return false;
         }
-        return !teamScoped || tracks.has('RD') || tracks.has('RND');
+        return !teamScoped || tracks.has('RND');
       })
       .slice(0, 150);
   });
@@ -164,7 +168,7 @@ export class QueuePage {
   }
 
   constructor() {
-    void this.loadWritebackFlag();
+    void this.scorecard.whenReady().then(() => this.loadWritebackFlag());
   }
 
   protected openTicket(id: string): void {
@@ -179,7 +183,7 @@ export class QueuePage {
       this.message.set('');
       return;
     }
-    const current = this.scorecard.workPlan().plans.find((plan) => plan.ticket.id === item.ticket.id);
+    const current = this.plan().plans.find((plan) => plan.ticket.id === item.ticket.id);
     if (!current?.personId || current.personId !== item.personId) {
       this.message.set('');
       this.error.set('โควตาเปลี่ยนแล้ว ใบนี้ยังไม่ถูกย้าย');
@@ -238,7 +242,11 @@ export class QueuePage {
 
           if (wips.length > 0) {
             const targetIds = wips.map((w) => w.id);
-            await this.scorecard.applyMdMandateShift(mdTicket.id, targetIds, shiftDays);
+            const shiftOk = await this.scorecard.applyMdMandateShift(mdTicket.id, targetIds, shiftDays);
+            if (!shiftOk) {
+              this.error.set('จ่ายงานด่วนแล้ว แต่เลื่อนกำหนดส่งงานเดิมไม่สำเร็จ');
+              return;
+            }
             this.notice.success(
               `รับงานด่วน MD ${mdTicket.id} ให้ ${item.personLabel} และเลื่อนงานเดิม ${wips.length} ใบ (+${shiftDays} วัน) แล้ว`,
             );
@@ -299,7 +307,7 @@ export class QueuePage {
   }
 
   private async loadWritebackFlag(): Promise<void> {
-    if (!this.api) {
+    if (!this.api || !this.scorecard.usingApi() || effectiveRole() === 'member') {
       this.writebackEnabled.set(false);
       return;
     }

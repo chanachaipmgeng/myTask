@@ -21,19 +21,21 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfDropdownComponent,
-  SfGridColumn,
-  SfGridComponent,
-  SfGridOptions,
-  SfTextBoxComponent,
   StaggerDirective,
   StatusBadgeComponent,
-  listGridOptions,
   levelToneMap,
   pageSlice,
   totalPages,
   trackToneMap,
 } from '../../shared/ui';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import {
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  listGridOptions,
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 
 type DirectoryView = 'people' | 'teams';
 

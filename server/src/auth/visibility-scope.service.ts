@@ -1,8 +1,9 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { AccessRole, Person, Ticket } from '../../../shared/domain/models';
-import { computeEffectiveAllowedTeams } from '../../../shared/domain/team-visibility';
+import { computeEffectiveAllowedTeams, VisibilityConfig } from '../../../shared/domain/team-visibility';
 import { resolvePersonTeamId } from '../../../shared/domain/work-views';
 import { filterPeopleByWorkspace } from '../../../shared/domain/workspace-scope';
+import { TtlCache } from '../common/ttl-cache';
 import { listPeople } from '../data/people.repo';
 import { getVisibilityConfig } from '../data/visibility.repo';
 import { Db } from '../db/db.service';
@@ -28,16 +29,28 @@ export interface ScopeContext {
 
 @Injectable()
 export class VisibilityScopeService {
+  private readonly scopeDataCache = new TtlCache<{
+    allPeople: Person[];
+    visibility: VisibilityConfig;
+  }>(15_000, 4);
+
   constructor(private readonly db: Db) {}
+
+  invalidateCache(): void {
+    this.scopeDataCache.clear();
+  }
 
   async resolve(authUser: AuthUser | undefined): Promise<ScopeContext> {
     if (!authUser?.person) {
       throw new ForbiddenException('login required');
     }
-    const [allPeople, visibility] = await Promise.all([
-      listPeople(this.db),
-      getVisibilityConfig(this.db),
-    ]);
+    const { allPeople, visibility } = await this.scopeDataCache.getOrSet('org-scope', async () => {
+      const [people, vis] = await Promise.all([
+        listPeople(this.db),
+        getVisibilityConfig(this.db),
+      ]);
+      return { allPeople: people, visibility: vis };
+    });
     const access = authUser.access;
     const isAdmin = access === 'admin';
     const selfId = authUser.person.id;

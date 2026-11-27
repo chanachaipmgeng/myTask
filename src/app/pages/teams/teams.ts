@@ -5,17 +5,16 @@ import { ApiClient, TeamsIntegration } from '../../core/api-client';
 import { ShellNotice } from '../../core/shell-notice';
 import { TeamsLogEntry, TeamsNotifyService } from '../../core/teams-notify';
 import { ScorecardService } from '../../core/scorecard.service';
+import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
+import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
 import {
-  PageHeadComponent,
-  SectionCardComponent,
-  SfCheckboxComponent,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  SfTextBoxComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 
 @Component({
   selector: 'app-teams',
@@ -67,11 +66,11 @@ export class TeamsPage {
   protected readonly error = signal('');
 
   constructor() {
-    void this.loadTeamsStatus();
+    void this.scorecard.whenReady().then(() => this.loadTeamsStatus());
   }
 
   private async loadTeamsStatus(): Promise<void> {
-    if (!this.api || !this.scorecard.usingApi()) {
+    if (!this.api || !this.scorecard.usingApi() || !this.canSend()) {
       return;
     }
     try {

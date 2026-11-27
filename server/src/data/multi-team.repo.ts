@@ -33,6 +33,38 @@ export async function listTrackConfigs(db: Queryable): Promise<TrackConfig[]> {
   }));
 }
 
+function toIsoDateOnly(raw: Date | string | null | undefined): string {
+  if (!raw) return '';
+  if (raw instanceof Date) {
+    const y = raw.getFullYear();
+    const m = String(raw.getMonth() + 1).padStart(2, '0');
+    const d = String(raw.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return String(raw).slice(0, 10);
+}
+
+export async function getLeave(db: Queryable, id: string): Promise<EmployeeLeave | null> {
+  const rows = await db.query<{
+    id: string;
+    user_id: string;
+    leave_date: Date | string;
+    leave_type: string;
+    deduct_md: string | number;
+    reason: string | null;
+  }>('SELECT * FROM employee_leaves WHERE id = $1', [id]);
+  const r = rows[0];
+  if (!r) return null;
+  return {
+    id: r.id,
+    userId: r.user_id,
+    leaveDate: toIsoDateOnly(r.leave_date),
+    leaveType: r.leave_type as EmployeeLeave['leaveType'],
+    deductMd: Number(r.deduct_md),
+    reason: r.reason ?? undefined,
+  };
+}
+
 export async function listLeaves(db: Queryable, userId?: string): Promise<EmployeeLeave[]> {
   const sql = userId
     ? 'SELECT * FROM employee_leaves WHERE user_id = $1 ORDER BY leave_date'
@@ -50,7 +82,7 @@ export async function listLeaves(db: Queryable, userId?: string): Promise<Employ
   return rows.map((r) => ({
     id: r.id,
     userId: r.user_id,
-    leaveDate: r.leave_date instanceof Date ? r.leave_date.toISOString().slice(0, 10) : String(r.leave_date).slice(0, 10),
+    leaveDate: toIsoDateOnly(r.leave_date),
     leaveType: r.leave_type as EmployeeLeave['leaveType'],
     deductMd: Number(r.deduct_md),
     reason: r.reason ?? undefined,
@@ -103,7 +135,7 @@ export async function listAllocations(db: Queryable, ticketId?: string): Promise
     subRole: r.sub_role ?? undefined,
     estimatedMd: Number(r.estimated_md),
     actualMd: Number(r.actual_md),
-    allocatedDueOn: r.allocated_due_on ? String(r.allocated_due_on).slice(0, 10) : undefined,
+    allocatedDueOn: r.allocated_due_on ? toIsoDateOnly(r.allocated_due_on) : undefined,
     completedAt: r.completed_at
       ? r.completed_at instanceof Date
         ? r.completed_at.toISOString()
@@ -255,11 +287,25 @@ export async function resolveDisputeRow(
   return rows[0] ? mapDisputeRow(rows[0]) : null;
 }
 
-export async function listStageLogs(db: Queryable, ticketId?: string): Promise<TicketStageLog[]> {
-  const sql = ticketId
-    ? 'SELECT * FROM ticket_stage_logs WHERE ticket_id = $1 ORDER BY entered_at'
-    : 'SELECT * FROM ticket_stage_logs ORDER BY entered_at';
-  const params = ticketId ? [ticketId] : [];
+export async function listStageLogs(
+  db: Queryable,
+  ticketId?: string,
+  opts?: { maxAgeDays?: number; limit?: number },
+): Promise<TicketStageLog[]> {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (ticketId) {
+    params.push(ticketId);
+    conditions.push(`ticket_id = $${params.length}`);
+  }
+  if (opts?.maxAgeDays && opts.maxAgeDays > 0) {
+    params.push(Math.floor(opts.maxAgeDays));
+    conditions.push(`(exited_at IS NULL OR entered_at >= now() - ($${params.length}::int * INTERVAL '1 day'))`);
+  }
+  const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const limitSql =
+    opts?.limit && opts.limit > 0 ? `LIMIT ${Math.min(10_000, Math.floor(opts.limit))}` : '';
+  const sql = `SELECT * FROM ticket_stage_logs ${whereSql} ORDER BY entered_at DESC ${limitSql}`;
   const rows = await db.query<{
     id: string;
     ticket_id: string;
@@ -370,8 +416,8 @@ export async function listDueShifts(db: Queryable, ticketId?: string): Promise<T
   return rows.map((r) => ({
     id: r.id,
     ticketId: r.ticket_id,
-    previousFirstDueOn: String(r.previous_first_due_on).slice(0, 10),
-    newFirstDueOn: String(r.new_first_due_on).slice(0, 10),
+    previousFirstDueOn: toIsoDateOnly(r.previous_first_due_on),
+    newFirstDueOn: toIsoDateOnly(r.new_first_due_on),
     shiftDays: Number(r.shift_days),
     reason: r.reason,
     status: r.status as TicketDueShift['status'],

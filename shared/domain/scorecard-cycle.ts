@@ -145,7 +145,13 @@ export function ticketAnchorDates(ticket: Ticket): string[] {
   const dates: string[] = [];
   for (const raw of [ticket.closedOn, ticket.dueOn, ticket.actualStartOn, ticket.firstDueOn, ticket.devDeliveredOn]) {
     if (!raw) continue;
-    const day = String(raw).slice(0, 10);
+    const rawVal = raw as unknown;
+    const day =
+      rawVal instanceof Date
+        ? Number.isNaN(rawVal.getTime())
+          ? ''
+          : rawVal.toISOString().slice(0, 10)
+        : String(rawVal).slice(0, 10);
     if (isIsoDay(day) && !dates.includes(day)) {
       dates.push(day);
     }

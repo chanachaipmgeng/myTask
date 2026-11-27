@@ -7,7 +7,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
-import { SfDialogComponent } from '../../sf';
+import { SfDialogComponent } from '../../sf/sf-dialog/sf-dialog';
 
 @Component({
   selector: 'app-confirm-dialog',

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
-import { SfMessageComponent } from '../../sf';
+import { SfMessageComponent } from '../../sf/sf-message/sf-message';
 
 @Component({
   selector: 'app-flash-messages',

@@ -8,6 +8,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { GitBranchItem } from '../../../../shared/domain/git-branch';
@@ -16,7 +17,8 @@ import {
   ProjectGitReleaseItem,
   ProjectGitSummary,
 } from '../../../../shared/domain/project-detail';
-import { currentViewer } from '../../core/admin-settings';
+import { workflowStatusOf } from '../../../../shared/domain/workflow';
+import { effectiveRole } from '../../core/admin-settings';
 import { ApiClient } from '../../core/api-client';
 import { Ticket } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -27,16 +29,18 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfGridColumn,
-  SfGridComponent,
-  SfGridOptions,
-  SfMultiSelectComponent,
   StatusBadgeComponent,
   TicketCreateDialogComponent,
-  listGridOptions,
   trackHexColor,
   workflowStageHexColor,
 } from '../../shared/ui';
+import {
+  SfGridColumn,
+  SfGridComponent,
+  SfGridOptions,
+  listGridOptions,
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMultiSelectComponent } from '../../shared/sf/sf-multiselect/sf-multiselect';
 import { ThemeService } from '../../core/theme.service';
 
 type ProjectDetailTab = 'overview' | 'tickets' | 'git' | 'teams';
@@ -104,9 +108,13 @@ export class ProjectDetailPage {
   }
 
   readonly canEdit = computed(() => {
-    const role = currentViewer().access;
+    const role = effectiveRole();
     return role === 'admin' || role === 'lead';
   });
+
+  private readonly paramMap = toSignal(this.route.paramMap);
+  private readonly routeProjectId = computed(() => this.paramMap()?.get('id') ?? '');
+  private loadSeq = 0;
 
   // Project Work Items from scorecard service
   readonly projectTickets = computed<any[]>(() => {
@@ -115,21 +123,19 @@ export class ProjectDetailPage {
     const idStr = String(proj.id);
     const ident = proj.identifier.toLowerCase();
     const name = proj.name.toLowerCase();
+    const peopleMap = this.scorecard.peopleById();
 
     return this.scorecard
       .tickets()
       .filter((t) => {
         const opProj = String(t.opProject ?? '').toLowerCase();
-        return (
-          opProj === idStr ||
-          opProj === ident ||
-          opProj === name
-        );
+        return opProj === idStr || opProj === ident || opProj === name;
       })
       .map((t) => ({
         ...t,
         title: t.title || t.note || t.module || t.id,
-        assigneeName: this.scorecard.roster().find((person) => person.id === t.assigneeId)?.nickname || t.assigneeId || 'ยังไม่กำหนด',
+        status: workflowStatusOf(t),
+        assigneeName: peopleMap.get(t.assigneeId)?.nickname || t.assigneeId || 'ยังไม่กำหนด',
         dueDate: t.dueOn || t.closedOn || '-',
       }));
   });
@@ -201,12 +207,12 @@ export class ProjectDetailPage {
   // Unique Members working on this project
   readonly projectMembers = computed<{ personId: string; name: string; ticketCount: number; totalMd: number }[]>(() => {
     const tickets = this.projectTickets();
-    const roster = this.scorecard.roster();
+    const peopleMap = this.scorecard.peopleById();
     const map = new Map<string, { personId: string; name: string; ticketCount: number; totalMd: number }>();
 
     for (const t of tickets) {
       const pid = t.assigneeId || 'unassigned';
-      const person = roster.find((p) => p.id === pid);
+      const person = peopleMap.get(pid);
       const name = person ? `${person.nickname} (${person.fullName})` : pid;
       const existing = map.get(pid) ?? { personId: pid, name, ticketCount: 0, totalMd: 0 };
       existing.ticketCount++;
@@ -219,38 +225,44 @@ export class ProjectDetailPage {
 
   constructor() {
     effect(() => {
-      const id = this.route.snapshot.paramMap.get('id');
+      const id = this.routeProjectId();
       if (id) {
-        this.loadProject(id);
+        void this.loadProject(id);
       }
     });
   }
 
   async loadProject(id: string) {
+    const seq = ++this.loadSeq;
     this.loading.set(true);
     this.errorMsg.set('');
 
     try {
       const res = await this.api.getProjectDetail(id);
+      if (seq !== this.loadSeq) return;
       if (res.ok && res.project) {
         this.project.set(res.project);
         this.selectedRepoIds.set(res.project.gitRepoIds || []);
 
-        this.loadGitSummary(id);
-        this.loadAvailableGitRepos();
+        void this.loadGitSummary(id, seq);
+        void this.loadAvailableGitRepos();
       } else {
         this.errorMsg.set(res.message || 'ไม่พบข้อมูลโปรเจกต์');
       }
     } catch (err: any) {
+      if (seq !== this.loadSeq) return;
       this.errorMsg.set(err.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูลโปรเจกต์');
     } finally {
-      this.loading.set(false);
+      if (seq === this.loadSeq) {
+        this.loading.set(false);
+      }
     }
   }
 
-  async loadGitSummary(id: string) {
+  async loadGitSummary(id: string, seq = this.loadSeq) {
     try {
       const res = await this.api.getProjectGitSummary(id);
+      if (seq !== this.loadSeq) return;
       if (res.ok && res.summary) {
         this.gitSummary.set(res.summary);
       }
@@ -268,11 +280,7 @@ export class ProjectDetailPage {
         );
       }
     } catch {
-      this.availableGitRepos.set([
-        { id: '101', name: 'frontend/myhr-portal' },
-        { id: '102', name: 'backend/core-api' },
-        { id: '103', name: 'mobile/app' },
-      ]);
+      this.availableGitRepos.set([]);
     }
   }
 
@@ -304,7 +312,7 @@ export class ProjectDetailPage {
               }
             : null,
         );
-        this.loadGitSummary(String(proj.id));
+        void this.loadGitSummary(String(proj.id));
       } else {
         this.notice.error(res.message || 'ไม่สามารถบันทึกได้', 'ผิดพลาด');
       }
@@ -328,13 +336,13 @@ export class ProjectDetailPage {
     }
   }
 
-  onTicketCreated(newTicketId: any) {
-    const id = typeof newTicketId === 'string' ? newTicketId : '';
+  onTicketCreated(payload: { ticketId?: string; branchId?: number } | string) {
+    const id = typeof payload === 'string' ? payload : (payload?.ticketId ?? '');
     this.notice.success(`สร้างใบงาน ${id ? '#' + id : ''} และผูกกับ Branch สำเร็จ`, 'สำเร็จ');
     const proj = this.project();
     if (proj) {
-      this.loadGitSummary(String(proj.id));
-      this.scorecard.reloadFromApi();
+      void this.loadGitSummary(String(proj.id));
+      void this.scorecard.reloadFromApi();
     }
   }
 }

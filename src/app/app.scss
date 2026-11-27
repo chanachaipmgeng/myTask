@@ -908,8 +908,7 @@
   margin-top: 0.25rem;
 }
 
-:host-context(.e-dark-mode),
-body.e-dark-mode {
+:host-context(.e-dark-mode) {
   .navbar-search-panel {
     background: #0f1838;
   }

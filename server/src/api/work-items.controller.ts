@@ -1,5 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import {
+  BadRequestException,
   Body,
+  ConflictException,
   Controller,
   ForbiddenException,
   Get,
@@ -25,6 +28,7 @@ import { canMoveWorkflowByRole, todayInBangkok, workflowStatusOf } from '../../.
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { VisibilityScopeService } from '../auth/visibility-scope.service';
 import { ListQuery, parseListQuery, toListPageResult } from '../common/list-query';
+import { sanitizeEvidenceUrl } from '../common/security';
 import { TtlCache } from '../common/ttl-cache';
 import { APP_CONFIG, AppConfig } from '../config';
 import { closeOpenStageLog, insertDueShift, insertStageLog } from '../data/multi-team.repo';
@@ -33,6 +37,7 @@ import { connectionToken, getConnection, getSettings } from '../data/settings.re
 import {
   getWorkItem,
   insertWorkItems,
+  listOpenWorkItemsByAssignee,
   listWorkItems,
   nextLocalTicketId,
   queryWorkItemsPage,
@@ -205,7 +210,7 @@ export class WorkItemsController {
       source: t.source,
     }));
 
-    const client = await this.openProject.getClient();
+    const client = ctx.access === 'member' ? null : await this.openProject.getClient();
     if (!client) {
       return { source: 'offline' as const, local, live: [], writeback: this.config.openproject.writeback };
     }
@@ -241,7 +246,11 @@ export class WorkItemsController {
     ctx.assertCanAccessTicket(ticket);
     const scores = scoreTicket(ticket);
     const writeback = this.config.openproject.writeback;
-    const client = await this.openProject.getClient();
+    const [client, opCreds] = await Promise.all([
+      this.openProject.getClient(),
+      this.openProject.resolveCredentials(),
+    ]);
+    const opBase = (opCreds?.url ?? '').replace(/\/+$/, '');
     const opId = typeof ticket.opId === 'number' ? ticket.opId : null;
 
     let description = '';
@@ -279,8 +288,6 @@ export class WorkItemsController {
     if (client && opId != null) {
       source = 'live';
       try {
-        const creds = await this.openProject.resolveCredentials();
-        const opBase = (creds?.url ?? '').replace(/\/+$/, '');
         const absUrl = (href: string | null | undefined): string => {
           const raw = (href ?? '').trim();
           if (!raw) return '';
@@ -377,10 +384,7 @@ export class WorkItemsController {
 
     const mrs = await this.resolveTicketMrs(ticket);
 
-    const opUrl =
-      opId != null
-        ? `${(await this.openProject.resolveCredentials())?.url?.replace(/\/+$/, '') ?? ''}/work_packages/${opId}`
-        : null;
+    const opUrl = opId != null && opBase ? `${opBase}/work_packages/${opId}` : null;
 
     return {
       ok: true,
@@ -417,10 +421,12 @@ export class WorkItemsController {
     @Body() body: { hours?: number; spentOn?: string; comment?: string },
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const ticket = await getWorkItem(this.db, id);
     if (!ticket) {
       return { ok: false, message: 'ไม่พบใบงาน' };
     }
+    ctx.assertCanAccessTicket(ticket, { allowUnassignedForMember: false });
     if (!this.config.openproject.writeback) {
       return { ok: false, writebackDisabled: true, message: 'Writeback ยังปิดอยู่ (OPENPROJECT_WRITEBACK=false)' };
     }
@@ -428,22 +434,23 @@ export class WorkItemsController {
     if (typeof opId !== 'number') {
       return { ok: false, message: 'ใบงานนี้ยังไม่ได้ผูกกับ myProject' };
     }
-    const role = req.authUser?.access ?? 'member';
-    const selfId = req.authUser?.person.id;
-    if (role === 'member' && ticket.assigneeId !== selfId) {
-      return { ok: false, message: 'ลงเวลาได้เฉพาะใบงานของตัวเอง' };
+    if (ctx.access === 'member' && ticket.assigneeId !== ctx.selfId) {
+      throw new ForbiddenException('ลงเวลาได้เฉพาะใบงานของตัวเอง');
     }
-    const hours = typeof body.hours === 'number' && body.hours > 0 ? body.hours : 0;
-    if (!hours) {
-      return { ok: false, message: 'hours ต้องมากกว่า 0' };
+    const hours = typeof body.hours === 'number' && Number.isFinite(body.hours) ? body.hours : 0;
+    if (hours <= 0 || hours > 24) {
+      return { ok: false, message: 'hours ต้องอยู่ระหว่าง 0.01 ถึง 24 ชั่วโมง' };
     }
-    const spentOn = (body.spentOn ?? todayInBangkok()).slice(0, 10);
+    const spentOn = (body.spentOn ?? todayInBangkok()).trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(spentOn)) {
+      return { ok: false, message: 'spentOn ต้องเป็นรูปแบบ YYYY-MM-DD' };
+    }
     const isoHours = hoursToIsoDuration(hours);
     const err = await this.openProject.writebackTimeEntry({
       workPackageId: opId,
       hours: isoHours,
       spentOn,
-      comment: body.comment?.trim() || undefined,
+      comment: body.comment?.trim().slice(0, 2000) || undefined,
     });
     if (err === 'writebackDisabled') {
       return { ok: false, writebackDisabled: true, message: 'Writeback ยังปิดอยู่' };
@@ -451,7 +458,7 @@ export class WorkItemsController {
     if (err) {
       return { ok: false, message: err };
     }
-    await this.db.audit(selfId ?? null, 'work_item.time_entry', id, { hours, spentOn });
+    await this.db.audit(ctx.selfId, 'work_item.time_entry', id, { hours, spentOn });
     return { ok: true };
   }
 
@@ -478,6 +485,9 @@ export class WorkItemsController {
     const comment = (body.comment ?? '').trim();
     if (!comment) {
       return { ok: false, message: 'comment required' };
+    }
+    if (comment.length > 10_000) {
+      return { ok: false, message: 'comment ต้องไม่เกิน 10,000 ตัวอักษร' };
     }
     const err = await this.openProject.writebackComment(opId, comment);
     if (err === 'writebackDisabled') {
@@ -610,7 +620,9 @@ export class WorkItemsController {
     const baseUrl = (this.config.gitlab.url || basePart).replace(/\/+$/, '');
     const projectIds =
       this.config.gitlab.projectIds.length > 0 ? this.config.gitlab.projectIds : storedProjects;
-    const token = this.config.gitlab.apiToken || connectionToken(connection, this.config.tokenEncKey);
+    const token =
+      this.config.gitlab.apiToken ||
+      connectionToken(connection, this.config.tokenEncKey, this.config.tokenEncKeyPrev);
     if (!baseUrl || !token) {
       return null;
     }
@@ -624,20 +636,71 @@ export class WorkItemsController {
     if (!input) {
       return { ok: false, message: 'ticket required' };
     }
-    const id = input.id?.trim() || (await nextLocalTicketId(this.db));
-    const ticket: Ticket = { ...input, id, source: input.source ?? 'local' };
+    const ctx = await this.scope.resolve(req.authUser);
+    const requestedId = typeof input.id === 'string' ? input.id.trim() : '';
+    const id = requestedId || (await nextLocalTicketId(this.db));
+    const existing = await getWorkItem(this.db, id);
+    if (existing) {
+      throw new ConflictException(`ใบงานรหัส ${id} มีอยู่ในระบบแล้ว`);
+    }
+
+    let ticket: Ticket;
+    if (ctx.access === 'member') {
+      if (input.assigneeId && input.assigneeId !== ctx.selfId) {
+        throw new ForbiddenException('สมาชิกสร้างใบงานได้เฉพาะสำหรับตนเอง');
+      }
+      if (input.closed === true || input.workflowStatus === 'Done') {
+        throw new ForbiddenException('สมาชิกไม่สามารถสร้างใบงานในสถานะปิดแล้ว (Done) ได้');
+      }
+      const cleanMrLink = input.mrLink ? sanitizeEvidenceUrl(input.mrLink) ?? '' : '';
+      ticket = {
+        ...input,
+        id,
+        assigneeId: ctx.selfId,
+        closed: false,
+        closedOn: null,
+        workflowStatus:
+          input.workflowStatus === 'Ready for QA' || input.workflowStatus === 'In QA'
+            ? input.workflowStatus
+            : 'In Progress',
+        isMdDirect: false,
+        mrLink: cleanMrLink,
+        source: 'local',
+      };
+    } else {
+      if (input.assigneeId?.trim()) {
+        ctx.assertCanAccessPerson(input.assigneeId);
+      }
+      ticket = {
+        ...input,
+        id,
+        source: ctx.isAdmin ? (input.source ?? 'local') : 'local',
+      };
+    }
+
     const saved = await upsertWorkItem(this.db, ticket);
-    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.create', id, { id });
+    await this.db.audit(ctx.selfId, 'work_item.create', id, { id });
     return { ok: true, ticket: saved };
   }
 
   @Post('import')
   @Roles('admin', 'lead')
   async importMany(@Body() body: { tickets?: Ticket[] }, @Req() req: AuthedRequest) {
-    const incoming = body.tickets ?? [];
+    const ctx = await this.scope.resolve(req.authUser);
+    const incoming = Array.isArray(body.tickets) ? body.tickets : [];
+    if (incoming.length > 2000) {
+      throw new BadRequestException('นำเข้าได้สูงสุด 2,000 รายการต่อครั้ง');
+    }
+    if (!ctx.isAdmin) {
+      for (const item of incoming) {
+        if (item.assigneeId?.trim()) {
+          ctx.assertCanAccessPerson(item.assigneeId);
+        }
+      }
+    }
     const added = await insertWorkItems(this.db, incoming);
     const skipped = incoming.filter((ticket) => !added.includes(ticket.id)).map((ticket) => ticket.id);
-    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.import', null, {
+    await this.db.audit(ctx.selfId, 'work_item.import', null, {
       added: added.length,
       skipped: skipped.length,
     });
@@ -676,25 +739,44 @@ export class WorkItemsController {
       if (body.ticket.closed === true || toStatus === 'Done') {
         throw new ForbiddenException('สมาชิกไม่สามารถปิดใบงานเป็น Done ได้ด้วยตนเอง');
       }
+      const nextActualMd =
+        typeof body.ticket.actualMd === 'number' && Number.isFinite(body.ticket.actualMd) && body.ticket.actualMd >= 0
+          ? body.ticket.actualMd
+          : existing.actualMd;
+      const nextMrLink =
+        body.ticket.mrLink === undefined
+          ? existing.mrLink
+          : body.ticket.mrLink.trim() === ''
+            ? ''
+            : (sanitizeEvidenceUrl(body.ticket.mrLink) ?? '');
+      const enteringQa = toStatus === 'Ready for QA' && fromStatus !== 'Ready for QA';
       nextTicket = {
         ...existing,
         workflowStatus: body.ticket.workflowStatus ?? existing.workflowStatus,
-        actualMd: typeof body.ticket.actualMd === 'number' ? body.ticket.actualMd : existing.actualMd,
+        actualMd: nextActualMd,
         actualStartOn:
           body.ticket.actualStartOn !== undefined ? body.ticket.actualStartOn : existing.actualStartOn,
-        mrLink: body.ticket.mrLink !== undefined ? body.ticket.mrLink : existing.mrLink,
+        mrLink: nextMrLink,
         dodChecklist:
           body.ticket.dodChecklist !== undefined ? body.ticket.dodChecklist : existing.dodChecklist,
         bugCause: body.ticket.bugCause !== undefined ? body.ticket.bugCause : existing.bugCause,
         pocResult: body.ticket.pocResult !== undefined ? body.ticket.pocResult : existing.pocResult,
         blocker: typeof body.ticket.blocker === 'boolean' ? body.ticket.blocker : existing.blocker,
         note: body.ticket.note !== undefined ? body.ticket.note : existing.note,
+        // Fair Cutoff: คำนวณฝั่งเซิร์ฟเวอร์เฉพาะตอนเข้า Ready for QA ครั้งแรก ห้ามส่งย้อนหลังเอง
         readyForQaAt:
-          body.ticket.readyForQaAt !== undefined ? body.ticket.readyForQaAt : existing.readyForQaAt,
+          enteringQa && !existing.readyForQaAt ? new Date().toISOString() : existing.readyForQaAt,
         devDeliveredOn:
-          body.ticket.devDeliveredOn !== undefined ? body.ticket.devDeliveredOn : existing.devDeliveredOn,
+          enteringQa && !existing.devDeliveredOn ? todayInBangkok() : existing.devDeliveredOn,
       };
     } else {
+      if (
+        !ctx.isAdmin &&
+        body.ticket.assigneeId?.trim() &&
+        body.ticket.assigneeId !== existing.assigneeId
+      ) {
+        ctx.assertCanAccessPerson(body.ticket.assigneeId);
+      }
       nextTicket = {
         ...body.ticket,
         id: existing.id,
@@ -713,7 +795,7 @@ export class WorkItemsController {
         const nowIso = new Date().toISOString();
         await closeOpenStageLog(tx, id, nowIso);
         const stageLog: TicketStageLog = {
-          id: `slog-${id}-${Date.now()}`,
+          id: `slog-${id}-${randomUUID()}`,
           ticketId: id,
           fromStatus,
           toStatus: finalStatus,
@@ -747,10 +829,12 @@ export class WorkItemsController {
     @Body() body: { assigneeId?: string },
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const assigneeId = body.assigneeId?.trim() ?? '';
     if (!assigneeId) {
       return { ok: false, message: 'assigneeId required' };
     }
+    ctx.assertCanAccessPerson(assigneeId);
     const person = await getPerson(this.db, assigneeId);
     if (!person) {
       return { ok: false, message: 'person not found' };
@@ -759,8 +843,9 @@ export class WorkItemsController {
     if (!ticket || ticket.assigneeId !== '') {
       return { ok: false, message: 'ticket missing or already assigned' };
     }
+    ctx.assertCanAccessTicket(ticket);
     const saved = await upsertWorkItem(this.db, { ...ticket, assigneeId });
-    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.assign', id, { assigneeId });
+    await this.db.audit(ctx.selfId, 'work_item.assign', id, { assigneeId });
 
     let writebackError: string | undefined;
     const opId = saved.opId;
@@ -774,13 +859,13 @@ export class WorkItemsController {
       const err = await this.openProject.writebackAssignee(opId, opUserId);
       if (err) {
         writebackError = err;
-        await this.db.audit(req.authUser?.person.id ?? null, 'work_item.assign_writeback_failed', id, {
+        await this.db.audit(ctx.selfId, 'work_item.assign_writeback_failed', id, {
           opId,
           opUserId,
           error: err,
         });
       } else {
-        await this.db.audit(req.authUser?.person.id ?? null, 'work_item.assign_writeback', id, { opId, opUserId });
+        await this.db.audit(ctx.selfId, 'work_item.assign_writeback', id, { opId, opUserId });
       }
     }
 
@@ -794,10 +879,12 @@ export class WorkItemsController {
     @Body() body: { startDate?: string | null; dueDate?: string | null },
     @Req() req: AuthedRequest,
   ) {
+    const ctx = await this.scope.resolve(req.authUser);
     const ticket = await getWorkItem(this.db, id);
     if (!ticket) {
       return { ok: false, message: 'ไม่พบใบงาน' };
     }
+    ctx.assertCanAccessTicket(ticket);
     const edited = applyGanttDateEdit(ticket, {
       startDate: body.startDate,
       dueDate: body.dueDate,
@@ -806,7 +893,7 @@ export class WorkItemsController {
       return { ok: false, message: edited.message };
     }
     const saved = await upsertWorkItem(this.db, edited.ticket);
-    await this.db.audit(req.authUser?.person.id ?? null, 'work_item.dates', id, {
+    await this.db.audit(ctx.selfId, 'work_item.dates', id, {
       startDate: saved.actualStartOn ?? null,
       dueDate: saved.dueOn ?? null,
       firstDueOn: saved.firstDueOn ?? null,
@@ -821,12 +908,12 @@ export class WorkItemsController {
       });
       if (err) {
         writebackError = err;
-        await this.db.audit(req.authUser?.person.id ?? null, 'work_item.dates_writeback_failed', id, {
+        await this.db.audit(ctx.selfId, 'work_item.dates_writeback_failed', id, {
           opId,
           error: err,
         });
       } else {
-        await this.db.audit(req.authUser?.person.id ?? null, 'work_item.dates_writeback', id, { opId });
+        await this.db.audit(ctx.selfId, 'work_item.dates_writeback', id, { opId });
       }
     }
 
@@ -841,7 +928,7 @@ export class WorkItemsController {
   ) {
     const ctx = await this.scope.resolve(req.authUser);
     ctx.assertCanAccessPerson(body.assigneeId);
-    const tickets = await listWorkItems(this.db);
+    const tickets = await listOpenWorkItemsByAssignee(this.db, body.assigneeId);
     const active = detectActiveWipTickets(tickets, body.assigneeId, body.excludeTicketId);
     return { ok: true, activeTickets: active };
   }
@@ -858,13 +945,24 @@ export class WorkItemsController {
     @Req() req: AuthedRequest,
   ) {
     const ctx = await this.scope.resolve(req.authUser);
+    if (!Array.isArray(body.targetTicketIds) || body.targetTicketIds.length === 0) {
+      throw new BadRequestException('targetTicketIds must be a non-empty array');
+    }
+    const uniqueTargets = [...new Set(body.targetTicketIds.map((x) => String(x).trim()).filter(Boolean))];
+    if (uniqueTargets.length === 0 || uniqueTargets.length > 50) {
+      throw new BadRequestException('targetTicketIds must contain 1 to 50 items');
+    }
     const mdTicket = await getWorkItem(this.db, body.mdTicketId);
     if (!mdTicket) {
       return { ok: false, message: 'ไม่พบใบงาน MD Mandate' };
     }
     ctx.assertCanAccessTicket(mdTicket);
 
-    const shiftDays = body.shiftDays > 0 ? body.shiftDays : Math.max(1, Math.ceil(mdTicket.estimateMd || 1));
+    const rawShift =
+      typeof body.shiftDays === 'number' && Number.isFinite(body.shiftDays) && body.shiftDays > 0
+        ? Math.ceil(body.shiftDays)
+        : Math.max(1, Math.ceil(mdTicket.estimateMd || 1));
+    const shiftDays = Math.min(90, Math.max(1, rawShift));
     const nowIso = new Date().toISOString();
     const shiftedItems = await this.db.tx(async (tx) => {
       const items: {
@@ -875,7 +973,7 @@ export class WorkItemsController {
         newDueOn: string | null;
       }[] = [];
 
-      for (const targetId of body.targetTicketIds) {
+      for (const targetId of uniqueTargets) {
         const ticket = await getWorkItem(tx, targetId);
         if (!ticket) continue;
         ctx.assertCanAccessTicket(ticket);
@@ -899,7 +997,7 @@ export class WorkItemsController {
         const saved = await upsertWorkItem(tx, pausedTicket);
         if (ticket.firstDueOn && newFirstDueOn) {
           const dueShift: TicketDueShift = {
-            id: `shift-${targetId}-${Date.now()}`,
+            id: `shift-${targetId}-${randomUUID()}`,
             ticketId: targetId,
             previousFirstDueOn: ticket.firstDueOn,
             newFirstDueOn,

@@ -367,7 +367,10 @@ export class OpenProjectClient {
       body['description'] = { raw: payload.description };
     }
     if (payload.estimatedHours && payload.estimatedHours > 0) {
-      body['estimatedTime'] = `PT${Math.round(payload.estimatedHours)}H`;
+      const totalMinutes = Math.max(1, Math.round(payload.estimatedHours * 60));
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      body['estimatedTime'] = h > 0 && m > 0 ? `PT${h}H${m}M` : h > 0 ? `PT${h}H` : `PT${m}M`;
     }
     if (payload.startDate) {
       body['startDate'] = payload.startDate;
@@ -478,44 +481,6 @@ export class OpenProjectClient {
         );
       } catch {
         // ignore select variants
-      }
-    }
-
-    if (ids.size === 0) {
-      try {
-        const page = await this.get<OpCollection<OpMembership>>(
-          `/api/v3/memberships?pageSize=200&offset=1&filters=${encodeURIComponent(
-            JSON.stringify([{ principal: { operator: '=', values: [`/api/v3/groups/${groupId}`] } }]),
-          )}`,
-        );
-        for (const m of page._embedded?.elements ?? []) {
-          // เมื่อ filter ด้วย group เป็น principal — สมาชิกจริงอาจอยู่ใน embedded ของ membership อื่น
-          // บาง instance คืน membership ของกลุ่มในโปรเจกต์; ดึง user จาก roles ไม่ได้ — ข้าม
-          void m;
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    // OpenProject มาตรฐาน: GET group มี members เป็น array ของ user links
-    if (ids.size === 0) {
-      try {
-        const raw = await this.get<{
-          id?: number;
-          members?: { href?: string; title?: string }[];
-          _links?: OpGroup['_links'];
-          _embedded?: OpGroup['_embedded'];
-        }>(`/api/v3/groups/${groupId}`);
-        if (Array.isArray(raw.members)) {
-          for (const link of raw.members) {
-            const id = idFromHref(link?.href);
-            if (id != null) ids.add(id);
-          }
-        }
-        collectFromGroup(raw as OpGroup);
-      } catch {
-        // ignore
       }
     }
 

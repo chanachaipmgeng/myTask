@@ -10,7 +10,10 @@ import { ShellNotice } from '../../core/shell-notice';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { currentSession } from '../../core/session';
 import { WorkspaceFilter } from '../../core/workspace-filter';
-import { PageHeadComponent, SectionCardComponent, SfMessageComponent } from '../../shared/ui';
+import { mondayOfWeek, shiftIsoDay } from '../../core/work-views';
+import { todayInBangkok } from '../../core/workflow';
+import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
 
 @Component({
   selector: 'app-team-time',
@@ -75,7 +78,7 @@ export class TeamTimePage {
   });
 
   constructor() {
-    void this.reload();
+    void this.scorecard.whenReady().then(() => this.reload());
     effect(() => {
       this.scope();
       this.selectedCell.set(null);
@@ -133,16 +136,10 @@ export class TeamTimePage {
   }
 
   private offlineMatrix(): TeamTimeResponse {
-    const today = new Date();
-    const day = today.getDay();
-    const mondayOffset = day === 0 ? -6 : 1 - day;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + mondayOffset);
+    const monday = mondayOfWeek(todayInBangkok());
     const days: string[] = [];
     for (let i = 0; i < 5; i += 1) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      days.push(d.toISOString().slice(0, 10));
+      days.push(shiftIsoDay(monday, i));
     }
     const from = days[0]!;
     const to = days[days.length - 1]!;

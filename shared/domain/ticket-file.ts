@@ -1,6 +1,6 @@
 import { Size, Ticket, TicketType, Track, VarianceCode } from './models';
 
-const TRACKS: ReadonlySet<string> = new Set(['Implement', 'RD']);
+const TRACKS: ReadonlySet<string> = new Set(['Implement', 'RD', 'IMP', 'RND', 'QA', 'UXBA', 'SUP', 'INFRA']);
 const TYPES: ReadonlySet<string> = new Set([
   'Feature',
   'CR',

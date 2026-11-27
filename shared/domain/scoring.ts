@@ -381,8 +381,8 @@ export function scorePerson(
   const splitClosedMd = splitTickets
     .filter((t) => t.closed)
     .reduce((sum, ticket) => {
-      const alloc = (ticket.allocations ?? []).find((a) => a.userId === person.id);
-      return sum + (alloc?.actualMd ?? 0);
+      const allocs = (ticket.allocations ?? []).filter((a) => a.userId === person.id);
+      return sum + allocs.reduce((s, a) => s + (a.actualMd ?? 0), 0);
     }, 0);
   const assignedClosedMd = closed
     .filter((t) => !t.isSplitEffort)
@@ -390,13 +390,15 @@ export function scorePerson(
   const peerReviewMd = tickets
     .filter(
       (ticket) =>
-        ticket.reviewerId === person.id ||
-        (ticket.reviewers ?? []).includes(person.id) ||
-        (ticket.approvedBy ?? []).includes(person.id),
+        ticket.closed &&
+        ticket.assigneeId !== person.id &&
+        (ticket.reviewerId === person.id ||
+          (ticket.reviewers ?? []).includes(person.id) ||
+          (ticket.approvedBy ?? []).includes(person.id)),
     )
     .reduce((sum, ticket) => sum + (ticket.peerReviewCreditMd ?? calculateReviewerCredit(ticket)), 0);
   const qaCreditMd = tickets
-    .filter((ticket) => ticket.qaAssigneeId === person.id)
+    .filter((ticket) => ticket.closed && ticket.qaAssigneeId === person.id && ticket.assigneeId !== person.id)
     .reduce((sum, ticket) => sum + calculateQaCredit(ticket), 0);
   const closedMd = roundMd(assignedClosedMd + splitClosedMd + peerReviewMd + qaCreditMd);
   const plannedMd = person.plannedMd;
@@ -457,30 +459,38 @@ export function scorePerson(
     weights.research.outcome * outcomeIndexPct +
     weights.research.review * reviewReopenQuality;
 
-  // Track Formulas for 6 Core Tracks
+  // Track Formulas for 6 Core Tracks (return 0 when no closed work — never fabricate baseline scores)
   const qaIndex =
-    0.4 * (weightedScore > 0 ? weightedScore : 90) +
-    0.3 * 92 +
-    0.2 * 100 +
-    0.1 * (dodWeightedScore > 0 ? dodWeightedScore : 95);
+    closed.length === 0
+      ? 0
+      : 0.4 * weightedScore +
+        0.25 * (accuracyShare * 100) +
+        0.2 * (quality * 100) +
+        0.15 * (dodWeightedScore > 0 ? dodWeightedScore : planIndexPct);
 
   const uxbaIndex =
-    0.4 * (accuracyShare > 0 ? accuracyShare * 100 : 88) +
-    0.3 * 95 +
-    0.2 * (quality > 0 ? quality * 100 : 90) +
-    0.1 * planIndexPct;
+    closed.length === 0
+      ? 0
+      : 0.4 * (accuracyShare * 100) +
+        0.25 * weightedScore +
+        0.2 * (quality * 100) +
+        0.15 * planIndexPct;
 
   const supIndex =
-    0.45 * (weightedScore > 0 ? weightedScore : 92) +
-    0.25 * 94 +
-    0.15 * (quality > 0 ? quality * 100 : 90) +
-    0.15 * (accuracyShare > 0 ? accuracyShare * 100 : 85);
+    closed.length === 0
+      ? 0
+      : 0.45 * weightedScore +
+        0.2 * planIndexPct +
+        0.2 * (quality * 100) +
+        0.15 * (accuracyShare * 100);
 
   const infraIndex =
-    0.4 * (weightedScore > 0 ? weightedScore : 95) +
-    0.25 * (quality > 0 ? quality * 100 : 92) +
-    0.2 * 90 +
-    0.15 * planIndexPct;
+    closed.length === 0
+      ? 0
+      : 0.4 * weightedScore +
+        0.25 * (quality * 100) +
+        0.2 * (accuracyShare * 100) +
+        0.15 * planIndexPct;
 
   let developmentIndex = implementIndex;
   if (person.track === 'RD' || person.track === 'RND') {
@@ -544,9 +554,10 @@ export function calculateReviewerCredit(ticket: Ticket, pct = 0.1): number {
  * Calculates net Actual MD after deducting paused days, blocked delays, and QA waiting time.
  */
 export function calculateNetActualMd(ticket: Ticket, blockedHours = 0, qaWaitHours = 0, hoursPerMd = 6): number {
+  const safeHoursPerMd = hoursPerMd > 0 ? hoursPerMd : FOCUS_HOURS_PER_MD;
   const pausedMd = ticket.pausedDays || 0;
-  const blockedMd = blockedHours > 0 ? blockedHours / hoursPerMd : 0;
-  const qaWaitMd = qaWaitHours > 0 ? qaWaitHours / hoursPerMd : 0;
+  const blockedMd = blockedHours > 0 ? blockedHours / safeHoursPerMd : 0;
+  const qaWaitMd = qaWaitHours > 0 ? qaWaitHours / safeHoursPerMd : 0;
   const net = Math.max(0, ticket.actualMd - pausedMd - blockedMd - qaWaitMd);
   return roundMd(net);
 }
@@ -558,20 +569,35 @@ export function calculateQaCredit(ticket: Ticket): number {
     : roundMd(ticket.estimateMd * 0.15);
 }
 
+const ALL_TRACK_SIDES: readonly { code: string; label: string; matches: (t: Track) => boolean }[] = [
+  { code: 'RND', label: 'R&D', matches: (t) => t === 'RD' || t === 'RND' },
+  { code: 'IMP', label: 'Implement', matches: (t) => t === 'Implement' || t === 'IMP' },
+  { code: 'QA', label: 'QA', matches: (t) => t === 'QA' },
+  { code: 'UXBA', label: 'UX/BA', matches: (t) => t === 'UXBA' },
+  { code: 'SUP', label: 'Support', matches: (t) => t === 'SUP' },
+  { code: 'INFRA', label: 'Infra', matches: (t) => t === 'INFRA' },
+];
+
 export function sampleWorkloadPoints(tickets: readonly Ticket[], track: Track | 'All'): ChartPoint[] {
-  const rows = track === 'All' ? tickets : tickets.filter((ticket) => ticket.track === track);
+  const targetSide = track === 'All' ? null : ALL_TRACK_SIDES.find((s) => s.matches(track));
+  const rows =
+    track === 'All'
+      ? tickets
+      : targetSide
+        ? tickets.filter((ticket) => targetSide.matches(ticket.track))
+        : tickets.filter((ticket) => ticket.track === track);
   const points: ChartPoint[] = [];
 
   if (track === 'All') {
     for (const category of CATEGORY_ORDER) {
-      for (const side of ['RD', 'Implement'] as const) {
+      for (const side of ALL_TRACK_SIDES) {
         const value = roundMd(
           rows
-            .filter((ticket) => ticket.track === side && workloadCategory(ticket.type) === category)
+            .filter((ticket) => side.matches(ticket.track) && workloadCategory(ticket.type) === category)
             .reduce((sum, ticket) => sum + effortMd(ticket), 0),
         );
         if (value > 0) {
-          const label = `${category} · ${side === 'RD' ? 'R&D' : 'Implement'}`;
+          const label = `${category} · ${side.label}`;
           points.push({ x: label, y: value, text: `${formatMd(value)} MD` });
         }
       }

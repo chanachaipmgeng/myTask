@@ -43,16 +43,28 @@ export async function updateRubric(
   const updatedActive = patch.is_active !== undefined ? patch.is_active : existing.is_active;
 
   const result = await db.pool.query<RubricDefinition>(
-    `UPDATE rubric_registry
-     SET params = $1::jsonb,
-         title = $2,
-         description = $3,
-         is_active = $4,
-         updated_by = $5,
-         updated_at = NOW()
-     WHERE rubric_id = $6
+    `INSERT INTO rubric_registry (
+       rubric_id, version, category, title, applicable_track, params, description, is_active, updated_by, updated_at
+     ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, NOW())
+     ON CONFLICT (rubric_id) DO UPDATE SET
+       params = EXCLUDED.params,
+       title = EXCLUDED.title,
+       description = EXCLUDED.description,
+       is_active = EXCLUDED.is_active,
+       updated_by = EXCLUDED.updated_by,
+       updated_at = NOW()
      RETURNING rubric_id, version, category, title, applicable_track, params, description, is_active, updated_by, updated_at`,
-    [updatedParams, updatedTitle, updatedDesc, updatedActive, updatedBy, rubricId],
+    [
+      rubricId,
+      existing.version ?? 'v2026.4',
+      existing.category,
+      updatedTitle,
+      existing.applicable_track ?? 'ALL',
+      updatedParams,
+      updatedDesc,
+      updatedActive,
+      updatedBy,
+    ],
   );
 
   return result.rows[0] ?? null;

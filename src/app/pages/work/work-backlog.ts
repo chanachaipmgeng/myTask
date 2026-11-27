@@ -4,14 +4,14 @@ import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { ScorecardService } from '../../core/scorecard.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { workBacklogRows } from '../../core/work-views';
+import { SectionCardComponent } from '../../shared/ui';
 import {
-  SectionCardComponent,
   SfGridAggregate,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
 import { WorkHubFilter } from './work-hub-filter';
 
 @Component({

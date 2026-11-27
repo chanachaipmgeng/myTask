@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
@@ -12,25 +12,24 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { ThemeService } from '../../core/theme.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
+import { PageHeadComponent, SectionCardComponent, prismChartPalette } from '../../shared/ui';
 import {
-  PageHeadComponent,
-  SectionCardComponent,
   SfChartComponent,
   SfChartOptions,
   SfChartSeriesConfig,
   scatterBandSeries,
   scorePartWaterfallSeries,
-  SfDonutChartComponent,
-  SfDonutChartOptions,
+} from '../../shared/sf/sf-chart/sf-chart';
+import { SfDonutChartComponent, SfDonutChartOptions } from '../../shared/sf/sf-donut-chart/sf-donut-chart';
+import {
   SfGridAggregate,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  SfTextBoxComponent,
-  prismChartPalette,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 import {
   defaultThaiSpeechButtonSettings,
   mergeSpeechTranscript,
@@ -134,7 +133,7 @@ export class PersonDashboard {
     labelStyle: this.axisFont,
     lineStyle: { width: 0 },
   };
-  protected readonly piePalette = prismChartPalette(false);
+  protected readonly piePalette = computed(() => prismChartPalette(this.theme.isDark()));
 
   protected readonly commonChartOptions: SfChartOptions = {
     height: '300px',
@@ -261,7 +260,7 @@ export class PersonDashboard {
       innerRadius: '62%',
       radius: '80%',
       centerLabel: `${total}<br>ใบ`,
-      palettes: this.piePalette,
+      palettes: this.piePalette(),
       legend: { visible: true, position: 'Bottom', alignment: 'Center', textStyle: this.axisFont },
       tooltip: { enable: true, format: '${point.x}: <b>${point.y}</b>' },
       exportable: true,
@@ -276,7 +275,7 @@ export class PersonDashboard {
       innerRadius: '62%',
       radius: '80%',
       centerLabel: `${rounded}<br>MD`,
-      palettes: this.piePalette,
+      palettes: this.piePalette(),
       legend: { visible: true, position: 'Bottom', alignment: 'Center', textStyle: this.axisFont },
       tooltip: { enable: true, format: '${point.x}: <b>${point.y}</b>' },
       exportable: true,
@@ -340,34 +339,40 @@ export class PersonDashboard {
 
     // 1. On-Time Delivery
     const closed = v.closedWork;
-    const onTimeCount = closed.filter((w) => !w.weekOffsetLabel.includes('+')).length;
-    const myOnTime = closed.length > 0 ? Math.round((onTimeCount / closed.length) * 100) : 90;
-    const teamOnTime = 88;
+    const onTimeCount = closed.filter((w) => w.weekOffsetLabel === 'ตรงสัปดาห์').length;
+    const myOnTime = closed.length > 0 ? Math.round((onTimeCount / closed.length) * 100) : 0;
+    const teamOnTime = 80;
 
     // 2. Estimation Accuracy
-    let myAccuracy = 85;
+    let myAccuracy = 0;
     if (v.effortBars.length > 0) {
       const accRatios = v.effortBars.map((e) => Math.min(1, (e.estimateMd || 1) / (e.actualMd || 1)));
       myAccuracy = Math.round((accRatios.reduce((s, r) => s + r, 0) / accRatios.length) * 100);
     }
-    const teamAccuracy = 82;
+    const teamAccuracy = 80;
 
     // 3. DoD First-Time Right Quality
     const qualityOk = closed.filter((w) => w.reviewRounds <= 1 && w.reopenCount === 0).length;
-    const myQuality = closed.length > 0 ? Math.round((qualityOk / closed.length) * 100) : 92;
-    const teamQuality = 85;
+    const myQuality = closed.length > 0 ? Math.round((qualityOk / closed.length) * 100) : 0;
+    const teamQuality = 80;
 
     // 4. Quota Fulfillment
-    const myQuotaPct = Math.min(100, Math.round(myRow ? myRow.planRawPct : 95));
-    const teamQuotaPct = 92;
+    const myQuotaPct = Math.min(100, Math.round(myRow ? myRow.planRawPct : 0));
+    const teamQuotaPct = rows.length > 0
+      ? Math.min(100, Math.round(rows.reduce((s, r) => s + r.planRawPct, 0) / rows.length))
+      : 80;
 
     // 5. Peer Review & Team Handoff
-    const myPeer = Math.min(100, Math.round(myRow ? (myRow.weighted || 90) : 88));
-    const teamPeer = 85;
+    const myPeer = Math.min(100, Math.round(myRow ? myRow.weighted : 0));
+    const teamPeer = rows.length > 0
+      ? Math.min(100, Math.round(rows.reduce((s, r) => s + r.weighted, 0) / rows.length))
+      : 80;
 
     // 6. Spike Research & AI Innovation
-    const mySpike = Math.min(100, Math.round(myRow && myRow.sidePct > 0 ? Math.min(100, myRow.sidePct * 3) : 80));
-    const teamSpike = 78;
+    const mySpike = Math.min(100, Math.round(myRow && myRow.sidePct > 0 ? Math.min(100, myRow.sidePct * 3) : 0));
+    const teamSpike = rows.length > 0
+      ? Math.min(100, Math.round(rows.reduce((s, r) => s + Math.min(100, r.sidePct * 3), 0) / rows.length))
+      : 75;
 
     return [
       { dimension: 'ส่งตรง (On-Time)', personScore: myOnTime, teamAvg: teamOnTime },
@@ -468,6 +473,15 @@ export class PersonDashboard {
   protected readonly aiProvider = signal<string | null>(null);
   protected readonly aiError = signal<string | null>(null);
   private aiSpeechBase = '';
+
+  constructor() {
+    effect(() => {
+      void this.personId();
+      this.aiResponse.set(null);
+      this.aiError.set(null);
+      this.aiPrompt.set('');
+    });
+  }
 
   protected readonly speechButtonSettings = defaultThaiSpeechButtonSettings;
   protected readonly speechTooltipSettings = {

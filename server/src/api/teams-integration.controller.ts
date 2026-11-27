@@ -2,6 +2,7 @@ import { Body, Controller, Get, Inject, Post, Put, Req } from '@nestjs/common';
 import { collectAlerts, projectedActual } from '../../../shared/domain/alerts';
 import { formatMd } from '../../../shared/domain/scoring';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
+import { VisibilityScopeService } from '../auth/visibility-scope.service';
 import { validateExternalUrl } from '../common/security';
 import { APP_CONFIG, AppConfig } from '../config';
 import { connectionToken, getConnection, getSettings, upsertConnection } from '../data/settings.repo';
@@ -12,10 +13,12 @@ import { Db } from '../db/db.service';
 export class TeamsIntegrationController {
   constructor(
     private readonly db: Db,
+    private readonly scope: VisibilityScopeService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Get('integrations/teams')
+  @Roles('admin', 'lead')
   async getTeams() {
     const [connection, runs] = await Promise.all([
       getConnection(this.db, 'teams'),
@@ -79,15 +82,18 @@ export class TeamsIntegrationController {
       channel?: string;
       deadline?: boolean;
       overrun?: boolean;
+      policySla?: boolean;
       dryRun?: boolean;
     },
     @Req() req: AuthedRequest,
   ) {
-    const [settings, connection, tickets] = await Promise.all([
+    const ctx = await this.scope.resolve(req.authUser);
+    const [settings, connection, rawTickets] = await Promise.all([
       getSettings(this.db),
       getConnection(this.db, 'teams'),
       listWorkItems(this.db),
     ]);
+    const tickets = ctx.isAdmin ? rawTickets : rawTickets.filter((t) => ctx.canAccessTicket(t));
     const channel = (
       body.channel ||
       connection?.base_url ||
@@ -95,13 +101,14 @@ export class TeamsIntegrationController {
       'dev-alerts'
     ).trim();
     const includeDeadline = body.deadline ?? true;
+    const includePolicySla = body.policySla ?? includeDeadline;
     const includeOverrun = body.overrun ?? true;
+    const overrunPct = Math.max(0, Math.round((settings.alertRules.overrunLimit - 1) * 100));
     const alerts = collectAlerts(tickets, settings.alertRules.overrunLimit).filter((alert) => {
-      if (
-        alert.kind === 'deadline' ||
-        alert.kind === 'policy-alert' ||
-        alert.kind === 'policy-breach'
-      ) {
+      if (alert.kind === 'policy-alert' || alert.kind === 'policy-breach') {
+        return includePolicySla;
+      }
+      if (alert.kind === 'deadline') {
         return includeDeadline;
       }
       return includeOverrun;
@@ -117,7 +124,7 @@ export class TeamsIntegrationController {
       } else if (alert.kind === 'deadline') {
         text = `ช่อง ${channel}: สัปดาห์ที่ commit ใกล้หมด ใบ ${alert.ticketId} เหลือ ${formatMd(ticket?.workingDaysLeft ?? 0)} วันทำการและยังไม่ปิด`;
       } else {
-        text = `ช่อง ${channel}: actual มีแนวโน้มเกิน estimate มากกว่า 50% ใบ ${alert.ticketId} คาดว่า ${formatMd(ticket ? (projectedActual(ticket) ?? 0) : 0)} MD จาก estimate ${formatMd(ticket?.estimateMd ?? 0)} MD`;
+        text = `ช่อง ${channel}: actual มีแนวโน้มเกิน estimate มากกว่า ${overrunPct}% ใบ ${alert.ticketId} คาดว่า ${formatMd(ticket ? (projectedActual(ticket) ?? 0) : 0)} MD จาก estimate ${formatMd(ticket?.estimateMd ?? 0)} MD`;
       }
       return {
         kind: alert.kind,
@@ -176,6 +183,7 @@ export class TeamsIntegrationController {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: summaryText }),
+        signal: AbortSignal.timeout(10_000),
       });
       if (!response.ok) {
         const errBody = await response.text();

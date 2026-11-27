@@ -16,17 +16,21 @@ import {
   PageHeadComponent,
   PersonAvatarComponent,
   SectionCardComponent,
+  StatusBadgeComponent,
+} from '../../shared/ui';
+import {
   SfChartComponent,
   SfChartOptions,
   SfChartSeriesConfig,
+  scatterBandSeries,
+} from '../../shared/sf/sf-chart/sf-chart';
+import {
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  StatusBadgeComponent,
-  scatterBandSeries,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
 
 @Component({
   selector: 'app-time-audit',

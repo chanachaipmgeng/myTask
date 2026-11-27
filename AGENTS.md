@@ -12,7 +12,7 @@
 
 | ชนิด | พาธ |
 |---|---|
-| Workspace Rules | `.agents/rules/myhr-ui-and-teams.md`, `.agents/rules/syncfusion-wrappers.md`, `.cursor/rules/*.mdc` (รวม `workspace-filter.mdc`) |
+| Workspace Rules | `.agents/rules/myhr-ui-and-teams.md`, `.agents/rules/syncfusion-wrappers.md`, `.agents/rules/backend-security-and-domain.md`, `.cursor/rules/*.mdc` (รวม `workspace-filter.mdc`) |
 | Project Skills | `.agents/skills/manday-docker-stack/SKILL.md`, `.agents/skills/openproject-fields/SKILL.md`, `.cursor/skills/*/SKILL.md` (รวม `workspace-filter`, `work-hub`, `scorecard-verify`, `openproject-fields`) |
 
 ## คำสั่งตรวจขั้นต่ำ & Windows Shell Guardrail
@@ -26,6 +26,7 @@ npm --prefix server run build
 
 - **Windows PowerShell 5.1 Guardrail**: ห้ามใช้ตัวคั่น `&&` หรือ ternary `? :` ในคำสั่ง PowerShell (จะเกิด `ParserError: InvalidEndOfLine`) ให้คั่นคำสั่งด้วย `;` หรือตรวจ `if ($LASTEXITCODE -eq 0) { ... }` เสมอ
 - **Windows Parallel `edit_file` Guardrail**: ห้ามเรียก `edit_file` ขนานหลายรายการใส่**ไฟล์เดียวกัน**ในเทิร์นเดียวบน Windows (จะติด `user-mapped section open`) ให้รวมการแก้ในไฟล์เดียวกันเป็นบล็อกเดียวหรือแยกเทิร์น
+- **Windows Mixed-EOL Guardrail**: หากใช้สคริปต์ Node/codemod แก้ไฟล์ `.ts`/`.scss` บน Windows ต้องคงรูปแบบขึ้นบรรทัดเดิม (CRLF/LF) ของไฟล์นั้นเสมอ ห้ามเขียน `\n` ปนในไฟล์ `\r\n` เพราะจะทำให้ `edit_file` แบบหลายบรรทัดหา Target ไม่พบ
 - **Docker Stack (`npm run docker:up|ps|logs|down`)**: `web` (`:8080` Nginx SPA + proxy `/api/`), `api` (`:3000` NestJS), `db` (`:5433` Postgres 16), `adminer` (`:8088`), `db-backup` (`--profile backup`) · คอนเทนเนอร์ `node:22-bookworm-slim` ไม่มี `wget`/`curl` ต้องใช้ Native Node `fetch('http://127.0.0.1:3000/api/health')` คู่กับ `@Public() @Get('health')` เสมอ
 
 ## Angular UI, MyHR Prism Color System & Syncfusion

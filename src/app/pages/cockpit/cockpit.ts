@@ -15,17 +15,15 @@ import { WorkspaceFilter } from '../../core/workspace-filter';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { TooltipModule } from '@syncfusion/ej2-angular-popups';
 import { currentViewer, effectiveRole } from '../../core/admin-settings';
+import { HeroBandComponent, HeroBandMetric } from '../../shared/ui';
 import {
-  HeroBandComponent,
-  HeroBandMetric,
   SfChartComponent,
   SfChartOptions,
   SfChartSeriesConfig,
   scorePartWaterfallSeries,
-  SfDialogComponent,
-  SfDonutChartComponent,
-  SfDonutChartOptions,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-chart/sf-chart';
+import { SfDialogComponent } from '../../shared/sf/sf-dialog/sf-dialog';
+import { SfDonutChartComponent, SfDonutChartOptions } from '../../shared/sf/sf-donut-chart/sf-donut-chart';
 import { mdCompositionTrend, MdCompositionPoint, scoreWaterfall } from '../../core/dashboard-charts';
 import { computeHandoffSlaSummary, computeQualityAuditSummary } from '../../core/multi-team';
 import { Ticket } from '../../core/models';
@@ -130,17 +128,16 @@ export class CockpitPage implements OnInit, OnDestroy {
     let mainScore = 0;
     if (this.isMine()) {
       const myRow = this.scorecard.personRows().find((p) => p.id === this.activePerson().id);
-      mainScore = myRow && myRow.index > 0
-        ? Math.round(myRow.index * 10) / 10
-        : 88.5;
+      mainScore = myRow && myRow.index > 0 ? Math.round(myRow.index * 10) / 10 : 0;
     } else {
       const teamPeople = new Set(this.workspace.applyToPeople(this.scorecard.people()).map((p) => p.id));
       const scoredRows = this.scorecard
         .personRows()
         .filter((p) => p.index > 0 && teamPeople.has(p.id));
-      mainScore = scoredRows.length > 0
-        ? Math.round((scoredRows.reduce((sum, p) => sum + p.index, 0) / scoredRows.length) * 10) / 10
-        : 89.5;
+      mainScore =
+        scoredRows.length > 0
+          ? Math.round((scoredRows.reduce((sum, p) => sum + p.index, 0) / scoredRows.length) * 10) / 10
+          : 0;
     }
 
     // 2. Sprint Pace & WIP
@@ -149,11 +146,11 @@ export class CockpitPage implements OnInit, OnDestroy {
 
     // 3. On-Time Reliability
     const onTimeCount = closed.filter((t) => (t.weekOffset ?? 0) <= 0).length;
-    const onTimeRate = closed.length > 0 ? Math.round((onTimeCount / closed.length) * 100) : 94;
+    const onTimeRate = closed.length > 0 ? Math.round((onTimeCount / closed.length) * 100) : 0;
 
     // 4. Quality & AI Health
     const qualityReport = computeQualityAuditSummary(tickets, this.scorecard.people());
-    const ftRate = qualityReport.kpis.firstTimeRightPct ?? 90;
+    const ftRate = closed.length > 0 ? (qualityReport.kpis.firstTimeRightPct ?? 0) : 0;
 
     return {
       mainScore,
@@ -203,22 +200,12 @@ export class CockpitPage implements OnInit, OnDestroy {
   // ==========================================
   // Chart 1: Workload Composition (Planned vs Unplanned vs MD Mandate)
   // ==========================================
-  protected readonly workloadData = computed<MdCompositionPoint[]>(() => {
-    const tickets = this.scopedTickets();
-    const data = mdCompositionTrend(tickets);
-    if (data.length > 0) return data;
-    // Fallback sample months if zero closed tickets in test environment
-    return [
-      { month: 'ก.ค.', plannedMd: 16.5, unplannedGeneralMd: 3.5, mdMandateMd: 1.0, totalMd: 21.0 },
-      { month: 'ส.ค.', plannedMd: 18.0, unplannedGeneralMd: 2.0, mdMandateMd: 3.5, totalMd: 23.5 },
-      { month: 'ก.ย.', plannedMd: 15.0, unplannedGeneralMd: 4.0, mdMandateMd: 4.5, totalMd: 23.5 },
-      { month: 'ต.ค.', plannedMd: 17.5, unplannedGeneralMd: 2.5, mdMandateMd: 2.0, totalMd: 22.0 },
-      { month: 'พ.ย.', plannedMd: 19.0, unplannedGeneralMd: 3.0, mdMandateMd: 5.0, totalMd: 27.0 },
-    ];
-  });
+  protected readonly workloadData = computed<MdCompositionPoint[]>(() =>
+    mdCompositionTrend(this.scopedTickets()),
+  );
 
   // ==========================================
-  // Chart 2: Delivery Trendline & OLS Regression
+  // Chart 2: Delivery Trendline & OLS Regression (computed from real closed tickets)
   // ==========================================
   protected readonly olsTrend = computed<{ points: OlsTrendPoint[]; slopeText: string; isPositive: boolean }>(() => {
     const raw = this.workloadData();
@@ -227,11 +214,22 @@ export class CockpitPage implements OnInit, OnDestroy {
       return { points: [], slopeText: '+0.0/เดือน', isPositive: true };
     }
 
-    const baseline = this.isMine() ? 88 : 85;
-    const points: OlsTrendPoint[] = raw.map((d, i) => {
-      // Simulate historical index trend from workload consistency
-      const efficiency = d.plannedMd / (d.totalMd || 1);
-      const score = Math.min(100, Math.round(baseline + i * 2.1 + (efficiency - 0.7) * 15));
+    const closed = this.scopedTickets().filter((t) => t.closed);
+    const byMonth = new Map<string, { onTime: number; total: number }>();
+    for (const t of closed) {
+      const m = String(t.closedOn ?? '').slice(0, 7);
+      if (!m) continue;
+      const cur = byMonth.get(m) ?? { onTime: 0, total: 0 };
+      cur.total++;
+      if ((t.weekOffset ?? 0) <= 0) cur.onTime++;
+      byMonth.set(m, cur);
+    }
+
+    const points: OlsTrendPoint[] = raw.map((d) => {
+      const stats = byMonth.get(d.month);
+      const efficiency = d.totalMd > 0 ? (d.plannedMd / d.totalMd) * 100 : 0;
+      const onTime = stats && stats.total > 0 ? (stats.onTime / stats.total) * 100 : efficiency;
+      const score = Math.min(100, Math.max(0, Math.round(onTime * 0.6 + efficiency * 0.4)));
       return {
         month: d.month,
         actual: score,
@@ -288,10 +286,22 @@ export class CockpitPage implements OnInit, OnDestroy {
     const rawSlice = workload.slice(workload.length - sliceLen);
     const olsSlice = ols.slice(ols.length - sliceLen);
 
+    const closed = this.scopedTickets().filter((t) => t.closed);
+    const monthOnTime = new Map<string, { onTime: number; total: number }>();
+    for (const t of closed) {
+      const m = String(t.closedOn ?? '').slice(0, 7);
+      if (!m) continue;
+      const cur = monthOnTime.get(m) ?? { onTime: 0, total: 0 };
+      cur.total++;
+      if ((t.weekOffset ?? 0) <= 0) cur.onTime++;
+      monthOnTime.set(m, cur);
+    }
+
     return rawSlice.map((w, idx) => {
       const o = olsSlice[idx];
-      // Normalized On-Time % and Score Index for secondary axis
-      const onTimeRate = Math.min(100, Math.max(70, Math.round(84 + idx * 3.2 - (w.unplannedGeneralMd > 3 ? 4 : 0))));
+      const stats = monthOnTime.get(w.month);
+      const onTimeRate =
+        stats && stats.total > 0 ? Math.round((stats.onTime / stats.total) * 100) : 0;
       return {
         month: w.month,
         plannedMd: w.plannedMd,
@@ -299,29 +309,25 @@ export class CockpitPage implements OnInit, OnDestroy {
         mdMandateMd: w.mdMandateMd,
         totalMd: w.totalMd,
         onTimeRate,
-        avgIndex: o?.actual ?? 90,
-        olsIndex: o?.ols ?? 90,
+        avgIndex: o?.actual ?? 0,
+        olsIndex: o?.ols ?? 0,
       };
     });
   });
 
   // ==========================================
-  // Chart 3: Quality Gate Pie (First-Time Right vs Rework)
+  // Chart 3: Quality Gate Pie (Mutually exclusive buckets summing to 100%)
   // ==========================================
   protected readonly qualityPieData = computed<QualityPiePoint[]>(() => {
     const tickets = this.scopedTickets();
     const closed = tickets.filter((t) => t.closed);
     if (closed.length === 0) {
-      return [
-        { label: 'ผ่านรอบแรก (First-Time Right)', count: 24, pct: 80, color: '#10b981' },
-        { label: 'แก้ไขรอบ 2 (Reopened / Fix)', count: 4, pct: 13, color: '#f59e0b' },
-        { label: 'หลุด Defect Leakage', count: 2, pct: 7, color: '#ef4444' },
-      ];
+      return [];
     }
 
-    const firstTime = closed.filter((t) => (t.reviewRounds ?? 0) <= 1 && (t.reopenCount ?? 0) === 0).length;
-    const rework = closed.filter((t) => (t.reviewRounds ?? 0) > 1 || (t.reopenCount ?? 0) === 1).length;
     const escape = closed.filter((t) => (t.reopenCount ?? 0) > 1).length;
+    const firstTime = closed.filter((t) => (t.reviewRounds ?? 0) <= 1 && (t.reopenCount ?? 0) === 0).length;
+    const rework = Math.max(0, closed.length - firstTime - escape);
     const total = closed.length;
 
     return [
@@ -338,17 +344,7 @@ export class CockpitPage implements OnInit, OnDestroy {
     const tickets = this.scopedTickets();
     const stageLogs = this.scorecard.stageLogs();
     const people = this.scorecard.people();
-    const report = computeHandoffSlaSummary(tickets, stageLogs, people);
-    if (report.stageAging.length > 0) {
-      return report.stageAging;
-    }
-    return [
-      { track: 'RND', devHours: 32, reviewHours: 12, qaHours: 8 },
-      { track: 'IMP', devHours: 48, reviewHours: 16, qaHours: 14 },
-      { track: 'QA', devHours: 8, reviewHours: 6, qaHours: 36 },
-      { track: 'INFRA', devHours: 20, reviewHours: 8, qaHours: 4 },
-      { track: 'UXBA', devHours: 28, reviewHours: 10, qaHours: 6 },
-    ];
+    return computeHandoffSlaSummary(tickets, stageLogs, people).stageAging;
   });
 
   // ==========================================
@@ -639,24 +635,38 @@ export class CockpitPage implements OnInit, OnDestroy {
     }
   });
 
+  private readonly onKeyDown = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape') {
+      if (this.isFullscreen()) {
+        this.exitFullscreen();
+      }
+      if (this.isTvMode()) {
+        this.isTvMode.set(false);
+      }
+    }
+  };
+
+  private readonly onFullscreenChange = (): void => {
+    if (typeof document !== 'undefined') {
+      this.isFullscreen.set(Boolean(document.fullscreenElement));
+    }
+  };
+
   ngOnInit(): void {
-    // Handle Esc key to exit presentation mode
     if (typeof window !== 'undefined') {
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          if (this.isFullscreen()) {
-            this.exitFullscreen();
-          }
-          if (this.isTvMode()) {
-            this.isTvMode.set(false);
-          }
-        }
-      });
+      window.addEventListener('keydown', this.onKeyDown);
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('fullscreenchange', this.onFullscreenChange);
     }
   }
 
   ngOnDestroy(): void {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('keydown', this.onKeyDown);
+    }
     if (typeof document !== 'undefined') {
+      document.removeEventListener('fullscreenchange', this.onFullscreenChange);
       document.body.classList.remove('cockpit-tv-active');
     }
   }
@@ -668,23 +678,36 @@ export class CockpitPage implements OnInit, OnDestroy {
   protected toggleFullscreen(): void {
     if (typeof document === 'undefined') return;
     if (!document.fullscreenElement) {
-      this.cockpitRoot?.nativeElement.requestFullscreen().then(() => {
-        this.isFullscreen.set(true);
-      }).catch(() => {
-        this.isTvMode.set(true);
-      });
+      this.cockpitRoot?.nativeElement
+        .requestFullscreen()
+        .then(() => {
+          this.isFullscreen.set(true);
+        })
+        .catch(() => {
+          this.isTvMode.set(true);
+        });
     } else {
-      document.exitFullscreen().then(() => {
-        this.isFullscreen.set(false);
-      });
+      document
+        .exitFullscreen()
+        .then(() => {
+          this.isFullscreen.set(false);
+        })
+        .catch(() => {
+          this.isFullscreen.set(false);
+        });
     }
   }
 
   private exitFullscreen(): void {
     if (typeof document !== 'undefined' && document.fullscreenElement) {
-      document.exitFullscreen().then(() => {
-        this.isFullscreen.set(false);
-      });
+      document
+        .exitFullscreen()
+        .then(() => {
+          this.isFullscreen.set(false);
+        })
+        .catch(() => {
+          this.isFullscreen.set(false);
+        });
     }
   }
 

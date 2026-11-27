@@ -9,7 +9,7 @@ import {
   createSession,
   deleteSession,
   deleteSessionsByPerson,
-  findSessionPersonId,
+  findSessionPerson,
 } from '../data/sessions.repo';
 import { AuthUser, GitlabProfile, SESSION_COOKIE } from './auth.types';
 
@@ -24,12 +24,11 @@ export class AuthService {
     if (!rawToken) {
       return null;
     }
-    const personId = await findSessionPersonId(this.db, rawToken);
-    if (!personId) {
+    const person = await findSessionPerson(this.db, rawToken);
+    if (!person) {
       return null;
     }
-    const person = await getPerson(this.db, personId);
-    if (!person || person.active === false) {
+    if (person.active === false) {
       await deleteSession(this.db, rawToken).catch(() => undefined);
       return null;
     }
@@ -165,7 +164,12 @@ export class AuthService {
     if (rawToken) {
       await deleteSession(this.db, rawToken);
     }
-    res.clearCookie(SESSION_COOKIE, { path: '/' });
+    res.clearCookie(SESSION_COOKIE, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: this.config.production,
+    });
   }
 
   private async issueSession(person: Person, res: Response): Promise<AuthUser> {

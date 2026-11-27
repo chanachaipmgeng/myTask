@@ -1,4 +1,4 @@
-import { EmployeeLeave, Person, Ticket } from './models';
+import { EmployeeLeave, Person, Ticket, normalizeTrack, trackDisplayLabel } from './models';
 import { WEEKLY_QUOTA, calculateNetWeeklyQuota, formatMd, roundMd } from './scoring';
 
 export const UNPLANNED_RESERVE_MD = 1;
@@ -44,14 +44,32 @@ export function planNewWork(
   quotas: Record<Person['level'], number> = WEEKLY_QUOTA,
   leaves: readonly EmployeeLeave[] = [],
 ): { rows: CapacityRow[]; plans: QueuePlan[] } {
-  const rows = people.map((person) => capacityRow(person, tickets, quotas, leaves));
+  const openByAssignee = new Map<string, Ticket[]>();
+  const queue: Ticket[] = [];
+  for (const ticket of tickets) {
+    if (ticket.closed) continue;
+    const aid = ticket.assigneeId.trim();
+    if (!aid) {
+      queue.push(ticket);
+    } else {
+      const list = openByAssignee.get(aid);
+      if (list) list.push(ticket);
+      else openByAssignee.set(aid, [ticket]);
+    }
+  }
+  const leavesByUser = new Map<string, EmployeeLeave[]>();
+  for (const leave of leaves) {
+    const list = leavesByUser.get(leave.userId);
+    if (list) list.push(leave);
+    else leavesByUser.set(leave.userId, [leave]);
+  }
+  const rows = people.map((person) =>
+    capacityRow(person, openByAssignee.get(person.id) ?? [], quotas, leavesByUser.get(person.id) ?? []),
+  );
   const state = new Map<string, LoadState>(
     rows.map((row) => [row.id, { row, freeMd: row.freeMd, openCount: row.openCount, xlCount: row.xlCount }]),
   );
-  const queue = tickets
-    .filter((ticket) => !ticket.closed && ticket.assigneeId.trim() === '')
-    .slice()
-    .sort((left, right) => right.estimateMd - left.estimateMd || left.id.localeCompare(right.id));
+  queue.sort((left, right) => right.estimateMd - left.estimateMd || left.id.localeCompare(right.id));
 
   const plans = queue.map((ticket) => propose(ticket, state));
   return { rows, plans };
@@ -59,13 +77,11 @@ export function planNewWork(
 
 function capacityRow(
   person: Person,
-  tickets: readonly Ticket[],
+  open: readonly Ticket[],
   quotas: Record<Person['level'], number>,
-  leaves: readonly EmployeeLeave[] = [],
+  personLeaves: readonly EmployeeLeave[] = [],
 ): CapacityRow {
-  const open = tickets.filter((ticket) => !ticket.closed && ticket.assigneeId === person.id);
   const openMd = roundMd(open.reduce((sum, ticket) => sum + ticket.estimateMd, 0));
-  const personLeaves = leaves.filter((leave) => leave.userId === person.id);
   const leaveDays = personLeaves
     .filter((leave) => leave.leaveType !== 'PUBLIC_HOLIDAY')
     .reduce((sum, leave) => sum + leave.deductMd, 0);
@@ -83,7 +99,7 @@ function capacityRow(
     nickname: person.nickname,
     level: person.level,
     track: person.track,
-    trackLabel: person.track === 'RD' ? 'R&D' : 'Implement',
+    trackLabel: trackDisplayLabel(person.track),
     quota,
     openMd,
     openCount,
@@ -97,9 +113,10 @@ function capacityRow(
 }
 
 function propose(ticket: Ticket, state: Map<string, LoadState>): QueuePlan {
-  const trackLabel = ticket.track === 'RD' ? 'R&D' : 'Implement';
+  const targetTrack = normalizeTrack(ticket.track);
+  const trackLabel = trackDisplayLabel(ticket.track);
   const candidates = [...state.values()]
-    .filter((load) => load.row.track === ticket.track)
+    .filter((load) => normalizeTrack(load.row.track) === targetTrack)
     .filter((load) => load.openCount < WIP_MAX)
     .filter((load) => ticket.size !== 'XL' || load.xlCount < XL_MAX)
     .filter((load) => load.freeMd + 1e-9 >= ticket.estimateMd)

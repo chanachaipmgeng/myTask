@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ConflictException,
   Controller,
@@ -28,6 +29,7 @@ import { APP_CONFIG, AppConfig } from '../config';
 import {
   deleteLeave,
   getDispute,
+  getLeave,
   insertDispute,
   listAllocations,
   listDisputes,
@@ -42,6 +44,9 @@ import { getPerson } from '../data/people.repo';
 import { connectionToken, getConnection } from '../data/settings.repo';
 import { getWorkItem, listWorkItems, upsertWorkItem } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
+
+const ALLOWED_DISPUTE_FLAGS = new Set(['REQ', 'BLK', 'ENV']);
+const ALLOWED_LEAVE_TYPES = new Set(['ANNUAL', 'SICK', 'PERSONAL', 'TRAINING', 'PUBLIC_HOLIDAY']);
 
 @Controller('api/v2')
 export class V2EnterpriseController {
@@ -59,7 +64,11 @@ export class V2EnterpriseController {
       listStageLogs(this.db),
     ]);
     const scopedTickets = ctx.isAdmin ? tickets : tickets.filter((t) => ctx.canAccessTicket(t));
-    const report = computeHandoffSlaSummary(scopedTickets, stageLogs, ctx.visiblePeople);
+    const scopedTicketIds = new Set(scopedTickets.map((t) => t.id));
+    const scopedStageLogs = ctx.isAdmin
+      ? stageLogs
+      : stageLogs.filter((l) => scopedTicketIds.has(l.ticketId));
+    const report = computeHandoffSlaSummary(scopedTickets, scopedStageLogs, ctx.visiblePeople);
     return { ok: true, ...report };
   }
 
@@ -72,13 +81,15 @@ export class V2EnterpriseController {
   ) {
     const ctx = await this.scope.resolve(req.authUser);
     const ticket = await getWorkItem(this.db, ticketId);
-    if (ticket) {
-      ctx.assertCanAccessTicket(ticket);
+    if (!ticket) {
+      return { ok: false, sent: false, ticketId, message: 'ไม่พบใบงานที่ระบุ' };
     }
+    ctx.assertCanAccessTicket(ticket);
 
-    const messageText =
+    const messageText = (
       body.message?.trim() ||
-      `แจ้งเตือนการส่งต่องาน ${ticketId}${body.target ? ` ถึง ${body.target}` : ''} เกิน SLA`;
+      `แจ้งเตือนการส่งต่องาน ${ticketId}${body.target ? ` ถึง ${body.target}` : ''} เกิน SLA`
+    ).slice(0, 1000);
 
     const connection = await getConnection(this.db, 'teams');
     const webhookUrl =
@@ -151,10 +162,33 @@ export class V2EnterpriseController {
       return { ok: false, message: 'ไม่พบใบงาน' };
     }
     ctx.assertCanAccessTicket(ticket);
-    const allocations = (body.allocations ?? []).map((a) => ({
+    if (!Array.isArray(body.allocations)) {
+      throw new BadRequestException('allocations must be an array');
+    }
+    if (body.allocations.length > 50) {
+      throw new BadRequestException('allocations cannot exceed 50 rows');
+    }
+    for (const a of body.allocations) {
+      if (!a || typeof a.userId !== 'string' || !a.userId.trim()) {
+        throw new BadRequestException('allocation userId is required');
+      }
+      ctx.assertCanAccessPerson(a.userId);
+      if (
+        !Number.isFinite(Number(a.estimatedMd)) ||
+        Number(a.estimatedMd) < 0 ||
+        !Number.isFinite(Number(a.actualMd)) ||
+        Number(a.actualMd) < 0
+      ) {
+        throw new BadRequestException('allocation estimatedMd/actualMd must be non-negative numbers');
+      }
+    }
+    const allocations = body.allocations.map((a) => ({
       ...a,
+      userId: a.userId.trim(),
+      estimatedMd: Number(a.estimatedMd),
+      actualMd: Number(a.actualMd),
       ticketId: id,
-      id: a.id || `alloc-${id}-${a.userId}-${a.subRole ?? 'main'}`,
+      id: a.id || `alloc-${id}-${a.userId.trim()}-${a.subRole ?? 'main'}`,
     }));
     const saved = await this.db.tx(async (tx) => {
       const nextAllocs = await replaceAllocations(tx, id, allocations);
@@ -258,7 +292,18 @@ export class V2EnterpriseController {
     @Req() req: AuthedRequest,
   ) {
     const ctx = await this.scope.resolve(req.authUser);
-    const ticket = await getWorkItem(this.db, body.ticketId);
+    const ticketId = typeof body.ticketId === 'string' ? body.ticketId.trim() : '';
+    if (!ticketId) {
+      throw new BadRequestException('ticketId is required');
+    }
+    if (!ALLOWED_DISPUTE_FLAGS.has(body.requestedFlag)) {
+      throw new BadRequestException('requestedFlag must be REQ, BLK, or ENV');
+    }
+    const reason = typeof body.reason === 'string' ? body.reason.trim() : '';
+    if (!reason || reason.length > 2000) {
+      throw new BadRequestException('reason is required (max 2000 characters)');
+    }
+    const ticket = await getWorkItem(this.db, ticketId);
     if (!ticket) {
       return { ok: false, message: 'ไม่พบใบงาน' };
     }
@@ -280,10 +325,10 @@ export class V2EnterpriseController {
     const dispute: TicketDispute = {
       id: `dsp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       disputeCode,
-      ticketId: body.ticketId,
+      ticketId,
       requesterId: person.id,
       requestedFlag: body.requestedFlag,
-      reason: body.reason,
+      reason,
       evidenceUrl: cleanEvidenceUrl,
       scoreBefore: sim.scoreBefore,
       scoreProjected: sim.scoreProjected,
@@ -293,7 +338,7 @@ export class V2EnterpriseController {
 
     await insertDispute(this.db, dispute);
     await this.db.audit(ctx.selfId, 'dispute.created', dispute.disputeCode, {
-      ticketId: body.ticketId,
+      ticketId,
       flag: body.requestedFlag,
     });
 
@@ -307,6 +352,9 @@ export class V2EnterpriseController {
     @Body() body: { status: 'APPROVED' | 'REJECTED'; comment?: string },
     @Req() req: AuthedRequest,
   ) {
+    if (body.status !== 'APPROVED' && body.status !== 'REJECTED') {
+      throw new BadRequestException('status must be APPROVED or REJECTED');
+    }
     const ctx = await this.scope.resolve(req.authUser);
     const existing = await getDispute(this.db, id);
     if (!existing) {
@@ -430,14 +478,34 @@ export class V2EnterpriseController {
   @Post('leaves')
   async createLeave(@Body() body: Omit<EmployeeLeave, 'id'> & { id?: string }, @Req() req: AuthedRequest) {
     const ctx = await this.scope.resolve(req.authUser);
+    if (typeof body.userId !== 'string' || !body.userId.trim()) {
+      throw new BadRequestException('userId is required');
+    }
+    if (typeof body.leaveDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.leaveDate.trim())) {
+      throw new BadRequestException('leaveDate must be YYYY-MM-DD');
+    }
+    if (body.leaveType && !ALLOWED_LEAVE_TYPES.has(body.leaveType)) {
+      throw new BadRequestException('Invalid leaveType');
+    }
+    const deductMd = Number(body.deductMd);
+    if (!Number.isFinite(deductMd) || deductMd < 0 || deductMd > 5) {
+      throw new BadRequestException('deductMd must be between 0 and 5');
+    }
     ctx.assertCanAccessPerson(body.userId);
+    const requestedId = typeof body.id === 'string' && body.id.trim() ? body.id.trim() : undefined;
+    if (requestedId) {
+      const existingLeave = await getLeave(this.db, requestedId);
+      if (existingLeave) {
+        ctx.assertCanAccessPerson(existingLeave.userId);
+      }
+    }
     const leave: EmployeeLeave = {
-      id: body.id ?? `leave-${Date.now()}`,
-      userId: body.userId,
-      leaveDate: body.leaveDate,
-      leaveType: body.leaveType,
-      deductMd: body.deductMd,
-      reason: body.reason,
+      id: requestedId ?? `leave-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      userId: body.userId.trim(),
+      leaveDate: body.leaveDate.trim(),
+      leaveType: body.leaveType || 'ANNUAL',
+      deductMd,
+      reason: body.reason ? String(body.reason).slice(0, 500) : undefined,
     };
     const saved = await upsertLeave(this.db, leave);
     await this.db.audit(ctx.selfId, 'leave.upsert', saved.id, {
@@ -452,8 +520,7 @@ export class V2EnterpriseController {
   async removeLeave(@Param('id') id: string, @Req() req: AuthedRequest) {
     const ctx = await this.scope.resolve(req.authUser);
     if (!ctx.isAdmin) {
-      const leaves = await listLeaves(this.db);
-      const target = leaves.find((l) => l.id === id);
+      const target = await getLeave(this.db, id);
       if (target) {
         ctx.assertCanAccessPerson(target.userId);
       }

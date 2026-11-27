@@ -4,14 +4,12 @@ import { DragEventArgs } from '@syncfusion/ej2-kanban';
 import { ScorecardService } from '../../core/scorecard.service';
 import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
-import {
-  SfDatePickerComponent,
-  SfDialogComponent,
-  SfDropdownComponent,
-  SfKanbanComponent,
-  SfProgressComponent,
-  SfTextBoxComponent,
-} from '../../shared/ui';
+import { SfDatePickerComponent } from '../../shared/sf/sf-datepicker/sf-datepicker';
+import { SfDialogComponent } from '../../shared/sf/sf-dialog/sf-dialog';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import { SfKanbanComponent } from '../../shared/sf/sf-kanban/sf-kanban';
+import { SfProgressComponent } from '../../shared/sf/sf-progress/sf-progress';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
 import {
   BUG_CAUSES,
   BugCause,

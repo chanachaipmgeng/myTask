@@ -31,6 +31,7 @@ import {
   CreateTicketFromBranchPayload,
 } from '../../../shared/domain/git-branch';
 import {
+  getGitBranchById,
   getPersonGitSummary,
   linkGitBranchToTicket,
   listGitBranches,
@@ -50,6 +51,7 @@ import {
   getConnection,
   getSettings,
   saveSettings,
+  updateSettingsTransactional,
   upsertConnection,
 } from '../data/settings.repo';
 import {
@@ -230,6 +232,7 @@ export class IntegrationsController {
   }
 
   @Get('sync-runs')
+  @Roles('admin', 'lead')
   async syncRuns(@Query('connection') connection = 'openproject') {
     return { runs: await listSyncRuns(this.db, connection, 30) };
   }
@@ -240,7 +243,9 @@ export class IntegrationsController {
   async tokenCheck() {
     const row = await getConnection(this.db, 'openproject');
     try {
-      const token = this.config.openproject.token || connectionToken(row, this.config.tokenEncKey);
+      const token =
+        this.config.openproject.token ||
+        connectionToken(row, this.config.tokenEncKey, this.config.tokenEncKeyPrev);
       return { ok: Boolean(token), source: this.config.openproject.token ? 'env' : row?.token_enc ? 'db' : 'none' };
     } catch {
       return { ok: false, source: 'error' };
@@ -248,6 +253,7 @@ export class IntegrationsController {
   }
 
   @Get('integrations/gitlab')
+  @Roles('admin', 'lead')
   async getGitLab() {
     const [connection, runs] = await Promise.all([
       getConnection(this.db, 'gitlab'),
@@ -857,21 +863,18 @@ export class IntegrationsController {
       return { ok: false, message: 'ต้องระบุ ticketId และ gitlabProjectId' };
     }
 
+    const ctx = await this.scope.resolve(req.authUser);
     const ticket = await getWorkItem(this.db, ticketId);
     if (!ticket) {
       return { ok: false, message: `ไม่พบใบงาน ${ticketId}` };
     }
+    ctx.assertCanAccessTicket(ticket, { allowUnassignedForMember: false });
     if (ticket.opId == null) {
       return { ok: false, message: 'ใบงานยังไม่มีรหัส OpenProject (opId) — สร้าง branch ไม่ได้' };
     }
 
-    const role = req.authUser?.access ?? 'member';
-    const selfId = req.authUser?.person.id;
-    if (role === 'member' && ticket.assigneeId !== selfId) {
-      return {
-        ok: false,
-        message: 'สมาชิกสร้าง branch ได้เฉพาะใบงานที่มอบหมายให้ตัวเอง',
-      };
+    if (ctx.access === 'member' && ticket.assigneeId !== ctx.selfId) {
+      throw new ForbiddenException('สมาชิกสร้าง branch ได้เฉพาะใบงานที่มอบหมายให้ตัวเอง');
     }
 
     let branchName = String(body.branchName ?? '').trim();
@@ -998,6 +1001,12 @@ export class IntegrationsController {
     if (body.assigneePersonId) {
       ctx.assertCanAccessPerson(body.assigneePersonId);
     }
+    if (body.branchId != null && !ctx.isAdmin) {
+      const branchRow = await getGitBranchById(this.db, Number(body.branchId));
+      if (branchRow?.personId) {
+        ctx.assertCanAccessPerson(branchRow.personId, { selfOnlyForMember: true });
+      }
+    }
 
     const opClient = await this.syncService.getClient();
     if (!opClient) {
@@ -1005,6 +1014,19 @@ export class IntegrationsController {
     }
 
     const settings = await getSettings(this.db);
+    if (!ctx.isAdmin && ctx.allowedTeams !== null) {
+      const catalog = settings.openprojectProjectCatalog ?? [];
+      const targetProj = catalog.find(
+        (p) => String(p.id) === String(body.projectId) || p.identifier === String(body.projectId),
+      );
+      if (
+        targetProj &&
+        (targetProj.assignedTeamIds ?? []).length > 0 &&
+        !(targetProj.assignedTeamIds ?? []).some((t) => ctx.allowedTeams!.includes(t))
+      ) {
+        throw new ForbiddenException('ไม่มีสิทธิ์สร้างใบงานในโปรเจกต์นอกขอบเขตทีม');
+      }
+    }
     let assigneeOpId: number | undefined;
     const effectiveAssigneeId = ctx.access === 'member' ? ctx.selfId : body.assigneePersonId;
 
@@ -1259,7 +1281,7 @@ export class IntegrationsController {
     @Res() res: Response,
   ) {
     const opUserId = Number(opUserIdRaw);
-    if (!Number.isFinite(opUserId) || opUserId <= 0) {
+    if (!Number.isInteger(opUserId) || opUserId <= 0) {
       res.status(400).end();
       return;
     }
@@ -1321,8 +1343,8 @@ export class IntegrationsController {
     }
   }
 
-  @Get('integrations/openproject/discovery')
-  @Roles('admin', 'lead')
+  @Post('integrations/openproject/discovery')
+  @Roles('admin')
   async openProjectDiscovery(@Req() req: AuthedRequest) {
     const client = await this.syncService.getClient();
     if (!client) {
@@ -1346,61 +1368,6 @@ export class IntegrationsController {
         client.listEnumerations().catch(() => []),
         client.discoverCustomFieldsFromSchemas(40).catch(() => []),
       ]);
-      const settings = await getSettings(this.db);
-      const existingByIdentifier = new Map(
-        (settings.openprojectProjectCatalog ?? []).map((p) => [p.identifier, p]),
-      );
-      const existingById = new Map(
-        (settings.openprojectProjectCatalog ?? []).map((p) => [p.id, p]),
-      );
-
-      const catalog = projects
-        .filter((p) => p.identifier)
-        .map((p) => {
-          const existing = existingByIdentifier.get(p.identifier ?? '') ?? existingById.get(p.id);
-          return {
-            id: p.id,
-            identifier: p.identifier ?? '',
-            name: p.name ?? p.identifier ?? '',
-            active: existing !== undefined ? existing.active : (p.active ?? true),
-            assignedTeamIds: existing?.assignedTeamIds ?? [],
-            gitRepoIds: existing?.gitRepoIds ?? [],
-            gitRepoNames: existing?.gitRepoNames ?? [],
-          };
-        });
-      settings.openprojectProjectCatalog = catalog;
-      settings.openprojectTypeCatalog = types
-        .filter((t) => t.name?.trim())
-        .map((t) => ({
-          id: t.id,
-          name: (t.name ?? '').trim(),
-          ...(t.color ? { color: t.color } : {}),
-          isMilestone: Boolean(t.isMilestone),
-        }));
-      settings.openprojectStatusCatalog = statuses
-        .filter((s) => s.name?.trim())
-        .map((s) => ({
-          id: s.id,
-          name: (s.name ?? '').trim(),
-          isClosed: Boolean(s.isClosed),
-          ...(s.color ? { color: s.color } : {}),
-        }));
-      settings.openprojectEnumerationCatalog = enumerations
-        .filter((e) => e.name?.trim())
-        .map((e) => ({
-          id: e.id,
-          name: (e.name ?? '').trim(),
-          type: e._type || 'Enumeration',
-          active: e.active !== false,
-          ...(e.color ? { color: e.color } : {}),
-        }));
-      settings.openprojectCustomFieldCatalog = customFields.map((f) => ({
-        key: f.key,
-        name: f.name,
-        type: f.type,
-        ...(f.sampleWpType ? { sampleWpType: f.sampleWpType } : {}),
-        ...(f.options?.length ? { options: f.options } : {}),
-      }));
 
       const groupCatalog: { id: number; name: string; memberCount?: number }[] = [];
       for (const g of groups) {
@@ -1416,9 +1383,94 @@ export class IntegrationsController {
           ...(memberCount != null ? { memberCount } : {}),
         });
       }
-      settings.openprojectGroupCatalog = groupCatalog;
 
-      await saveSettings(this.db, settings, req.authUser?.person.id ?? null);
+      let mergedCatalog: {
+        id: number;
+        identifier: string;
+        name: string;
+        active: boolean;
+        assignedTeamIds: string[];
+        gitRepoIds: string[];
+        gitRepoNames: string[];
+      }[] = [];
+
+      const savedSettings = await updateSettingsTransactional(
+        this.db,
+        (settings) => {
+          const existingList = settings.openprojectProjectCatalog ?? [];
+          const existingByIdentifier = new Map(existingList.map((p) => [p.identifier, p]));
+          const existingById = new Map(existingList.map((p) => [p.id, p]));
+          const seenIds = new Set<number>();
+
+          const catalog = projects
+            .filter((p) => p.identifier)
+            .map((p) => {
+              seenIds.add(p.id);
+              const existing = existingByIdentifier.get(p.identifier ?? '') ?? existingById.get(p.id);
+              return {
+                id: p.id,
+                identifier: p.identifier ?? '',
+                name: p.name ?? p.identifier ?? '',
+                active: existing !== undefined ? existing.active : (p.active ?? true),
+                assignedTeamIds: existing?.assignedTeamIds ?? [],
+                gitRepoIds: existing?.gitRepoIds ?? [],
+                gitRepoNames: existing?.gitRepoNames ?? [],
+              };
+            });
+          for (const prev of existingList) {
+            if (!seenIds.has(prev.id)) {
+              catalog.push({
+                id: prev.id,
+                identifier: prev.identifier,
+                name: prev.name,
+                active: prev.active,
+                assignedTeamIds: prev.assignedTeamIds ?? [],
+                gitRepoIds: prev.gitRepoIds ?? [],
+                gitRepoNames: prev.gitRepoNames ?? [],
+              });
+            }
+          }
+          mergedCatalog = catalog;
+          settings.openprojectProjectCatalog = catalog;
+          settings.openprojectTypeCatalog = types
+            .filter((t) => t.name?.trim())
+            .map((t) => ({
+              id: t.id,
+              name: (t.name ?? '').trim(),
+              ...(t.color ? { color: t.color } : {}),
+              isMilestone: Boolean(t.isMilestone),
+            }));
+          settings.openprojectStatusCatalog = statuses
+            .filter((s) => s.name?.trim())
+            .map((s) => ({
+              id: s.id,
+              name: (s.name ?? '').trim(),
+              isClosed: Boolean(s.isClosed),
+              ...(s.color ? { color: s.color } : {}),
+            }));
+          settings.openprojectEnumerationCatalog = enumerations
+            .filter((e) => e.name?.trim())
+            .map((e) => ({
+              id: e.id,
+              name: (e.name ?? '').trim(),
+              type: e._type || 'Enumeration',
+              active: e.active !== false,
+              ...(e.color ? { color: e.color } : {}),
+            }));
+          settings.openprojectCustomFieldCatalog = customFields.map((f) => ({
+            key: f.key,
+            name: f.name,
+            type: f.type,
+            ...(f.sampleWpType ? { sampleWpType: f.sampleWpType } : {}),
+            ...(f.options?.length ? { options: f.options } : {}),
+          }));
+          settings.openprojectGroupCatalog = groupCatalog;
+          return settings;
+        },
+        req.authUser?.person.id ?? null,
+      );
+
+      const catalog = mergedCatalog;
       return {
         source: 'live' as const,
         projects: catalog.map((p) => ({
@@ -1438,9 +1490,9 @@ export class IntegrationsController {
           isMilestone: t.isMilestone ?? false,
         })),
         groups: groupCatalog,
-        enumerations: settings.openprojectEnumerationCatalog,
-        customFields: settings.openprojectCustomFieldCatalog,
-        rosterGroupIds: settings.openprojectRosterGroupIds ?? [],
+        enumerations: savedSettings.openprojectEnumerationCatalog,
+        customFields: savedSettings.openprojectCustomFieldCatalog,
+        rosterGroupIds: savedSettings.openprojectRosterGroupIds ?? [],
         teamStaging: this.config.openproject.teamStaging,
       };
     } catch (err) {

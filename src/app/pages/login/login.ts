@@ -8,7 +8,8 @@ import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession, setSessionUser } from '../../core/session';
 import { ShellNotice } from '../../core/shell-notice';
 import { RevealDirective, StaggerDirective } from '../../shared/motion';
-import { FlashMessagesComponent, SfCheckboxComponent } from '../../shared/ui';
+import { FlashMessagesComponent } from '../../shared/ui';
+import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
 
 type DevRosterAccount = {
   id: string;

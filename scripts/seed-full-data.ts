@@ -8,6 +8,10 @@ import { Ticket, WorkCategory, Discipline, WorkflowStatus, StoryPoint, PocResult
 import { buildPeriodSnapshots } from '../shared/domain/kpi-snapshot';
 import { DEFAULT_TRACK_WEIGHTS } from '../shared/domain/scoring';
 
+if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PROD_SEED !== 'true') {
+  throw new Error('Refusing to run seed-full-data in production (set ALLOW_PROD_SEED=true only if intentional).');
+}
+
 const DATABASE_URL = process.env.DATABASE_URL || 'postgres://manday:manday@localhost:5433/manday';
 
 // Comprehensive set of realistic active & pipeline tickets

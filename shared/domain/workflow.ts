@@ -203,6 +203,7 @@ export function moveWorkflow(ticket: Ticket, target: WorkflowStatus, today: stri
       ? weekOffsetFromDelivery(ticket.firstDueOn, deliveryAnchor)
       : ticket.weekOffset;
   const closing = target === 'Done' && !ticket.closed;
+  const reopening = from === 'Done' && target !== 'Done';
   return {
     ok: true,
     ticket: {
@@ -213,15 +214,15 @@ export function moveWorkflow(ticket: Ticket, target: WorkflowStatus, today: stri
       readyForQaAt,
       devDeliveredOn,
       weekOffset,
-      closed: closing ? true : ticket.closed,
-      closedOn: closing ? today : ticket.closedOn,
+      closed: closing ? true : reopening ? false : ticket.closed,
+      closedOn: closing ? today : reopening ? null : ticket.closedOn,
     },
   };
 }
 
 function weekOffsetFromDelivery(firstDueOn: string, deliveredOn: string): number {
-  const due = Date.parse(firstDueOn);
-  const delivered = Date.parse(deliveredOn);
+  const due = Date.parse(`${firstDueOn.slice(0, 10)}T00:00:00Z`);
+  const delivered = Date.parse(`${deliveredOn.slice(0, 10)}T00:00:00Z`);
   if (Number.isNaN(due) || Number.isNaN(delivered)) {
     return 0;
   }

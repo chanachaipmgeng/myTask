@@ -5,20 +5,16 @@ import { acceptedTrackedMd, aiTicketPoints, formatTrackedMd, researchSpikeShare 
 import { ScorecardService } from '../../core/scorecard.service';
 import { currentSession } from '../../core/session';
 import { WorkspaceFilter } from '../../core/workspace-filter';
+import { PageHeadComponent, PersonAvatarComponent, SectionCardComponent } from '../../shared/ui';
+import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
 import {
-  PageHeadComponent,
-  PersonAvatarComponent,
-  SectionCardComponent,
-  SfChartComponent,
-  SfChartOptions,
-  SfChartSeriesConfig,
   SfGridAggregate,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfProgressComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfProgressComponent } from '../../shared/sf/sf-progress/sf-progress';
 
 @Component({
   selector: 'app-ai-tracking',

@@ -29,6 +29,11 @@ export class TtlCache<T> {
     this.store.set(key, { value, expiresAt: Date.now() + ttlMs });
   }
 
+  clear(): void {
+    this.store.clear();
+    this.inflight.clear();
+  }
+
   async getOrSet(key: string, factory: () => Promise<T>, ttlMs = this.defaultTtlMs): Promise<T> {
     const cached = this.get(key);
     if (cached !== undefined) return cached;

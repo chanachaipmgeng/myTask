@@ -47,6 +47,8 @@ const ACCENT_SPARK: Record<KpiAccent, string> = {
   coral: '#f97316',
 };
 
+let nextKpiSparkUid = 1;
+
 @Component({
   selector: 'app-kpi-stat',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,6 +61,12 @@ export class KpiStatCardComponent implements AfterViewInit, OnChanges {
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly theme = inject(ThemeService);
+  private readonly uid = nextKpiSparkUid++;
+  private destroyed = false;
+  private rafId: number | null = null;
+  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private cachedRawSpark: KpiSparklineData | null | undefined = undefined;
+  private cachedSparkPoints: KpiSparklinePoint[] = [];
 
   @ViewChild(SparklineComponent) private sparkline?: SparklineComponent;
   @ViewChild(ProgressBarComponent) private progressBar?: ProgressBarComponent;
@@ -85,6 +93,20 @@ export class KpiStatCardComponent implements AfterViewInit, OnChanges {
 
   protected sparkWidth = '100%';
   protected progressWidth = '100%';
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.destroyed = true;
+      if (this.rafId !== null && typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+      if (this.refreshTimer !== null) {
+        clearTimeout(this.refreshTimer);
+        this.refreshTimer = null;
+      }
+    });
+  }
 
   protected mappedGlowTone(): MotionGlowTone {
     switch (this.accent) {
@@ -159,13 +181,20 @@ export class KpiStatCardComponent implements AfterViewInit, OnChanges {
 
   protected sparkPoints(): KpiSparklinePoint[] {
     const raw = this.sparklineData;
+    if (raw === this.cachedRawSpark) {
+      return this.cachedSparkPoints;
+    }
+    this.cachedRawSpark = raw;
     if (!raw || (Array.isArray(raw) && raw.length === 0)) {
-      return [];
+      this.cachedSparkPoints = [];
+      return this.cachedSparkPoints;
     }
     if (typeof raw[0] === 'number') {
-      return (raw as number[]).map((y, i) => ({ x: i + 1, y }));
+      this.cachedSparkPoints = (raw as number[]).map((y, i) => ({ x: i + 1, y }));
+      return this.cachedSparkPoints;
     }
-    return [...(raw as readonly KpiSparklinePoint[])];
+    this.cachedSparkPoints = [...(raw as readonly KpiSparklinePoint[])];
+    return this.cachedSparkPoints;
   }
 
   /** เดือน/ป้ายข้อความต้องใช้ Category ไม่งั้นพิกัด X เป็น NaN */
@@ -189,29 +218,40 @@ export class KpiStatCardComponent implements AfterViewInit, OnChanges {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
-      .slice(0, 24);
-    return `kpi-spark-${slug || 'stat'}`;
+      .slice(0, 20);
+    return `kpi-spark-${slug || 'stat'}-${this.uid}`;
   }
 
   private scheduleChartRefresh(): void {
-    requestAnimationFrame(() => {
+    if (this.destroyed) return;
+    if (this.rafId !== null && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(this.rafId);
+    }
+    if (this.refreshTimer !== null) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+    this.rafId = requestAnimationFrame(() => {
+      this.rafId = null;
+      if (this.destroyed) return;
       this.refreshSparkline();
       this.refreshProgress();
-      // DashboardLayout อาจยังไม่นิ่งในเฟรมแรก — รีเฟรชซ้ำสั้นๆ
-      window.setTimeout(() => {
+      this.refreshTimer = setTimeout(() => {
+        this.refreshTimer = null;
+        if (this.destroyed) return;
         this.refreshSparkline();
         this.refreshProgress();
-      }, 80);
+      }, 90);
     });
   }
 
   private refreshSparkline(): void {
-    if (!this.hasSparkline()) {
+    if (this.destroyed || !this.hasSparkline()) {
       return;
     }
     const host = this.sparkHost?.nativeElement;
     const spark = this.sparkline;
-    if (!host || !spark) {
+    if (!host || !spark || spark.isDestroyed) {
       return;
     }
     const width = Math.max(80, Math.floor(host.clientWidth));
@@ -222,12 +262,12 @@ export class KpiStatCardComponent implements AfterViewInit, OnChanges {
   }
 
   private refreshProgress(): void {
-    if (this.progress === null || this.progress === undefined) {
+    if (this.destroyed || this.progress === null || this.progress === undefined) {
       return;
     }
     const host = this.progressHost?.nativeElement;
     const bar = this.progressBar;
-    if (!host || !bar) {
+    if (!host || !bar || bar.isDestroyed) {
       return;
     }
     const width = Math.max(80, Math.floor(host.clientWidth));

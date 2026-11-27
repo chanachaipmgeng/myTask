@@ -1,6 +1,9 @@
 import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { Pool, PoolClient, QueryResultRow } from 'pg';
+import { Pool, PoolClient, QueryResultRow, types } from 'pg';
 import { APP_CONFIG, AppConfig } from '../config';
+
+// OID 1082 = PostgreSQL DATE — return exact 'YYYY-MM-DD' string without local TZ Date shift.
+types.setTypeParser(1082, (val: string) => val);
 
 export interface Queryable {
   query<T extends QueryResultRow = QueryResultRow>(sql: string, params?: unknown[]): Promise<T[]>;

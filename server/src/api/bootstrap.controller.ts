@@ -29,14 +29,19 @@ export class BootstrapController {
   @Public()
   @Get('health')
   async health() {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       await Promise.race([
         this.db.query('SELECT 1'),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('DB healthcheck timeout')), 2000)),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error('DB healthcheck timeout')), 2000);
+        }),
       ]);
       return { status: 'ok', db: 'ok', timestamp: new Date().toISOString() };
     } catch {
       throw new ServiceUnavailableException('Database unavailable');
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
 
@@ -97,7 +102,7 @@ export class BootstrapController {
       listTeams(this.db),
       listDisputes(this.db),
       listLeaves(this.db),
-      listStageLogs(this.db),
+      listStageLogs(this.db, undefined, { maxAgeDays: 90, limit: 2500 }),
       listAllocations(this.db),
       getVisibilityConfig(this.db),
       listRubrics(this.db),

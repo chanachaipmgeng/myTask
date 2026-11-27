@@ -55,12 +55,13 @@ export function alertsForTicket(
   }
   const projected = projectedActual(ticket);
   if (projected !== null && ticket.estimateMd > 0 && projected > ticket.estimateMd * overrunLimit) {
+    const overPct = Math.max(0, Math.round((overrunLimit - 1) * 100));
     alerts.push({
       id: `${ticket.id}:overrun`,
       ticketId: ticket.id,
       kind: 'overrun',
-      shortLabel: 'actual จะเกิน 50%',
-      message: `${ticket.id} actual มีแนวโน้ม ${formatMd(projected)} MD เกิน estimate ${formatMd(ticket.estimateMd)} MD มากกว่า 50%`,
+      shortLabel: `actual จะเกิน ${overPct}%`,
+      message: `${ticket.id} actual มีแนวโน้ม ${formatMd(projected)} MD เกิน estimate ${formatMd(ticket.estimateMd)} MD มากกว่า ${overPct}%`,
     });
   }
   return alerts;
@@ -80,8 +81,8 @@ export function projectedActual(ticket: Ticket): number | null {
     return ticket.actualMd > 0 ? ticket.actualMd : null;
   }
   const elapsed = COMMITTED_WEEK_DAYS - ticket.workingDaysLeft;
-  if (elapsed <= 0) {
+  if (elapsed <= 0 || elapsed >= COMMITTED_WEEK_DAYS) {
     return ticket.actualMd;
   }
-  return roundMd((ticket.actualMd / elapsed) * COMMITTED_WEEK_DAYS);
+  return Math.max(ticket.actualMd, roundMd((ticket.actualMd / elapsed) * COMMITTED_WEEK_DAYS));
 }

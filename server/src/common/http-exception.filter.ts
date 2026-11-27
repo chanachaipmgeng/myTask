@@ -43,7 +43,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       if (pgCode === '23505') {
         status = HttpStatus.CONFLICT;
         message = 'Duplicate record conflict';
-      } else if (pgCode === '23503' || pgCode === '22P02') {
+      } else if (pgCode === '23503' || pgCode === '22P02' || pgCode === '23502' || pgCode === '23514') {
         status = HttpStatus.BAD_REQUEST;
         message = 'Invalid data or reference';
       } else if (exception instanceof Error && !this.production) {

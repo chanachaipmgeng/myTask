@@ -1,5 +1,7 @@
+import { Person } from '../../../shared/domain/models';
 import { Queryable } from '../db/db.service';
 import { sha256 } from '../common/crypto';
+import { PersonRow, personFromRow } from './types';
 
 export async function createSession(
   db: Queryable,
@@ -21,6 +23,17 @@ export async function findSessionPersonId(db: Queryable, rawToken: string): Prom
     [sha256(rawToken)],
   );
   return rows[0]?.person_id ?? null;
+}
+
+export async function findSessionPerson(db: Queryable, rawToken: string): Promise<Person | null> {
+  const rows = await db.query<PersonRow>(
+    `SELECT p.*
+     FROM sessions s
+     JOIN people p ON p.id = s.person_id
+     WHERE s.id_hash = $1 AND s.expires_at > now()`,
+    [sha256(rawToken)],
+  );
+  return rows[0] ? personFromRow(rows[0]) : null;
 }
 
 export async function deleteSession(db: Queryable, rawToken: string): Promise<void> {

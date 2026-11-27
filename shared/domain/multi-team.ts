@@ -215,7 +215,7 @@ export function computeHandoffSlaSummary(
 
     const reviewerOrQa = isReview
       ? (reviewerPerson?.nickname ?? 'ทีม Review')
-      : (qaPerson?.nickname ?? 'สาวิต (QA)');
+      : (qaPerson?.nickname ?? 'ทีม QA');
 
     ticketRows.push({
       ticketId: t.id,
@@ -242,7 +242,7 @@ export function computeHandoffSlaSummary(
     waitingQaOverdue: ticketRows.filter((r) => (r.status === 'Ready for QA' || r.status === 'In QA') && r.isOverSla).length,
     blockedCount: blocked.length,
     blockedInfraCount: ticketRows.filter((r) => r.blockerFlag === 'ENV').length,
-    avgHandoffHours: handoffCount > 0 ? roundMd(totalHandoffHours / handoffCount) : 4.2,
+    avgHandoffHours: handoffCount > 0 ? roundMd(totalHandoffHours / handoffCount) : 0,
   };
 
   const stageAging = deriveStageAging(tickets, stageLogs, people);
@@ -262,6 +262,8 @@ function deriveStageAging(
   people: readonly Person[],
 ): StageAgingTrackPoint[] {
   const personMap = new Map(people.map((p) => [p.id, p]));
+  const ticketMap = new Map(tickets.map((t) => [t.id, t]));
+  const loggedTicketIds = new Set<string>();
   const byTrack = new Map<string, StageAgingTrackPoint>();
 
   const ensure = (track: string): StageAgingTrackPoint => {
@@ -279,9 +281,11 @@ function deriveStageAging(
   };
 
   for (const log of stageLogs) {
-    const ticket = tickets.find((t) => t.id === log.ticketId);
-    const owner = ticket ? personMap.get(ticket.assigneeId) : undefined;
-    const trackLabel = trackDisplayLabel(owner?.track ?? ticket?.track ?? 'Implement');
+    const ticket = ticketMap.get(log.ticketId);
+    if (!ticket) continue;
+    loggedTicketIds.add(log.ticketId);
+    const owner = personMap.get(ticket.assigneeId);
+    const trackLabel = trackDisplayLabel(owner?.track ?? ticket.track);
     const bucket = ensure(trackLabel);
     const hours = log.durationHours ?? 0;
     const status = log.toStatus;
@@ -296,7 +300,8 @@ function deriveStageAging(
     }
   }
 
-  for (const row of tickets.filter((t) => !t.closed)) {
+  for (const row of tickets) {
+    if (row.closed || loggedTicketIds.has(row.id)) continue;
     const owner = personMap.get(row.assigneeId);
     const trackLabel = trackDisplayLabel(owner?.track ?? row.track);
     const bucket = ensure(trackLabel);
@@ -368,7 +373,8 @@ export function computeQualityAuditSummary(
 ): QualityAuditReport {
   const personMap = new Map(people.map((p) => [p.id, p]));
   const closed = tickets.filter((t) => t.closed);
-  const totalClosed = Math.max(1, closed.length);
+  const totalClosed = closed.length;
+  const denom = Math.max(1, totalClosed);
 
   const cleanFirstTime = closed.filter((t) => t.reopenCount === 0);
   const reopenedTickets = closed.filter((t) => t.reopenCount > 0);
@@ -378,13 +384,13 @@ export function computeQualityAuditSummary(
   );
 
   const kpis: QualityKpis = {
-    firstTimeRightPct: roundMd((cleanFirstTime.length / totalClosed) * 100),
-    reopenRatePct: roundMd((reopenedTickets.length / totalClosed) * 100),
+    firstTimeRightPct: totalClosed > 0 ? roundMd((cleanFirstTime.length / denom) * 100) : 0,
+    reopenRatePct: totalClosed > 0 ? roundMd((reopenedTickets.length / denom) * 100) : 0,
     reopenCount: reopenedTickets.length,
     totalClosed,
-    bugEscapePct: roundMd((bugEscapes.length / totalClosed) * 100),
+    bugEscapePct: totalClosed > 0 ? roundMd((bugEscapes.length / denom) * 100) : 0,
     bugEscapeCount: bugEscapes.length,
-    dodEvidencePct: roundMd((dodComplete.length / totalClosed) * 100),
+    dodEvidencePct: totalClosed > 0 ? roundMd((dodComplete.length / denom) * 100) : 0,
     dodMissingCount: totalClosed - dodComplete.length,
   };
 
@@ -394,21 +400,21 @@ export function computeQualityAuditSummary(
       return status === 'Ready for QA' || status === 'In QA' || status === 'Code Review' || (status === 'In Progress' && !t.closed);
     })
     .slice(0, 10)
-    .map((t, idx) => {
+    .map((t) => {
       const dev = personMap.get(t.assigneeId)?.nickname ?? 'ทีม Dev';
-      const qa = t.qaAssigneeId ? (personMap.get(t.qaAssigneeId)?.nickname ?? 'สาวิต (QA)') : 'สาวิต (QA)';
-      const mr = t.mrLink || `#MR-${410 + idx}`;
-      const unitPass = t.dodChecklist?.unitTest ?? (idx % 3 !== 1);
-      const stagPass = t.dodChecklist?.stagingVerified ?? (idx % 2 === 0);
-      const isComplete = unitPass && stagPass && Boolean(t.mrLink || mr);
-      const hasMr = Boolean(t.mrLink);
+      const qa = t.qaAssigneeId ? (personMap.get(t.qaAssigneeId)?.nickname ?? 'ทีม QA') : 'ยังไม่ระบุ QA';
+      const hasMr = Boolean(t.mrLink?.trim());
+      const mr = hasMr ? t.mrLink!.trim() : '';
+      const unitPass = Boolean(t.dodChecklist?.unitTest ?? t.dodPassed);
+      const stagPass = Boolean(t.dodChecklist?.stagingVerified ?? t.dodPassed);
+      const isComplete = unitPass && stagPass && hasMr;
       return {
         ticketId: t.id,
         title: t.title || t.note || t.module,
         devName: dev,
         qaName: qa,
-        mrLink: mr,
-        unitTestLabel: unitPass ? 'ผ่าน (85%)' : 'ไม่ระบุ!',
+        mrLink: mr || 'ยังไม่มี MR',
+        unitTestLabel: unitPass ? 'ผ่าน' : 'ยังไม่ระบุ',
         unitTestPassed: unitPass,
         stagingVerified: stagPass,
         ciStatusLabel: hasMr ? (unitPass ? 'CI พร้อมตรวจ' : 'รอ CI / ไม่ระบุ') : 'ยังไม่มี MR',
@@ -453,17 +459,27 @@ export function computeThreeWayTimeAudit(
   let overrunCount = 0;
 
   for (const t of tickets) {
-    const est = t.estimateMd || 1.0;
+    const est = t.estimateMd || 0;
     const opActual = t.actualMd;
-    // Derive realistic gitlab span or synthetic
-    let gitlabSpan = opActual > 0 ? roundMd(opActual * 0.95) : 0;
-    if (t.id === 'RD-AI-09') {
-      gitlabSpan = 2.1;
-    } else if (t.id === 'IMP-ghost') {
-      gitlabSpan = 0;
+    // Derive GitLab span from actual start -> delivery/close when MR exists; otherwise 0
+    const startIso = t.actualStartOn;
+    const endIso = t.devDeliveredOn ?? t.closedOn ?? t.dueOn;
+    let gitlabSpan = 0;
+    if (t.mrLink?.trim()) {
+      if (startIso && endIso) {
+        const s = Date.parse(`${String(startIso).slice(0, 10)}T00:00:00Z`);
+        const e = Date.parse(`${String(endIso).slice(0, 10)}T00:00:00Z`);
+        if (Number.isFinite(s) && Number.isFinite(e) && e >= s) {
+          gitlabSpan = roundMd(Math.max(0.25, ((e - s) / 86_400_000 + 1) * 0.75));
+        } else {
+          gitlabSpan = opActual;
+        }
+      } else {
+        gitlabSpan = opActual;
+      }
     }
 
-    const ratio = est > 0 ? roundMd(opActual / est) : 1;
+    const ratio = est > 0 ? roundMd(opActual / est) : 0;
 
     let anomalyType: ThreeWayTimeRow['anomalyType'] = 'NONE';
     let anomalyLabel = 'ปกติ';
@@ -472,14 +488,14 @@ export function computeThreeWayTimeAudit(
       anomalyType = 'MISSING_TIME';
       anomalyLabel = 'ลืมกรอกเวลา!';
       missingTimeCount++;
-    } else if (t.workflowStatus === 'In Progress' && (!t.mrLink || t.id.includes('ghost'))) {
+    } else if (t.workflowStatus === 'In Progress' && !t.mrLink?.trim()) {
       anomalyType = 'GHOST_PROGRESS';
       anomalyLabel = 'ไม่มีโค้ดใน Git';
       ghostProgressCount++;
     } else if (opActual > 0 && gitlabSpan > 0 && Math.abs(opActual - gitlabSpan) / opActual > 0.5) {
       anomalyType = 'TIME_MISMATCH';
       anomalyLabel = 'เวลา OP vs Git ต่างกันเกิน 50%';
-    } else if (ratio > 1.5) {
+    } else if (est > 0 && ratio > 1.5) {
       anomalyType = 'OUTLIER';
       anomalyLabel = `Outlier สูง (${ratio}x)`;
       overrunCount++;
@@ -553,14 +569,22 @@ export function runPreflightChecklist(
 ): PreflightReport {
   const pendingDisputes = disputes.filter((d) => d.status === 'PENDING');
   const closedTicketsWithoutMd = tickets.filter((t) => t.closed && t.actualMd <= 0);
+  const unassignedCount = tickets.filter((t) => !t.closed && !t.assigneeId?.trim()).length;
+  const syncedTicketsCount = tickets.filter((t) => t.source === 'openproject' || typeof t.opId === 'number').length;
 
   const checks: PreflightCheckItem[] = [
     {
       stage: 1,
-      name: 'การซิงก์ OpenProject & GitLab ล่าสุด',
-      status: 'PASS',
-      summary: 'ซิงก์ข้อมูลอัปเดตต่อเนื่อง (Sync Readiness 96%)',
-      detail: 'พบข้อมูลล่าสุดในระบบเรียบร้อยแล้ว ไม่พบข้อขัดแย้งของ schema',
+      name: 'การซิงก์ OpenProject & ความครบถ้วนใบงาน',
+      status: tickets.length > 0 && unassignedCount === 0 ? 'PASS' : tickets.length > 0 ? 'WARN' : 'FAIL',
+      summary:
+        tickets.length === 0
+          ? 'ยังไม่มีใบงานในระบบ'
+          : `พบ ${tickets.length} ใบงาน (จาก myProject ${syncedTicketsCount} ใบ · ยังไม่ระบุผู้รับผิดชอบ ${unassignedCount} ใบ)`,
+      detail:
+        unassignedCount === 0
+          ? 'ใบงานเปิดทั้งหมดมีผู้รับผิดชอบครบถ้วน'
+          : 'แนะนำให้ตรวจสอบใบงานที่ยังไม่มีผู้รับผิดชอบก่อนจับ snapshot',
     },
     {
       stage: 2,
@@ -579,7 +603,7 @@ export function runPreflightChecklist(
     {
       stage: 4,
       name: 'ความครบถ้วนของโควตาและวันลา',
-      status: 'PASS',
+      status: people.length > 0 ? 'PASS' : 'FAIL',
       summary: `คำนวณปรับลดวันลาของพนักงานทั้ง ${people.length} คนครบแล้ว`,
       detail: `บันทึกข้อมูลวันลาในงวดแล้ว ${leaves.length} รายการ โควตาสุทธิถูกคำนวณอัตโนมัติ`,
     },
@@ -591,8 +615,7 @@ export function runPreflightChecklist(
   const previewDiffs: SnapshotPreviewDiffRow[] = people.map((p) => {
     const liveScore = scorePerson(p, tickets);
     const curr = roundMd(liveScore.developmentIndex);
-    // Synthetic previous month index for demonstration
-    const prev = roundMd(Math.max(60, curr - (p.id.length % 5) + 2));
+    const prev = INDEX_TARGET;
     const diff = roundMd(curr - prev);
     const isTargetMet = curr >= INDEX_TARGET;
     return {

@@ -1,5 +1,6 @@
 import { extractTicketIdFromText } from './gitlab-mr';
 import { parseTicketIdFromBranch } from './git-branch';
+import { todayInBangkok } from './workflow';
 
 /** Normalized kinds for Person WS / drawer activity feed. */
 export type GitActivityKind =
@@ -206,7 +207,7 @@ export function filterGitActivityForTicket(
       const hay = `${row.targetLabel} ${row.detail}`.toUpperCase();
       if (id && hay.includes(id)) return true;
       if (opKey && hay.includes(opKey)) return true;
-      if (opId != null && hay.includes(String(opId))) return true;
+      if (opId != null && opId >= 100 && new RegExp(`(?:^|\\D)${opId}(?:$|\\D)`).test(hay)) return true;
       return false;
     }
     if (id && tid === id) return true;
@@ -222,7 +223,7 @@ export function buildContributionDays(
   days = 365,
   todayIso?: string,
 ): ContributionDay[] {
-  const today = (todayIso ?? new Date().toISOString().slice(0, 10)).slice(0, 10);
+  const today = (todayIso ?? todayInBangkok()).slice(0, 10);
   const end = new Date(`${today}T12:00:00Z`);
   const start = new Date(end);
   start.setUTCDate(start.getUTCDate() - (days - 1));

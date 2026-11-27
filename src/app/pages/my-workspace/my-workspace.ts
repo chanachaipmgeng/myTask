@@ -10,20 +10,16 @@ import { ThemeService } from '../../core/theme.service';
 import { TicketDetailService } from '../../core/ticket-detail.service';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
 import { MotionWrapperComponent } from '../../shared/motion/motion-wrapper';
+import { PageHeadComponent, SectionCardComponent, StatusBadgeComponent } from '../../shared/ui';
+import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
 import {
-  PageHeadComponent,
-  SectionCardComponent,
-  SfChartComponent,
-  SfChartOptions,
-  SfChartSeriesConfig,
   SfGridAggregate,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  StatusBadgeComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
 
 @Component({
   selector: 'app-my-workspace',

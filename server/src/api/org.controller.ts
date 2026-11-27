@@ -201,10 +201,11 @@ export class OrgController {
       gitlabUsername: saved.gitlabUsername,
       allowedTeams: body.allowedTeams,
     });
+    this.scope.invalidateCache();
     return { ok: true, person: saved };
   }
 
-  @Roles('admin', 'lead')
+  @Roles('admin')
   @Get('visibility')
   async getVisibility() {
     return getVisibilityConfig(this.db);
@@ -218,6 +219,7 @@ export class OrgController {
   ) {
     const matrix = Array.isArray(body.matrix) ? body.matrix : [];
     const saved = await this.db.tx((tx) => setTeamVisibilityMatrix(tx, matrix));
+    this.scope.invalidateCache();
     await this.db.audit(req.authUser?.person.id ?? null, 'visibility.update_matrix', null, {
       rulesCount: saved.length,
     });
@@ -233,6 +235,7 @@ export class OrgController {
   ) {
     const teams = Array.isArray(body.allowedTeams) ? body.allowedTeams : [];
     const saved = await this.db.tx((tx) => setUserAllowedTeams(tx, id, teams));
+    this.scope.invalidateCache();
     await this.db.audit(req.authUser?.person.id ?? null, 'visibility.update_user', id, {
       allowedTeams: saved,
     });
@@ -544,16 +547,24 @@ export class OrgController {
     const projectIdent = project.identifier;
 
     // Query work items for this project
-    const items = await this.db.query<{
+    const rawItems = await this.db.query<{
       id: string;
       closed: boolean;
+      assignee_id: string | null;
       data: any;
     }>(
-      `SELECT id, closed, data FROM work_items
+      `SELECT id, closed, assignee_id, data FROM work_items
        WHERE data->>'opProject' = $1 OR data->>'opProject' = $2
           OR data->>'project' = $1 OR data->>'project' = $2`,
       [projectIdStr, projectIdent],
     );
+    const items =
+      ctx.isAdmin || ctx.allowedPersonIds === null
+        ? rawItems
+        : rawItems.filter((item) => {
+            const aid = (item.assignee_id ?? item.data?.assigneeId ?? '').trim();
+            return !aid || ctx.allowedPersonIds!.has(aid);
+          });
 
     let totalEstimateMd = 0;
     let totalActualMd = 0;
@@ -722,9 +733,14 @@ export class OrgController {
     const repoIdStrs = (project.gitRepoIds ?? []).map(String).filter(Boolean);
     const repoNames = project.gitRepoNames ?? [];
     const repoIds = repoIdStrs.map(Number).filter((n) => !Number.isNaN(n));
-    const allBranches = await listGitBranches(this.db, {
-      projectId: repoIds.length > 0 ? repoIds : undefined,
-    });
+    const rawBranches =
+      repoIds.length > 0
+        ? await listGitBranches(this.db, { projectId: repoIds })
+        : [];
+    const allBranches =
+      ctx.isAdmin || ctx.allowedPersonIds === null
+        ? rawBranches
+        : rawBranches.filter((b) => !b.personId || ctx.allowedPersonIds!.has(b.personId));
     const branches = allBranches.slice(0, 200);
 
     const gitlab = await this.resolveGitLabClient();
@@ -810,14 +826,7 @@ export class OrgController {
       projectIdentifier: project.identifier,
       mappedRepos,
       releases,
-      latestPipelines: mappedRepos.map((r) => ({
-        repoId: r.id,
-        repoName: r.name,
-        branch: 'main',
-        status: 'success' as const,
-        webUrl: r.webUrl ? `${r.webUrl}/-/pipelines` : '',
-        updatedAt: new Date().toISOString(),
-      })),
+      latestPipelines: [],
       openMrs: [],
       activeBranches: branches,
     };
@@ -954,7 +963,9 @@ export class OrgController {
     const connection = await getConnection(this.db, 'gitlab');
     const storedBase = (connection?.base_url ?? '').split('#')[0]?.trim() ?? '';
     const baseUrl = (this.config.gitlab.url || storedBase).replace(/\/+$/, '');
-    const token = this.config.gitlab.apiToken || connectionToken(connection, this.config.tokenEncKey);
+    const token =
+      this.config.gitlab.apiToken ||
+      connectionToken(connection, this.config.tokenEncKey, this.config.tokenEncKeyPrev);
     if (!baseUrl || !token) {
       return null;
     }

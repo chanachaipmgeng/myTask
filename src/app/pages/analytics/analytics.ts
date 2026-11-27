@@ -8,21 +8,16 @@ import { ShellNotice } from '../../core/shell-notice';
 import { ThemeService } from '../../core/theme.service';
 import { WorkspaceFilter } from '../../core/workspace-filter';
 import { KpiStatCardComponent } from '../../shared/kpi-stat-card/kpi-stat-card';
+import { PageHeadComponent, PersonAvatarComponent, SectionCardComponent } from '../../shared/ui';
+import { SfChartComponent, SfChartOptions, SfChartSeriesConfig } from '../../shared/sf/sf-chart/sf-chart';
 import {
-  PageHeadComponent,
-  PersonAvatarComponent,
-  SectionCardComponent,
-  SfChartComponent,
-  SfChartOptions,
-  SfChartSeriesConfig,
   SfGridColumn,
   SfGridComponent,
   SfGridOptions,
   listGridOptions,
-  SfMessageComponent,
-  SfTabItem,
-  SfTabsComponent,
-} from '../../shared/ui';
+} from '../../shared/sf/sf-grid/sf-grid';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfTabItem, SfTabsComponent } from '../../shared/sf/sf-tabs/sf-tabs';
 
 @Component({
   selector: 'app-analytics',
@@ -170,10 +165,19 @@ export class AnalyticsPage {
 
   protected readonly report = computed<AnalyticsReport>(() => {
     const remote = this.remoteReport();
-    if (remote && !this.workspace.teamId() && this.workspace.track() === 'All') {
+    const hasFilter =
+      Boolean(this.workspace.teamId()) ||
+      this.workspace.track() !== 'All' ||
+      Boolean(this.workspace.personId()) ||
+      Boolean(this.workspace.opProject()) ||
+      Boolean(this.workspace.cycleId()) ||
+      Boolean(this.workspace.fromDate()) ||
+      Boolean(this.workspace.toDate()) ||
+      this.workspace.yearCe() != null;
+    if (remote && !hasFilter) {
       return remote;
     }
-    return buildAnalyticsReport(this.scopedRoster(), this.scopedTickets(), 'python');
+    return buildAnalyticsReport(this.scopedRoster(), this.scopedTickets(), 'typescript-fallback');
   });
 
   protected readonly highRiskCount = computed(
@@ -181,7 +185,7 @@ export class AnalyticsPage {
   );
 
   constructor() {
-    void this.fetchReport();
+    void this.scorecard.whenReady().then(() => this.fetchReport());
   }
 
   protected async fetchReport(): Promise<void> {
@@ -203,16 +207,20 @@ export class AnalyticsPage {
       if (this.api && this.scorecard.usingApi()) {
         const res = await this.api.runAnalytics();
         this.remoteReport.set(res);
-        const text = `รันวิเคราะห์ด้วย ${res.engine === 'python' ? 'Python Engine' : 'Fallback Engine'} สำเร็จ · ความพร้อมข้อมูล ${res.syncHygiene.readinessScore}%`;
+        const text = `รันวิเคราะห์ด้วย ${res.engine === 'python' ? 'Python Engine' : 'TypeScript Engine'} สำเร็จ · ความพร้อมข้อมูล ${res.syncHygiene.readinessScore}%`;
         this.message.set(text);
         this.notice.success(text);
       } else {
-        const local = buildAnalyticsReport(this.scopedRoster(), this.scopedTickets(), 'python');
+        const local = buildAnalyticsReport(this.scopedRoster(), this.scopedTickets(), 'typescript-fallback');
         this.remoteReport.set(local);
         const text = `คำนวณวิเคราะห์ชุดข้อมูลปัจจุบันแล้ว · ความพร้อมข้อมูล ${local.syncHygiene.readinessScore}% (พบ ${local.syncHygiene.issueCount} รายการต้องตรวจสอบ)`;
         this.message.set(text);
         this.notice.success(text);
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'รันวิเคราะห์ข้อมูลไม่สำเร็จ';
+      this.message.set(msg);
+      this.notice.error(msg, 'วิเคราะห์ข้อมูลไม่สำเร็จ');
     } finally {
       this.running.set(false);
     }

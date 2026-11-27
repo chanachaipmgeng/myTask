@@ -206,6 +206,17 @@ export function teamFromRow(row: TeamRow): Team {
   };
 }
 
+function normalizeDateOnly(raw: Date | string | null | undefined): string | null {
+  if (!raw) return null;
+  if (raw instanceof Date) {
+    const y = raw.getFullYear();
+    const m = String(raw.getMonth() + 1).padStart(2, '0');
+    const d = String(raw.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return String(raw).slice(0, 10);
+}
+
 export function ticketFromRow(row: WorkItemRow): Ticket {
   const data = typeof row.data === 'string' ? (JSON.parse(row.data) as Ticket) : row.data;
   return {
@@ -213,7 +224,7 @@ export function ticketFromRow(row: WorkItemRow): Ticket {
     id: row.id,
     assigneeId: row.assignee_id,
     closed: row.closed,
-    closedOn: row.closed_on,
+    closedOn: normalizeDateOnly(row.closed_on),
     source: row.source,
     opId: row.op_id,
   };

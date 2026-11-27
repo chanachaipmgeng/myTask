@@ -13,21 +13,21 @@ import {
   HeroBandComponent,
   PersonAvatarComponent,
   SectionCardComponent,
-  SfCheckboxComponent,
-  SfDatePickerComponent,
-  SfDialogComponent,
-  SfDropdownComponent,
-  SfKanbanComponent,
-  SfMessageComponent,
-  SfMultiSelectComponent,
-  SfTextBoxComponent,
-  SfTimelineComponent,
   StatusBadgeComponent,
   badgeToneClass,
   resolveBadgeTone,
   sizeToneMap,
   trackToneMap,
 } from '../../shared/ui';
+import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
+import { SfDatePickerComponent } from '../../shared/sf/sf-datepicker/sf-datepicker';
+import { SfDialogComponent } from '../../shared/sf/sf-dialog/sf-dialog';
+import { SfDropdownComponent } from '../../shared/sf/sf-dropdown/sf-dropdown';
+import { SfKanbanComponent } from '../../shared/sf/sf-kanban/sf-kanban';
+import { SfMessageComponent } from '../../shared/sf/sf-message/sf-message';
+import { SfMultiSelectComponent } from '../../shared/sf/sf-multiselect/sf-multiselect';
+import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
+import { SfTimelineComponent } from '../../shared/sf/sf-timeline/sf-timeline';
 import {
   BUG_CAUSES,
   BugCause,
@@ -215,7 +215,12 @@ export class WorkBoard {
 
     return filteredList.map((ticket) => {
       const assigneeLabel = names.get(ticket.assigneeId) ?? 'ยังไม่มีผู้รับ';
-      const trackLabel = ticket.track === 'RD' ? 'R&D' : 'Implement';
+      const trackLabel =
+        ticket.track === 'RD' || ticket.track === 'RND'
+          ? 'R&D'
+          : ticket.track === 'Implement' || ticket.track === 'IMP'
+            ? 'Implement'
+            : ticket.track;
       const projectLabel = resolveProjectLabel(ticket);
       const projectKey = resolveProjectKey(ticket) || '__none__';
       return {
@@ -289,9 +294,16 @@ export class WorkBoard {
     })),
   );
 
+  private lastFilledId: string | null = null;
+
   constructor() {
     effect(() => {
-      this.fillForm(this.selected());
+      const id = this.selectedId();
+      const ticket = this.selected();
+      if (id !== this.lastFilledId) {
+        this.lastFilledId = id;
+        this.fillForm(ticket);
+      }
     });
   }
 

@@ -37,6 +37,7 @@ import {
   TicketStageLog,
   Track,
   VarianceCode,
+  normalizeTrack,
 } from './models';
 import { ScorecardCycle, defaultCycleSettings, normalizeCycleSettings } from '../../../shared/domain/scorecard-cycle';
 import { TeamVisibilityRule, VisibilityConfig } from '../../../shared/domain/team-visibility';
@@ -143,7 +144,20 @@ export interface PersonRow {
 }
 
 function trackLabel(track: Track): string {
-  return track === 'RD' ? 'R&D' : 'Implement';
+  switch (normalizeTrack(track)) {
+    case 'RND':
+      return 'R&D';
+    case 'IMP':
+      return 'Implement';
+    case 'QA':
+      return 'QA';
+    case 'UXBA':
+      return 'UX/BA';
+    case 'SUP':
+      return 'Support';
+    case 'INFRA':
+      return 'Infra';
+  }
 }
 
 function yesNo(value: boolean): string {
@@ -281,6 +295,20 @@ export class ScorecardService {
     })),
   );
 
+  readonly peopleById = computed(() => personById(this.roster()));
+
+  readonly ticketsByAssignee = computed(() => {
+    const map = new Map<string, Ticket[]>();
+    for (const ticket of this.ticketsState()) {
+      const aid = ticket.assigneeId?.trim();
+      if (!aid) continue;
+      const list = map.get(aid);
+      if (list) list.push(ticket);
+      else map.set(aid, [ticket]);
+    }
+    return map;
+  });
+
   readonly ticketRows = computed(() => this.toTicketRows(this.ticketsState(), alertRules()));
 
   readonly personRows = computed(() =>
@@ -314,6 +342,15 @@ export class ScorecardService {
     setSessionUser(null, null);
     this.peopleState.set([]);
     this.ticketsState.set([]);
+    this.departmentsState.set([]);
+    this.teamsState.set([]);
+    this.disputesState.set([]);
+    this.leavesState.set([]);
+    this.stageLogsState.set([]);
+    this.allocationsState.set([]);
+    this.visibilityState.set({ matrix: [], userOverrides: {} });
+    this.effectiveAllowedTeamsState.set(null);
+    this.ticketScoreCache.clear();
   }
 
   whenReady(): Promise<void> {
@@ -826,9 +863,13 @@ export class ScorecardService {
   }
 
   private scoreTicketCached(ticket: Ticket): ReturnType<typeof scoreTicket> {
+    const pausedTriState = ticket.isPaused === true ? 1 : ticket.isPaused === false ? 0 : 2;
     const key = [
       ticket.id,
+      ticket.track,
       ticket.closed ? 1 : 0,
+      ticket.closedOn ?? '',
+      ticket.dodPassed ? 1 : 0,
       ticket.size,
       ticket.type,
       ticket.estimateMd,
@@ -839,9 +880,10 @@ export class ScorecardService {
       ticket.firstDueOn ?? '',
       ticket.readyForQaAt ?? '',
       ticket.devDeliveredOn ?? '',
+      ticket.replyDate ?? '',
       ticket.blocker ? 1 : 0,
       ticket.pausedDays ?? 0,
-      ticket.isPaused ? 1 : 0,
+      pausedTriState,
       ticket.varianceCode,
       ticket.inTimeBox ? 1 : 0,
       ticket.childTicketsSized ? 1 : 0,
@@ -865,7 +907,7 @@ export class ScorecardService {
       const score = this.scoreTicketCached(ticket);
       const person = ticket.assigneeId ? people.get(ticket.assigneeId) : undefined;
       const scored = score.total !== null;
-      const alerts = collectAlerts([ticket], rules.overrunLimit).filter((alert) =>
+      const alerts = collectAlerts([ticket], rules.overrunLimit, today).filter((alert) =>
         alert.kind === 'overrun' ? rules.overrun : rules.deadline,
       );
       const sla = evaluatePolicySla(ticket, today);
@@ -925,17 +967,16 @@ export class ScorecardService {
     const rubricOpts = this.rubricOptions();
     return people.map((person) => {
       const score = scorePerson(person, tickets, weights, rubricOpts);
-      const weighted = person.track === 'Implement' ? score.weightedScore : score.dodWeightedScore;
-      const sidePct =
-        person.track === 'Implement' ? score.unplannedRatio * 100 : score.spikeRatio * 100;
-      const sideState =
-        person.track === 'Implement'
-          ? score.unplannedRatio <= UNPLANNED_TARGET
-            ? 'ตามเป้า'
-            : 'เกินเป้า'
-          : score.spikeInBand
-            ? 'ในช่วง'
-            : 'นอกช่วง';
+      const isRd = normalizeTrack(person.track) === 'RND';
+      const weighted = isRd ? score.dodWeightedScore : score.weightedScore;
+      const sidePct = isRd ? score.spikeRatio * 100 : score.unplannedRatio * 100;
+      const sideState = isRd
+        ? score.spikeInBand
+          ? 'ในช่วง'
+          : 'นอกช่วง'
+        : score.unplannedRatio <= UNPLANNED_TARGET
+          ? 'ตามเป้า'
+          : 'เกินเป้า';
       const planCap = score.planRawPct > 100 ? ' · ดัชนีใช้ 100' : '';
       return {
         id: person.id,
@@ -990,7 +1031,7 @@ export class ScorecardService {
 
     const newDispute: TicketDispute = {
       id: `dsp-${Date.now()}`,
-      disputeCode: `DSP-2026-${Math.floor(100 + Math.random() * 900)}`,
+      disputeCode: `DSP-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
       ticketId,
       requesterId: person.id,
       requestedFlag,

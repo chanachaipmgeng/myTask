@@ -113,11 +113,11 @@ export function buildContextualTabs(url: string, role: AccessRole): ContextualTa
   const scope = queryParams.get('scope');
 
   // 1. Team Space tabs ("ทีมของฉัน")
-  // Shows when viewing /team, /team/time, /team/schedule, /work/team-time, or /schedule?scope=team
+  // Shows when viewing /team, /team/time, /team/schedule, or /schedule?scope=team
+  // (/work/team-time lives inside WorkShell which renders its own tab bar — avoid double tabs)
   if (
     path === '/team' ||
     path.startsWith('/team/') ||
-    path === '/work/team-time' ||
     (path === '/schedule' && scope === 'team')
   ) {
     return [
@@ -131,7 +131,7 @@ export function buildContextualTabs(url: string, role: AccessRole): ContextualTa
         text: 'เวลาทีม',
         route: '/team/time',
         icon: 'e-icons e-day',
-        active: path === '/team/time' || path === '/work/team-time',
+        active: path === '/team/time',
       },
       {
         text: 'ปฏิทินทีม & วันลา',
@@ -189,11 +189,11 @@ export function buildContextualTabs(url: string, role: AccessRole): ContextualTa
     ];
   }
 
-  // 4. Admin Projects
-  if (role === 'admin' && (path === '/admin/projects' || path.startsWith('/org/projects'))) {
+  // 4. Admin Projects — only show detail tab when viewing an actual project (no hardcoded ID)
+  if (role === 'admin' && path.startsWith('/org/projects')) {
     return [
-      { text: 'จัดการโปรเจกต์', route: '/admin/projects', icon: 'e-icons e-folder', active: path === '/admin/projects' },
-      { text: 'รายละเอียด & CI/CD', route: '/org/projects/331', icon: 'e-icons e-chart', active: path.startsWith('/org/projects') },
+      { text: 'จัดการโปรเจกต์', route: '/admin/projects', icon: 'e-icons e-folder', active: false },
+      { text: 'รายละเอียด & CI/CD', route: path, icon: 'e-icons e-chart', active: true },
     ];
   }
 
@@ -371,7 +371,7 @@ export function screenTitle(url: string, role: AccessRole = 'member'): string {
   if (rawPath === '/team/time' || rawPath === '/work/team-time') return isMember ? 'เวลาทีมของฉัน' : 'ลงเวลาทีม';
   if (rawPath === '/team/schedule' || (rawPath === '/schedule' && scope === 'team')) return 'ปฏิทินทีม & วันลา';
   if (rawPath === '/schedule') return 'ปฏิทิน & วันลาของฉัน';
-  if (rawPath === '/team' || rawPath.startsWith('/team')) return isMember ? 'ทีมของฉัน' : 'แดชบอร์ดทีม';
+  if (rawPath === '/team' || rawPath.startsWith('/team/')) return isMember ? 'ทีมของฉัน' : 'แดชบอร์ดทีม';
   if (url.startsWith('/workspace/people')) {
     return role === 'admin' ? 'พนักงาน & ทีม' : 'คนในทีม';
   }
@@ -397,14 +397,6 @@ export function screenTitle(url: string, role: AccessRole = 'member'): string {
     return isMember ? 'Git & MR ของฉัน' : 'Git & MR';
   }
   if (url.startsWith('/quality')) return isMember ? 'คะแนน & วิเคราะห์ของฉัน' : 'คะแนน & วิเคราะห์';
-  if (url.startsWith('/insights/ols')) return isMember ? 'วิเคราะห์รายคนของฉัน' : 'วิเคราะห์รายคน';
-  if (url.startsWith('/insights/mygit') || url.startsWith('/mygit')) {
-    return isMember ? 'Git & MR ของฉัน' : 'Git & MR';
-  }
-  if (url.startsWith('/insights/ai') || url.startsWith('/ai')) {
-    return isMember ? 'งาน AI & Spike ของฉัน' : 'งาน AI & Spike';
-  }
-  if (url.startsWith('/insights/mockup') || url.startsWith('/mockup')) return 'โหมดจำลอง';
   if (url.startsWith('/insights')) return isMember ? 'วิเคราะห์ & Git MR' : 'วิเคราะห์ & ซิงก์';
   if (url.startsWith('/org/teams/') && url.includes('/people')) return 'ทีม · คน';
   if (url.startsWith('/org/teams/') && url.includes('/work')) return 'ทีม · งาน';

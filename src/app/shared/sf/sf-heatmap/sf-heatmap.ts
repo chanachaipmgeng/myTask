@@ -154,7 +154,9 @@ export class SfHeatmapComponent implements AfterViewInit, OnDestroy {
       this.xLabels();
       this.yLabels();
       this.theme.sfTheme();
-      queueMicrotask(() => this.heatRef?.refresh());
+      queueMicrotask(() => {
+        if (this.heatRef && !this.heatRef.isDestroyed) this.heatRef.refresh();
+      });
     });
   }
 
@@ -162,7 +164,9 @@ export class SfHeatmapComponent implements AfterViewInit, OnDestroy {
     if (typeof ResizeObserver !== 'undefined' && this.hostBox?.nativeElement) {
       this.resizeObserver = new ResizeObserver(() => {
         if (this.resizeTimer) clearTimeout(this.resizeTimer);
-        this.resizeTimer = setTimeout(() => this.heatRef?.refresh(), 150);
+        this.resizeTimer = setTimeout(() => {
+          if (this.heatRef && !this.heatRef.isDestroyed) this.heatRef.refresh();
+        }, 150);
       });
       this.resizeObserver.observe(this.hostBox.nativeElement);
     }

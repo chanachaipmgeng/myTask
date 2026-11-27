@@ -1063,7 +1063,7 @@ export class ApiClient {
     rosterGroupIds?: number[];
     message?: string;
   }> {
-    return api('/api/integrations/openproject/discovery');
+    return api('/api/integrations/openproject/discovery', { method: 'POST', body: '{}' });
   }
 
   discoverOpenProjectFields(): Promise<{

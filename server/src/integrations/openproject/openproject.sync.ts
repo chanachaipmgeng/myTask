@@ -20,7 +20,13 @@ import {
   upsertPerson,
   upsertTeam,
 } from '../../data/people.repo';
-import { connectionToken, getConnection, getSettings, saveSettings } from '../../data/settings.repo';
+import {
+  connectionToken,
+  getConnection,
+  getSettings,
+  saveSettings,
+  updateSettingsTransactional,
+} from '../../data/settings.repo';
 import {
   finishSyncRun,
   getWorkItemByOpId,
@@ -183,11 +189,22 @@ export class OpenProjectSyncService implements OnModuleInit {
               active: e.active !== false,
               ...(e.color ? { color: e.color } : {}),
             }));
-          await saveSettings(this.db, settings, startedBy);
+          await updateSettingsTransactional(
+            this.db,
+            (curr) => {
+              curr.openprojectTypeCatalog = settings.openprojectTypeCatalog;
+              curr.openprojectStatusCatalog = settings.openprojectStatusCatalog;
+              curr.openprojectEnumerationCatalog = settings.openprojectEnumerationCatalog;
+              return curr;
+            },
+            startedBy,
+          );
         } catch (catErr) {
           this.log.warn(`Skipped OP type/status catalog refresh: ${catErr instanceof Error ? catErr.message : catErr}`);
         }
-        const spentHours = await this.loadSpentHours(client, since);
+        // Incremental sync (since != null) MUST NOT overwrite cumulative actualMd with delta time entries.
+        // OpenProject v3 work packages already carry cumulative wp.spentTime; only aggregate all entries on full sync.
+        const spentHours = since ? new Map<number, number>() : await this.loadSpentHours(client, null);
         const staging = this.config.openproject.teamStaging;
         const personByOp = await this.refreshUserMap(client, staging === 'rd');
         const allPeople = await listPeople(this.db, false);
@@ -782,7 +799,7 @@ export class OpenProjectSyncService implements OnModuleInit {
     if (!row) {
       return null;
     }
-    const token = envToken || connectionToken(row, this.config.tokenEncKey);
+    const token = envToken || connectionToken(row, this.config.tokenEncKey, this.config.tokenEncKeyPrev);
     const url = envUrl || row.base_url;
     if (!url || !token || (!row.enabled && !(envUrl && envToken))) {
       return null;
