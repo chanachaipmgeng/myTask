@@ -13,7 +13,7 @@
 | ชนิด | พาธ |
 |---|---|
 | Workspace Rules | `.agents/rules/myhr-ui-and-teams.md`, `.agents/rules/syncfusion-wrappers.md`, `.agents/rules/backend-security-and-domain.md`, `.cursor/rules/*.mdc` (รวม `workspace-filter.mdc`) |
-| Project Skills | `.agents/skills/manday-docker-stack/SKILL.md`, `.agents/skills/openproject-fields/SKILL.md`, `.cursor/skills/*/SKILL.md` (รวม `workspace-filter`, `work-hub`, `scorecard-verify`, `openproject-fields`) |
+| Project Skills | `.agents/skills/manday-docker-stack/SKILL.md`, `.agents/skills/openproject-fields/SKILL.md`, `.agents/skills/obsidian-bento-ui/SKILL.md`, `.cursor/skills/*/SKILL.md` (รวม `workspace-filter`, `work-hub`, `scorecard-verify`, `openproject-fields`) |
 
 ## คำสั่งตรวจขั้นต่ำ & Windows Shell Guardrail
 
@@ -24,7 +24,7 @@ npm run build
 npm --prefix server run build
 ```
 
-- **Windows PowerShell 5.1 Guardrail**: ห้ามใช้ตัวคั่น `&&` หรือ ternary `? :` ในคำสั่ง PowerShell (จะเกิด `ParserError: InvalidEndOfLine`) ให้คั่นคำสั่งด้วย `;` หรือตรวจ `if ($LASTEXITCODE -eq 0) { ... }` เสมอ
+- **Windows PowerShell 5.1 Guardrail**: ห้ามใช้ตัวคั่น `&&` หรือ ternary `? :` ในคำสั่ง PowerShell (จะเกิด `ParserError: InvalidEndOfLine`) ให้คั่นคำสั่งด้วย `;` หรือตรวจ `if ($LASTEXITCODE -eq 0) { ... }` เสมอ · หากต้องรันสคริปต์ Node แบบอินไลน์จาก PowerShell ห้ามใช้ `node -e "..."` ที่มีเครื่องหมายคำพูดหรือ `$` ด้านใน ให้ส่งผ่าน Single-Quoted Here-String `@' ... '@ | node` เสมอ
 - **Windows Parallel `edit_file` Guardrail**: ห้ามเรียก `edit_file` ขนานหลายรายการใส่**ไฟล์เดียวกัน**ในเทิร์นเดียวบน Windows (จะติด `user-mapped section open`) ให้รวมการแก้ในไฟล์เดียวกันเป็นบล็อกเดียวหรือแยกเทิร์น
 - **Windows Mixed-EOL Guardrail**: หากใช้สคริปต์ Node/codemod แก้ไฟล์ `.ts`/`.scss` บน Windows ต้องคงรูปแบบขึ้นบรรทัดเดิม (CRLF/LF) ของไฟล์นั้นเสมอ ห้ามเขียน `\n` ปนในไฟล์ `\r\n` เพราะจะทำให้ `edit_file` แบบหลายบรรทัดหา Target ไม่พบ
 - **Docker Stack (`npm run docker:up|ps|logs|down`)**: `web` (`:8080` Nginx SPA + proxy `/api/`), `api` (`:3000` NestJS), `db` (`:5433` Postgres 16), `adminer` (`:8088`), `db-backup` (`--profile backup`) · คอนเทนเนอร์ `node:22-bookworm-slim` ไม่มี `wget`/`curl` ต้องใช้ Native Node `fetch('http://127.0.0.1:3000/api/health')` คู่กับ `@Public() @Get('health')` เสมอ
@@ -32,17 +32,17 @@ npm --prefix server run build
 ## Angular UI, MyHR Prism Color System & Syncfusion
 
 - Angular **22.2.6** (pin) · **signals / computed / `@if` `@for`** · **OnPush** ทุก component · คง **Zone** (`provideZoneChangeDetection`) · Syncfusion ใช้ `[value]="x()"` + `(change)` ไม่ใช้ `[(value)]` กับ class field · เรียกผ่าน `app-sf-*` wrappers (`src/app/shared/sf/`) ยกเว้น root shell (`ejs-sidebar`, `ejs-appbar`, `ejs-toast`) และ `ejs-skeleton`
-- **Brand Anchor & MyHR Prism 8-Hue Spectrum (`shared/domain/palette.ts` & `src/app/shared/ui/badge.ts`)**:
-  - **คงสีหลักบริษัท (Corporate Royal Blue `#2746b3` → `#3154cc` → `#3b60dc`)** เฉพาะจุดยึดแบรนด์: Sidebar (`#app-nav`), พื้นหลังหลัก (`#f4f7fe` Light / `#0b1120` Dark), แถบซ้าย `app-hero-band`, Active Underline Tab (`.hub-underline-tab`), และปุ่ม `.e-btn.e-primary` · **ห้ามย้อมแบรนด์เป็น lime/sage** และ**ห้ามยุบ `--teal`/`--cyan`/`--violet`/`--coral` กลับเป็นสีน้ำเงินเดียวกับ `--primary`**
+- **Brand Anchor & Obsidian Royal × Prism Glow (`shared/domain/palette.ts`, `src/app/shared/ui/badge.ts`, สกิล `obsidian-bento-ui`)**:
+  - **Default Theme & Brand Anchor**: ผู้ใช้ใหม่เริ่มที่ **Obsidian Cosmic Dark Mode** (`ThemeService` default `'dark'`, `--paper: #06070d`, `--surface: #0c0f1c`) คงสีหลักบริษัท **Corporate Royal Blue (`#2746b3` → `#3154cc` → `#3b60dc`)** ผสาน **Electric Violet (`#8b5cf6` → `#a855f7`)** ในจุด AI/Glow/Border Beam พร้อม Light Bento Mode · **ห้ามย้อมแบรนด์เป็น lime/sage** และ**ห้ามยุบ `--teal`/`--cyan`/`--violet`/`--coral` กลับเป็นสีน้ำเงินเดียวกับ `--primary`**
   - **6 สายงาน**: `IMP`/`Implement` (`primary` `#2746b3`) · `RND`/`RD` (`teal` `#0d9488`) · `QA` (`info` `#0284c7`) · `UXBA` (`violet` `#7c3aed`) · `SUP` (`warning` `#d97706`) · `INFRA` (`coral` `#ea580c`)
   - **Workflow Stages**: `Backlog` (`secondary`) · `In Progress` (`primary`) · `Code Review` (`violet`) · `Ready for QA` (`coral`) · `In QA` (`info`) · `Done` (`success`) · `Reopened`/`Blocked` (`danger`)
   - **Soft-Tinted Pill Badges (`BadgeTone` 10 โทน)**: `.e-badge:not(.e-badge-notification)` ใช้พื้นโปร่งแสง + ขอบ 1px (`--b-bg`, `--b-border`, `--b-fg`) ส่วน `.e-badge-notification` บนกระดิ่ง AppBar คงสีแดงทึบ
   - **Semantic Action Buttons (ห้ามใส่ `:hover transform`)**: `.e-primary` (CTA หลัก), `.e-success` (`+ สร้างใบงาน`/อนุมัติ/Resume), `.e-info`/`.e-btn-teal` (ซิงก์ GitLab/myProject/รีเฟรช), `.e-btn-violet` (วิเคราะห์ทีม/AI), `.e-warning` (Ping SLA/ขอทบทวนคะแนน), `.e-danger` (ตีกลับ Dev/ลบ) ทั้งทึบและ `.e-outline`
   - **Wording UI ภาษาไทยที่เข้าใจง่าย**: หลีกเลี่ยงคำทับศัพท์งงๆ บนเมนู/หัวหน้า — เช่น `/cockpit` แสดงเป็น **ภาพรวมงาน** (ไม่ใช้「ค็อกพิท/ห้องบัญชาการ」) · **ขอทบทวนคะแนน** (ไม่ใช้「อุทธรณ์」) · **ตรวจคุณภาพ QA** (ไม่โชว์ DoD Gate บนหัวข้อ) · **งานรอจัด** (แทน Backlog/แบ็กล็อก) · **งานค้าง & SLA** (แทน คอขวด) · route โค้ดคงเดิม
   - **Multi-Accent KPI & Charts**: `app-kpi-stat` รองรับ `KpiAccent` 8 โทน (`default|success|warning|danger|info|teal|violet|coral`) · `app-hero-band` มีจุดสี Prism หน้าหัวข้อดัชนี · ชาร์ตผูก `[theme]="theme.sfTheme()"` + `prismChartPalette(theme.isDark())` · Heatmap ใช้ 4 ช่วง (`0:#f43f5e` → `65:#f59e0b` → `80:#0ea5e9` → `100:#10b981`)
-- **Surface, Theme & SCSS Budget**:
-  - โทเคนใน `src/styles.scss`: `--radius-panel` 24 → `--radius-card` 18 → `--radius-nested` 14 · `--shadow-card*` · `--ease-crisp` / `--ease-nordic` + `--dur-*` · ตัวเลข KPI ใช้ `tabular-nums`
-  - Scoped SCSS ใช้ CSS Custom Properties + `:host-context(.e-light-mode)` / `:host-context(body:not(.e-dark-mode))` แทนการเขียน `body.e-light-mode` ตรงๆ เพื่อสลับธีมแบบ zero-reload และคุมขนาดไม่ให้เกิน `anyComponentStyle` (`28kB/36kB`)
+- **Surface, Cosmic Motion & SCSS Budget**:
+  - โทเคนใน `src/styles.scss`: `--radius-panel` 24 → `--radius-card` 18 → `--radius-nested` 14 · `--shadow-card*` · `--ease-crisp` / `--ease-nordic` + `--dur-*` · `[appBentoSpotlight]` (rAF นอก NgZone, zero `:hover transform`) · `.cosmic-border-beam` · `<app-ecosystem-hub>` (`showcase` ใน `/login`, `live` ใน `/integrations`) · ตัวเลข KPI ใช้ `tabular-nums`
+  - Scoped SCSS ใช้ CSS Custom Properties + `:host-context(.e-light-mode)` / `:host-context(body:not(.e-dark-mode))` แทนการเขียน `body.e-light-mode` ตรงๆ เพื่อสลับธีมแบบ zero-reload และคุมขนาดไม่ให้เกิน `anyComponentStyle` (`28kB/36kB`) — เนื่องจาก `app.scss` ใกล้เพดาน (`~32.7kB`) ให้วางคลาส Utility ร่วมของ Shell/Cosmic (`.bento-obsidian-panel`, `.cosmic-border-beam`, `.sidebar-score-card`) ไว้ใน `src/styles.scss` แทนการเพิ่มลง `app.scss`
   - แต่ง Syncfusion ที่ `src/styles/sf/_components.scss` เท่านั้น · ห้ามเขียนครอบ generic `button` หรือ `.e-control-wrapper { width: 100%; }` นอก `.field`/`.filter`/`.form-grid` · ห้ามใช้ `.e-chart` โดดๆ (ชนไอคอน `e-icons.e-chart` ให้ใช้ `ejs-chart, .e-control.e-chart`) · ห้าม `:hover transform` บน `.e-btn`/`.e-card`/`.e-dialog`/`.e-panel`
   - มือถือ ($\le 640$px): `.e-dialog` กว้าง `calc(100vw - 16px) !important` และ `.e-btn.e-small` สูงขั้นต่ำ `36px` · คอนเทนเนอร์รายการยาวใส่ `pb-16`/`pb-20` กันปุ่มลอย `ขึ้นบน` บังปุ่มท้ายหน้า · `ejs-toast` วาง Bottom-Right เสมอ · Global Filter เหลือปุ่ม「ตัวกรอง」+ ป็อปโอเวอร์ · drawer ใบงานเต็มจอ · Kanban/Gantt/Schedule เลื่อนในกรอบ · `.hub-underline-tab` สูงแตะ $\ge 40$px
 - **Shell, AppBar, Unified Sidebar & Navigation**:
