@@ -70,6 +70,9 @@ export interface AppConfig {
   tokenEncKey: string;
   tokenEncKeyPrev: string[];
   geminiApiKey: string;
+  /** Shared ai-core-service base URL. Cutover on only when both URL + API key are set. */
+  aiCoreUrl: string;
+  aiCoreApiKey: string;
   gitlab: {
     url: string;
     clientId: string;
@@ -123,6 +126,8 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     tokenEncKey: tokenEncKey || INSECURE_DEV_TOKEN_ENC_KEY,
     tokenEncKeyPrev: list(env['TOKEN_ENC_KEY_PREV']),
     geminiApiKey: (env['GEMINI_API_KEY'] ?? '').trim(),
+    aiCoreUrl: trimSlash(env['AI_CORE_URL'] ?? ''),
+    aiCoreApiKey: (env['AI_CORE_API_KEY'] ?? '').trim(),
     gitlab: {
       url: trimSlash(env['GITLAB_URL'] ?? ''),
       clientId: env['GITLAB_OAUTH_CLIENT_ID'] ?? '',

@@ -9,6 +9,7 @@ import { APP_CONFIG, AppConfig } from '../config';
 import { connectionToken, getConnection, getSettings } from '../data/settings.repo';
 import { finishSyncRun, listWorkItems, startSyncRun } from '../data/work-items.repo';
 import { Db } from '../db/db.service';
+import { aiCoreEnabled, createAiCoreClient } from './ai-core.client';
 
 export interface AiChatHistoryItem {
   role: 'user' | 'assistant';
@@ -375,14 +376,44 @@ export class AiCopilotService {
     return (this.config.geminiApiKey || process.env['GEMINI_API_KEY'] || '').trim();
   }
 
+  /** 2A flag: route LLM through ai-core only when URL + API key are both set. */
+  private aiCoreOn(): boolean {
+    return aiCoreEnabled(this.config.aiCoreUrl, this.config.aiCoreApiKey);
+  }
+
+  private canUseLlm(): boolean {
+    return this.aiCoreOn() || Boolean(this.geminiKey());
+  }
+
+  private async generateViaAiCore(opts: {
+    system?: string;
+    messages: Array<{ role: 'user' | 'assistant' | 'model'; content: string }>;
+    mode?: 'answer' | 'light';
+    temperature?: number;
+    maxOutputTokens?: number;
+    timeoutMs?: number;
+  }): Promise<string | null> {
+    const client = createAiCoreClient(this.config.aiCoreUrl, this.config.aiCoreApiKey);
+    const result = await client.generate(opts.messages, {
+      system: opts.system,
+      mode: opts.mode ?? 'answer',
+      temperature: opts.temperature,
+      maxOutputTokens: opts.maxOutputTokens,
+      timeoutMs: opts.timeoutMs,
+    });
+    return result.text?.trim() || null;
+  }
+
   async getStatus() {
     const conn = await getConnection(this.db, 'teams');
     const teamsConfigured = Boolean(this.config.teams.webhookUrl || (conn?.token_enc && conn?.enabled));
-    const hasGemini = Boolean(this.geminiKey());
+    const viaCore = this.aiCoreOn();
+    const hasLlm = this.canUseLlm();
     return {
       ok: true,
-      provider: hasGemini ? ('gemini' as const) : ('rule-based' as const),
-      model: hasGemini ? 'gemini-2.5-flash' : 'local-smart-engine',
+      provider: hasLlm ? ('gemini' as const) : ('rule-based' as const),
+      model: viaCore ? 'ai-core' : hasLlm ? 'gemini-2.5-flash' : 'local-smart-engine',
+      aiCoreEnabled: viaCore,
       voiceSupported: true,
       teamsConfigured,
     };
@@ -432,11 +463,10 @@ export class AiCopilotService {
     const snapshot = await this.loadScopedSnapshot(ctxScope, body.track);
     const selfName = authUser.person.nickname || authUser.person.fullName;
     const deterministic = answerDeterministic(message, snapshot, selfName);
-    const apiKey = this.geminiKey();
 
-    if (apiKey) {
+    if (this.canUseLlm()) {
       try {
-        const llmReply = await this.callGeminiChat(apiKey, message, body.history ?? [], snapshot, selfName, authUser.access);
+        const llmReply = await this.callGeminiChat(message, body.history ?? [], snapshot, selfName, authUser.access);
         if (llmReply) {
           const mentionedIds = Array.from(
             new Set(
@@ -445,7 +475,10 @@ export class AiCopilotService {
                 .filter((id) => snapshot.tickets.some((t) => t.id.toUpperCase() === id)),
             ),
           ).slice(0, 8);
-          await this.db.audit(authUser.person.id, 'ai.chat', 'gemini', { length: message.length });
+          await this.db.audit(authUser.person.id, 'ai.chat', 'gemini', {
+            length: message.length,
+            via: this.aiCoreOn() ? 'ai-core' : 'direct',
+          });
           return {
             ok: true,
             reply: llmReply,
@@ -479,14 +512,13 @@ export class AiCopilotService {
     const period: 'daily' | 'weekly' = body.period === 'daily' ? 'daily' : 'weekly';
     const snapshot = await this.loadScopedSnapshot(ctxScope);
     const fallbackText = buildRuleBasedBriefing(snapshot, period);
-    const apiKey = this.geminiKey();
 
     let briefingText = fallbackText;
     let provider: 'gemini' | 'rule-based' = 'rule-based';
 
-    if (apiKey) {
+    if (this.canUseLlm()) {
       try {
-        const llmText = await this.callGeminiBriefing(apiKey, snapshot, period);
+        const llmText = await this.callGeminiBriefing(snapshot, period);
         if (llmText) {
           briefingText = llmText;
           provider = 'gemini';
@@ -576,14 +608,12 @@ export class AiCopilotService {
   }
 
   private async callGeminiChat(
-    apiKey: string,
     message: string,
     history: AiChatHistoryItem[],
     snapshot: ScopedSnapshot,
     selfName: string,
     role: string,
   ): Promise<string | null> {
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const compactContext = {
       viewer: { name: selfName, role },
       metrics: snapshot.metrics,
@@ -603,6 +633,21 @@ export class AiCopilotService {
 บริบทข้อมูลที่ผ่านการกรองสิทธิ์แล้ว:
 ${JSON.stringify(compactContext)}`;
 
+    if (this.aiCoreOn()) {
+      const messages = [
+        ...history.slice(-6).map((h) => ({
+          role: (h.role === 'assistant' ? 'assistant' : 'user') as 'user' | 'assistant',
+          content: h.text.slice(0, 800),
+        })),
+        { role: 'user' as const, content: message },
+      ];
+      return this.generateViaAiCore({ system: systemText, messages, timeoutMs: 15_000 });
+    }
+
+    const apiKey = this.geminiKey();
+    if (!apiKey) return null;
+
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const contents = [
       ...history.slice(-6).map((h) => ({
         role: h.role === 'assistant' ? 'model' : 'user',
@@ -631,11 +676,9 @@ ${JSON.stringify(compactContext)}`;
   }
 
   private async callGeminiBriefing(
-    apiKey: string,
     snapshot: ScopedSnapshot,
     period: 'daily' | 'weekly',
   ): Promise<string | null> {
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const prompt = `สรุป Executive Briefing แบบ${period === 'daily' ? 'รายวัน' : 'รายสัปดาห์'} สำหรับส่งเข้า Microsoft Teams ของทีมพัฒนาซอฟต์แวร์
 เงื่อนไข:
 - ใช้ภาษาไทยแบบกระชับ อ่านจบใน 30 วินาที เป็น Markdown bullet points
@@ -648,6 +691,17 @@ ${JSON.stringify({
   freeCapacity: snapshot.capacity.filter((c) => c.freeMd >= 0.5).slice(0, 5),
 })}`;
 
+    if (this.aiCoreOn()) {
+      return this.generateViaAiCore({
+        messages: [{ role: 'user', content: prompt }],
+        timeoutMs: 15_000,
+      });
+    }
+
+    const apiKey = this.geminiKey();
+    if (!apiKey) return null;
+
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -731,12 +785,14 @@ ${JSON.stringify({
       authorName: body.authorName,
     });
 
-    const apiKey = this.geminiKey();
-    if (apiKey && branchName) {
+    if (this.canUseLlm() && branchName) {
       try {
-        const aiDraft = await this.callGeminiBranchDraft(apiKey, body, heuristic);
+        const aiDraft = await this.callGeminiBranchDraft(body, heuristic);
         if (aiDraft) {
-          await this.db.audit(authUser.person.id, 'ai.draft_branch', branchName, { provider: 'gemini' });
+          await this.db.audit(authUser.person.id, 'ai.draft_branch', branchName, {
+            provider: 'gemini',
+            via: this.aiCoreOn() ? 'ai-core' : 'direct',
+          });
           return { ok: true, provider: 'gemini', draft: aiDraft };
         }
       } catch {
@@ -749,11 +805,9 @@ ${JSON.stringify({
   }
 
   private async callGeminiBranchDraft(
-    apiKey: string,
     input: { branchName: string; projectName?: string; lastCommitTitle?: string; authorName?: string },
     fallback: BranchTicketDraft,
   ): Promise<BranchTicketDraft | null> {
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const prompt = `แปลงข้อมูล Git Branch ต่อไปนี้เป็นร่างใบงานสำหรับระบบ OpenProject (myProject) ตอบเป็น JSON ล้วนเท่านั้น (ไม่มี markdown code fence)
 Schema:
 {"subject":"หัวข้อใบงานที่อ่านเข้าใจง่าย","module":"ชื่อโมดูลสั้นๆ","track":"IMP|RND|QA|UXBA|SUP|INFRA","type":"Feature|CR|Bug-Fix|Bug-Investigate|Spike|Ops|TechDebt","size":"XS|S|M|L|XL","estimateMd":1.0,"reasoning":"เหตุผลสั้นๆ 1 ประโยคภาษาไทย"}
@@ -764,25 +818,38 @@ Schema:
 - lastCommitTitle: ${input.lastCommitTitle ?? ''}
 - authorName: ${input.authorName ?? ''}`;
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
-      }),
-      signal: AbortSignal.timeout(12_000),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    };
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    let rawText: string | null = null;
+    if (this.aiCoreOn()) {
+      rawText = await this.generateViaAiCore({
+        messages: [{ role: 'user', content: prompt }],
+        timeoutMs: 12_000,
+      });
+    } else {
+      const apiKey = this.geminiKey();
+      if (!apiKey) return null;
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' },
+        }),
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+      rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+    }
+
     if (!rawText) return null;
-    const parsed = JSON.parse(rawText) as Partial<BranchTicketDraft>;
+    const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(cleaned) as Partial<BranchTicketDraft>;
     const validTypes: TicketType[] = ['Feature', 'CR', 'Bug-Fix', 'Bug-Investigate', 'Spike', 'Ops', 'TechDebt'];
     const validSizes: Size[] = ['XS', 'S', 'M', 'L', 'XL'];
     const est = Number(parsed.estimateMd);
@@ -871,12 +938,14 @@ Schema:
       body.disputeReason ?? '',
     );
 
-    const apiKey = this.geminiKey();
-    if (apiKey && mode === 'draft' && (body.rawText ?? '').trim().length >= 6) {
+    if (this.canUseLlm() && mode === 'draft' && (body.rawText ?? '').trim().length >= 6) {
       try {
-        const polished = await this.callGeminiDisputeDraft(apiKey, ticket, body.rawText ?? '', heuristic);
+        const polished = await this.callGeminiDisputeDraft(ticket, body.rawText ?? '', heuristic);
         if (polished) {
-          await this.db.audit(authUser.person.id, 'ai.dispute_copilot', `${mode}:${ticketId}`, { provider: 'gemini' });
+          await this.db.audit(authUser.person.id, 'ai.dispute_copilot', `${mode}:${ticketId}`, {
+            provider: 'gemini',
+            via: this.aiCoreOn() ? 'ai-core' : 'direct',
+          });
           return { ok: true, mode, provider: 'gemini', ...polished };
         }
       } catch {
@@ -889,37 +958,48 @@ Schema:
   }
 
   private async callGeminiDisputeDraft(
-    apiKey: string,
     ticket: Ticket | null,
     rawText: string,
     fallback: Omit<AiDisputeCopilotResponse, 'ok' | 'mode' | 'provider'>,
   ): Promise<Omit<AiDisputeCopilotResponse, 'ok' | 'mode' | 'provider'> | null> {
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const prompt = `ช่วยเรียบเรียงเหตุผลคำขอทบทวนคะแนนใบงานให้กระชับ สุภาพ เป็นมืออาชีพแบบอิงข้อเท็จจริง และเลือก VarianceCode ที่เหมาะสมที่สุด ตอบเป็น JSON ล้วนเท่านั้น:
 {"suggestedFlag":"BLK|ENV|REQ","polishedReason":"เหตุผลภาษาไทยที่เรียบเรียงแล้ว 2-3 ประโยค","summary":"สรุปสั้น 1 ประโยค"}
 
 ใบงาน: ${ticket ? `${ticket.id} (${ticket.title || ticket.module}, Est ${ticket.estimateMd} MD, Actual ${ticket.actualMd} MD)` : 'ไม่ระบุ'}
 ข้อความดิบจากพนักงาน: ${rawText}`;
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
-      }),
-      signal: AbortSignal.timeout(12_000),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    };
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    let raw: string | null = null;
+    if (this.aiCoreOn()) {
+      raw = await this.generateViaAiCore({
+        messages: [{ role: 'user', content: prompt }],
+        timeoutMs: 12_000,
+      });
+    } else {
+      const apiKey = this.geminiKey();
+      if (!apiKey) return null;
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' },
+        }),
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+      raw = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+    }
+
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as { suggestedFlag?: string; polishedReason?: string; summary?: string };
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(cleaned) as { suggestedFlag?: string; polishedReason?: string; summary?: string };
     const flag = parsed.suggestedFlag === 'ENV' || parsed.suggestedFlag === 'REQ' || parsed.suggestedFlag === 'BLK'
       ? parsed.suggestedFlag
       : fallback.suggestedFlag;
