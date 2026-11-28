@@ -32,6 +32,7 @@ import {
   recordFailedAvatar,
 } from './shared/ui/person-avatar/person-avatar';
 import { SectionCardComponent } from './shared/ui/section-card/section-card';
+import { AiAssistantComponent } from './shared/ui/ai-assistant/ai-assistant';
 import { TicketDetailDialogComponent } from './shared/ui/ticket-detail-dialog/ticket-detail-dialog';
 import { SfDatePickerComponent } from './shared/sf/sf-datepicker/sf-datepicker';
 import { SfDialogComponent } from './shared/sf/sf-dialog/sf-dialog';
@@ -68,6 +69,7 @@ import { resolvePersonTeamId } from '../../shared/domain/work-views';
     FilterChipsComponent,
     PersonAvatarComponent,
     SectionCardComponent,
+    AiAssistantComponent,
     TicketDetailDialogComponent,
     SfDatePickerComponent,
     SfDialogComponent,

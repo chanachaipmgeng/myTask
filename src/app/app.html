@@ -761,3 +761,9 @@
 @defer (when ticketDetail.ticketId(); prefetch on idle) {
   <app-ticket-detail-dialog></app-ticket-detail-dialog>
 }
+
+@if (!isAuthScreen() && hasActiveSession()) {
+  @defer (on idle) {
+    <app-ai-assistant />
+  }
+}

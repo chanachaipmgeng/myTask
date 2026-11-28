@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { canAssignWork, effectiveRole, weeklyQuotas } from '../../core/admin-settings';
-import { ApiClient } from '../../core/api-client';
+import { ApiClient, AssigneeRecommendation } from '../../core/api-client';
 import { planNewWork, QueuePlan } from '../../core/capacity';
 import { normalizeTrack } from '../../core/models';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -101,6 +101,55 @@ export class QueuePage {
   protected readonly pendingAccept = signal<QueuePlan | null>(null);
   protected readonly accepting = signal(false);
   protected readonly planLimit = signal(30);
+  protected readonly loadingAiFor = signal<string | null>(null);
+  protected readonly aiRecsByTicket = signal<Record<string, AssigneeRecommendation[]>>({});
+
+  protected async loadAiRecommendations(item: QueuePlan): Promise<void> {
+    if (!this.api || this.loadingAiFor() === item.ticket.id) return;
+    this.loadingAiFor.set(item.ticket.id);
+    try {
+      const res = await this.api.recommendAiAssignees({
+        ticketId: item.ticket.id,
+        title: item.ticket.title,
+        module: item.ticket.module,
+        track: item.ticket.track,
+        estimateMd: item.ticket.estimateMd,
+      });
+      this.aiRecsByTicket.update((map) => ({
+        ...map,
+        [item.ticket.id]: res.recommendations ?? [],
+      }));
+    } catch (err) {
+      const text = err instanceof Error ? err.message : 'ไม่สามารถวิเคราะห์ผู้รับผิดชอบได้';
+      this.notice.error(text);
+    } finally {
+      this.loadingAiFor.set(null);
+    }
+  }
+
+  protected closeAiRecommendations(ticketId: string): void {
+    this.aiRecsByTicket.update((map) => {
+      const next = { ...map };
+      delete next[ticketId];
+      return next;
+    });
+  }
+
+  protected assignRecommended(item: QueuePlan, rec: AssigneeRecommendation): void {
+    if (!this.canAssign()) return;
+    const customPlan: QueuePlan = {
+      ...item,
+      personId: rec.personId,
+      personLabel: rec.name,
+    };
+    this.closeAiRecommendations(item.ticket.id);
+    if (this.writebackEnabled() && item.ticket.opId) {
+      this.pendingAccept.set(customPlan);
+      this.writebackConfirm?.open();
+      return;
+    }
+    void this.runAssign(customPlan);
+  }
 
   protected readonly writebackMessage = computed(() => {
     const item = this.pendingAccept();

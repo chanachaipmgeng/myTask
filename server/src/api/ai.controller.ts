@@ -1,5 +1,6 @@
-import { Body, Controller, Inject, Post, Req } from '@nestjs/common';
-import { AuthedRequest } from '../auth/auth.guard';
+import { Body, Controller, Get, Inject, Post, Req } from '@nestjs/common';
+import { AiChatRequest, AiCopilotService } from '../ai/ai-copilot.service';
+import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { VisibilityScopeService } from '../auth/visibility-scope.service';
 import { APP_CONFIG, AppConfig } from '../config';
 import { getPerson } from '../data/people.repo';
@@ -11,8 +12,93 @@ export class AiController {
   constructor(
     private readonly db: Db,
     private readonly scope: VisibilityScopeService,
+    private readonly copilot: AiCopilotService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
+
+  @Get('status')
+  async status() {
+    return this.copilot.getStatus();
+  }
+
+  @Post('chat')
+  async chat(@Body() body: AiChatRequest, @Req() req: AuthedRequest) {
+    const ctxScope = await this.scope.resolve(req.authUser);
+    return this.copilot.chat(ctxScope, req.authUser!, body);
+  }
+
+  @Post('briefing')
+  @Roles('admin', 'lead')
+  async briefing(
+    @Body() body: { period?: 'daily' | 'weekly'; channel?: string; sendToTeams?: boolean },
+    @Req() req: AuthedRequest,
+  ) {
+    const ctxScope = await this.scope.resolve(req.authUser);
+    return this.copilot.briefing(ctxScope, req.authUser!, body ?? {});
+  }
+
+  @Post('recommend-assignees')
+  @Roles('admin', 'lead')
+  async recommendAssignees(
+    @Body()
+    body: {
+      ticketId?: string;
+      title?: string;
+      module?: string;
+      track?: string;
+      estimateMd?: number;
+    },
+    @Req() req: AuthedRequest,
+  ) {
+    const ctxScope = await this.scope.resolve(req.authUser);
+    return this.copilot.recommendAssignees(ctxScope, req.authUser!, body ?? {});
+  }
+
+  @Post('draft-ticket-from-branch')
+  async draftTicketFromBranch(
+    @Body()
+    body: {
+      branchName: string;
+      projectName?: string;
+      lastCommitTitle?: string;
+      authorName?: string;
+    },
+    @Req() req: AuthedRequest,
+  ) {
+    return this.copilot.draftTicketFromBranch(req.authUser!, body);
+  }
+
+  @Post('estimate-effort')
+  async estimateEffort(
+    @Body()
+    body: {
+      title: string;
+      module?: string;
+      track?: string;
+      type?: string;
+      currentEstimateMd?: number;
+    },
+    @Req() req: AuthedRequest,
+  ) {
+    const ctxScope = await this.scope.resolve(req.authUser);
+    return this.copilot.estimateEffort(ctxScope, req.authUser!, body ?? { title: '' });
+  }
+
+  @Post('dispute-copilot')
+  async disputeCopilot(
+    @Body()
+    body: {
+      mode: 'draft' | 'review';
+      ticketId: string;
+      rawText?: string;
+      requestedFlag?: string;
+      disputeReason?: string;
+    },
+    @Req() req: AuthedRequest,
+  ) {
+    const ctxScope = await this.scope.resolve(req.authUser);
+    return this.copilot.disputeCopilot(ctxScope, req.authUser!, body);
+  }
 
   @Post('coach-summary')
   async coachSummary(

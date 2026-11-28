@@ -136,6 +136,40 @@
             @if (sel.status === 'PENDING') {
               @if (role() === 'admin' || role() === 'lead') {
                 <div class="flex flex-col gap-2">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold text-violet-400">✨ AI Dispute Review Copilot</span>
+                    <button
+                      ejs-button
+                      cssClass="e-outline e-btn-violet e-small"
+                      type="button"
+                      [disabled]="aiReviewing()"
+                      (click)="analyzeDisputeWithAi(sel)"
+                    >
+                      {{ aiReviewing() ? 'กำลังสรุปหลักฐาน…' : '✨ AI สรุปหลักฐาน' }}
+                    </button>
+                  </div>
+
+                  @if (aiReviewResult(); as rev) {
+                    @if (rev.ticketId === sel.ticketId) {
+                      <div class="rounded-xl border border-violet-500/30 bg-violet-500/5 p-3 text-xs flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between gap-2">
+                          <span class="font-semibold">{{ rev.res.summary }}</span>
+                          <app-status-badge
+                            [label]="rev.res.verdict === 'APPROVE_LIKELY' ? 'แนวโน้มอนุมัติได้' : rev.res.verdict === 'NEEDS_EVIDENCE' ? 'ควรขอหลักฐานเพิ่ม' : 'ควรพิจารณาเพิ่ม'"
+                            [tone]="rev.res.verdict === 'APPROVE_LIKELY' ? 'success' : rev.res.verdict === 'NEEDS_EVIDENCE' ? 'warning' : 'info'"
+                          />
+                        </div>
+                        @if (rev.res.evidencePoints.length > 0) {
+                          <ul class="m-0 pl-4 space-y-0.5 text-[color:var(--text-muted)]">
+                            @for (pt of rev.res.evidencePoints; track pt) {
+                              <li>{{ pt }}</li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    }
+                  }
+
                   <app-form-field label="หมายเหตุผู้อนุมัติ">
                     <app-sf-textbox
                       placeholder="ระบุเหตุผลหรือเงื่อนไขในการพิจารณา..."
@@ -226,18 +260,34 @@
             [value]="newReason()"
             (valueChange)="newReason.set($event)"
           />
-          <button
-            ejs-speechtotext
-            lang="th-TH"
-            cssClass="e-outline e-small"
-            [buttonSettings]="speechButtonSettings"
-            [tooltipSettings]="speechTooltipSettings"
-            [allowInterimResults]="true"
-            [showTooltip]="true"
-            (onStart)="onReasonSpeechStart()"
-            (transcriptChanged)="onReasonSpeechTranscript($event)"
-            (onError)="onReasonSpeechError($event)"
-          ></button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              ejs-speechtotext
+              lang="th-TH"
+              cssClass="e-outline e-small"
+              [buttonSettings]="speechButtonSettings"
+              [tooltipSettings]="speechTooltipSettings"
+              [allowInterimResults]="true"
+              [showTooltip]="true"
+              (onStart)="onReasonSpeechStart()"
+              (transcriptChanged)="onReasonSpeechTranscript($event)"
+              (onError)="onReasonSpeechError($event)"
+            ></button>
+            <button
+              ejs-button
+              cssClass="e-btn-violet e-small"
+              type="button"
+              [disabled]="aiDrafting() || !newTicketId()"
+              (click)="polishReasonWithAi()"
+            >
+              {{ aiDrafting() ? 'กำลังเรียบเรียง…' : '✨ AI เรียบเรียงเหตุผล & แนะนำรหัส' }}
+            </button>
+          </div>
+          @if (aiDraftSummary(); as note) {
+            <div class="rounded-lg border border-violet-500/30 bg-violet-500/10 px-2.5 py-1.5 text-xs text-violet-400">
+              ✨ {{ note }}
+            </div>
+          }
         </div>
       </app-form-field>
 

@@ -983,6 +983,83 @@ export class ApiClient {
     });
   }
 
+  getAiStatus(): Promise<AiStatusResponse> {
+    return api('/api/ai/status');
+  }
+
+  chatWithAi(body: {
+    message: string;
+    history?: Array<{ role: 'user' | 'assistant'; text: string }>;
+    track?: string;
+  }): Promise<AiChatResponse> {
+    return api('/api/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  generateAiBriefing(body: {
+    period?: 'daily' | 'weekly';
+    channel?: string;
+    sendToTeams?: boolean;
+  }): Promise<AiBriefingResponse> {
+    return api('/api/ai/briefing', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  recommendAiAssignees(body: {
+    ticketId?: string;
+    title?: string;
+    module?: string;
+    track?: string;
+    estimateMd?: number;
+  }): Promise<AiRecommendAssigneesResponse> {
+    return api('/api/ai/recommend-assignees', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  draftTicketFromBranchAi(body: {
+    branchName: string;
+    projectName?: string;
+    lastCommitTitle?: string;
+    authorName?: string;
+  }): Promise<AiBranchDraftResponse> {
+    return api('/api/ai/draft-ticket-from-branch', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  estimateEffortAi(body: {
+    title: string;
+    module?: string;
+    track?: string;
+    type?: string;
+    currentEstimateMd?: number;
+  }): Promise<AiEffortEstimateResponse> {
+    return api('/api/ai/estimate-effort', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  disputeCopilotAi(body: {
+    mode: 'draft' | 'review';
+    ticketId: string;
+    rawText?: string;
+    requestedFlag?: string;
+    disputeReason?: string;
+  }): Promise<AiDisputeCopilotResponse> {
+    return api('/api/ai/dispute-copilot', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
   resumeTicket(ticketId: string): Promise<{ ok: boolean; ticket: Ticket; message?: string }> {
     return api('/api/work-items/md-mandate/resume', {
       method: 'POST',
@@ -1172,4 +1249,122 @@ export interface OpenMrItem {
   ciStatus: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AiStatusResponse {
+  ok: boolean;
+  provider: 'gemini' | 'rule-based';
+  model: string;
+  voiceSupported: boolean;
+  teamsConfigured: boolean;
+}
+
+export interface AiChatResponse {
+  ok: boolean;
+  reply: string;
+  provider: 'gemini' | 'rule-based';
+  suggestions: string[];
+  ticketIds: string[];
+  generatedAt: string;
+}
+
+export interface AiBriefingResponse {
+  ok: boolean;
+  briefing: string;
+  provider: 'gemini' | 'rule-based';
+  period: 'daily' | 'weekly';
+  sent: boolean;
+  teamsMessage?: string;
+  metrics: {
+    peopleCount: number;
+    openCount: number;
+    closedCount: number;
+    closedMd: number;
+    openMd: number;
+    avgScore: number | null;
+    alertCount: number;
+    blockedCount: number;
+    mdDirectCount: number;
+    reopenTotal: number;
+    freePeopleCount: number;
+  };
+  generatedAt: string;
+}
+
+export interface AssigneeRecommendation {
+  personId: string;
+  name: string;
+  track: string;
+  level: string;
+  matchScore: number;
+  breakdown: {
+    skillScore: number;
+    capacityScore: number;
+    wipScore: number;
+    qualityScore: number;
+  };
+  freeMd: number;
+  quota: number;
+  openMd: number;
+  wipCount: number;
+  moduleHistoryCount: number;
+  avgScore: number | null;
+  reasons: string[];
+}
+
+export interface AiRecommendAssigneesResponse {
+  ok: boolean;
+  ticketId: string;
+  provider: 'skill-match';
+  recommendations: AssigneeRecommendation[];
+}
+
+export interface BranchTicketDraft {
+  subject: string;
+  module: string;
+  track: string;
+  type: string;
+  size: string;
+  estimateMd: number;
+  reasoning: string;
+}
+
+export interface AiBranchDraftResponse {
+  ok: boolean;
+  provider: 'gemini' | 'rule-based';
+  draft: BranchTicketDraft;
+}
+
+export interface SimilarTicketMatch {
+  id: string;
+  title: string;
+  module: string;
+  estimateMd: number;
+  actualMd: number;
+  size: string;
+  similarityPct: number;
+}
+
+export interface AiEffortEstimateResponse {
+  ok: boolean;
+  provider: 'similarity';
+  recommendedMd: number;
+  size: string;
+  minMd: number;
+  maxMd: number;
+  confidence: 'high' | 'medium' | 'low';
+  warning: string | null;
+  reasoning: string;
+  similarTickets: SimilarTicketMatch[];
+}
+
+export interface AiDisputeCopilotResponse {
+  ok: boolean;
+  mode: 'draft' | 'review';
+  provider: 'gemini' | 'rule-based';
+  suggestedFlag: 'BLK' | 'ENV' | 'REQ';
+  polishedReason: string;
+  summary: string;
+  verdict: 'APPROVE_LIKELY' | 'NEEDS_EVIDENCE' | 'REVIEW_CAREFULLY';
+  evidencePoints: string[];
 }

@@ -16,7 +16,7 @@ import {
   openprojectProjectCatalog,
   openprojectTypeCatalog,
 } from '../../../core/admin-settings';
-import { ApiClient } from '../../../core/api-client';
+import { ApiClient, AiEffortEstimateResponse } from '../../../core/api-client';
 import { ScorecardService } from '../../../core/scorecard.service';
 import { ShellNotice } from '../../../core/shell-notice';
 import { SfDialogComponent } from '../../sf/sf-dialog/sf-dialog';
@@ -56,6 +56,72 @@ export class TicketCreateDialogComponent {
   protected readonly selectedType = signal<number>(1);
   protected readonly estimateMd = signal<number>(1.0);
   protected readonly submitting = signal(false);
+  protected readonly draftingAi = signal(false);
+  protected readonly aiDraftNote = signal<string | null>(null);
+  protected readonly aiDraftProvider = signal<'gemini' | 'rule-based' | null>(null);
+  protected readonly estimatingAi = signal(false);
+  protected readonly effortEstimate = signal<AiEffortEstimateResponse | null>(null);
+
+  protected async estimateEffortWithAi(): Promise<void> {
+    if (this.estimatingAi() || !this.subject().trim()) return;
+    this.estimatingAi.set(true);
+    try {
+      const b = this.branch();
+      const res = await this.api.estimateEffortAi({
+        title: this.subject().trim(),
+        module: b?.projectName || this.selectedProject() || undefined,
+        currentEstimateMd: this.estimateMd(),
+      });
+      this.effortEstimate.set(res);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถประเมิน MD จากประวัติได้';
+      this.notice.error(msg);
+    } finally {
+      this.estimatingAi.set(false);
+    }
+  }
+
+  protected applyRecommendedMd(md: number): void {
+    this.estimateMd.set(md);
+    this.notice.success(`ปรับ Estimate เป็น ${md} MD ตามคำแนะนำ AI แล้ว`);
+  }
+
+  protected async autoDraftWithAi(): Promise<void> {
+    const b = this.branch();
+    if (!b || this.draftingAi()) return;
+    this.draftingAi.set(true);
+    try {
+      const res = await this.api.draftTicketFromBranchAi({
+        branchName: b.branchName,
+        projectName: b.projectName,
+        lastCommitTitle: b.lastCommitTitle ?? undefined,
+        authorName: b.personName ?? undefined,
+      });
+      const d = res.draft;
+      this.subject.set(d.subject);
+      this.estimateMd.set(d.estimateMd);
+      this.aiDraftNote.set(d.reasoning);
+      this.aiDraftProvider.set(res.provider);
+
+      // Match best OpenProject Type option based on AI draft type
+      const opts = this.typeOptions();
+      const wanted = d.type.toLowerCase();
+      const match =
+        opts.find((o) => wanted.includes('bug') && /bug|fix/i.test(o.text)) ||
+        opts.find((o) => wanted.includes('feature') && /enhanc|feat|implement/i.test(o.text)) ||
+        opts.find((o) => wanted.includes('spike') && /spike|r&d|research/i.test(o.text)) ||
+        opts.find((o) => wanted.includes('cr') && /cr|change|enhanc/i.test(o.text));
+      if (match) {
+        this.selectedType.set(match.value);
+      }
+      this.notice.success(`AI ร่างใบงานเรียบร้อย (${res.provider === 'gemini' ? 'Gemini 2.5' : 'Smart Engine'})`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถร่างใบงานด้วย AI ได้';
+      this.notice.error(msg);
+    } finally {
+      this.draftingAi.set(false);
+    }
+  }
 
   protected readonly projectOptions = computed(() => {
     const catalog = openprojectProjectCatalog();
@@ -97,6 +163,9 @@ export class TicketCreateDialogComponent {
 
   open(branch: GitBranchItem): void {
     this.branch.set(branch);
+    this.aiDraftNote.set(null);
+    this.aiDraftProvider.set(null);
+    this.effortEstimate.set(null);
     this.subject.set(cleanBranchToTicketTitle(branch.branchName));
 
     // Guess default project: find in catalog by branch's projectName or take first active

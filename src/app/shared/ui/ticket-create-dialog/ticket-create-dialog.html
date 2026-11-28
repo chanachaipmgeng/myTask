@@ -20,10 +20,26 @@
             </span>
           }
         </div>
-        <div class="flex items-center gap-1.5 font-mono font-bold text-blue-600 dark:text-blue-400 break-all">
-          <span class="e-icons e-timeline-work-week"></span>
-          {{ b.branchName }}
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 font-mono font-bold text-blue-600 dark:text-blue-400 break-all">
+            <span class="e-icons e-timeline-work-week"></span>
+            {{ b.branchName }}
+          </div>
+          <button
+            ejs-button
+            cssClass="e-btn-violet e-small shrink-0"
+            type="button"
+            [disabled]="draftingAi()"
+            (click)="autoDraftWithAi()"
+          >
+            {{ draftingAi() ? 'กำลังร่าง…' : '✨ AI ร่างใบงาน' }}
+          </button>
         </div>
+        @if (aiDraftNote(); as note) {
+          <div class="mt-1 rounded-md border border-violet-500/30 bg-violet-500/10 px-2.5 py-1.5 text-[11px] text-violet-300">
+            <strong>{{ aiDraftProvider() === 'gemini' ? 'Gemini 2.5' : 'Smart Engine' }}:</strong> {{ note }}
+          </div>
+        }
       </div>
     }
 
@@ -70,15 +86,64 @@
       </app-form-field>
 
       <app-form-field label="ประมาณการ Man-day (MD)">
-        <app-sf-number
-          [value]="estimateMd()"
-          [min]="0.1"
-          [max]="50"
-          [step]="0.5"
-          (valueChange)="estimateMd.set(+$event)"
-        />
+        <div class="flex items-center gap-1.5">
+          <div class="flex-1 min-w-0">
+            <app-sf-number
+              [value]="estimateMd()"
+              [min]="0.1"
+              [max]="50"
+              [step]="0.5"
+              (valueChange)="estimateMd.set(+$event)"
+            />
+          </div>
+          <button
+            ejs-button
+            cssClass="e-outline e-btn-violet e-small shrink-0"
+            type="button"
+            title="ประเมิน MD จากประวัติใบงานที่คล้ายกัน"
+            [disabled]="estimatingAi() || !subject().trim()"
+            (click)="estimateEffortWithAi()"
+          >
+            {{ estimatingAi() ? 'กำลังเทียบ…' : '📊 เทียบประวัติ' }}
+          </button>
+        </div>
       </app-form-field>
     </div>
+
+    @if (effortEstimate(); as est) {
+      <div class="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3 text-xs flex flex-col gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="font-bold text-indigo-400">📊 AI Effort Estimator:</span>
+            <span class="font-semibold">แนะนำ {{ est.recommendedMd }} MD (ไซส์ {{ est.size }})</span>
+            <span class="text-[color:var(--text-muted)]">· ความมั่นใจ: {{ est.confidence }}</span>
+          </div>
+          <button
+            ejs-button
+            cssClass="e-success e-small"
+            type="button"
+            (click)="applyRecommendedMd(est.recommendedMd)"
+          >
+            ใช้ {{ est.recommendedMd }} MD
+          </button>
+        </div>
+        <p class="m-0 text-[color:var(--text-muted)]">{{ est.reasoning }}</p>
+        @if (est.warning) {
+          <div class="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-amber-400 font-medium">
+            ⚠️ {{ est.warning }}
+          </div>
+        }
+        @if (est.similarTickets.length > 0) {
+          <div class="flex flex-wrap gap-1.5">
+            @for (sim of est.similarTickets.slice(0, 3); track sim.id) {
+              <span class="px-2 py-0.5 rounded-md bg-slate-500/15 font-mono text-[11px]">
+                {{ sim.id }} · จริง {{ sim.actualMd }} MD ({{ sim.similarityPct }}%)
+              </span>
+            }
+          </div>
+        }
+      </div>
+    }
   </div>
 
   <div footer class="flex justify-end gap-2 pt-3 border-t border-[color:var(--line)]">

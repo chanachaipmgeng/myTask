@@ -1,0 +1,208 @@
+<!-- Floating Trigger Pill -->
+<button
+  type="button"
+  class="ai-fab"
+  [class.is-open]="open()"
+  (click)="toggleOpen()"
+  aria-label="เปิดผู้ช่วย AI ถาม-ตอบและสั่งงานด้วยเสียง"
+  title="myTask AI Copilot (แชต & เสียง)"
+>
+  <span class="ai-fab__spark" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3l1.9 5.3L19 10.2l-5.1 1.9L12 17.5l-1.9-5.4L5 10.2l5.1-1.9L12 3z" fill="currentColor" fill-opacity="0.24"></path>
+      <path d="M19 3v3M20.5 4.5h-3"></path>
+    </svg>
+  </span>
+  <span class="ai-fab__label">{{ open() ? 'ปิดผู้ช่วย' : 'AI ผู้ช่วย' }}</span>
+</button>
+
+@if (open()) {
+  <section class="ai-panel" role="dialog" aria-label="myTask AI Copilot">
+    <header class="ai-panel__head">
+      <div class="ai-panel__title-group">
+        <span class="ai-panel__avatar" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1">
+            <path d="M12 3l1.9 5.3L19 10.2l-5.1 1.9L12 17.5l-1.9-5.4L5 10.2l5.1-1.9L12 3z" fill="currentColor" fill-opacity="0.25"></path>
+          </svg>
+        </span>
+        <div>
+          <h3 class="ai-panel__title">myTask AI Copilot</h3>
+          <div class="ai-panel__meta">
+            <span class="ai-panel__pill">{{ providerLabel() }}</span>
+            <span class="ai-panel__sub">ถาม-ตอบข้อมูลจริงตามสิทธิ์</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-panel__head-actions">
+        @if (ttsSupported) {
+          <button
+            type="button"
+            class="ai-icon-btn"
+            [class.is-active]="autoSpeak()"
+            (click)="toggleAutoSpeak()"
+            [title]="autoSpeak() ? 'ปิดอ่านคำตอบอัตโนมัติ' : 'เปิดอ่านคำตอบอัตโนมัติ (เสียงภาษาไทย)'"
+            aria-label="สลับอ่านคำตอบออกเสียงอัตโนมัติ"
+          >
+            @if (autoSpeak()) {
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+              </svg>
+            } @else {
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+              </svg>
+            }
+          </button>
+        }
+        <button
+          type="button"
+          class="ai-icon-btn"
+          (click)="clearChat()"
+          title="ล้างประวัติแชต"
+          aria-label="ล้างประวัติแชต"
+        >
+          <span class="e-icons e-refresh"></span>
+        </button>
+        <button
+          type="button"
+          class="ai-icon-btn"
+          (click)="toggleOpen()"
+          title="ปิดหน้าต่าง"
+          aria-label="ปิดหน้าต่าง AI Copilot"
+        >
+          <span class="e-icons e-close"></span>
+        </button>
+      </div>
+    </header>
+
+    <div #messagesViewport class="ai-panel__messages" aria-live="polite">
+      @for (msg of messages(); track msg.id) {
+        <article class="ai-msg" [class.is-user]="msg.role === 'user'">
+          <div class="ai-msg__bubble">
+            @for (line of msg.lines; track $index) {
+              @if (line.kind === 'spacer') {
+                <div class="ai-msg__spacer"></div>
+              } @else if (line.kind === 'heading') {
+                <div class="ai-msg__heading">
+                  @for (seg of line.segments; track $index) {
+                    @if (seg.bold) { <strong>{{ seg.text }}</strong> } @else { {{ seg.text }} }
+                  }
+                </div>
+              } @else if (line.kind === 'bullet') {
+                <div class="ai-msg__bullet">
+                  <span class="ai-msg__dot" aria-hidden="true">•</span>
+                  <span>
+                    @for (seg of line.segments; track $index) {
+                      @if (seg.bold) { <strong>{{ seg.text }}</strong> } @else { {{ seg.text }} }
+                    }
+                  </span>
+                </div>
+              } @else {
+                <p class="ai-msg__p">
+                  @for (seg of line.segments; track $index) {
+                    @if (seg.bold) { <strong>{{ seg.text }}</strong> } @else { {{ seg.text }} }
+                  }
+                </p>
+              }
+            }
+
+            @if (msg.ticketIds.length > 0) {
+              <div class="ai-msg__tickets">
+                @for (tid of msg.ticketIds; track tid) {
+                  <button
+                    type="button"
+                    class="ai-ticket-chip"
+                    (click)="openTicket(tid)"
+                    [title]="'เปิดรายละเอียดใบงาน ' + tid"
+                  >
+                    {{ tid }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="ai-msg__foot">
+            <span>{{ msg.time }}</span>
+            @if (msg.role === 'assistant' && ttsSupported) {
+              <button
+                type="button"
+                class="ai-speak-btn"
+                [class.is-speaking]="speakingId() === msg.id"
+                (click)="speakBubble(msg)"
+              >
+                {{ speakingId() === msg.id ? 'หยุดอ่าน' : 'ฟังเสียง' }}
+              </button>
+            }
+          </div>
+        </article>
+      }
+
+      @if (sending()) {
+        <div class="ai-typing" role="status">
+          <span class="ai-typing__dot"></span>
+          <span class="ai-typing__dot"></span>
+          <span class="ai-typing__dot"></span>
+          <span>กำลังวิเคราะห์ข้อมูลล่าสุด…</span>
+        </div>
+      }
+    </div>
+
+    <div class="ai-panel__suggestions">
+      @for (q of quickPrompts(); track q) {
+        <button
+          type="button"
+          class="ai-suggest-chip"
+          [disabled]="sending()"
+          (click)="send(q)"
+        >
+          {{ q }}
+        </button>
+      }
+    </div>
+
+    <form class="ai-panel__composer" (submit)="$event.preventDefault(); send()">
+      <div class="ai-mic-wrap" [class.is-listening]="listening()">
+        <button
+          type="button"
+          ejs-speechtotext
+          lang="th-TH"
+          cssClass="e-outline e-small"
+          [allowInterimResults]="true"
+          [showTooltip]="true"
+          [buttonSettings]="speechButtonSettings"
+          [tooltipSettings]="speechTooltipSettings"
+          (onStart)="onSpeechStart()"
+          (transcriptChanged)="onSpeechChange($event)"
+          (onStop)="onSpeechStop()"
+          (onError)="onSpeechError($event)"
+        ></button>
+      </div>
+      <input
+        type="text"
+        class="ai-input"
+        [placeholder]="listening() ? 'กำลังฟังเสียงภาษาไทย…' : 'พิมพ์คำถาม หรือกดไมค์เพื่อพูด…'"
+        [ngModel]="draft()"
+        (ngModelChange)="draft.set($event)"
+        (keydown)="onComposerKeydown($event)"
+        [disabled]="sending()"
+        name="aiPrompt"
+        autocomplete="off"
+      />
+      <button
+        ejs-button
+        cssClass="e-btn-violet e-small"
+        type="submit"
+        [disabled]="sending() || !draft().trim()"
+        aria-label="ส่งคำถาม"
+      >
+        ส่ง
+      </button>
+    </form>
+  </section>
+}

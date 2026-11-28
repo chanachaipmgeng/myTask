@@ -61,6 +61,64 @@
     }
   </app-section-card>
 
+  @if (canSend()) {
+    <app-section-card
+      title="AI Executive Briefing ส่งเข้า Teams"
+      subtitle="ให้ AI สรุปความคืบหน้า คอขวด SLA และคิวว่างของทีม (ไม่เปิดเผยลำดับคะแนนรายบุคคล) เพื่อตรวจหรือส่งเข้า Teams"
+      [badge]="briefingResult() ? (briefingResult()!.provider === 'gemini' ? 'Gemini 2.5' : 'Smart Engine') : 'Phase 1 AI'"
+      badgeTone="violet"
+    >
+      <div actions class="flex flex-wrap items-center gap-2">
+        <app-filter-chips
+          [options]="briefingPeriodOptions"
+          [value]="briefingPeriod()"
+          (valueChange)="setBriefingPeriod($event)"
+        />
+        <button
+          ejs-button
+          cssClass="e-btn-violet e-small"
+          type="button"
+          [disabled]="briefingLoading()"
+          (click)="runAiBriefing(false)"
+        >
+          {{ briefingLoading() ? 'กำลังสรุป…' : 'สร้างสรุปด้วย AI' }}
+        </button>
+        <button
+          ejs-button
+          cssClass="e-success e-small"
+          type="button"
+          [disabled]="briefingLoading()"
+          (click)="runAiBriefing(true)"
+        >
+          ส่ง Briefing เข้า Teams
+        </button>
+      </div>
+
+      @if (briefingResult(); as br) {
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="e-badge e-badge-success">ปิดแล้ว {{ br.metrics.closedCount }} ใบ ({{ br.metrics.closedMd }} MD)</span>
+          <span class="e-badge e-badge-primary">เปิดอยู่ {{ br.metrics.openCount }} ใบ</span>
+          <span class="e-badge e-badge-warning">แจ้งเตือน SLA {{ br.metrics.alertCount }}</span>
+          <span class="e-badge e-badge-info">คนคิวว่าง {{ br.metrics.freePeopleCount }} คน</span>
+          @if (br.metrics.avgScore !== null) {
+            <span class="e-badge e-badge-violet">คะแนนเฉลี่ย {{ br.metrics.avgScore }}</span>
+          }
+        </div>
+        <pre class="whitespace-pre-wrap text-sm leading-relaxed m-0 p-3 rounded-xl border border-slate-500/20 bg-slate-900/25">{{ br.briefing }}</pre>
+        @if (br.teamsMessage) {
+          <div class="mt-3">
+            <app-sf-message [content]="br.teamsMessage" [severity]="br.sent ? 'Success' : 'Warning'" />
+          </div>
+        }
+      } @else {
+        <app-sf-message
+          content="กด 'สร้างสรุปด้วย AI' เพื่อดูตัวอย่าง Executive Briefing จากข้อมูลล่าสุด หรือกด 'ส่ง Briefing เข้า Teams' เพื่อส่งเข้าช่องทันที"
+          severity="Info"
+        />
+      }
+    </app-section-card>
+  }
+
   <app-section-card
     title="บันทึกข้อความที่จะส่ง"
     subtitle="ตัวอย่างข้อความแจ้งเตือนที่สร้างจากใบงานเสี่ยงปัจจุบัน"

@@ -17,6 +17,7 @@ import { WorkItemsController } from './api/work-items.controller';
 import { AuthGuard } from './auth/auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { DbModule } from './db/db.module';
+import { AiCopilotService } from './ai/ai-copilot.service';
 import { OpenProjectSyncService } from './integrations/openproject/openproject.sync';
 import { KpiSnapshotService } from './kpi/kpi-snapshot.service';
 
@@ -38,6 +39,7 @@ import { KpiSnapshotService } from './kpi/kpi-snapshot.service';
     V2EnterpriseController,
   ],
   providers: [
+    AiCopilotService,
     OpenProjectSyncService,
     KpiSnapshotService,
     { provide: APP_GUARD, useClass: AuthGuard },

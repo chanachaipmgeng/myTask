@@ -12,6 +12,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { SpeechToTextModule, TranscriptChangedEventArgs } from '@syncfusion/ej2-angular-inputs';
 import { currentViewer, effectiveRole } from '../../core/admin-settings';
+import { ApiClient, AiDisputeCopilotResponse } from '../../core/api-client';
 import { TicketDispute, VarianceCode } from '../../core/models';
 import { scoreTicket } from '../../core/scoring';
 import { ScorecardService } from '../../core/scorecard.service';
@@ -76,6 +77,59 @@ export class DisputesPage implements OnInit {
   private readonly notice = inject(ShellNotice);
   private readonly ticketDetail = inject(TicketDetailService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly api = inject(ApiClient, { optional: true });
+
+  protected readonly aiDrafting = signal(false);
+  protected readonly aiDraftSummary = signal<string | null>(null);
+  protected readonly aiReviewing = signal(false);
+  protected readonly aiReviewResult = signal<{ ticketId: string; res: AiDisputeCopilotResponse } | null>(null);
+
+  protected async polishReasonWithAi(): Promise<void> {
+    if (!this.api || this.aiDrafting() || !this.newTicketId()) return;
+    this.aiDrafting.set(true);
+    try {
+      const res = await this.api.disputeCopilotAi({
+        mode: 'draft',
+        ticketId: this.newTicketId(),
+        rawText: this.newReason(),
+        requestedFlag: this.newRequestedFlag(),
+      });
+      if (res.ok) {
+        this.newRequestedFlag.set(res.suggestedFlag);
+        if (res.polishedReason) {
+          this.newReason.set(res.polishedReason);
+        }
+        this.aiDraftSummary.set(res.summary);
+        this.notice.success(`AI เรียบเรียงเหตุผลและแนะนำรหัส ${res.suggestedFlag} แล้ว`);
+      }
+    } catch (err) {
+      this.notice.error(err instanceof Error ? err.message : 'ไม่สามารถเรียบเรียงเหตุผลด้วย AI ได้');
+    } finally {
+      this.aiDrafting.set(false);
+    }
+  }
+
+  protected async analyzeDisputeWithAi(sel: TicketDispute): Promise<void> {
+    if (!this.api || this.aiReviewing()) return;
+    this.aiReviewing.set(true);
+    try {
+      const res = await this.api.disputeCopilotAi({
+        mode: 'review',
+        ticketId: sel.ticketId,
+        requestedFlag: sel.requestedFlag,
+        disputeReason: sel.reason,
+      });
+      if (res.ok) {
+        this.aiReviewResult.set({ ticketId: sel.ticketId, res });
+      } else {
+        this.notice.warning(res.summary || 'ไม่สามารถสรุปหลักฐานได้');
+      }
+    } catch (err) {
+      this.notice.error(err instanceof Error ? err.message : 'ไม่สามารถสรุปหลักฐานด้วย AI ได้');
+    } finally {
+      this.aiReviewing.set(false);
+    }
+  }
 
   protected openTicket(id: string): void {
     if (id) {
@@ -257,6 +311,7 @@ export class DisputesPage implements OnInit {
     this.newRequestedFlag.set('BLK');
     this.newReason.set('');
     this.newEvidenceUrl.set('');
+    this.aiDraftSummary.set(null);
     this.reasonSpeechBase = '';
     this.showCreateDialog.set(true);
   }

@@ -1,11 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ButtonModule } from '@syncfusion/ej2-angular-buttons';
 import { canAssignWork } from '../../core/admin-settings';
-import { ApiClient, TeamsIntegration } from '../../core/api-client';
+import { ApiClient, AiBriefingResponse, TeamsIntegration } from '../../core/api-client';
 import { ShellNotice } from '../../core/shell-notice';
 import { TeamsLogEntry, TeamsNotifyService } from '../../core/teams-notify';
 import { ScorecardService } from '../../core/scorecard.service';
-import { PageHeadComponent, SectionCardComponent } from '../../shared/ui';
+import {
+  FilterChipOption,
+  FilterChipsComponent,
+  PageHeadComponent,
+  SectionCardComponent,
+} from '../../shared/ui';
 import { SfCheckboxComponent } from '../../shared/sf/sf-checkbox/sf-checkbox';
 import {
   SfGridColumn,
@@ -21,6 +26,7 @@ import { SfTextBoxComponent } from '../../shared/sf/sf-textbox/sf-textbox';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ButtonModule,
+    FilterChipsComponent,
     PageHeadComponent,
     SectionCardComponent,
     SfCheckboxComponent,
@@ -64,6 +70,45 @@ export class TeamsPage {
   protected readonly sending = signal(false);
   protected readonly message = signal('');
   protected readonly error = signal('');
+
+  protected readonly briefingPeriod = signal<'daily' | 'weekly'>('daily');
+  protected readonly briefingPeriodOptions: FilterChipOption[] = [
+    { id: 'daily', label: 'รายวัน' },
+    { id: 'weekly', label: 'รายสัปดาห์' },
+  ];
+  protected readonly briefingLoading = signal(false);
+  protected readonly briefingResult = signal<AiBriefingResponse | null>(null);
+
+  protected setBriefingPeriod(id: string): void {
+    this.briefingPeriod.set(id === 'weekly' ? 'weekly' : 'daily');
+  }
+
+  protected async runAiBriefing(sendToTeams: boolean): Promise<void> {
+    if (!this.api || !this.canSend() || this.briefingLoading()) return;
+    this.briefingLoading.set(true);
+    try {
+      const res = await this.api.generateAiBriefing({
+        period: this.briefingPeriod(),
+        channel: this.channel(),
+        sendToTeams,
+      });
+      this.briefingResult.set(res);
+      if (sendToTeams) {
+        if (res.sent) {
+          this.notice.success(res.teamsMessage || 'ส่ง AI Briefing เข้า Teams เรียบร้อย');
+        } else {
+          this.notice.warning(res.teamsMessage || 'ยังไม่ได้ตั้งค่า Teams Webhook');
+        }
+      } else {
+        this.notice.success('สร้าง AI Executive Briefing สำเร็จ');
+      }
+    } catch (err) {
+      const text = err instanceof Error ? err.message : 'สร้าง AI Briefing ไม่สำเร็จ';
+      this.notice.error(text);
+    } finally {
+      this.briefingLoading.set(false);
+    }
+  }
 
   constructor() {
     void this.scorecard.whenReady().then(() => this.loadTeamsStatus());

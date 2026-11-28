@@ -73,8 +73,17 @@
                       </div>
                       <p class="m-0 text-xs text-muted leading-relaxed">{{ item.text }}</p>
                     </div>
-                    @if (item.personId) {
-                      <div class="flex items-center gap-1.5 shrink-0">
+                    <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
+                      <button
+                        ejs-button
+                        cssClass="e-outline e-btn-violet e-small"
+                        type="button"
+                        [disabled]="loadingAiFor() === item.ticket.id"
+                        (click)="loadAiRecommendations(item)"
+                      >
+                        {{ loadingAiFor() === item.ticket.id ? 'กำลังวิเคราะห์…' : '✨ AI แนะนำคน' }}
+                      </button>
+                      @if (item.personId) {
                         <button
                           ejs-button
                           [isPrimary]="true"
@@ -96,9 +105,57 @@
                         >
                           ⚡ งานด่วน MD
                         </button>
-                      </div>
-                    }
+                      }
+                    </div>
                   </div>
+                  @if (aiRecsByTicket()[item.ticket.id]; as recs) {
+                    <div class="mt-2.5 pt-2.5 border-t border-violet-500/20 flex flex-col gap-2">
+                      <div class="flex items-center justify-between gap-2 text-xs">
+                        <span class="font-semibold text-violet-400">✨ AI Skill Matching — Top {{ recs.length }} ผู้รับผิดชอบที่เหมาะสม</span>
+                        <button
+                          type="button"
+                          class="text-xs text-muted hover:underline bg-transparent border-0 cursor-pointer"
+                          (click)="closeAiRecommendations(item.ticket.id)"
+                        >
+                          ซ่อน
+                        </button>
+                      </div>
+                      @if (recs.length === 0) {
+                        <p class="m-0 text-xs text-muted">ไม่พบรายชื่อพนักงานที่เหมาะสมในขอบเขตทีมนี้</p>
+                      } @else {
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                          @for (rec of recs; track rec.personId) {
+                            <div class="rounded-xl border border-violet-500/25 bg-violet-500/5 p-2.5 flex flex-col justify-between gap-2">
+                              <div class="flex items-center justify-between gap-1.5">
+                                <app-person-avatar [personId]="rec.personId" [showName]="true" size="xs" />
+                                <app-status-badge
+                                  [label]="rec.matchScore + '% Match'"
+                                  [tone]="rec.matchScore >= 80 ? 'success' : rec.matchScore >= 60 ? 'info' : 'warning'"
+                                />
+                              </div>
+                              <div class="text-[11px] text-muted leading-snug">
+                                {{ rec.reasons.join(' · ') }}
+                              </div>
+                              <div class="flex items-center justify-between gap-1 pt-1">
+                                <span class="text-[11px] text-muted tabular-nums">
+                                  Skill {{ rec.breakdown.skillScore }} · Cap {{ rec.breakdown.capacityScore }} · WIP {{ rec.breakdown.wipScore }}
+                                </span>
+                                <button
+                                  ejs-button
+                                  cssClass="e-success e-small"
+                                  type="button"
+                                  [disabled]="!canAssign() || accepting()"
+                                  (click)="assignRecommended(item, rec)"
+                                >
+                                  จ่ายให้คนนี้
+                                </button>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
                 </app-section-card>
               } @empty {
                 <app-sf-message content="ไม่มีข้อเสนอจ่ายงานค้างในคิวตอนนี้" severity="Success" />
