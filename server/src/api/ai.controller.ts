@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Inject, Post, Req } from '@nestjs/common';
+import { aiCoreEnabled, createAiCoreClient } from '../ai/ai-core.client';
 import { AiChatRequest, AiCopilotService } from '../ai/ai-copilot.service';
 import { AuthedRequest, Roles } from '../auth/auth.guard';
 import { VisibilityScopeService } from '../auth/visibility-scope.service';
@@ -139,11 +140,12 @@ export class AiController {
     }
 
     const promptQuestion = (body.prompt?.trim() || 'สรุปประเด็นสำหรับคุย 1-on-1 สิ้นเดือนนี้').slice(0, 500);
-    const apiKey = this.config.geminiApiKey || process.env['GEMINI_API_KEY'] || '';
+    const viaCore = aiCoreEnabled(this.config.aiCoreUrl, this.config.aiCoreApiKey);
+    const apiKey = (this.config.geminiApiKey || process.env['GEMINI_API_KEY'] || '').trim();
 
-    if (apiKey) {
+    if (viaCore || apiKey) {
       try {
-        const response = await this.callGemini(apiKey, {
+        const response = await this.callGemini({
           person,
           closedCount: closedTickets.length,
           activeCount: activeTickets.length,
@@ -155,7 +157,7 @@ export class AiController {
           promptQuestion,
         });
         if (response) {
-          return { ok: true, summary: response, provider: 'gemini' };
+          return { ok: true, summary: response, provider: 'gemini', via: viaCore ? 'ai-core' : 'direct' };
         }
       } catch {
         // Fallback to rule-based synthesis below
@@ -177,8 +179,7 @@ export class AiController {
     return { ok: true, summary: ruleBased, provider: 'rule-based' };
   }
 
-  private async callGemini(apiKey: string, ctx: any): Promise<string | null> {
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+  private async callGemini(ctx: any): Promise<string | null> {
     const systemText = `คุณคือหัวหน้าทีมและโค้ชวิศวกรรมซอฟต์แวร์ผู้เชี่ยวชาญ กำลังเตรียมข้อเสนอแนะสำหรับการพูดคุย 1-on-1 แบบ Data-Driven
 ข้อมูลบริบท:
 - พนักงาน: ${ctx.person.nickname} (${ctx.person.fullName}), บทบาท: ${ctx.person.roleTitle || ctx.person.role}, สายงาน: ${ctx.person.track}, ระดับ: ${ctx.person.level}
@@ -193,6 +194,19 @@ export class AiController {
 3. 💬 คำถามชวนคุย 1-on-1 (Suggested Questions)
 4. 🎯 ข้อตกลงและเป้าหมาย Sprint ถัดไป (Next Sprint Agreements)`;
 
+    if (aiCoreEnabled(this.config.aiCoreUrl, this.config.aiCoreApiKey)) {
+      const client = createAiCoreClient(this.config.aiCoreUrl, this.config.aiCoreApiKey);
+      const result = await client.generate([{ role: 'user', content: ctx.promptQuestion }], {
+        system: systemText,
+        timeoutMs: 15_000,
+      });
+      return result.text?.trim() || null;
+    }
+
+    const apiKey = (this.config.geminiApiKey || process.env['GEMINI_API_KEY'] || '').trim();
+    if (!apiKey) return null;
+
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
     const res = await fetch(url, {
       method: 'POST',
       headers: {
